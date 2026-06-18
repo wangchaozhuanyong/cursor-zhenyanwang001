@@ -24,7 +24,6 @@ export function CheckoutShippingSection({
     <div className={SECTION_SHELL}>
       <div className="mb-3">
         <h3 className="text-[15px] font-bold text-foreground md:text-base">配送与备注</h3>
-        <p className="mt-0.5 text-xs text-muted-foreground">配送会按当前订单自动匹配，订单备注可选填</p>
       </div>
       <div className="divide-y divide-[var(--theme-border)] rounded-2xl bg-[var(--theme-bg)] px-4">
         <div className="flex items-center justify-between gap-3 py-3.5">

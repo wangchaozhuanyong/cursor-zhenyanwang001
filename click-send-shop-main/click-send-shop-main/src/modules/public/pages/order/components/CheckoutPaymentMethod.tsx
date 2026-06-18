@@ -10,7 +10,6 @@ const CHECKOUT_PAYMENT_COPY: Record<PublicLocale, {
   methodLabels: Record<PaymentMethod, string>;
   disabledHint: string;
   title: string;
-  subtitle: string;
   secure: string;
   selected: string;
   switchHint: string;
@@ -24,7 +23,6 @@ const CHECKOUT_PAYMENT_COPY: Record<PublicLocale, {
     },
     disabledHint: "商户暂未开通在线支付，请选择联系客服",
     title: "支付方式",
-    subtitle: "选择适合你的付款方式",
     secure: "安全支付",
     selected: "已选支付方式",
     switchHint: "点击可切换付款方式",
@@ -38,7 +36,6 @@ const CHECKOUT_PAYMENT_COPY: Record<PublicLocale, {
     },
     disabledHint: "Online payment is not enabled. Please contact support.",
     title: "Payment method",
-    subtitle: "Choose a payment method that works for you",
     secure: "Secure payment",
     selected: "Selected payment method",
     switchHint: "Tap to switch payment method",
@@ -104,7 +101,6 @@ export function CheckoutPaymentMethod({
       <div className="mb-3 flex items-center justify-between gap-3">
         <div>
           <h3 className="text-[15px] font-bold text-foreground md:text-base">{copy.title}</h3>
-          <p className="mt-0.5 text-xs text-muted-foreground">{copy.subtitle}</p>
         </div>
         <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
           <ShieldCheck size={12} className="text-[var(--theme-success)]" /> {copy.secure}

@@ -14,6 +14,7 @@ type AccountProductCardProps = {
   index?: number;
   actions?: ReactNode;
   className?: string;
+  variant?: "default" | "history";
 };
 
 export default function AccountProductCard({
@@ -21,23 +22,26 @@ export default function AccountProductCard({
   index = 0,
   actions,
   className,
+  variant = "default",
 }: AccountProductCardProps) {
   const { localizedPath } = usePublicLocale();
   const vm = buildProductCardV2Model(product);
   const href = localizedPath(vm.href);
   const loading = index < 3 ? "eager" : "lazy";
+  const isHistory = variant === "history";
 
   return (
     <article
       className={cn(
-        "group rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 shadow-[var(--theme-shadow)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_42px_color-mix(in_srgb,var(--theme-primary)_10%,transparent)]",
+        "store-account-product-card group rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 shadow-[var(--theme-shadow)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_42px_color-mix(in_srgb,var(--theme-primary)_10%,transparent)]",
+        isHistory && "store-account-product-card--history",
         className,
       )}
     >
-      <div className="grid min-w-0 grid-cols-[5.75rem_minmax(0,1fr)] gap-3 sm:grid-cols-[7rem_minmax(0,1fr)]">
+      <div className="store-account-product-card__row grid min-w-0 grid-cols-[5.75rem_minmax(0,1fr)] gap-3 sm:grid-cols-[7rem_minmax(0,1fr)]">
         <Link
           to={href}
-          className="relative block overflow-hidden rounded-xl bg-[color-mix(in_srgb,var(--theme-primary)_5%,var(--theme-bg))]"
+          className="store-account-product-card__media relative block overflow-hidden rounded-xl bg-[color-mix(in_srgb,var(--theme-primary)_5%,var(--theme-bg))]"
           style={THEME_PRODUCT_MEDIA_ASPECT_STYLE}
           aria-label={`查看 ${vm.name}`}
         >
@@ -62,16 +66,16 @@ export default function AccountProductCard({
           {vm.soldOut ? <SoldOutMask /> : null}
         </Link>
 
-        <div className="flex min-w-0 flex-col">
+        <div className="store-account-product-card__content flex min-w-0 flex-col">
           <Link to={href} className="min-w-0" aria-label={`查看 ${vm.name}`}>
-            <h3 className="line-clamp-2 min-h-[2.5rem] text-sm font-semibold leading-5 text-[var(--theme-text)]">
+            <h3 className="store-account-product-card__title line-clamp-2 min-h-[2.5rem] text-sm font-semibold leading-5 text-[var(--theme-text)]">
               {vm.name}
             </h3>
           </Link>
           <DecisionMetaRow items={vm.decisionTexts} />
           <ActivityProgressBar percent={vm.activityProgressPercent} text={vm.activityProgressText} />
-          <div className="mt-auto pt-2">
-            <StorefrontPrice amount={vm.priceText} originalAmount={vm.originalPriceText} />
+          <div className="store-account-product-card__price mt-auto pt-2">
+            <StorefrontPrice className="store-account-product-card__price-line" amount={vm.priceText} originalAmount={vm.originalPriceText} />
           </div>
         </div>
       </div>
@@ -85,12 +89,18 @@ export default function AccountProductCard({
   );
 }
 
-export function AccountProductCardSkeleton() {
+export function AccountProductCardSkeleton({ variant = "default" }: { variant?: "default" | "history" }) {
+  const isHistory = variant === "history";
   return (
-    <div className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 shadow-[var(--theme-shadow)]">
-      <div className="grid grid-cols-[5.75rem_minmax(0,1fr)] gap-3 sm:grid-cols-[7rem_minmax(0,1fr)]">
-        <div className="aspect-square animate-pulse rounded-xl bg-[color-mix(in_srgb,var(--theme-border)_50%,transparent)]" />
-        <div className="min-w-0 space-y-2">
+    <div
+      className={cn(
+        "store-account-product-card rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 shadow-[var(--theme-shadow)]",
+        isHistory && "store-account-product-card--history",
+      )}
+    >
+      <div className="store-account-product-card__row grid grid-cols-[5.75rem_minmax(0,1fr)] gap-3 sm:grid-cols-[7rem_minmax(0,1fr)]">
+        <div className="store-account-product-card__media aspect-square animate-pulse rounded-xl bg-[color-mix(in_srgb,var(--theme-border)_50%,transparent)]" />
+        <div className={cn("store-account-product-card__content min-w-0", isHistory ? "grid" : "space-y-2")}>
           <div className="h-4 w-5/6 animate-pulse rounded bg-[color-mix(in_srgb,var(--theme-border)_50%,transparent)]" />
           <div className="h-4 w-2/3 animate-pulse rounded bg-[color-mix(in_srgb,var(--theme-border)_40%,transparent)]" />
           <div className="h-3 w-1/2 animate-pulse rounded bg-[color-mix(in_srgb,var(--theme-border)_35%,transparent)]" />
@@ -102,9 +112,9 @@ export function AccountProductCardSkeleton() {
 }
 
 function DecisionMetaRow({ items }: { items: string[] }) {
-  if (!items.length) return <div className="mt-1.5 min-h-[1rem]" />;
+  if (!items.length) return <div className="store-account-product-card__meta mt-1.5 min-h-[1rem]" />;
   return (
-    <div className="mt-1.5 flex min-h-[1rem] min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] leading-4 text-[var(--theme-text-muted)]">
+    <div className="store-account-product-card__meta mt-1.5 flex min-h-[1rem] min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] leading-4 text-[var(--theme-text-muted)]">
       {items.map((item, index) => (
         <span key={`${item}-${index}`} className="inline-flex min-w-0 items-center gap-1">
           {index > 0 ? <span className="h-1 w-1 shrink-0 rounded-full bg-[var(--theme-border)]" aria-hidden /> : null}
@@ -116,10 +126,10 @@ function DecisionMetaRow({ items }: { items: string[] }) {
 }
 
 function ActivityProgressBar({ percent, text }: { percent?: number; text?: string }) {
-  if (!percent && !text) return <div className="mt-2 min-h-[1.1rem]" />;
+  if (!percent && !text) return <div className="store-account-product-card__progress mt-2 min-h-[1.1rem]" />;
   const safePercent = Math.max(0, Math.min(100, Math.round(Number(percent || 0))));
   return (
-    <div className="mt-2 min-h-[1.1rem]">
+    <div className="store-account-product-card__progress mt-2 min-h-[1.1rem]">
       <div className="h-1.5 overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--theme-border)_70%,transparent)]">
         <div
           className="h-full rounded-full bg-[var(--theme-price)] transition-[width]"

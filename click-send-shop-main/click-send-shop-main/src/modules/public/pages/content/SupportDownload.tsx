@@ -27,6 +27,7 @@ import "@/styles/support-download.css";
 import type { AnalyticsEventPayload } from "@/services/analyticsService";
 import type { SupportChannelType, SupportDownloadChannel } from "@/types/content";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import { useHorizontalActiveScroll } from "@/hooks/useHorizontalActiveScroll";
 
 type SupportDownloadView = SupportChannelType | "download";
 
@@ -214,6 +215,8 @@ export default function SupportDownload() {
       title={displayTitle}
     />
   );
+  const { containerRef: tabsRef, setItemRef: setTabRef, scrollToKey: scrollTabToKey } =
+    useHorizontalActiveScroll<HTMLElement, HTMLButtonElement>(activeView || "", availableViews.length);
 
   if (!config.enabled) {
     return (
@@ -278,7 +281,8 @@ export default function SupportDownload() {
 
         {!waitingForConfiguredView && availableViews.length > 0 ? (
           <nav
-            className="support-download-tabs"
+            ref={tabsRef}
+            className="support-download-tabs no-scrollbar"
             aria-label={`${STORE_COPY.supportCenterTitle}入口`}
             style={{ "--support-tab-count": availableViews.length } as CSSProperties}
           >
@@ -287,8 +291,12 @@ export default function SupportDownload() {
               return (
                 <UnifiedButton
                   key={view}
+                  ref={(el) => setTabRef(view, el)}
                   type="button"
-                  onClick={() => setActiveView(view)}
+                  onClick={() => {
+                    scrollTabToKey(view);
+                    setActiveView(view);
+                  }}
                   className={`support-download-tab support-download-tab--${view}${active ? " is-active" : ""}`}
                   aria-pressed={active}
                 >

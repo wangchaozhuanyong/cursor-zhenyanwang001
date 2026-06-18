@@ -26,7 +26,6 @@ import CheckoutPromotionExplanation from "@/modules/storefront-v2/checkout/Check
 import { fetchPrimaryFullReductionCampaign } from "@/modules/storefront-v2/campaign/campaignService";
 import type { StorefrontCampaignVm } from "@/modules/storefront-v2/campaign/campaignTypes";
 import { usePublicLocale } from "@/i18n/publicLocale";
-import { BadgeCheck, Calculator, ShieldCheck, Truck } from "lucide-react";
 
 export default function Checkout() {
   const { localizedPath, t } = usePublicLocale();
@@ -176,11 +175,6 @@ export default function Checkout() {
           }
         >
             <MarketingPositionNotices position="checkout_notice" />
-            <CheckoutTrustGuardrail
-              pricingReady={checkout.backendPricingReady}
-              pricingError={checkout.orderPreviewError}
-              shippingSyncing={shippingBlocked}
-            />
             <CheckoutAddressCard
               name={checkout.name}
               phone={checkout.phone}
@@ -288,69 +282,5 @@ export default function Checkout() {
         onSelect={handlePickAddress}
       />
     </StoreStandardPageShell>
-  );
-}
-
-function CheckoutTrustGuardrail({
-  pricingReady,
-  pricingError,
-  shippingSyncing,
-}: {
-  pricingReady: boolean;
-  pricingError?: string | null;
-  shippingSyncing: boolean;
-}) {
-  const blocked = Boolean(pricingError);
-  const items = [
-    {
-      icon: Calculator,
-      title: "订单金额",
-      value: pricingReady ? "已同步" : blocked ? "需处理" : "同步中",
-      hint: pricingError || "商品、优惠、积分和返现已汇总",
-      tone: pricingReady ? "is-on" : "is-warn",
-    },
-    {
-      icon: BadgeCheck,
-      title: "活动资格",
-      value: "自动确认",
-      hint: "活动适用范围会自动确认",
-      tone: "is-on",
-    },
-    {
-      icon: Truck,
-      title: "配送库存",
-      value: blocked ? "待确认" : shippingSyncing ? "确认中" : "已确认",
-      hint: "运费、地址、库存和限购会在提交订单前确认",
-      tone: blocked || shippingSyncing ? "is-warn" : "is-on",
-    },
-  ];
-
-  return (
-    <section className="store-checkout-v12-guardrail" aria-label="结算确认">
-      <div className="store-checkout-v12-guardrail__head">
-        <span className="store-checkout-v12-guardrail__icon" aria-hidden>
-          <ShieldCheck size={17} />
-        </span>
-        <div>
-          <h2>提交前确认订单</h2>
-          <p>价格、优惠、库存和配送会在提交前确认。</p>
-        </div>
-      </div>
-      <div className="store-checkout-v12-guardrail__grid">
-        {items.map((item) => {
-          const Icon = item.icon;
-          return (
-            <div key={item.title} className="store-checkout-v12-guardrail__item">
-              <span className={`store-checkout-v12-guardrail__status ${item.tone}`}>
-                <Icon size={15} aria-hidden />
-              </span>
-              <strong>{item.value}</strong>
-              <span>{item.title}</span>
-              <small>{item.hint}</small>
-            </div>
-          );
-        })}
-      </div>
-    </section>
   );
 }

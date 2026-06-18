@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useRef } from "react";
 import { ArrowDown, ArrowUp } from "lucide-react";
 import type { ProductSortType } from "@/types/product";
 import { cn } from "@/lib/utils";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import { useHorizontalActiveScroll } from "@/hooks/useHorizontalActiveScroll";
 
 type SortItem = {
   value: ProductSortType;
@@ -33,36 +33,15 @@ interface ProductSortBarProps {
 
 /** 分类 / 新品列表：顶部横向排序，直接切换（不用底部上拉） */
 export default function ProductSortBar({ value, onChange, hideNewest = false, className }: ProductSortBarProps) {
-  const sortBarRef = useRef<HTMLDivElement>(null);
-  const buttonRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
   const isPriceAsc = value === "price-asc";
   const isPriceDesc = value === "price-desc";
   const isPriceActive = isPriceAsc || isPriceDesc;
   const sortItems = hideNewest ? baseSortItems.filter((item) => item.value !== "newest") : baseSortItems;
   const activeButtonKey = isPriceActive ? PRICE_SORT_KEY : value;
-
-  const scrollButtonIntoView = useCallback((buttonKey: string) => {
-    const bar = sortBarRef.current;
-    const button = buttonRefs.current.get(buttonKey);
-    if (!bar || !button) return;
-
-    const prefersReducedMotion =
-      typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const behavior: ScrollBehavior = prefersReducedMotion ? "auto" : "smooth";
-    const barRect = bar.getBoundingClientRect();
-    const buttonRect = button.getBoundingClientRect();
-    const centeredLeft = bar.scrollLeft + buttonRect.left - barRect.left - (bar.clientWidth - button.clientWidth) / 2;
-    const maxLeft = Math.max(0, bar.scrollWidth - bar.clientWidth);
-
-    bar.scrollTo({
-      left: Math.min(Math.max(0, centeredLeft), maxLeft),
-      behavior,
-    });
-  }, []);
-
-  useEffect(() => {
-    scrollButtonIntoView(activeButtonKey);
-  }, [activeButtonKey, scrollButtonIntoView, sortItems.length]);
+  const { containerRef: sortBarRef, setItemRef, scrollToKey } = useHorizontalActiveScroll<HTMLDivElement, HTMLButtonElement>(
+    activeButtonKey,
+    sortItems.length,
+  );
 
   return (
     <div
@@ -75,15 +54,12 @@ export default function ProductSortBar({ value, onChange, hideNewest = false, cl
       {sortItems.map((item) => (
         <UnifiedButton
           key={item.value}
-          ref={(node) => {
-            if (node) buttonRefs.current.set(item.value, node);
-            else buttonRefs.current.delete(item.value);
-          }}
+          ref={(node) => setItemRef(item.value, node)}
           type="button"
           aria-pressed={value === item.value}
           onClick={() => {
             onChange(item.value);
-            scrollButtonIntoView(item.value);
+            scrollToKey(item.value);
           }}
           className={sortPillClass(value === item.value)}
         >
@@ -91,15 +67,12 @@ export default function ProductSortBar({ value, onChange, hideNewest = false, cl
         </UnifiedButton>
       ))}
       <UnifiedButton
-        ref={(node) => {
-          if (node) buttonRefs.current.set(PRICE_SORT_KEY, node);
-          else buttonRefs.current.delete(PRICE_SORT_KEY);
-        }}
+        ref={(node) => setItemRef(PRICE_SORT_KEY, node)}
         type="button"
         aria-pressed={isPriceActive}
         onClick={() => {
           onChange(cyclePriceSort(value));
-          scrollButtonIntoView(PRICE_SORT_KEY);
+          scrollToKey(PRICE_SORT_KEY);
         }}
         className={sortPillClass(isPriceActive)}
         aria-label={

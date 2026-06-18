@@ -1,6 +1,6 @@
-import { useEffect, useRef } from "react";
 import CategoryNavTile from "@/components/store/CategoryNavTile";
 import { cn } from "@/lib/utils";
+import { useHorizontalActiveScroll } from "@/hooks/useHorizontalActiveScroll";
 
 export type CategoryKingkongVariant = "standard" | "plain";
 
@@ -48,34 +48,10 @@ export default function CategoryKingkongRow({
   loadingSlots = 6,
   variant = "standard",
 }: CategoryKingkongRowProps) {
-  const itemRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
-  const railRef = useRef<HTMLDivElement>(null);
-  const firstItemId = items[0]?.id;
-
-  useEffect(() => {
-    if (!scrollKey) return;
-    const rail = railRef.current;
-    const btn = itemRefs.current.get(scrollKey);
-    if (!rail || !btn) return;
-    const prefersReducedMotion =
-      typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const behavior: ScrollBehavior = prefersReducedMotion ? "auto" : "smooth";
-
-    if (scrollKey === firstItemId) {
-      rail.scrollTo({ left: 0, behavior });
-      return;
-    }
-
-    const railRect = rail.getBoundingClientRect();
-    const btnRect = btn.getBoundingClientRect();
-    const centeredLeft = rail.scrollLeft + btnRect.left - railRect.left - (rail.clientWidth - btn.clientWidth) / 2;
-    const maxLeft = Math.max(0, rail.scrollWidth - rail.clientWidth);
-
-    rail.scrollTo({
-      left: Math.min(Math.max(0, centeredLeft), maxLeft),
-      behavior,
-    });
-  }, [firstItemId, scrollKey, items.length]);
+  const { containerRef: railRef, setItemRef, scrollToKey } = useHorizontalActiveScroll<HTMLDivElement, HTMLButtonElement>(
+    scrollKey,
+    `${loading ? "loading" : "ready"}:${items.length}`,
+  );
 
   return (
     <section
@@ -106,11 +82,11 @@ export default function CategoryKingkongRow({
               iconValue={item.iconValue}
               active={item.active}
               variant={variant}
-              onClick={item.onClick}
-              btnRef={(el) => {
-                if (el) itemRefs.current.set(item.id, el);
-                else itemRefs.current.delete(item.id);
+              onClick={() => {
+                scrollToKey(item.id);
+                item.onClick();
               }}
+              btnRef={(el) => setItemRef(item.id, el)}
             />
           ))
         )}

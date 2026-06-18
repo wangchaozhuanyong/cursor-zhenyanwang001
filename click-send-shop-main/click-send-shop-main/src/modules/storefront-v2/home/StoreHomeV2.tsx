@@ -328,7 +328,6 @@ export default function StoreHomeV2() {
         {siteCapabilities.mallEnabled && showNewArrivals ? (
           <HomeProductSectionV2
             title={getHomeModuleTitle(homeModules, "new_arrivals", "新品上市")}
-            subtitle="最新上架，先看这一组"
             products={newArrivalProducts}
             loading={homeLoading && newArrivalProducts.length === 0}
             skeletonCount={8}
@@ -337,6 +336,7 @@ export default function StoreHomeV2() {
             emptyText="新品正在整理中，可以先看全部分类。"
             emptyActionLabel="去全部分类"
             showPrice={siteInfo.newArrivalShowPrice !== "0"}
+            className="store-home-v12-shelf--new-arrivals"
             onNavigate={navigatePath}
           />
         ) : null}
@@ -358,7 +358,6 @@ export default function StoreHomeV2() {
         {siteCapabilities.mallEnabled && showHotSales ? (
           <HomeProductSectionV2
             title={getHomeModuleTitle(homeModules, "hot_sales", "今日热销")}
-            subtitle="高频购买商品优先展示"
             products={hotHomeProducts}
             loading={homeLoading && hotHomeProducts.length === 0}
             skeletonCount={homeModules.hotBatchSize}
@@ -366,6 +365,7 @@ export default function StoreHomeV2() {
             actionPath="/categories?sort=sales_desc"
             emptyText="热销榜暂时没有数据，可以先看全部商品。"
             emptyActionLabel="全部商品"
+            className="store-home-v12-shelf--hot-sales"
             onNavigate={navigatePath}
           />
         ) : null}
@@ -373,13 +373,13 @@ export default function StoreHomeV2() {
         {siteCapabilities.mallEnabled && showRecommend ? (
           <HomeProductSectionV2
             title={getHomeModuleTitle(homeModules, "recommend", "猜你喜欢")}
-            subtitle="根据浏览、收藏、购物车和订单信号推荐"
             products={memberRecommendations}
             loading={homeLoading && memberRecommendations.length === 0}
             skeletonCount={homeModules.recBatchSize}
             actionLabel="更多推荐"
             emptyText="还没有足够的浏览记录生成推荐，可以先看看热销商品。"
             emptyActionLabel="看热销"
+            className="store-home-v12-shelf--recommend"
             onNavigate={navigatePath}
           />
         ) : null}
@@ -481,9 +481,8 @@ function HomeBuyingStatusBoard({
   return (
     <section className="store-home-v12-status-board" aria-label="快捷操作">
       <div className="store-home-v12-status-board__head">
-        <div>
-          <span>快捷操作</span>
-          <h2>从找货到结算都收在一个入口里</h2>
+        <div className="min-w-0">
+          <h2>快捷操作</h2>
         </div>
         <UnifiedButton
           type="button"

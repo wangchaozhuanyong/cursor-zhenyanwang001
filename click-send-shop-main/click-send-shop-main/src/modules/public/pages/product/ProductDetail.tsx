@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { ArrowLeft, BadgePercent, CheckCircle2, CreditCard, Headphones, Layers3, MapPin, PackageCheck, RotateCcw, ShieldCheck, Truck, type LucideIcon } from "lucide-react";
+import { ArrowLeft, BadgePercent, CheckCircle2, Headphones, PackageCheck, ShieldCheck, Truck, type LucideIcon } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useProductStore } from "@/stores/useProductStore";
 import { useCartStore } from "@/stores/useCartStore";
@@ -58,18 +58,6 @@ import { DesktopPurchaseActionCard } from "@/components/store/DesktopPurchasePat
 import ProductActivityPanel from "@/modules/storefront-v2/product-detail/ProductActivityPanel";
 import { buildProductDisplayPriceModel } from "@/modules/storefront-v2/product/productDisplayPricing";
 import { usePublicLocale } from "@/i18n/publicLocale";
-
-function getActivityStatusLabel(status?: string, statusLabel?: string) {
-  const normalizedStatus = String(status || "").toLowerCase();
-  const normalizedStatusLabel = String(statusLabel || "").toLowerCase();
-  if (normalizedStatus === "scheduled") return "未开始";
-  if (normalizedStatus === "ended") return "已结束";
-  if (normalizedStatus === "paused") return "已暂停";
-  if (statusLabel && !["active", "scheduled", "ended", "paused"].includes(normalizedStatusLabel)) {
-    return statusLabel;
-  }
-  return "进行中";
-}
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -248,64 +236,6 @@ export default function ProductDetail() {
     : displayStock;
   const maxQty = Math.max(0, Math.min(displayStock, activityRemaining, activityLimit));
   const soldOut = maxQty <= 0;
-  const productFacts = [
-    {
-      label: "库存状态",
-      value: soldOut ? "已售罄" : `可售 ${Math.max(0, Number(maxQty || 0))} 件`,
-      hint: "加入购物车和提交订单前都会复核",
-      icon: PackageCheck,
-    },
-    {
-      label: "限购规则",
-      value: activeActivity && activityLimit > 0 ? `每人 ${Math.max(0, Number(activityLimit || 0))} 件` : "按规格库存",
-      hint: "活动限购以结算页为准",
-      icon: BadgePercent,
-    },
-    {
-      label: "配送售后",
-      value: "结算确认",
-      hint: "运费、地址和售后信息会自动更新",
-      icon: Truck,
-    },
-    {
-      label: "下单确认",
-      value: "系统确认",
-      hint: "价格、优惠和库存下单前确认",
-      icon: ShieldCheck,
-    },
-  ];
-  const assuranceItems = [
-    {
-      label: "规格库存",
-      value: hasMultipleVariants ? `${availableVariants.length} 种可选` : "默认规格",
-      desc: soldOut ? "当前库存不足，不能提交购买" : "提交前会重新锁定可售库存",
-      icon: Layers3,
-    },
-    {
-      label: "活动资格",
-      value: activeActivity ? getActivityStatusLabel(activeActivity.status, activeActivity.status_label) : "普通价格",
-      desc: activeActivity ? "活动库存、限购和叠加关系以结算页为准" : "暂无活动时按商品基础价格结算",
-      icon: BadgePercent,
-    },
-    {
-      label: "配送范围",
-      value: "结算确认",
-      desc: "地址、运费、可配送区域会自动确认",
-      icon: MapPin,
-    },
-    {
-      label: "售后规则",
-      value: "订单关联",
-      desc: "签收、售后申请和退款进度跟随订单状态",
-      icon: RotateCcw,
-    },
-  ];
-  const purchaseFlow = [
-    { label: "选择规格", desc: "先确认 SKU、数量和可售库存" },
-    { label: "结算确认", desc: "自动汇总活动、优惠券、积分、运费" },
-    { label: "创建订单", desc: "锁定库存并保存订单金额快照" },
-    { label: "支付发货", desc: "支付后可查看订单状态" },
-  ];
   const salesCount = hasProductSales(product.sales_count) ? getProductSalesCount(product.sales_count) : null;
   const statusBadges: { key: string; label: string; className: string }[] = [];
   if (product.is_hot) {
@@ -625,23 +555,6 @@ export default function ProductDetail() {
                 {product.name}
               </h1>
               <ProductActivityPanel activity={activeActivity} />
-              <section className="store-product-v12-facts" aria-label="商品购买规则">
-                {productFacts.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <div key={item.label} className="store-product-v12-fact">
-                      <span className="store-product-v12-fact__icon" aria-hidden>
-                        <Icon size={16} />
-                      </span>
-                      <span className="store-product-v12-fact__body">
-                        <strong>{item.value}</strong>
-                        <small>{item.label}</small>
-                        <em>{item.hint}</em>
-                      </span>
-                    </div>
-                  );
-                })}
-              </section>
               {showRegulatedNotice ? <RegulatedProductNotice {...regulatedNoticeProps} /> : null}
               {purchaseAgeBlocked ? (
                 <p className="mt-3 rounded-lg border border-[color-mix(in_srgb,var(--theme-warning)_34%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-warning)_14%,var(--theme-surface))] px-3 py-2 text-xs text-[color-mix(in_srgb,var(--theme-warning)_78%,var(--theme-text-on-surface))]">
@@ -668,11 +581,6 @@ export default function ProductDetail() {
               <TrustInfo variant="card" />
             </div>
 
-            <ProductDetailAssurancePanel
-              items={assuranceItems}
-              flow={purchaseFlow}
-            />
-
             <ProductDetailContentPanel
               sections={detailSections}
               summaryItems={detailSummaryItems}
@@ -683,16 +591,14 @@ export default function ProductDetail() {
         {/* 评论 */}
         <ProductReviews vm={reviewsVm} />
 
-        {/* 同类推荐 */}
+        {/* 推荐商品 */}
         {(relatedProductsLoading || relatedProducts.length > 0) && (
-          <section className="store-product-v12-related" aria-labelledby="product-related-heading">
+          <section className="store-product-v12-related" aria-label="推荐商品">
             <div className="store-product-v12-related__head">
               <span>
                 <PackageCheck size={15} aria-hidden />
                 推荐商品
               </span>
-              <h2 id="product-related-heading">同类推荐</h2>
-              <p>继续浏览相似好物，活动价、库存和标签会自动更新。</p>
             </div>
             {relatedProductsLoading ? (
               <div className={`${productGridClass} md:gap-5`}>
@@ -796,63 +702,6 @@ export default function ProductDetail() {
         <p className="whitespace-pre-wrap text-sm text-[var(--theme-text-muted)]">{shareText}</p>
       </AppModal>
     </div>
-  );
-}
-
-function ProductDetailAssurancePanel({
-  items,
-  flow,
-}: {
-  items: Array<{
-    label: string;
-    value: string;
-    desc: string;
-    icon: typeof ShieldCheck;
-  }>;
-  flow: Array<{
-    label: string;
-    desc: string;
-  }>;
-}) {
-  return (
-    <section className="store-product-v12-assurance" aria-label="购买前确认">
-      <div className="store-product-v12-assurance__head">
-        <span>
-          <CreditCard size={15} aria-hidden />
-          购买前确认
-        </span>
-        <h2>先看清规则，再进入结算</h2>
-        <p>商品规格、活动、库存、配送、售后和最终金额都会在结算页确认。</p>
-      </div>
-      <div className="store-product-v12-assurance__grid">
-        {items.map((item) => {
-          const Icon = item.icon;
-          return (
-            <div key={item.label} className="store-product-v12-assurance__item">
-              <span aria-hidden>
-                <Icon size={16} />
-              </span>
-              <div>
-                <small>{item.label}</small>
-                <strong>{item.value}</strong>
-                <p>{item.desc}</p>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-      <div className="store-product-v12-assurance__flow" aria-label="下单流程">
-        {flow.map((step, index) => (
-          <div key={step.label}>
-            <span aria-hidden>
-              <CheckCircle2 size={15} />
-            </span>
-            <b>{index + 1}. {step.label}</b>
-            <small>{step.desc}</small>
-          </div>
-        ))}
-      </div>
-    </section>
   );
 }
 

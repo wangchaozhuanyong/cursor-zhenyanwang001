@@ -16,6 +16,7 @@ type HomeProductSectionV2Props = {
   emptyText?: string;
   emptyActionLabel?: string;
   showPrice?: boolean;
+  className?: string;
   onNavigate: (path: string) => void;
 };
 
@@ -30,10 +31,11 @@ export default function HomeProductSectionV2({
   emptyText = "暂无商品",
   emptyActionLabel = "去全部分类",
   showPrice = true,
+  className,
   onNavigate,
 }: HomeProductSectionV2Props) {
   return (
-    <section className="store-home-product-shelf store-home-v12-shelf min-w-0">
+    <section className={["store-home-product-shelf store-home-v12-shelf min-w-0", className].filter(Boolean).join(" ")}>
       <div className="store-home-v12-shelf__head">
         <StorefrontTitleRow
           title={title}

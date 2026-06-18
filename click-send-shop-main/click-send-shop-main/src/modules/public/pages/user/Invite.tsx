@@ -106,8 +106,6 @@ export default function Invite() {
       const themeText = readThemeCssVar("--theme-text", "#111111");
       const themeMuted = readThemeCssVar("--theme-text-muted", "#6b7280");
       const themePrimary = readThemeCssVar("--theme-primary", "#111111");
-      const themePrimaryFg = readThemeCssVar("--theme-primary-foreground", "#ffffff");
-      const themePrice = readThemeCssVar("--theme-price", "#d97706");
       const themeSurface = readThemeCssVar("--theme-surface", "#ffffff");
 
       ctx.fillStyle = themeBg;
@@ -122,29 +120,21 @@ export default function Invite() {
       ctx.font = "28px sans-serif";
       ctx.fillText("好友付款成功即可获得现金返现", w / 2, 170);
 
-      ctx.fillStyle = themePrice;
-      ctx.fillRect(100, 220, w - 200, 170);
-      ctx.fillStyle = themePrimaryFg;
-      ctx.font = "26px sans-serif";
-      ctx.fillText("我的邀请码", w / 2, 285);
-      ctx.font = "bold 58px monospace";
-      ctx.fillText(inviteCode || "----", w / 2, 355);
-
       ctx.fillStyle = themeSurface;
-      ctx.fillRect(210, 450, 480, 480);
-      ctx.drawImage(qrCanvas, 240, 480, 420, 420);
+      ctx.fillRect(210, 260, 480, 480);
+      ctx.drawImage(qrCanvas, 240, 290, 420, 420);
 
       ctx.fillStyle = themeText;
       ctx.font = "24px sans-serif";
-      ctx.fillText("扫码注册，自动绑定邀请关系", w / 2, 980);
+      ctx.fillText("扫码注册，自动绑定邀请关系", w / 2, 800);
 
       ctx.fillStyle = themeMuted;
       ctx.font = "20px sans-serif";
-      ctx.fillText("规则：邀请好友消费后可获积分/返现，具体以平台规则为准", w / 2, 1060);
+      ctx.fillText("规则：邀请好友消费后可获积分/返现，具体以平台规则为准", w / 2, 880);
 
       ctx.fillStyle = themePrimary;
       ctx.font = "22px sans-serif";
-      ctx.fillText(inviteLink, w / 2, 1140);
+      ctx.fillText(inviteLink, w / 2, 960);
 
       const fileName = `invite-poster-${inviteCode}.png`;
       void runGuardedDownload(() => {
@@ -181,9 +171,6 @@ export default function Invite() {
               <h2 className="mt-3 max-w-2xl text-[26px] font-black leading-tight text-[var(--theme-text-on-surface)] sm:text-4xl">
                 把采购体验分享给朋友
               </h2>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--theme-text-muted-on-surface)]">
-                复制专属链接或海报，好友注册并下单后，奖励会自动记录到你的账户。
-              </p>
 
               <div className="mt-4 flex flex-col gap-3 rounded-2xl border border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-surface)_82%,transparent)] p-3 backdrop-blur sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
@@ -235,9 +222,6 @@ export default function Invite() {
                   <QRCodeCanvas value={inviteLink} size={132} level="H" marginSize={1} fgColor={qrFg} bgColor={qrBg} />
                 </div>
               </div>
-              <p className="mt-3 text-center text-[11px] leading-5 text-[var(--theme-text-muted-on-surface)]">
-                {loyaltyLoading ? "奖励规则同步中" : "好友注册后进入邀请记录"}
-              </p>
             </div>
           </div>
         </section>
@@ -275,10 +259,8 @@ export default function Invite() {
             <p className="text-xs font-bold text-[var(--theme-price)]">专属邀请海报</p>
             <p className="mt-2 text-2xl font-black leading-tight text-[var(--theme-text)]">邀请好友得奖励</p>
             <p className="mt-1 text-xs leading-5 text-[var(--theme-text-muted)]">好友付款成功即可获得现金返现</p>
-            <p className="mt-4 text-xs font-semibold text-[var(--theme-text-muted)]">我的邀请码</p>
-            <p className="font-mono text-2xl font-black text-[var(--theme-price)] sm:text-3xl">{inviteCode || "----"}</p>
             <motion.div
-              className="mt-4 inline-block rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 shadow-[0_18px_40px_-30px_color-mix(in_srgb,var(--theme-text)_40%,transparent)]"
+              className="mt-5 inline-block rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 shadow-[0_18px_40px_-30px_color-mix(in_srgb,var(--theme-text)_40%,transparent)]"
               initial={motionEnabled ? { opacity: 0, scale: 0.92 } : false}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.28, delay: inviteCode ? 0.08 : 0 }}

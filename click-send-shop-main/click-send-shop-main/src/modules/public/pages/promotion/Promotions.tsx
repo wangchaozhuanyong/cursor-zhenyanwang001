@@ -9,7 +9,6 @@ import {
   Gift,
   PackageSearch,
   RefreshCw,
-  ShieldCheck,
   Sparkles,
   TicketPercent,
   Timer,
@@ -23,6 +22,7 @@ import * as marketingService from "@/services/marketingService";
 import { buildCanonical } from "@/utils/seo";
 import { cn } from "@/lib/utils";
 import { usePublicLocale } from "@/i18n/publicLocale";
+import { useHorizontalActiveScroll } from "@/hooks/useHorizontalActiveScroll";
 import type { PromotionType, StorefrontHomeCampaign, StorefrontPromotion } from "@/services/marketingService";
 
 type PromotionFilter = PromotionType | "";
@@ -109,6 +109,10 @@ function buildFilterHref(type: PromotionFilter) {
   return type ? `${PROMOTIONS_BASE_PATH}?type=${type}` : PROMOTIONS_BASE_PATH;
 }
 
+function filterScrollKey(type: PromotionFilter) {
+  return type || "all";
+}
+
 function toPromotionsHref(href?: string) {
   const raw = String(href || "").trim();
   if (!raw) return PROMOTIONS_BASE_PATH;
@@ -146,15 +150,14 @@ function CampaignShortcut({
     <Link
       to={href}
       className={cn(
-        "store-promotions-v12-shortcut group flex flex-col justify-between rounded-[1rem] border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 transition hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--theme-primary)_30%,var(--theme-border))]",
+        "store-promotions-v12-shortcut group flex flex-col justify-start gap-2 rounded-[1rem] border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 transition hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--theme-primary)_30%,var(--theme-border))]",
         layout === "scroll" && "min-w-[11rem] sm:min-w-0",
         layout === "pair" && "min-w-0",
         layout === "single" && "w-full max-w-[13rem] min-w-0",
       )}
     >
       <span className="text-[11px] font-black uppercase tracking-[0.08em] text-[var(--theme-primary)]">{metric}</span>
-      <strong className="mt-2 line-clamp-2 text-sm font-black leading-5 text-[var(--theme-text)]">{campaign.title}</strong>
-      <span className="mt-2 line-clamp-2 text-xs leading-5 text-[var(--theme-text-muted)]">{campaign.subtitle || campaign.description || campaign.promoLabel}</span>
+      <strong className="line-clamp-2 text-sm font-black leading-5 text-[var(--theme-text)]">{campaign.title}</strong>
     </Link>
   );
 }
@@ -164,7 +167,6 @@ function PromotionCard({ promotion }: { promotion: StorefrontPromotion }) {
   const detailPath = localizedPath(`${PROMOTIONS_BASE_PATH}/${promotion.slug}`);
   const itemCount = promotion.items?.length || 0;
   const couponCount = promotion.coupons?.length || 0;
-  const description = promotion.description || promotion.subtitle || t("promotion.detailFallback");
 
   return (
     <article className="store-promotions-v12-card group flex h-full min-w-0 flex-col overflow-hidden rounded-[1.1rem] border border-[var(--theme-border)] bg-[var(--theme-surface)] shadow-sm transition hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--theme-primary)_28%,var(--theme-border))]">
@@ -193,9 +195,6 @@ function PromotionCard({ promotion }: { promotion: StorefrontPromotion }) {
           <h2 className="line-clamp-2 text-base font-black leading-6 text-[var(--theme-text)] sm:text-lg">
             {promotion.title}
           </h2>
-          <p className="mt-1 line-clamp-2 text-xs leading-5 text-[var(--theme-text-muted)] sm:text-sm sm:leading-6">
-            {description}
-          </p>
         </Link>
 
         <div className="mt-3 grid gap-2 text-xs text-[var(--theme-text-muted)]">
@@ -248,22 +247,6 @@ function PromotionCard({ promotion }: { promotion: StorefrontPromotion }) {
   );
 }
 
-function PromotionGuardrail() {
-  return (
-    <section className="store-promotions-v12-guardrail" aria-label="活动规则说明">
-      <span className="store-promotions-v12-guardrail__icon">
-        <ShieldCheck size={18} aria-hidden />
-      </span>
-      <div>
-        <h2>活动优惠会自动匹配</h2>
-        <p>
-          商品范围、会员等级、库存、限购和优惠券会在结算页确认。
-        </p>
-      </div>
-    </section>
-  );
-}
-
 function PromotionStatePanel({
   kind,
   onRetry,
@@ -280,9 +263,7 @@ function PromotionStatePanel({
         {isError ? <Timer size={24} aria-hidden /> : <PackageSearch size={24} aria-hidden />}
       </span>
       <div className="store-promotions-v12-state-panel__copy">
-        {isError ? <p className="store-promotions-v12-state-panel__eyebrow">活动数据暂时不可用</p> : null}
-        <h2>{isError ? "活动中心还在，同步接口暂时失败" : t("promotion.emptyTitle")}</h2>
-        {isError ? <p>你仍然可以先去领券、看商品或稍后重试。</p> : null}
+        <h2>{isError ? t("promotion.errorFallback") : t("promotion.emptyTitle")}</h2>
       </div>
       <div className="store-promotions-v12-state-panel__actions">
         {isError ? (
@@ -367,6 +348,9 @@ export default function Promotions() {
   const shortcutCampaigns = useMemo(() => campaigns.slice(0, 4), [campaigns]);
   const shortcutLayout: CampaignShortcutLayout =
     shortcutCampaigns.length === 1 ? "single" : shortcutCampaigns.length === 2 ? "pair" : "scroll";
+  const activeFilterKey = filterScrollKey(selectedType);
+  const { containerRef: filtersRef, setItemRef: setFilterRef, scrollToKey: scrollFilterToKey } =
+    useHorizontalActiveScroll<HTMLElement, HTMLAnchorElement>(activeFilterKey, FILTERS.length);
 
   return (
     <div className="store-page-shell store-v12-page store-promotions-v12-page store-bottom-safe min-h-[100dvh] bg-[var(--theme-bg)] text-[var(--theme-text)]">
@@ -430,20 +414,26 @@ export default function Promotions() {
           </section>
         ) : null}
 
-        <PromotionGuardrail />
-
-        <nav className="store-promotions-v12-filters mt-4 grid grid-cols-3 gap-2 sm:grid-cols-5 lg:grid-cols-10" aria-label={t("promotion.quickNav")}>
+        <nav
+          ref={filtersRef}
+          className="store-promotions-v12-filters no-scrollbar mt-4 flex gap-2 overflow-x-auto overflow-y-hidden scroll-smooth pb-1 [-webkit-overflow-scrolling:touch] sm:grid sm:grid-cols-5 sm:overflow-visible sm:pb-0 lg:grid-cols-10"
+          aria-label={t("promotion.quickNav")}
+        >
           {FILTERS.map((filter) => {
             const Icon = filter.icon;
             const active = selectedType === filter.type;
             const label = filter.type ? promotionTypeLabel(filter.type) : t("common.allPromotions");
+            const scrollKey = filterScrollKey(filter.type);
             return (
               <Link
                 key={filter.type || "all"}
+                ref={(node) => setFilterRef(scrollKey, node)}
                 to={localizedPath(buildFilterHref(filter.type))}
+                preventScrollReset
                 aria-current={active ? "page" : undefined}
+                onClick={() => scrollFilterToKey(scrollKey)}
                 className={cn(
-                  "inline-flex h-10 min-w-0 items-center justify-center gap-1.5 rounded-full border px-2 text-xs font-black transition",
+                  "inline-flex h-10 min-w-max shrink-0 items-center justify-center gap-1.5 rounded-full border px-3 text-xs font-black transition sm:min-w-0 sm:px-2",
                   active
                     ? "border-[var(--theme-primary)] bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]"
                     : "border-[var(--theme-border)] bg-[var(--theme-surface)] text-[var(--theme-text)]",

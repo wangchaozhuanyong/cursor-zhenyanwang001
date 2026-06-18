@@ -80,6 +80,7 @@ function StoreScrollRestoration() {
   const navigationType = useNavigationType();
   const scrollKey = getStoreScrollKey(location.pathname, location.search);
   const activeScrollKeyRef = useRef(scrollKey);
+  const previousScrollKeyRef = useRef(scrollKey);
   const hasHandledInitialRouteRef = useRef(false);
 
   useLayoutEffect(() => {
@@ -89,12 +90,18 @@ function StoreScrollRestoration() {
   }, []);
 
   useLayoutEffect(() => {
+    const previousScrollKey = previousScrollKeyRef.current;
     activeScrollKeyRef.current = scrollKey;
+
+    if (hasHandledInitialRouteRef.current && previousScrollKey === scrollKey) {
+      return;
+    }
 
     const shouldRestore = hasHandledInitialRouteRef.current && navigationType === "POP";
     const targetY = shouldRestore ? getRememberedStoreScrollPosition(scrollKey) ?? 0 : 0;
     const maxY = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
     window.scrollTo({ top: Math.min(targetY, maxY), left: 0, behavior: "auto" });
+    previousScrollKeyRef.current = scrollKey;
     hasHandledInitialRouteRef.current = true;
   }, [navigationType, scrollKey]);
 

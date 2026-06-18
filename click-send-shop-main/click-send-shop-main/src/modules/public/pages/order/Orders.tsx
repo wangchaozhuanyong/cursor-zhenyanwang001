@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { ClipboardList, Clock3, PackageCheck, RotateCcw } from "lucide-react";
@@ -23,6 +23,7 @@ import ProductCoverImage from "@/components/ProductCoverImage";
 import { ClientButton, EmptyState as ClientEmptyState } from "@/components/client";
 import { usePublicLocale } from "@/i18n/publicLocale";
 import { formatDateTime } from "@/utils/formatDateTime";
+import { useHorizontalActiveScroll } from "@/hooks/useHorizontalActiveScroll";
 import {
   getBuyerOrderStatusTextLocalized,
   getOrderCopy,
@@ -125,10 +126,11 @@ export default function Orders() {
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = parseTab(searchParams);
   const keyword = (searchParams.get("keyword") || "").trim();
-  const tabButtonRefs = useRef<Map<OrderTab, HTMLButtonElement>>(new Map());
   const capabilities = useSiteCapabilities();
   const { paying, payPendingOrder } = usePayPendingOrder();
   const tabs = useMemo(() => getOrderTabs(locale).filter((t) => t.key !== "pending_review" || capabilities.reviewEnabled), [capabilities.reviewEnabled, locale]);
+  const { containerRef: tabsRef, setItemRef: setTabRef, scrollToKey: scrollTabToKey } =
+    useHorizontalActiveScroll<HTMLDivElement, HTMLButtonElement>(tab, tabs.length);
 
   const { orders, pagination, loading, loadingMore, error, loadOrders, cancelOrder, confirmReceive, deleteOrder } = useOrderStore();
   const { addToCart, clearBuyNow, setSelectAll } = useCartStore();
@@ -232,11 +234,6 @@ export default function Orders() {
     });
   }, [hasMoreOrders, keyword, loadOrders, loading, loadingMore, pagination.page, pagination.pageSize, tab]);
 
-  useEffect(() => {
-    const activeButton = tabButtonRefs.current.get(tab);
-    activeButton?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
-  }, [tab, tabs.length]);
-
   const switchTab = (next: OrderTab) => {
     const nextParams = new URLSearchParams(searchParams);
     nextParams.delete("status");
@@ -326,6 +323,7 @@ export default function Orders() {
           <div className="flex flex-col gap-2 md:gap-3 xl:flex-row xl:items-center">
             <div className="relative min-w-0 overflow-hidden md:flex-1 md:overflow-visible">
               <div
+                ref={tabsRef}
                 className="no-scrollbar flex snap-x snap-mandatory gap-2 overflow-x-auto overflow-y-hidden scroll-smooth px-[var(--store-page-x)] pb-1 [-webkit-overflow-scrolling:touch] sm:px-4 md:flex-wrap md:overflow-visible md:px-0 md:pb-0"
                 role="tablist"
                 aria-label={copy.tabsAria}
@@ -336,15 +334,15 @@ export default function Orders() {
                 return (
                   <UnifiedButton
                     key={t.key}
-                    ref={(el) => {
-                      if (el) tabButtonRefs.current.set(t.key, el);
-                      else tabButtonRefs.current.delete(t.key);
-                    }}
+                    ref={(el) => setTabRef(t.key, el)}
                     type="button"
                     role="tab"
                     aria-selected={active}
                     className={`snap-center whitespace-nowrap rounded-full px-3 py-1.5 text-xs transition-colors md:snap-none ${active ? "bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)] shadow-sm" : "bg-[var(--theme-surface)] text-[var(--theme-text-muted)]"}`}
-                    onClick={() => switchTab(t.key)}
+                    onClick={() => {
+                      scrollTabToKey(t.key);
+                      switchTab(t.key);
+                    }}
                   >
                     {t.label}{count && count > 0 ? ` ${count}` : ""}
                   </UnifiedButton>

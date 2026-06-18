@@ -33,6 +33,7 @@ import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 import { AppModal } from "@/modules/micro-interactions";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { ClientButton, EmptyState as ClientEmptyState } from "@/components/client";
+import { useHorizontalActiveScroll } from "@/hooks/useHorizontalActiveScroll";
 
 const typeConfig: Record<NotificationType, { icon: typeof Bell; color: string }> = {
   order: { icon: Package, color: THEME_BADGE_PRIMARY },
@@ -79,6 +80,8 @@ export default function Notifications() {
     useNotificationStore();
   const [activeId, setActiveId] = useState<string | null>(null);
   const [filter, setFilter] = useState<NotificationFilter>("all");
+  const { containerRef: filtersRef, setItemRef: setFilterRef, scrollToKey: scrollFilterToKey } =
+    useHorizontalActiveScroll<HTMLDivElement, HTMLButtonElement>(filter, NOTIFICATION_FILTERS.length);
   const active = notifications.find((n) => n.id === activeId) || null;
   const unreadBadgeText = formatUnreadBadge(unreadCount);
   const filterCounts = notifications.reduce<Record<NotificationFilter, number>>((acc, item) => {
@@ -170,7 +173,6 @@ export default function Notifications() {
         <section className="store-account-v12-hero store-notifications-v12-hero">
           <span className="store-v12-eyebrow"><Bell size={14} aria-hidden /> 消息中心</span>
           <h2>订单、优惠、售后提醒集中处理</h2>
-          <p>消息会按订单、优惠和系统分类展示，点击可直接进入关联页面或查看完整内容。</p>
           <div className="store-v12-status-strip">
             <span>{notifications.length} 条消息</span>
             <span>{unreadCount} 条未读</span>
@@ -184,25 +186,21 @@ export default function Notifications() {
               <span className="store-orders-v12-stat__icon"><Bell size={17} aria-hidden /></span>
               <strong>{notifications.length}</strong>
               <span>全部消息</span>
-              <small>系统按时间同步</small>
             </div>
             <div className="store-orders-v12-stat">
               <span className="store-orders-v12-stat__icon"><Megaphone size={17} aria-hidden /></span>
               <strong>{filterCounts.promotion}</strong>
               <span>优惠提醒</span>
-              <small>活动、券和积分</small>
             </div>
             <div className="store-orders-v12-stat">
               <span className="store-orders-v12-stat__icon"><Package size={17} aria-hidden /></span>
               <strong>{filterCounts.order}</strong>
               <span>订单提醒</span>
-              <small>支付、物流、售后</small>
             </div>
             <div className="store-orders-v12-stat">
               <span className="store-orders-v12-stat__icon"><ShieldCheck size={17} aria-hidden /></span>
               <strong>{filterCounts.system}</strong>
               <span>系统消息</span>
-              <small>账户与服务通知</small>
             </div>
           </section>
         ) : null}
@@ -210,20 +208,23 @@ export default function Notifications() {
         {!loading && notifications.length === 0 && (
           <ClientEmptyState
             title="暂无消息通知"
-            description="订单、优惠和系统提醒会显示在这里。"
             icon={<Bell size={30} />}
           />
         )}
         {notifications.length > 0 ? (
-          <div className="store-notifications-v12-filters">
+          <div ref={filtersRef} className="store-notifications-v12-filters no-scrollbar">
             {NOTIFICATION_FILTERS.map((item) => {
               const Icon = item.icon;
               const activeFilter = filter === item.key;
               return (
                 <UnifiedButton
                   key={item.key}
+                  ref={(el) => setFilterRef(item.key, el)}
                   type="button"
-                  onClick={() => setFilter(item.key)}
+                  onClick={() => {
+                    scrollFilterToKey(item.key);
+                    setFilter(item.key);
+                  }}
                   className={`store-notifications-v12-filter ${activeFilter ? "is-active" : ""}`}
                 >
                   <span className="inline-flex min-w-0 items-center gap-1.5">
@@ -239,7 +240,6 @@ export default function Notifications() {
         {notifications.length > 0 && filteredNotifications.length === 0 ? (
           <ClientEmptyState
             title="当前分类暂无消息"
-            description="切换到其他分类查看。"
             icon={<Bell size={30} />}
           />
         ) : null}

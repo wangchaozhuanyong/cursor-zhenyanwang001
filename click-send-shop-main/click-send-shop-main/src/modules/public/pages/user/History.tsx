@@ -42,7 +42,6 @@ export default function History() {
         <section className="store-account-v12-hero">
           <span className="store-v12-eyebrow"><HistoryIcon size={14} aria-hidden /> 浏览足迹</span>
           <h2>最近看过的商品，继续比较</h2>
-          <p>浏览历史会保留商品活动价、库存和标签信息，帮助你快速回到刚刚犹豫过的商品。</p>
           <div className="store-v12-hero-actions">
             {history.length > 0 ? (
               <UnifiedButton
@@ -84,39 +83,34 @@ export default function History() {
               <span className="store-orders-v12-stat__icon"><Clock size={17} aria-hidden /></span>
               <strong>{history.length}</strong>
               <span>最近浏览</span>
-              <small>按最近访问排序</small>
             </div>
             <div className="store-orders-v12-stat">
               <span className="store-orders-v12-stat__icon"><PackageCheck size={17} aria-hidden /></span>
               <strong>{saleableCount}</strong>
               <span>可售商品</span>
-              <small>库存大于 0</small>
             </div>
             <div className="store-orders-v12-stat">
               <span className="store-orders-v12-stat__icon"><BadgePercent size={17} aria-hidden /></span>
               <strong>{activityCount}</strong>
               <span>活动商品</span>
-              <small>活动信息</small>
             </div>
             <div className="store-orders-v12-stat">
               <span className="store-orders-v12-stat__icon"><HistoryIcon size={17} aria-hidden /></span>
               <strong>{Math.min(history.length, 12)}</strong>
               <span>快速回看</span>
-              <small>优先展示近期记录</small>
             </div>
           </section>
         ) : null}
         {loading && history.length === 0 ? (
           <div className="grid gap-3 md:grid-cols-2">
-            <AccountProductCardSkeleton />
-            <AccountProductCardSkeleton />
-            <AccountProductCardSkeleton />
-            <AccountProductCardSkeleton />
+            <AccountProductCardSkeleton variant="history" />
+            <AccountProductCardSkeleton variant="history" />
+            <AccountProductCardSkeleton variant="history" />
+            <AccountProductCardSkeleton variant="history" />
           </div>
         ) : history.length === 0 ? (
           <ClientEmptyState
             title="暂无浏览记录"
-            description="浏览过的商品会自动保存在这里，方便你回看。"
             icon={<Clock size={30} />}
           />
         ) : (
@@ -130,7 +124,7 @@ export default function History() {
                   transition={{ delay: i * 0.03 }}
                   className="min-w-0"
                 >
-                  <AccountProductCard product={product} index={i} />
+                  <AccountProductCard product={product} index={i} variant="history" />
                 </motion.div>
               ))}
             </AnimatePresence>

@@ -1,10 +1,14 @@
+import { stripPublicLocaleFromPathname } from "@/i18n/publicLocale";
+
 const STORE_SCROLL_RESTORE_MAX_ENTRIES = 40;
 const STORE_SCROLL_RESTORE_STORAGE_KEY = "store_scroll_positions_v1";
 const storeScrollPositions = new Map<string, number>();
 
 export function getStoreScrollKey(pathname: string, search = "") {
-  if (pathname === "/categories") return pathname;
-  if (pathname === "/support-download") return pathname;
+  const canonicalPathname = stripPublicLocaleFromPathname(pathname);
+  if (canonicalPathname === "/categories") return canonicalPathname;
+  if (canonicalPathname === "/promotions") return canonicalPathname;
+  if (canonicalPathname === "/support-download") return canonicalPathname;
   return `${pathname}${search}`;
 }
 

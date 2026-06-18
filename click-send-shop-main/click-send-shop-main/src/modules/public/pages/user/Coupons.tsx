@@ -20,6 +20,7 @@ import { THEME_BTN_PRICE } from "@/utils/themeVisuals";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { ClientButton, EmptyState as ClientEmptyState } from "@/components/client";
 import { usePublicLocale } from "@/i18n/publicLocale";
+import { useHorizontalActiveScroll } from "@/hooks/useHorizontalActiveScroll";
 
 type DisplayStatus = "available" | "claimed" | "pending" | "used" | "expired" | "invalidated";
 
@@ -222,6 +223,8 @@ export default function Coupons() {
   const [pageView, setPageView] = useState<PageView>(() => (isLoggedIn() ? "mine" : "claimCenter"));
   const [claimingId, setClaimingId] = useState<string | null>(null);
   const canViewOwnedCoupons = isAuthenticated;
+  const { containerRef: statusTabsRef, setItemRef: setStatusTabRef, scrollToKey: scrollStatusTabToKey } =
+    useHorizontalActiveScroll<HTMLDivElement, HTMLButtonElement>(tab, TAB_ITEMS.length);
 
   useEffect(() => {
     void loadCenter();
@@ -370,7 +373,8 @@ export default function Coupons() {
 
       {pageView === "mine" ? (
         <motion.div
-          className="mt-5 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          ref={statusTabsRef}
+          className="no-scrollbar mt-5 overflow-x-auto scroll-smooth [-webkit-overflow-scrolling:touch]"
           role="tablist"
           aria-label="优惠券状态筛选"
         >
@@ -380,10 +384,14 @@ export default function Coupons() {
               return (
                 <UnifiedButton
                   key={t.key}
+                  ref={(el) => setStatusTabRef(t.key, el)}
                   type="button"
                   role="tab"
                   aria-selected={tab === t.key}
-                  onClick={() => setTab(t.key)}
+                  onClick={() => {
+                    scrollStatusTabToKey(t.key);
+                    setTab(t.key);
+                  }}
                   className={cn(
                     "relative shrink-0 whitespace-nowrap rounded-xl px-3 py-2.5 text-sm font-medium transition-all",
                     tab === t.key
@@ -650,9 +658,13 @@ function CouponCategoryRail({
   active: CouponCategory;
   onChange: (category: CouponCategory) => void;
 }) {
+  const { containerRef: categoryRailRef, setItemRef: setCategoryRef, scrollToKey: scrollCategoryToKey } =
+    useHorizontalActiveScroll<HTMLDivElement, HTMLButtonElement>(active, COUPON_CATEGORY_ITEMS.length);
+
   return (
     <motion.div
-      className="mt-4 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      ref={categoryRailRef}
+      className="no-scrollbar mt-4 overflow-x-auto scroll-smooth [-webkit-overflow-scrolling:touch]"
       role="tablist"
       aria-label="优惠分类"
       initial={{ opacity: 0, y: 10 }}
@@ -666,10 +678,14 @@ function CouponCategoryRail({
           return (
             <UnifiedButton
               key={item.key}
+              ref={(el) => setCategoryRef(item.key, el)}
               type="button"
               role="tab"
               aria-selected={selected}
-              onClick={() => onChange(item.key)}
+              onClick={() => {
+                scrollCategoryToKey(item.key);
+                onChange(item.key);
+              }}
               className={cn(
                 "inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full border px-3 text-sm font-bold transition-all",
                 selected

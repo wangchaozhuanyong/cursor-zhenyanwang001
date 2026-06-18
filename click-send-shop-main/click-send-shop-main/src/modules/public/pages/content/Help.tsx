@@ -11,6 +11,7 @@ import { STORE_COPY } from "@/constants/storeCopy";
 import type { FaqItem } from "@/constants/help";
 import type { HelpCenterConfig } from "@/types/content";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import { useHorizontalActiveScroll } from "@/hooks/useHorizontalActiveScroll";
 
 function parseHelpConfig(raw?: string): { categories: string[]; faqs: FaqItem[] } | null {
   if (!raw?.trim()) return null;
@@ -50,6 +51,7 @@ export default function Help() {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
   const [keyword, setKeyword] = useState("");
+  const activeCategoryKey = activeCategory || "all";
   const categoryCounts = useMemo(() => {
     return faqCategories.map((category) => ({
       category,
@@ -66,6 +68,8 @@ export default function Help() {
       return item.question.toLowerCase().includes(q) || item.answer.toLowerCase().includes(q);
     });
   }, [activeCategory, faqs, keyword]);
+  const { containerRef: categoryRailRef, setItemRef: setCategoryRef, scrollToKey: scrollCategoryToKey } =
+    useHorizontalActiveScroll<HTMLDivElement, HTMLButtonElement>(activeCategoryKey, categoryCounts.length);
 
   const faqJsonLd = useMemo(
     () => ({
@@ -134,10 +138,14 @@ export default function Help() {
             className="h-12 w-full rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] pl-10 pr-3 text-sm font-medium text-[var(--theme-text)] shadow-[var(--theme-shadow)] outline-none focus:border-[color-mix(in_srgb,var(--theme-primary)_46%,var(--theme-border))]"
           />
         </div>
-        <div className="no-scrollbar mt-3 flex gap-2 overflow-x-auto md:flex-wrap md:overflow-visible">
+        <div ref={categoryRailRef} className="no-scrollbar mt-3 flex gap-2 overflow-x-auto scroll-smooth [-webkit-overflow-scrolling:touch] md:flex-wrap md:overflow-visible">
           <UnifiedButton
+            ref={(el) => setCategoryRef("all", el)}
             type="button"
-            onClick={() => setActiveCategory(null)}
+            onClick={() => {
+              scrollCategoryToKey("all");
+              setActiveCategory(null);
+            }}
             className={`inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-4 text-xs font-semibold ${!activeCategory ? "btn-theme-price" : "border border-[var(--theme-border)] bg-[var(--theme-surface)] text-[var(--theme-text-muted)]"}`}
           >
             <span>全部</span>
@@ -148,8 +156,13 @@ export default function Help() {
             return (
               <UnifiedButton
                 key={category}
+                ref={(el) => setCategoryRef(category, el)}
                 type="button"
-                onClick={() => setActiveCategory(active ? null : category)}
+                onClick={() => {
+                  const nextCategory = active ? null : category;
+                  scrollCategoryToKey(nextCategory || "all");
+                  setActiveCategory(nextCategory);
+                }}
                 className={`inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-4 text-xs font-semibold ${active ? "btn-theme-price" : "border border-[var(--theme-border)] bg-[var(--theme-surface)] text-[var(--theme-text-muted)]"}`}
               >
                 <span>{category}</span>

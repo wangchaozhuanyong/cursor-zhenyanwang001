@@ -1,9 +1,10 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import { type ReactNode } from "react";
 import { motion } from "framer-motion";
 import { useMotionConfig } from "@/modules/micro-interactions";
 import { cn } from "@/lib/utils";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import type { Category } from "@/types/category";
+import { useHorizontalActiveScroll } from "@/hooks/useHorizontalActiveScroll";
 
 const TAB_INDICATOR_SPRING = { type: "spring" as const, stiffness: 380, damping: 32 };
 
@@ -28,28 +29,12 @@ export default function CategorySubcategoryRail({
   className,
   allItem,
 }: CategorySubcategoryRailProps) {
-  const railRef = useRef<HTMLDivElement | null>(null);
-  const itemRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
   const allItemId = allItem?.id;
   const activeKey = allItemId && activeCat === allItemId ? allItemId : activeCat;
-
-  useEffect(() => {
-    const rail = railRef.current;
-    const activeButton = itemRefs.current.get(activeKey);
-    if (!rail || !activeButton) return;
-
-    const prefersReducedMotion =
-      typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const railRect = rail.getBoundingClientRect();
-    const buttonRect = activeButton.getBoundingClientRect();
-    const centeredLeft = rail.scrollLeft + buttonRect.left - railRect.left - (rail.clientWidth - activeButton.clientWidth) / 2;
-    const maxLeft = Math.max(0, rail.scrollWidth - rail.clientWidth);
-
-    rail.scrollTo({
-      left: Math.min(Math.max(0, centeredLeft), maxLeft),
-      behavior: prefersReducedMotion ? "auto" : "smooth",
-    });
-  }, [activeKey, categories.length]);
+  const { containerRef: railRef, setItemRef, scrollToKey } = useHorizontalActiveScroll<HTMLDivElement, HTMLButtonElement>(
+    activeKey,
+    `${allItemId || "none"}:${categories.length}`,
+  );
 
   return (
     <div
@@ -61,15 +46,15 @@ export default function CategorySubcategoryRail({
       {allItem ? (
         <CategoryTabButton
           active={activeCat === allItem.id}
-          onClick={allItem.onSelect ?? (() => onSelect(allItem.id))}
+          onClick={() => {
+            scrollToKey(allItem.id);
+            (allItem.onSelect ?? (() => onSelect(allItem.id)))();
+          }}
           layoutId={layoutId}
           activeClassName="store-category-subtab-active-bg"
           activeTextClass="store-category-subtab-active-label"
           className="store-category-subtab px-3"
-          btnRef={(el) => {
-            if (el) itemRefs.current.set(allItem.id, el);
-            else itemRefs.current.delete(allItem.id);
-          }}
+          btnRef={(el) => setItemRef(allItem.id, el)}
         >
           {allItem.label ?? "全部"}
         </CategoryTabButton>
@@ -78,15 +63,15 @@ export default function CategorySubcategoryRail({
         <CategoryTabButton
           key={child.id}
           active={activeCat === child.id}
-          onClick={() => onSelect(child.id)}
+          onClick={() => {
+            scrollToKey(child.id);
+            onSelect(child.id);
+          }}
           layoutId={layoutId}
           activeClassName="store-category-subtab-active-bg"
           activeTextClass="store-category-subtab-active-label"
           className="store-category-subtab px-3"
-          btnRef={(el) => {
-            if (el) itemRefs.current.set(child.id, el);
-            else itemRefs.current.delete(child.id);
-          }}
+          btnRef={(el) => setItemRef(child.id, el)}
         >
           {child.name}
         </CategoryTabButton>

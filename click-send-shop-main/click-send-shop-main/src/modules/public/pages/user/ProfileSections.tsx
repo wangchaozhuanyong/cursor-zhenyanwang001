@@ -354,7 +354,7 @@ export function ProfileSnapshotPanel({
   onNavigate,
   className,
   title = "账户总览",
-  subtitle = "常用状态",
+  subtitle,
 }: {
   items: ProfileSnapshotItem[];
   onNavigate: (item: ProfileSnapshotItem) => void;
@@ -368,7 +368,7 @@ export function ProfileSnapshotPanel({
     <section className={cn(PROFILE_CARD_CLASS, "client-profile-snapshot-panel", className)}>
       <div className="client-profile-snapshot-head">
         <h3>{title}</h3>
-        <p>{subtitle}</p>
+        {subtitle ? <p>{subtitle}</p> : null}
       </div>
       <div className="client-profile-snapshot-grid">
         {items.map((item) => (

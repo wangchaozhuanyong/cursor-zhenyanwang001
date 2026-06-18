@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ChevronRight, Clock3, FileText, PackageCheck, Plus, RefreshCw } from "lucide-react";
 import { useGoBack } from "@/hooks/useGoBack";
@@ -24,6 +24,7 @@ import {
 import ProductCoverImage from "@/components/ProductCoverImage";
 import { ClientButton, EmptyState as ClientEmptyState } from "@/components/client";
 import { usePublicLocale, type PublicLocale } from "@/i18n/publicLocale";
+import { useHorizontalActiveScroll } from "@/hooks/useHorizontalActiveScroll";
 
 const RETURNS_COPY: Record<PublicLocale, {
   title: string;
@@ -81,7 +82,9 @@ export default function Returns() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<ReturnFilterKey>("all");
   const [applyOpen, setApplyOpen] = useState(!!applyOrderId);
-  const filterButtonRefs = useRef<Map<ReturnFilterKey, HTMLButtonElement>>(new Map());
+  const returnFilters = getReturnFilters(locale);
+  const { containerRef: filterRailRef, setItemRef: setFilterRef, scrollToKey: scrollFilterToKey } =
+    useHorizontalActiveScroll<HTMLDivElement, HTMLButtonElement>(filter, returnFilters.length);
 
   const loadList = useCallback(async () => {
     setLoading(true);
@@ -102,14 +105,6 @@ export default function Returns() {
   useEffect(() => {
     if (applyOrderId) setApplyOpen(true);
   }, [applyOrderId]);
-
-  useEffect(() => {
-    filterButtonRefs.current.get(filter)?.scrollIntoView({
-      behavior: "smooth",
-      inline: "center",
-      block: "nearest",
-    });
-  }, [filter]);
 
   const filteredList = useMemo(
     () => list.filter((item) => shouldShowReturnInFilter(item, filter)),
@@ -209,23 +204,24 @@ export default function Returns() {
         <section className="rounded-[24px] border border-border bg-card p-3 shadow-[0_14px_34px_rgba(15,23,42,0.07)]">
           <div className="relative overflow-hidden">
             <div
+              ref={filterRailRef}
               className="no-scrollbar flex snap-x snap-mandatory gap-2 overflow-x-auto overflow-y-hidden scroll-smooth px-1 py-1 [-webkit-overflow-scrolling:touch]"
               role="tablist"
               aria-label={copy.statusTabs}
             >
-              {getReturnFilters(locale).map((item) => {
+              {returnFilters.map((item) => {
                 const active = filter === item.key;
                 return (
                   <UnifiedButton
                     key={item.key}
-                    ref={(el) => {
-                      if (el) filterButtonRefs.current.set(item.key, el);
-                      else filterButtonRefs.current.delete(item.key);
-                    }}
+                    ref={(el) => setFilterRef(item.key, el)}
                     type="button"
                     role="tab"
                     aria-selected={active}
-                    onClick={() => setFilter(item.key)}
+                    onClick={() => {
+                      scrollFilterToKey(item.key);
+                      setFilter(item.key);
+                    }}
                     className={`min-h-10 shrink-0 snap-center whitespace-nowrap rounded-full border px-4 py-2 text-sm transition-colors ${
                       active
                         ? "border-[var(--theme-primary)] bg-[color-mix(in_srgb,var(--theme-primary)_10%,var(--theme-surface))] font-medium text-[var(--theme-primary)]"

@@ -49,8 +49,8 @@ function LocationProbe() {
   return <output data-testid="location">{location.pathname + location.search}</output>;
 }
 
-function dispatchPointerDown(target: Element, pointerType: string) {
-  const event = new MouseEvent("pointerdown", {
+function dispatchPointerEvent(target: Element, type: "pointerdown" | "pointerup", pointerType: string) {
+  const event = new MouseEvent(type, {
     bubbles: true,
     cancelable: true,
     button: 0,
@@ -106,14 +106,22 @@ describe("BottomNav", () => {
     expect(navClassName).not.toContain("pointer-events-none");
   });
 
-  it("navigates on touch pointer down so inertial scrolling cannot swallow the tab switch", async () => {
+  it("warms and highlights on touch down, then navigates after a confirmed tap", async () => {
     await renderBottomNav();
 
     const dealsButton = container?.querySelector<HTMLButtonElement>("button[aria-label='优惠活动']");
     expect(dealsButton).not.toBeNull();
 
     await act(async () => {
-      dispatchPointerDown(dealsButton!, "touch");
+      dispatchPointerEvent(dealsButton!, "pointerdown", "touch");
+    });
+
+    expect(container?.querySelector("[data-testid='location']")?.textContent).toBe("/new-arrivals");
+
+    await act(async () => {
+      dispatchPointerEvent(dealsButton!, "pointerup", "touch");
+      await Promise.resolve();
+      await Promise.resolve();
     });
 
     expect(container?.querySelector("[data-testid='location']")?.textContent).toBe("/promotions");

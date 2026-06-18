@@ -148,6 +148,10 @@ html[data-app-scope="store"] .support-download-overview-card strong {
   white-space: nowrap;
 }
 
+html[data-app-scope="store"] .support-download-overview-card--value-only strong {
+  margin-top: 0;
+}
+
 html[data-app-scope="store"] .support-download-tabs {
   display: grid;
   grid-template-columns: repeat(var(--support-tab-count), minmax(0, 1fr));
@@ -852,18 +856,18 @@ html[data-app-scope="store"] .support-install-card > .support-outline-action {
 
 @media (max-width: 640px) {
   html[data-app-scope="store"] .support-download-tabs {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(var(--support-tab-count), minmax(0, 1fr));
     align-items: stretch;
     gap: 0.32rem;
     padding: 0.32rem;
-    overflow-x: auto;
+    overflow-x: hidden;
     overflow-y: hidden;
   }
 
   html[data-app-scope="store"] .support-download-tab {
-    flex: 0 0 auto;
-    width: auto;
-    min-width: max-content;
+    width: 100%;
+    min-width: 0;
     min-height: 2.66rem;
     gap: 0.3rem;
     padding-inline: 0.48rem;
@@ -888,7 +892,7 @@ html[data-app-scope="store"] .support-install-card > .support-outline-action {
     min-height: 2.6rem;
     gap: 0.24rem;
     padding-inline: 0.35rem;
-    font-size: 0.8rem;
+    font-size: 0.78rem;
   }
 
   html[data-app-scope="store"] .support-download-tab-icon {

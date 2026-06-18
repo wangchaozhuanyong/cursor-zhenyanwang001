@@ -1,6 +1,6 @@
 import { formatDateTime } from "@/utils/formatDateTime";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { CalendarDays, Camera, CheckCircle2, ChevronRight, MessageCircle, Phone, ShieldCheck, UserRound } from "lucide-react";
+import { CalendarDays, Camera, MessageCircle, Phone, UserRound } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import WeChatIcon from "@/components/icons/WeChatIcon";
 import { THIRD_PARTY_LOGIN_ENABLED } from "@/constants/authLogin";
@@ -216,10 +216,6 @@ export default function Settings() {
     >
       <div className="space-y-4 sm:space-y-5">
         <section className="store-account-v12-hero store-settings-v12-hero">
-          <span className="store-v12-eyebrow">
-            <UserRound size={14} aria-hidden />
-            账户设置
-          </span>
           <div className="store-settings-v12-identity">
             <UnifiedButton
               type="button"
@@ -241,84 +237,24 @@ export default function Settings() {
             </UnifiedButton>
             <div className="min-w-0">
               <h2 title={userName}>{userName}</h2>
-              <p>管理头像、基础资料、联系方式与账户安全。</p>
-              <div className="store-v12-status-strip">
-                <span>{contactItemsReady} 项联系方式</span>
-                <span>生日 {birthdayStatus}</span>
-                <span>微信 {wechatStatus}</span>
-              </div>
             </div>
           </div>
-        </section>
-
-        <section className="store-account-v12-summary store-orders-v12-stat-grid">
-          <div className="store-orders-v12-stat">
-            <span className="store-orders-v12-stat__icon"><CheckCircle2 size={16} aria-hidden /></span>
-            <strong>{nickname?.trim() ? "已完善" : "待完善"}</strong>
-            <span>昵称资料</span>
-            <small>{nickname?.trim() || "建议补充常用称呼"}</small>
-          </div>
-          <div className="store-orders-v12-stat">
-            <span className="store-orders-v12-stat__icon"><Phone size={16} aria-hidden /></span>
-            <strong>{contactItemsReady}/3</strong>
-            <span>联系方式</span>
-            <small>手机号、微信、WhatsApp</small>
-          </div>
-          <div className="store-orders-v12-stat">
-            <span className="store-orders-v12-stat__icon"><CalendarDays size={16} aria-hidden /></span>
-            <strong>{birthdayStatus}</strong>
-            <span>生日资料</span>
-            <small>生日保存后需联系客服修改</small>
-          </div>
-          <div className="store-orders-v12-stat">
-            <span className="store-orders-v12-stat__icon"><ShieldCheck size={16} aria-hidden /></span>
-            <strong>{wechatStatus}</strong>
-            <span>登录安全</span>
-            <small>手机号登录与第三方绑定状态</small>
-          </div>
-        </section>
-
-      <section className={`${CARD} store-settings-v12-profile-card overflow-hidden`}>
-        <div className="flex items-center gap-4">
-          <UnifiedButton
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={profileSaving}
-            className="relative h-16 w-16 shrink-0 rounded-full p-0 disabled:cursor-not-allowed disabled:opacity-70"
-            aria-label="更换头像"
-          >
-            <span className="block h-16 w-16 overflow-hidden rounded-full ring-1 ring-[color-mix(in_srgb,var(--theme-primary)_18%,var(--theme-border))]">
-              {avatar ? (
-                <StableImage src={avatar} alt="头像" className="h-full w-full" imgClassName="object-cover" />
-              ) : (
-                <span className="flex h-full w-full items-center justify-center bg-[var(--theme-primary)] text-2xl font-bold text-[var(--theme-primary-foreground)]">
-                  {avatarInitial}
-                </span>
-              )}
+          <div className="store-v12-status-strip store-settings-v12-status-strip" aria-label="账户状态">
+            <span>
+              <b>联系方式</b>
+              <strong>{contactItemsReady}/3</strong>
             </span>
-            <span className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] text-[var(--theme-primary)] shadow-sm">
-              <Camera size={15} />
+            <span>
+              <b>生日</b>
+              <strong>{birthdayStatus}</strong>
             </span>
-          </UnifiedButton>
-
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-xl font-semibold leading-tight text-[var(--theme-text)]" title={userName}>
-              {userName}
-            </p>
-            <p className="mt-1 text-xs leading-5 text-[var(--theme-muted)]">管理你的个人资料与账户信息</p>
-            <UnifiedButton
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={profileSaving}
-              className="mt-3 inline-flex h-9 items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--theme-primary)_8%,var(--theme-surface))] px-3 text-sm font-semibold text-[var(--theme-primary)] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {profileSaving ? "保存中..." : "更换头像"}
-              <ChevronRight size={15} />
-            </UnifiedButton>
+            <span>
+              <b>微信</b>
+              <strong>{wechatStatus}</strong>
+            </span>
           </div>
-        </div>
-        <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
-      </section>
+          <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
+        </section>
 
       <SectionBlock title="基础信息">
         <div className="space-y-4">

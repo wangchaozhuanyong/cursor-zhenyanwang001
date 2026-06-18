@@ -135,7 +135,7 @@ const COUPON_ACTION_LABELS: Record<DisplayStatus, string> = {
   invalidated: "已失效",
 };
 
-const COUPON_HERO_IMAGE = "/assets/home-banners/home-hero-03-local-goods-bg.webp";
+const COUPON_HERO_IMAGE = "/assets/home-banners/coupon-hero-premium-bg.webp";
 
 function filterByTab(coupons: DisplayCoupon[], tab: Tab): DisplayCoupon[] {
   const owned = coupons;
@@ -571,22 +571,14 @@ function CouponHero({
       animate={{ opacity: 1, y: 0 }}
       className="relative overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-4 shadow-[var(--theme-shadow)] sm:px-6 sm:py-5"
       style={{
-        backgroundImage: `linear-gradient(112deg, color-mix(in srgb, var(--theme-surface) 95%, transparent) 0%, color-mix(in srgb, var(--theme-surface) 83%, transparent) 44%, color-mix(in srgb, var(--theme-bg) 42%, transparent) 100%), url("${COUPON_HERO_IMAGE}")`,
-        backgroundPosition: "center",
+        backgroundImage: `linear-gradient(112deg, color-mix(in srgb, var(--theme-surface) 88%, transparent) 0%, color-mix(in srgb, var(--theme-surface) 72%, transparent) 45%, color-mix(in srgb, var(--theme-bg) 22%, transparent) 100%), url("${COUPON_HERO_IMAGE}")`,
+        backgroundPosition: "center right",
         backgroundSize: "cover",
       }}
     >
       <div className="relative grid gap-4 md:grid-cols-[minmax(0,1fr)_15rem] md:items-stretch">
         <div className="min-w-0">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--theme-primary)_18%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-primary)_8%,var(--theme-surface))] px-3 py-1 text-xs font-semibold text-[var(--theme-primary)]">
-            <Sparkles size={13} aria-hidden />
-            {isClaimCenter ? "今日领券中心" : "优惠采购钱包"}
-          </span>
-          <h2 className="mt-3 text-[24px] font-black leading-tight text-[var(--theme-text-on-surface)] sm:text-3xl">
-            {isClaimCenter ? "先领券，再结算更省" : `${usableCount} 张优惠券待使用`}
-          </h2>
-
-          <div className="mt-4 grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             {metrics.map((metric) => {
               const Icon = metric.icon;
               return (

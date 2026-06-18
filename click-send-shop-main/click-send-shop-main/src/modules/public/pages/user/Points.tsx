@@ -122,7 +122,7 @@ function PointsHeroCard({
         aria-hidden
       />
       <div className="relative flex flex-col gap-5">
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex items-center justify-between gap-4">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/15">
@@ -130,15 +130,15 @@ function PointsHeroCard({
               </span>
               <p className={cn(THEME_ACCENT_HERO_LABEL, "normal-case tracking-normal")}>当前积分</p>
             </div>
-            <p className={cn("store-stat-value mt-4 break-words text-5xl leading-none sm:text-6xl", THEME_ACCENT_HERO_VALUE)}>
-              {balance}
-            </p>
           </div>
           <span className="inline-flex min-h-8 shrink-0 items-center gap-1.5 rounded-full bg-white/15 px-3 text-xs font-semibold">
             <CalendarCheck size={14} aria-hidden />
             {statusText}
           </span>
         </div>
+        <p className={cn("store-stat-value -mt-1 w-full break-words text-center text-5xl leading-none sm:text-6xl", THEME_ACCENT_HERO_VALUE)}>
+          {balance}
+        </p>
 
         <div className="rounded-2xl bg-white/10 px-4 py-3">
           <p className={cn("text-sm font-medium leading-5", THEME_ACCENT_HERO_SUBTLE)}>{rewardText}</p>

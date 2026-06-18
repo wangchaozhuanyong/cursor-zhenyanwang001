@@ -16,6 +16,7 @@ import { stripPublicLocaleFromPathname, usePublicLocale } from "@/i18n/publicLoc
 
 /** 轻触允许的最大位移（px）；略放宽，避免「刚滑完页面就点底栏」被误判为滑动 */
 const TAP_MOVE_THRESHOLD = 28;
+const TAB_PRELOAD_WAIT_MS = 180;
 type ActivePointer = {
   path: string;
   pointerId: number;
@@ -23,11 +24,21 @@ type ActivePointer = {
   startY: number;
   startTime: number;
   maxMove: number;
-  activatedOnDown: boolean;
 };
 
 function preloadTabRoute(path: string) {
+  return preloadStoreRoute(path, "intent") ?? Promise.resolve();
+}
+
+function preloadIdleTabRoute(path: string) {
   preloadStoreRoute(path, "idle");
+}
+
+function waitForTabWarmup(path: string) {
+  return Promise.race([
+    preloadTabRoute(path),
+    new Promise<void>((resolve) => window.setTimeout(resolve, TAB_PRELOAD_WAIT_MS)),
+  ]).catch(() => undefined);
 }
 
 export default function BottomNav() {
@@ -40,6 +51,7 @@ export default function BottomNav() {
   const activePointerRef = useRef<ActivePointer | null>(null);
   const lastNavTapRef = useRef<{ path: string; at: number } | null>(null);
   const [badgeBump, setBadgeBump] = useState(false);
+  const [pendingPath, setPendingPath] = useState<string | null>(null);
   const currentPathname = stripPublicLocaleFromPathname(location.pathname);
   const tabs = [
     { path: "/", label: t("common.home"), icon: Home },
@@ -63,6 +75,10 @@ export default function BottomNav() {
     };
   }, []);
 
+  useEffect(() => {
+    setPendingPath(null);
+  }, [currentPathname, location.search]);
+
   const handleNavigate = useCallback((path: string) => {
     const base = path.split("?")[0];
     const targetSearch = path.includes("?") ? `?${path.split("?")[1]}` : "";
@@ -85,7 +101,13 @@ export default function BottomNav() {
     const last = lastNavTapRef.current;
     if (last && last.path === path && now - last.at < 400) return;
     lastNavTapRef.current = { path, at: now };
-    handleNavigate(path);
+    setPendingPath(path);
+    void waitForTabWarmup(path).finally(() => {
+      handleNavigate(path);
+      window.setTimeout(() => {
+        setPendingPath((value) => (value === path ? null : value));
+      }, 900);
+    });
   }, [handleNavigate]);
 
   if (shouldHideBottomNav(location.pathname)) return null;
@@ -93,6 +115,11 @@ export default function BottomNav() {
   const isTabActive = (path: string) => {
     const base = path.split("?")[0];
     return currentPathname === base;
+  };
+  const isTabPending = (path: string) => {
+    const base = path.split("?")[0];
+    const pendingBase = pendingPath?.split("?")[0];
+    return Boolean(pendingBase && pendingBase === base && currentPathname !== base);
   };
   const visibleTabs = tabs.filter((tab) => isStoreNavPathVisible(tab.path, capabilities));
 
@@ -111,7 +138,6 @@ export default function BottomNav() {
   const handlePointerDown = (event: PointerEvent<HTMLButtonElement>, path: string) => {
     if (event.button !== 0) return;
     const target = event.currentTarget;
-    const shouldActivateImmediately = event.pointerType === "touch" || event.pointerType === "pen";
     try {
       target.setPointerCapture(event.pointerId);
     } catch {
@@ -124,11 +150,9 @@ export default function BottomNav() {
       startY: event.clientY,
       startTime: Date.now(),
       maxMove: 0,
-      activatedOnDown: shouldActivateImmediately,
     };
-    if (shouldActivateImmediately) {
-      activateTab(path);
-    }
+    setPendingPath(path);
+    void preloadTabRoute(path);
   };
 
   const handlePointerMove = (event: PointerEvent<HTMLButtonElement>) => {
@@ -137,6 +161,9 @@ export default function BottomNav() {
     const dx = Math.abs(event.clientX - active.startX);
     const dy = Math.abs(event.clientY - active.startY);
     active.maxMove = Math.max(active.maxMove, dx, dy);
+    if (!isTapIntent(active)) {
+      setPendingPath((value) => (value === active.path ? null : value));
+    }
   };
 
   const finishPointer = (event: PointerEvent<HTMLButtonElement>, path: string) => {
@@ -145,8 +172,10 @@ export default function BottomNav() {
     activePointerRef.current = null;
     clearPointerCapture(event.currentTarget, event.pointerId);
 
-    if (active.activatedOnDown) return;
-    if (!isTapIntent(active)) return;
+    if (!isTapIntent(active)) {
+      setPendingPath((value) => (value === path ? null : value));
+      return;
+    }
 
     activateTab(path);
   };
@@ -156,6 +185,7 @@ export default function BottomNav() {
     if (!active || active.pointerId !== event.pointerId) return;
     activePointerRef.current = null;
     clearPointerCapture(event.currentTarget, event.pointerId);
+    setPendingPath((value) => (value === active.path ? null : value));
   };
 
   return (
@@ -175,20 +205,21 @@ export default function BottomNav() {
       <div className={cn("store-bottom-nav-inner", getBottomNavInnerClassName(navStyle))} style={{ touchAction: "manipulation" }}>
         <div className="grid h-[68px] items-center px-1" style={{ gridTemplateColumns: `repeat(${visibleTabs.length}, minmax(0, 1fr))` }}>
           {visibleTabs.map((tab) => {
-            const isActive = isTabActive(tab.path);
+            const isCurrent = isTabActive(tab.path);
+            const isActive = isCurrent || isTabPending(tab.path);
             const Icon = tab.icon;
             return (
               <UnifiedButton
                 key={tab.path}
                 type="button"
-                aria-current={isActive ? "page" : undefined}
+                aria-current={isCurrent ? "page" : undefined}
                 aria-label={tab.label}
                 onPointerDown={(event) => handlePointerDown(event, tab.path)}
                 onPointerMove={handlePointerMove}
                 onPointerUp={(event) => finishPointer(event, tab.path)}
                 onPointerCancel={handlePointerCancel}
-                onMouseEnter={() => preloadTabRoute(tab.path)}
-                onFocus={() => preloadTabRoute(tab.path)}
+                onMouseEnter={() => preloadIdleTabRoute(tab.path)}
+                onFocus={() => preloadIdleTabRoute(tab.path)}
                 onClick={() => activateTab(tab.path)}
                 className="store-bottom-nav-item relative flex min-h-0 w-full cursor-pointer select-none flex-col items-center justify-center gap-1 border-0 bg-transparent px-1 py-2"
               >

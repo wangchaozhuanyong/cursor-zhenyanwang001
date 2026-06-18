@@ -10,6 +10,7 @@ import {
   PackageSearch,
   RefreshCw,
   Sparkles,
+  Store,
   TicketPercent,
   Timer,
   Zap,
@@ -23,12 +24,31 @@ import { buildCanonical } from "@/utils/seo";
 import { cn } from "@/lib/utils";
 import { usePublicLocale } from "@/i18n/publicLocale";
 import { useHorizontalActiveScroll } from "@/hooks/useHorizontalActiveScroll";
-import type { PromotionType, StorefrontHomeCampaign, StorefrontPromotion } from "@/services/marketingService";
+import type { PromotionType, StorefrontPromotion } from "@/services/marketingService";
 
 type PromotionFilter = PromotionType | "";
-type CampaignShortcutLayout = "scroll" | "single" | "pair";
 const PROMOTIONS_BASE_PATH = "/promotions";
-const LEGACY_DEALS_BASE_PATH = "/deals";
+const PROMOTION_LIST_TTL_MS = 5 * 60 * 1000;
+
+const promotionListCache = new Map<string, { list: StorefrontPromotion[]; cachedAt: number }>();
+
+function promotionCacheKey(type: PromotionFilter) {
+  return type || "all";
+}
+
+function readPromotionListCache(type: PromotionFilter) {
+  const cached = promotionListCache.get(promotionCacheKey(type));
+  if (!cached) return null;
+  if (Date.now() - cached.cachedAt > PROMOTION_LIST_TTL_MS) {
+    promotionListCache.delete(promotionCacheKey(type));
+    return null;
+  }
+  return cached;
+}
+
+function writePromotionListCache(type: PromotionFilter, list: StorefrontPromotion[]) {
+  promotionListCache.set(promotionCacheKey(type), { list, cachedAt: Date.now() });
+}
 
 const FILTERABLE_PROMOTION_TYPES: PromotionType[] = [
   "coupon",
@@ -48,12 +68,10 @@ const FILTERS: Array<{ type: PromotionFilter; icon: typeof Gift; fallbackLabel: 
   { type: "flash_sale", icon: Zap, fallbackLabel: "秒杀" },
   { type: "full_reduction", icon: TicketPercent, fallbackLabel: "满减" },
   { type: "full_discount", icon: TicketPercent, fallbackLabel: "满折" },
-  { type: "limited_time_discount", icon: Timer, fallbackLabel: "限时折扣" },
   { type: "member_price", icon: Gem, fallbackLabel: "会员价" },
-  { type: "points_reward", icon: Sparkles, fallbackLabel: "积分奖励" },
-  { type: "checkin_reward", icon: CalendarDays, fallbackLabel: "签到奖励" },
-  { type: "campaign", icon: Gift, fallbackLabel: "主题活动" },
 ];
+
+const PROMOTION_TEST_COPY_RE = /测试|test|demo|样例|副标题|互斥|规则判断/i;
 
 function typeTone(type: PromotionType) {
   if (type === "flash_sale" || type === "limited_time_discount") {
@@ -105,6 +123,116 @@ function formatCount(value: number) {
   return Math.max(0, Number(value) || 0).toLocaleString("zh-CN");
 }
 
+function formatRM(value: unknown) {
+  const amount = Number(value);
+  if (!Number.isFinite(amount) || amount <= 0) return "";
+  return `RM ${amount.toLocaleString("zh-CN", {
+    minimumFractionDigits: amount % 1 === 0 ? 0 : 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
+function isDisplayablePromoLabel(value: string | null | undefined) {
+  const label = value?.trim() || "";
+  return Boolean(label)
+    && !PROMOTION_TEST_COPY_RE.test(label)
+    && !["秒杀", "优惠券", "满减", "满折", "活动"].includes(label);
+}
+
+function displayPromotionTitle(promotion: StorefrontPromotion, promotionTypeLabel: (type: string) => string) {
+  const title = promotion.title?.trim();
+  if (title && !PROMOTION_TEST_COPY_RE.test(title)) return title;
+  const fallbackByType: Record<PromotionType, string> = {
+    campaign: "精选主题活动",
+    coupon: "领券优惠专区",
+    full_reduction: "满减优惠专区",
+    full_discount: "满折优惠专区",
+    limited_time_discount: "限时折扣专区",
+    flash_sale: "限时秒杀专区",
+    member_price: "会员专享优惠",
+    checkin_reward: "签到福利专区",
+    points_reward: "积分奖励专区",
+  };
+  return fallbackByType[promotion.type] || `${promotionTypeLabel(promotion.type)}专区`;
+}
+
+function displayPromotionSubtitle(promotion: StorefrontPromotion) {
+  const subtitle = promotion.subtitle?.trim() || promotion.description?.trim() || "";
+  if (subtitle && !PROMOTION_TEST_COPY_RE.test(subtitle)) return subtitle;
+  const fallbackByType: Record<PromotionType, string> = {
+    campaign: "精选活动限时开放",
+    coupon: "领券后下单更划算",
+    full_reduction: "满足金额自动优惠",
+    full_discount: "凑单享受组合折扣",
+    limited_time_discount: "限时商品优惠进行中",
+    flash_sale: "指定商品限时优惠",
+    member_price: "会员专享价格与权益",
+    checkin_reward: "每日签到领取福利",
+    points_reward: "下单可获得积分奖励",
+  };
+  return fallbackByType[promotion.type] || "精选优惠活动";
+}
+
+function promotionBenefitLabel(promotion: StorefrontPromotion) {
+  const itemSavings = (promotion.items || [])
+    .map((item) => Number(item.saving_amount) || 0)
+    .filter((value) => value > 0);
+  const bestSaving = itemSavings.length ? Math.max(...itemSavings) : 0;
+  const itemSavingPercents = (promotion.items || [])
+    .map((item) => Number(item.saving_percent) || 0)
+    .filter((value) => value > 0);
+  const bestSavingPercent = itemSavingPercents.length ? Math.max(...itemSavingPercents) : 0;
+  const couponCount = promotion.coupons?.length || 0;
+
+  if (bestSaving > 0) return `最高省 ${formatRM(bestSaving)}`;
+  if (bestSavingPercent > 0) return `最高优惠 ${Math.round(bestSavingPercent)}%`;
+  if (couponCount > 0) return `${couponCount} 张优惠券待领取`;
+  if (isDisplayablePromoLabel(promotion.promo_label)) {
+    return promotion.promo_label.trim();
+  }
+
+  const fallbackByType: Record<PromotionType, string> = {
+    campaign: "精选福利",
+    coupon: "先领券再下单",
+    full_reduction: "满额立减",
+    full_discount: "满额折扣",
+    limited_time_discount: "限时直降",
+    flash_sale: "限时秒杀",
+    member_price: "会员专享价",
+    checkin_reward: "签到有礼",
+    points_reward: "积分加速",
+  };
+  return fallbackByType[promotion.type] || "优惠进行中";
+}
+
+function promotionActionLabel(type: PromotionType) {
+  const labels: Record<PromotionType, string> = {
+    campaign: "查看活动",
+    coupon: "去领券",
+    full_reduction: "去凑单",
+    full_discount: "去凑单",
+    limited_time_discount: "马上抢",
+    flash_sale: "马上抢",
+    member_price: "看会员价",
+    checkin_reward: "去签到",
+    points_reward: "赚积分",
+  };
+  return labels[type] || "查看活动";
+}
+
+function PromotionVisualIcon({ type }: { type: PromotionType }) {
+  const Icon = type === "coupon" || type === "full_reduction" || type === "full_discount"
+    ? TicketPercent
+    : type === "flash_sale" || type === "limited_time_discount"
+      ? Zap
+      : type === "member_price"
+        ? Gem
+        : type === "points_reward" || type === "checkin_reward"
+          ? Sparkles
+          : Gift;
+  return <Icon size={30} aria-hidden />;
+}
+
 function buildFilterHref(type: PromotionFilter) {
   return type ? `${PROMOTIONS_BASE_PATH}?type=${type}` : PROMOTIONS_BASE_PATH;
 }
@@ -113,53 +241,16 @@ function filterScrollKey(type: PromotionFilter) {
   return type || "all";
 }
 
-function toPromotionsHref(href?: string) {
-  const raw = String(href || "").trim();
-  if (!raw) return PROMOTIONS_BASE_PATH;
-  if (raw.startsWith(LEGACY_DEALS_BASE_PATH)) {
-    return `${PROMOTIONS_BASE_PATH}${raw.slice(LEGACY_DEALS_BASE_PATH.length)}`;
-  }
-  return raw;
-}
-
-function campaignFallbackHref(campaign: StorefrontHomeCampaign) {
-  if (campaign.type === "coupon" || campaign.type === "new_user_gift") return "/coupons";
-  if (campaign.type === "promotion" || campaign.type === "notice") return PROMOTIONS_BASE_PATH;
-  if (FILTERABLE_PROMOTION_TYPES.includes(campaign.type as PromotionType)) {
-    return buildFilterHref(campaign.type as PromotionType);
-  }
-  return "/categories";
-}
-
-function CampaignShortcut({
-  campaign,
-  layout = "scroll",
-}: {
-  campaign: StorefrontHomeCampaign;
-  layout?: CampaignShortcutLayout;
-}) {
-  const { localizedPath, t } = usePublicLocale();
-  const href = localizedPath(toPromotionsHref(campaign.href || campaignFallbackHref(campaign)));
-  const metric = campaign.coupons?.length
-    ? `${campaign.coupons.length} ${t("promotion.couponUnit")}`
-    : campaign.products?.length
-      ? `${campaign.products.length} ${t("promotion.items")}`
-      : campaign.promoLabel || campaign.type;
-
-  return (
-    <Link
-      to={href}
-      className={cn(
-        "store-promotions-v12-shortcut group flex flex-col justify-start gap-2 rounded-[1rem] border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 transition hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--theme-primary)_30%,var(--theme-border))]",
-        layout === "scroll" && "min-w-[11rem] sm:min-w-0",
-        layout === "pair" && "min-w-0",
-        layout === "single" && "w-full max-w-[13rem] min-w-0",
-      )}
-    >
-      <span className="text-[11px] font-black uppercase tracking-[0.08em] text-[var(--theme-primary)]">{metric}</span>
-      <strong className="line-clamp-2 text-sm font-black leading-5 text-[var(--theme-text)]">{campaign.title}</strong>
-    </Link>
-  );
+function promotionScopeLabel(scopeType: string | null | undefined, t: (key: string) => string) {
+  const normalized = String(scopeType || "all").trim();
+  const labels: Record<string, string> = {
+    all: t("promotion.scopeAll"),
+    category: t("promotion.scopeCategory"),
+    product: t("promotion.scopeProduct"),
+    new_user: t("promotion.scopeNewUser"),
+    old_user: t("promotion.scopeOldUser"),
+  };
+  return labels[normalized] || t("promotion.applyScope");
 }
 
 function PromotionCard({ promotion }: { promotion: StorefrontPromotion }) {
@@ -167,37 +258,56 @@ function PromotionCard({ promotion }: { promotion: StorefrontPromotion }) {
   const detailPath = localizedPath(`${PROMOTIONS_BASE_PATH}/${promotion.slug}`);
   const itemCount = promotion.items?.length || 0;
   const couponCount = promotion.coupons?.length || 0;
+  const displayTitle = displayPromotionTitle(promotion, promotionTypeLabel);
+  const displaySubtitle = displayPromotionSubtitle(promotion);
+  const benefitLabel = promotionBenefitLabel(promotion);
+  const actionLabel = promotionActionLabel(promotion.type);
+  const scopeLabel = promotionScopeLabel(promotion.scope_type, t);
 
   return (
-    <article className="store-promotions-v12-card group flex h-full min-w-0 flex-col overflow-hidden rounded-[1.1rem] border border-[var(--theme-border)] bg-[var(--theme-surface)] shadow-sm transition hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--theme-primary)_28%,var(--theme-border))]">
+    <article
+      className="store-promotions-v12-card store-promotions-v12-card--poster group flex h-full min-w-0 flex-col overflow-hidden rounded-[1.1rem] border border-[var(--theme-border)] bg-[var(--theme-surface)] shadow-sm transition hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--theme-primary)_28%,var(--theme-border))]"
+      data-promotion-type={promotion.type}
+    >
       {promotion.cover_image ? (
-        <Link to={detailPath} className="block aspect-[16/9] overflow-hidden bg-[color-mix(in_srgb,var(--theme-primary)_7%,var(--theme-bg))]">
+        <Link to={detailPath} className="store-promotions-v12-card__media block aspect-[16/9] overflow-hidden bg-[color-mix(in_srgb,var(--theme-primary)_7%,var(--theme-bg))]">
           <img
             src={promotion.cover_image}
-            alt={promotion.title}
+            alt={displayTitle}
             className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
             loading="lazy"
           />
         </Link>
       ) : null}
 
-      <div className="flex min-h-0 flex-1 flex-col p-3.5 sm:p-4">
-        <div className="flex min-w-0 items-start justify-between gap-2">
-          <span className={cn("inline-flex shrink-0 items-center rounded-full border px-2.5 py-1 text-[11px] font-black", typeTone(promotion.type))}>
+      <div className="store-promotions-v12-card__body flex min-h-0 flex-1 flex-col p-3.5 sm:p-4">
+        <div className="store-promotions-v12-card__ribbon flex min-w-0 items-start justify-between gap-2">
+          <span className={cn("store-promotions-v12-card__type inline-flex shrink-0 items-center rounded-full border px-2.5 py-1 text-[11px] font-black", typeTone(promotion.type))}>
             {promotionTypeLabel(promotion.type)}
           </span>
-          <span className={cn("inline-flex shrink-0 rounded-full px-2 py-1 text-[11px] font-semibold", statusTone(promotion.runtime_status))}>
+          <span className={cn("store-promotions-v12-card__runtime inline-flex shrink-0 rounded-full px-2 py-1 text-[11px] font-semibold", statusTone(promotion.runtime_status))}>
             {runtimeStatusLabel(promotion.runtime_status, t)}
           </span>
         </div>
 
-        <Link to={detailPath} className="mt-3 block min-w-0">
-          <h2 className="line-clamp-2 text-base font-black leading-6 text-[var(--theme-text)] sm:text-lg">
-            {promotion.title}
-          </h2>
-        </Link>
+        <div className="store-promotions-v12-card__headline mt-3 grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
+          <Link to={detailPath} className="block min-w-0">
+            <p className="store-promotions-v12-card__benefit">{benefitLabel}</p>
+            <h2 className="line-clamp-2 text-base font-black leading-6 text-[var(--theme-text)] sm:text-lg">
+              {displayTitle}
+            </h2>
+            <p className="store-promotions-v12-card__subtitle line-clamp-2">{displaySubtitle}</p>
+          </Link>
+          <Link to={detailPath} className="store-promotions-v12-card__visual" aria-label={displayTitle}>
+            {promotion.cover_image ? (
+              <img src={promotion.cover_image} alt="" loading="lazy" />
+            ) : (
+              <PromotionVisualIcon type={promotion.type} />
+            )}
+          </Link>
+        </div>
 
-        <div className="mt-3 grid gap-2 text-xs text-[var(--theme-text-muted)]">
+        <div className="store-promotions-v12-card__facts mt-3 grid gap-2 text-xs text-[var(--theme-text-muted)]">
           <span className="store-promotions-v12-card__status-hint">
             <Clock3 size={15} className="shrink-0" />
             <span className="truncate">{runtimeStatusHint(promotion, t)}</span>
@@ -207,13 +317,13 @@ function PromotionCard({ promotion }: { promotion: StorefrontPromotion }) {
             <span className="truncate">{formatDate(promotion.start_at)} - {formatDate(promotion.end_at)}</span>
           </span>
           <span className="inline-flex min-w-0 items-center gap-1.5">
-            <BadgePercent size={15} className="shrink-0" />
-            <span className="truncate">{promotion.stackable ? t("promotion.stackableYes") : t("promotion.stackableNo")}</span>
+            <Store size={15} className="shrink-0" />
+            <span className="truncate">{scopeLabel}</span>
           </span>
         </div>
 
-        <div className="mt-3 flex flex-wrap gap-1.5">
-          {promotion.promo_label ? (
+        <div className="store-promotions-v12-card__tags mt-3 flex flex-wrap gap-1.5">
+          {isDisplayablePromoLabel(promotion.promo_label) ? (
             <span className="rounded-full bg-[color-mix(in_srgb,var(--theme-price)_10%,var(--theme-surface))] px-2 py-1 text-[11px] font-black text-[var(--theme-price)]">
               {promotion.promo_label}
             </span>
@@ -230,15 +340,15 @@ function PromotionCard({ promotion }: { promotion: StorefrontPromotion }) {
           ) : null}
         </div>
 
-        <div className="mt-auto flex items-center justify-between gap-3 pt-4">
+        <div className="store-promotions-v12-card__footer mt-auto flex items-center justify-between gap-3 pt-4">
           <span className="min-w-0 truncate text-[11px] font-medium text-[var(--theme-text-muted)]">
-            {promotion.scope_type || "all"}
+            {itemCount ? `${itemCount} 件商品参与` : couponCount ? `${couponCount} 张券可用` : "限时福利"}
           </span>
           <Link
-            className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--theme-primary)] px-3 py-2 text-xs font-black text-[var(--theme-primary-foreground)]"
+            className="store-v12-compact-cta store-promotions-v12-card__cta inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--theme-primary)] px-3 py-2 text-xs font-black text-[var(--theme-primary-foreground)]"
             to={detailPath}
           >
-            {t("promotion.view")}
+            {actionLabel}
             <ArrowRight size={14} />
           </Link>
         </div>
@@ -287,11 +397,15 @@ function PromotionStatePanel({
 
 function PromotionSkeleton() {
   return (
-    <div className="store-promotions-v12-card rounded-[1.1rem] border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3.5">
-      <div className="skeleton-base skeleton-shimmer aspect-[16/9] rounded-[0.9rem]" />
+    <div className="store-promotions-v12-card store-promotions-v12-card--poster rounded-[1.1rem] border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3.5">
+      <div className="flex items-center justify-between gap-3">
+        <div className="skeleton-base skeleton-shimmer h-6 w-20 rounded-full" />
+        <div className="skeleton-base skeleton-shimmer h-6 w-14 rounded-full" />
+      </div>
       <div className="mt-3 space-y-2">
         <div className="skeleton-base skeleton-shimmer h-4 w-24 rounded-full" />
-        <div className="skeleton-base skeleton-shimmer h-5 w-4/5 rounded" />
+        <div className="skeleton-base skeleton-shimmer h-6 w-4/5 rounded" />
+        <div className="skeleton-base skeleton-shimmer h-4 w-24 rounded-full" />
         <div className="skeleton-base skeleton-shimmer h-4 w-full rounded" />
         <div className="skeleton-base skeleton-shimmer h-4 w-3/5 rounded" />
       </div>
@@ -300,38 +414,41 @@ function PromotionSkeleton() {
 }
 
 export default function Promotions() {
-  const [list, setList] = useState<StorefrontPromotion[]>([]);
-  const [campaigns, setCampaigns] = useState<StorefrontHomeCampaign[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [searchParams] = useSearchParams();
   const { localizedPath, promotionTypeLabel, t } = usePublicLocale();
   const selectedType = useMemo(() => {
     const raw = searchParams.get("type") || "";
     return FILTERABLE_PROMOTION_TYPES.includes(raw as PromotionType) ? raw as PromotionType : "";
   }, [searchParams]);
+  const initialCache = useMemo(() => readPromotionListCache(selectedType), [selectedType]);
+  const [list, setList] = useState<StorefrontPromotion[]>(() => initialCache?.list || []);
+  const [loading, setLoading] = useState(() => !initialCache);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState("");
 
   const load = useCallback(async () => {
-    setLoading(true);
+    const cached = readPromotionListCache(selectedType);
+    if (cached) {
+      setList(cached.list);
+      setLoading(false);
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+      setRefreshing(false);
+    }
     setError("");
-    const [promotionResult, campaignResult] = await Promise.allSettled([
-      marketingService.fetchPromotions({ pageSize: 60, type: selectedType }),
-      marketingService.fetchHomeCampaigns(),
-    ]);
-
-    if (campaignResult.status === "fulfilled") {
-      setCampaigns(campaignResult.value || []);
-    } else {
-      setCampaigns([]);
-    }
-
-    if (promotionResult.status === "fulfilled") {
-      setList(promotionResult.value.list || []);
-    } else {
-      setList([]);
+    try {
+      const promotionResult = await marketingService.fetchPromotions({ pageSize: 60, type: selectedType });
+      const nextList = promotionResult.list || [];
+      writePromotionListCache(selectedType, nextList);
+      setList(nextList);
+    } catch {
+      setList((current) => current.length > 0 ? current : []);
       setError(t("promotion.errorFallback"));
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
-    setLoading(false);
   }, [selectedType, t]);
 
   useEffect(() => {
@@ -339,18 +456,16 @@ export default function Promotions() {
   }, [load]);
 
   const summary = useMemo(() => ({
-    total: list.length,
     active: list.filter((item) => item.runtime_status === "active").length,
     coupon: list.filter((item) => item.type === "coupon").length,
     flash: list.filter((item) => item.type === "flash_sale" || item.type === "limited_time_discount").length,
     member: list.filter((item) => ["member_price", "points_reward", "checkin_reward"].includes(item.type)).length,
   }), [list]);
-  const shortcutCampaigns = useMemo(() => campaigns.slice(0, 4), [campaigns]);
-  const shortcutLayout: CampaignShortcutLayout =
-    shortcutCampaigns.length === 1 ? "single" : shortcutCampaigns.length === 2 ? "pair" : "scroll";
   const activeFilterKey = filterScrollKey(selectedType);
   const { containerRef: filtersRef, setItemRef: setFilterRef, scrollToKey: scrollFilterToKey } =
     useHorizontalActiveScroll<HTMLElement, HTMLAnchorElement>(activeFilterKey, FILTERS.length);
+  const showFullSkeleton = loading && list.length === 0;
+  const showSoftRefreshing = refreshing && list.length > 0;
 
   return (
     <div className="store-page-shell store-v12-page store-promotions-v12-page store-bottom-safe min-h-[100dvh] bg-[var(--theme-bg)] text-[var(--theme-text)]">
@@ -369,50 +484,29 @@ export default function Promotions() {
 
       <main className="mx-auto w-full max-w-6xl px-[var(--store-page-x)] pb-6 pt-3 md:px-6 md:py-8 lg:px-8">
         <section className="store-promotions-v12-hero overflow-hidden rounded-[1.35rem] border border-[color-mix(in_srgb,var(--theme-price)_20%,var(--theme-border))] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--theme-price)_14%,var(--theme-surface))_0%,var(--theme-surface)_58%,color-mix(in_srgb,var(--theme-primary)_8%,var(--theme-bg))_100%)] p-4 shadow-[0_18px_50px_color-mix(in_srgb,var(--theme-price)_10%,transparent)] sm:p-6">
-          <div className="grid grid-cols-3 gap-2 text-center">
-            <div className="rounded-[0.95rem] border border-[color-mix(in_srgb,var(--theme-border)_70%,transparent)] bg-[color-mix(in_srgb,var(--theme-surface)_82%,transparent)] px-2 py-3 backdrop-blur">
-              <strong className="block text-xl font-black text-[var(--theme-text)]">{formatCount(summary.active)}</strong>
-              <span className="text-[11px] font-medium text-[var(--theme-text-muted)]">{t("promotion.active")}</span>
+          <div className="store-promotions-v12-hero__copy">
+            <span className="store-promotions-v12-hero__eyebrow">
+              <Gift size={15} aria-hidden />
+              大马通优惠活动中心
+            </span>
+            <h1>今日优惠集中领取</h1>
+            <p>秒杀、满减、满折、优惠券一处查看</p>
+          </div>
+          <div className="store-promotions-v12-hero__stats" aria-label="活动统计">
+            <div>
+              <strong>{formatCount(summary.active)}</strong>
+              <span>{t("promotion.active")}</span>
             </div>
-            <div className="rounded-[0.95rem] border border-[color-mix(in_srgb,var(--theme-border)_70%,transparent)] bg-[color-mix(in_srgb,var(--theme-surface)_82%,transparent)] px-2 py-3 backdrop-blur">
-              <strong className="block text-xl font-black text-[var(--theme-price)]">{formatCount(summary.flash)}</strong>
-              <span className="text-[11px] font-medium text-[var(--theme-text-muted)]">{t("promotion.timed")}</span>
+            <div>
+              <strong>{formatCount(summary.flash)}</strong>
+              <span>{t("promotion.timed")}</span>
             </div>
-            <div className="rounded-[0.95rem] border border-[color-mix(in_srgb,var(--theme-border)_70%,transparent)] bg-[color-mix(in_srgb,var(--theme-surface)_82%,transparent)] px-2 py-3 backdrop-blur">
-              <strong className="block text-xl font-black text-[var(--theme-primary)]">{formatCount(summary.coupon + summary.member)}</strong>
-              <span className="text-[11px] font-medium text-[var(--theme-text-muted)]">{t("common.coupons")}</span>
+            <div>
+              <strong>{formatCount(summary.coupon)}</strong>
+              <span>可领券</span>
             </div>
           </div>
         </section>
-
-        {shortcutCampaigns.length ? (
-          <section className="store-promotions-v12-strip mt-4 rounded-[1.1rem] border border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-surface)_92%,var(--theme-bg))] p-3">
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <h2 className="text-sm font-black text-[var(--theme-text)]">{t("common.allPromotions")}</h2>
-              </div>
-              <Link
-                to={localizedPath("/coupons")}
-                className="inline-flex h-9 shrink-0 items-center justify-center gap-1 rounded-full bg-[var(--theme-primary)] px-3 text-xs font-black text-[var(--theme-primary-foreground)] shadow-sm"
-              >
-                {t("promotion.goCoupons")}
-                <ArrowRight size={14} />
-              </Link>
-            </div>
-            <div
-              className={cn(
-                "pb-1",
-                shortcutLayout === "single" && "flex justify-center",
-                shortcutLayout === "pair" && "grid grid-cols-2 gap-2.5 sm:mx-auto sm:max-w-md",
-                shortcutLayout === "scroll" && "no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1 sm:grid sm:grid-cols-2 sm:overflow-visible lg:grid-cols-4",
-              )}
-            >
-              {shortcutCampaigns.map((campaign) => (
-                <CampaignShortcut key={`${campaign.type}:${campaign.id}`} campaign={campaign} layout={shortcutLayout} />
-              ))}
-            </div>
-          </section>
-        ) : null}
 
         <nav
           ref={filtersRef}
@@ -433,7 +527,7 @@ export default function Promotions() {
                 aria-current={active ? "page" : undefined}
                 onClick={() => scrollFilterToKey(scrollKey)}
                 className={cn(
-                  "inline-flex h-10 min-w-max shrink-0 items-center justify-center gap-1.5 rounded-full border px-3 text-xs font-black transition sm:min-w-0 sm:px-2",
+                  "store-promotions-v12-filter inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-full border px-3 text-xs font-black transition",
                   active
                     ? "border-[var(--theme-primary)] bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]"
                     : "border-[var(--theme-border)] bg-[var(--theme-surface)] text-[var(--theme-text)]",
@@ -445,12 +539,17 @@ export default function Promotions() {
             );
           })}
         </nav>
+        {showSoftRefreshing ? (
+          <p className="mt-3 rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-center text-xs font-semibold text-[var(--theme-text-muted)]">
+            正在同步最新优惠
+          </p>
+        ) : null}
 
-        {loading ? (
+        {showFullSkeleton ? (
           <section className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3" aria-busy="true" aria-label={t("common.loadingPromotions")}>
             {Array.from({ length: 6 }).map((_, index) => <PromotionSkeleton key={index} />)}
           </section>
-        ) : error ? (
+        ) : error && list.length === 0 ? (
           <PromotionStatePanel kind="error" onRetry={() => void load()} />
         ) : list.length ? (
           <section className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

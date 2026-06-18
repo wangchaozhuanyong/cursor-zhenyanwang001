@@ -54,7 +54,9 @@ export function useStoreNavigationGuard() {
       return false;
     }
     const ctx: AccountFeatureContext = { capabilities, loyaltyConfig };
-    const waitingForFeatureConfig = !capabilitiesReady || (feature.loyaltyFeature && loyaltyLoading);
+    const waitingForFeatureConfig =
+      (Boolean(feature.capability) && !capabilitiesReady) ||
+      (Boolean(feature.loyaltyFeature) && loyaltyLoading);
     if (waitingForFeatureConfig) {
       toast.info("功能配置加载中，请稍后再试");
       return false;

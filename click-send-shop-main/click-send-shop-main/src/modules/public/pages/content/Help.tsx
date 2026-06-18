@@ -101,26 +101,26 @@ export default function Help() {
       />
 
       <div className="mx-auto w-full max-w-lg md:max-w-none">
-        <section className="mb-3 overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 shadow-[var(--theme-shadow)] md:p-5">
-          <div className="flex items-start gap-3">
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[color-mix(in_srgb,var(--theme-primary)_12%,var(--theme-surface))] text-[var(--theme-primary)]">
+        <section className="store-help-v12-summary mb-3 overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 shadow-[var(--theme-shadow)] md:p-5">
+          <div className="store-help-v12-summary__head flex items-start gap-3">
+            <span className="store-help-v12-summary__icon grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[color-mix(in_srgb,var(--theme-primary)_12%,var(--theme-surface))] text-[var(--theme-primary)]">
               <Headphones size={22} aria-hidden />
             </span>
             <div className="min-w-0">
-              <p className="text-base font-semibold text-[var(--theme-text)]">下单、配送、售后和账户问题都可以先在这里查</p>
+              <p className="store-help-v12-summary__title text-base font-semibold text-[var(--theme-text)]">常见问题快速查</p>
             </div>
           </div>
-          <div className="mt-4 grid grid-cols-3 gap-2">
+          <div className="store-help-v12-summary__stats mt-4 grid grid-cols-3 gap-2">
             <div className="rounded-xl bg-[var(--theme-bg)] px-3 py-2">
-              <p className="text-[11px] text-[var(--theme-muted)]">问题分类</p>
+              <p className="text-[11px] text-[var(--theme-muted)]">分类</p>
               <p className="mt-1 text-lg font-black text-[var(--theme-text)]">{faqCategories.length}</p>
             </div>
             <div className="rounded-xl bg-[var(--theme-bg)] px-3 py-2">
-              <p className="text-[11px] text-[var(--theme-muted)]">当前结果</p>
+              <p className="text-[11px] text-[var(--theme-muted)]">结果</p>
               <p className="mt-1 text-lg font-black text-[var(--theme-text)]">{filtered.length}</p>
             </div>
             <div className="rounded-xl bg-[var(--theme-bg)] px-3 py-2">
-              <p className="text-[11px] text-[var(--theme-muted)]">客服入口</p>
+              <p className="text-[11px] text-[var(--theme-muted)]">客服</p>
               <p className="mt-1 text-lg font-black text-[var(--theme-text)]">已接入</p>
             </div>
           </div>
@@ -185,9 +185,11 @@ export default function Help() {
             </div>
           ))}
         </div>
-        <div className="mt-6 rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 shadow-[var(--theme-shadow)]">
-          <SupportContactSection hideDescription />
-        </div>
+        <SupportContactSection
+          hideDescription
+          variant="compact"
+          className="store-help-v12-contact mt-6 rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 shadow-[var(--theme-shadow)]"
+        />
       </div>
     </StoreStandardPageShell>
   );

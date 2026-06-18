@@ -90,8 +90,8 @@ export function getCouponCardPresentation(
     default: "store-coupon-amount-list",
   };
 
-  /** 操作区统一竖排一字一行（如「使」「用」），贴右侧窄条 */
-  const actionLayout: CouponCardPresentation["actionLayout"] = "vertical";
+  /** 首页横滑窄位保留竖排；列表页横排展示，避免「已失效」等状态被挤成竖排。 */
+  const actionLayout: CouponCardPresentation["actionLayout"] = layout === "home" ? "vertical" : "horizontal";
 
   const actionButtonClass = useThemedMarketingShell
     ? layout === "home"

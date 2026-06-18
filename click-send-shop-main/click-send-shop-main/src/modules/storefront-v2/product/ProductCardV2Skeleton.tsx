@@ -9,9 +9,9 @@ type ProductCardV2SkeletonProps = {
 export default function ProductCardV2Skeleton({ variant = "grid" }: ProductCardV2SkeletonProps) {
   if (variant === "list") {
     return (
-      <div className={`${storefrontCardClassName()} flex gap-3 p-2.5 sm:p-3`} aria-hidden>
-        <Skeleton className="w-[5.25rem] shrink-0 self-start rounded-[0.875rem] sm:w-24" style={THEME_PRODUCT_MEDIA_ASPECT_STYLE} />
-        <div className="flex flex-1 flex-col gap-2">
+      <div className={`${storefrontCardClassName()} grid grid-cols-[5.75rem_minmax(0,1fr)] items-stretch gap-3 p-2.5 sm:grid-cols-[6rem_minmax(0,1fr)] sm:p-3`} aria-hidden>
+        <Skeleton className="h-full min-h-[5.75rem] w-full self-stretch rounded-[0.875rem] sm:min-h-24" />
+        <div className="flex min-h-[5.75rem] flex-col gap-2 py-1 sm:min-h-24">
           <Skeleton className="h-4 w-full" />
           <Skeleton className="h-4 w-2/3" />
           <Skeleton className="h-3 w-32" />

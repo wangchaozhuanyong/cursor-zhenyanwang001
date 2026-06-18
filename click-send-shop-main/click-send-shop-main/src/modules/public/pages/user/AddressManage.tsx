@@ -1,5 +1,5 @@
 import { useState, useEffect, type ReactNode } from "react";
-import { Check, Edit3, Home, Loader2, MapPin, Navigation, Phone, Plus, ShieldCheck, Trash2 } from "lucide-react";
+import { Check, Edit3, Home, Loader2, MapPin, Phone, Plus, ShieldCheck, Trash2 } from "lucide-react";
 import { useGoBack } from "@/hooks/useGoBack";
 import { useUserStore, type Address } from "@/stores/useUserStore";
 import { toast } from "sonner";
@@ -15,7 +15,7 @@ import { usePublicLocale } from "@/i18n/publicLocale";
 
 type AddressForm = Omit<Address, "id">;
 const CARD = "rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-[var(--store-card-x)] py-[var(--store-card-y)] shadow-[var(--theme-shadow)] sm:p-4";
-const ADDRESS_HERO_IMAGE = "/assets/home-banners/home-hero-05-support-bg.webp";
+const ADDRESS_HERO_IMAGE = "/assets/home-banners/address-hero-premium-bg.webp";
 
 const EMPTY_FORM: AddressForm = {
   recipient_name: "",
@@ -123,32 +123,22 @@ export default function AddressManage() {
         mainClassName="pb-24 sm:py-4 md:pb-12"
       >
         <section
-          className="store-address-v12-hero relative overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-5 shadow-[var(--theme-shadow)] sm:px-6 sm:py-6"
+          className="store-address-v12-hero relative overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-4 shadow-[var(--theme-shadow)] sm:px-6 sm:py-6"
           style={{
-            backgroundImage: `linear-gradient(112deg, color-mix(in srgb, var(--theme-surface) 95%, transparent) 0%, color-mix(in srgb, var(--theme-surface) 84%, transparent) 48%, color-mix(in srgb, var(--theme-bg) 42%, transparent) 100%), url("${ADDRESS_HERO_IMAGE}")`,
-            backgroundPosition: "center",
+            backgroundImage: `linear-gradient(112deg, color-mix(in srgb, var(--theme-surface) 98%, transparent) 0%, color-mix(in srgb, var(--theme-surface) 91%, transparent) 52%, color-mix(in srgb, var(--theme-bg) 52%, transparent) 100%), radial-gradient(circle at 84% 14%, color-mix(in srgb, var(--theme-primary) 12%, transparent), transparent 34%), url("${ADDRESS_HERO_IMAGE}")`,
+            backgroundPosition: "center right",
             backgroundSize: "cover",
           }}
         >
           <div className="relative grid gap-4 md:grid-cols-[minmax(0,1fr)_15rem] md:items-stretch">
             <div className="min-w-0">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--theme-primary)_18%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-primary)_8%,var(--theme-surface))] px-3 py-1 text-xs font-semibold text-[var(--theme-primary)]">
-                <Navigation size={13} aria-hidden />
-                {t("address.addressBook")}
-              </span>
-              <h2 className="mt-3 text-2xl font-black leading-tight text-[var(--theme-text-on-surface)] sm:text-3xl">
-                {defaultAddress ? t("address.defaultReady") : t("address.setupFirst")}
-              </h2>
-              <p className="mt-2 max-w-xl text-sm leading-6 text-[var(--theme-text-muted-on-surface)]">
-                {t("address.description")}
-              </p>
-              <div className="mt-4 grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-[repeat(3,minmax(0,1fr))] gap-2">
                 <AddressMetric icon={<MapPin size={13} aria-hidden />} label={t("address.addressCount")} value={`${addresses.length}${t("address.addressCountUnit") ? ` ${t("address.addressCountUnit")}` : ""}`} />
                 <AddressMetric icon={<Home size={13} aria-hidden />} label={t("address.defaultAddress")} value={defaultAddress ? t("address.set") : t("address.notSet")} />
                 <AddressMetric icon={<ShieldCheck size={13} aria-hidden />} label={t("address.deliveryArea")} value="马来西亚" />
               </div>
             </div>
-            <div className="store-address-v12-default-card rounded-2xl border border-[color-mix(in_srgb,var(--theme-price)_20%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-surface)_72%,transparent)] p-4 backdrop-blur">
+            <div className="store-address-v12-default-card rounded-2xl border border-[color-mix(in_srgb,var(--theme-primary)_18%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-surface)_88%,transparent)] p-4 backdrop-blur">
               <p className="text-xs font-semibold text-[var(--theme-text-muted-on-surface)]">{t("address.defaultCheckout")}</p>
               <p className="mt-2 line-clamp-2 text-sm font-black leading-5 text-[var(--theme-text-on-surface)]">
                 {defaultAddress ? formatAddressForDisplay(defaultAddress) : t("address.noDefaultFallback")}
@@ -295,12 +285,12 @@ export default function AddressManage() {
 
 function AddressMetric({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
   return (
-    <div className="min-w-0 rounded-xl border border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-surface)_82%,transparent)] px-2.5 py-2 backdrop-blur">
-      <div className="flex items-center gap-1.5 text-[10px] font-semibold text-[var(--theme-text-muted-on-surface)]">
-        <span className="shrink-0 text-[var(--theme-price)]">{icon}</span>
-        <span className="truncate">{label}</span>
-      </div>
-      <p className="mt-1 truncate text-sm font-black text-[var(--theme-text-on-surface)]">{value}</p>
+    <div className="flex min-h-[86px] min-w-0 flex-col items-center justify-center rounded-2xl border border-[color-mix(in_srgb,var(--theme-primary)_14%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-surface)_86%,transparent)] px-2 py-2.5 text-center shadow-[0_14px_28px_-30px_color-mix(in_srgb,var(--theme-text)_44%,transparent)] backdrop-blur">
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[color-mix(in_srgb,var(--theme-primary)_10%,var(--theme-surface))] text-[var(--theme-primary)]">
+        {icon}
+      </span>
+      <p className="mt-1.5 max-w-full truncate text-[10px] font-semibold leading-tight text-[var(--theme-text-muted-on-surface)]">{label}</p>
+      <p className="mt-1 max-w-full truncate text-sm font-black leading-tight text-[var(--theme-text-on-surface)]">{value}</p>
     </div>
   );
 }

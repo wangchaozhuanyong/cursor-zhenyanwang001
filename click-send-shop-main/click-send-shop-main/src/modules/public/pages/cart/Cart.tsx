@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Calculator, Coins, Heart, Minus, PackageCheck, Pin, Plus, Share2, Trash2, ShoppingBag, Loader2, Check, LogIn, ShieldCheck, X } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import StorePageHeader from "@/components/store/StorePageHeader";
@@ -7,7 +7,7 @@ import { THEME_PRODUCT_MEDIA_ASPECT_STYLE } from "@/constants/productMediaAspect
 import { cartLineKey, useCartStore } from "@/stores/useCartStore";
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
 import ProductCoverImage from "@/components/ProductCoverImage";
-import type { CartItem, CartPromotionPreview } from "@/types/cart";
+import type { CartItem } from "@/types/cart";
 import { isLoggedIn } from "@/utils/token";
 import { copyToClipboard } from "@/utils/clipboard";
 import TrustInfo from "@/components/TrustInfo";
@@ -24,8 +24,6 @@ import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { DesktopPurchaseCard, DesktopPurchaseTwoColumn } from "@/components/store/DesktopPurchasePattern";
 import { ClientButton, EmptyState as ClientEmptyState } from "@/components/client";
 import { usePublicLocale } from "@/i18n/publicLocale";
-import CartPromotionNudge from "@/modules/storefront-v2/cart/CartPromotionNudge";
-import { fetchCartPromotionPreview } from "@/services/cartService";
 
 const CART_ACTION_WIDTH = 244;
 const CART_ACTION_REVEAL_THRESHOLD = 64;
@@ -51,6 +49,7 @@ export default function Cart() {
     totalAmountSelected,
     totalPointsSelected,
     totalItemsSelected,
+    hasLoaded,
   } = useCartStore();
   const selection = useCartStore((s) => s.selection);
   const isFavoriteProduct = useFavoritesStore((s) => s.isFavorite);
@@ -62,15 +61,12 @@ export default function Cart() {
   const [openActionKey, setOpenActionKey] = useState<string | null>(null);
   const [quantityTargetKey, setQuantityTargetKey] = useState<string | null>(null);
   const [quantityDraft, setQuantityDraft] = useState("");
-  const [cartPromotionPreview, setCartPromotionPreview] = useState<CartPromotionPreview | null>(null);
+  const backgroundSyncStartedRef = useRef(false);
 
   const selectedCount = items.filter((i) => selection[cartLineKey(i.product.id, i.variant_id)] !== false).length;
   const allSelected = items.length > 0 && selectedCount === items.length;
   const someSelected = selectedCount > 0;
   const totalQty = items.reduce((s, i) => s + i.qty, 0);
-  const cartPreviewRefreshKey = items
-    .map((item) => `${cartLineKey(item.product.id, item.variant_id)}:${item.qty}`)
-    .join("|");
   const selectedQty = totalItemsSelected();
   const selectedPoints = totalPointsSelected();
   const checkoutLabel =
@@ -98,26 +94,14 @@ export default function Cart() {
     );
 
   useEffect(() => {
-    loadCart({ force: true });
-  }, [loadCart]);
-
-  useEffect(() => {
-    if (!isLoggedIn() || items.length === 0) {
-      setCartPromotionPreview(null);
-      return;
-    }
-    let cancelled = false;
-    fetchCartPromotionPreview()
-      .then((preview) => {
-        if (!cancelled) setCartPromotionPreview(preview);
-      })
-      .catch(() => {
-        if (!cancelled) setCartPromotionPreview(null);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [cartPreviewRefreshKey, items.length]);
+    void loadCart();
+    if (backgroundSyncStartedRef.current || (!hasLoaded && items.length === 0)) return;
+    backgroundSyncStartedRef.current = true;
+    const timer = window.setTimeout(() => {
+      void loadCart({ force: true });
+    }, 500);
+    return () => window.clearTimeout(timer);
+  }, [hasLoaded, items.length, loadCart]);
 
   const handleCheckout = () => {
     if (totalItemsSelected() === 0) {
@@ -304,19 +288,6 @@ export default function Cart() {
             }
           >
             <MarketingPositionNotices position="cart_notice" className="mb-3" />
-            {allSelected && cartPromotionPreview?.promotion_evaluation ? (
-              <CartPromotionNudge
-                campaign={null}
-                amount={Number(
-                  cartPromotionPreview.order_snapshot?.goods_amount
-                    ?? cartPromotionPreview.goods_amount
-                    ?? totalAmountSelected(),
-                )}
-                evaluation={cartPromotionPreview.promotion_evaluation}
-                className="mb-3"
-                onBrowse={() => navigate(localizedPath("/categories"))}
-              />
-            ) : null}
             {!isLoggedIn() && (
               <div
                 className="relative mb-4 mt-3 overflow-hidden rounded-[22px] border px-4 py-4 text-[var(--theme-text)]"
@@ -513,7 +484,7 @@ export default function Cart() {
                           }}
                           animate={{ x: actionsOpen ? -CART_ACTION_WIDTH : 0 }}
                           transition={{ type: "spring", stiffness: 420, damping: 36 }}
-                          className="relative z-10 flex min-w-0 gap-2.5 bg-transparent py-0.5 sm:gap-3"
+                          className="store-cart-item-row relative z-10 flex min-w-0 gap-2.5 bg-transparent py-0.5 sm:gap-3"
                         >
                           <UnifiedButton
                             type="button"
@@ -521,7 +492,7 @@ export default function Cart() {
                               closeItemActions();
                               navigate(localizedPath(`/product/${item.product.id}`), { state: { from: currentPath } });
                             }}
-                            className="store-cart-media w-14 flex-shrink-0 self-start cursor-pointer overflow-hidden rounded-xl border-0 bg-transparent p-0 sm:w-16 md:w-16 lg:w-20"
+                            className="store-cart-media store-cart-item-media w-14 flex-shrink-0 self-start cursor-pointer overflow-hidden rounded-xl border-0 bg-transparent p-0 sm:w-16 md:w-16 lg:w-20"
                             style={THEME_PRODUCT_MEDIA_ASPECT_STYLE}
                             aria-label={`${t("common.browseProducts")} ${item.product.name}`}
                           >
@@ -534,25 +505,25 @@ export default function Cart() {
                               fetchPriority={index === 0 ? "high" : "low"}
                             />
                           </UnifiedButton>
-                          <div className="flex min-w-0 flex-1 flex-col justify-between">
-                            <div className="min-w-0">
+                          <div className="store-cart-item-content flex min-w-0 flex-1 flex-col justify-between">
+                            <div className="store-cart-item-copy min-w-0">
                               <h3
                                 onClick={() => {
                                   closeItemActions();
                                   navigate(localizedPath(`/product/${item.product.id}`), { state: { from: currentPath } });
                                 }}
-                                className="store-card-title cursor-pointer break-words leading-tight text-foreground line-clamp-2 hover:text-theme-price"
+                                className="store-card-title store-cart-item-title cursor-pointer break-words leading-tight text-foreground line-clamp-2 hover:text-theme-price"
                               >
                                 {item.product.name}
                               </h3>
-                              {item.variant_name ? <p className="store-caption mt-1 truncate text-muted-foreground">规格：{item.variant_name}</p> : null}
+                              {item.variant_name ? <p className="store-caption store-cart-item-variant mt-1 truncate text-muted-foreground">规格：{item.variant_name}</p> : null}
                             </div>
-                            <div className="mt-2 flex min-w-0 items-center justify-between gap-2">
+                            <div className="store-cart-item-bottom mt-2 flex min-w-0 items-center justify-between gap-2">
                               <StorePriceAmount
                                 amount={item.product.price}
                                 amountClassName="text-[15px] font-extrabold leading-tight sm:text-base"
                               />
-                              <div className="flex h-9 shrink-0 items-center overflow-hidden rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)]">
+                              <div className="store-cart-qty-control flex h-9 shrink-0 items-center overflow-hidden rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)]">
                                 <SquishButton
                                   type="button"
                                   variant="ghost"

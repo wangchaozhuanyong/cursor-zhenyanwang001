@@ -72,9 +72,22 @@ export default function HomePrimaryCampaignV2({
   if (!visibleCampaigns.length) return null;
 
   return (
-    <section className="store-home-v4-campaigns min-w-0">
-      <StorefrontTitleRow title="今日优惠" subtitle="领券和活动一处查看" />
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+    <section className="store-home-v4-campaigns store-home-v4-campaigns--festive min-w-0">
+      <StorefrontTitleRow
+        title="今日优惠"
+        action={(
+          <UnifiedButton
+            type="button"
+            onClick={() => onNavigate("/promotions")}
+            className="store-home-v12-shelf__action"
+            aria-label="去领取，进入优惠活动页面"
+          >
+            去领取
+            <ArrowRight size={14} aria-hidden />
+          </UnifiedButton>
+        )}
+      />
+      <div className="store-home-v4-campaign-grid grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {visibleCampaigns.map((campaign, index) => (
           <CampaignCard
             key={`${campaign.source}-${campaign.type}-${campaign.id}`}

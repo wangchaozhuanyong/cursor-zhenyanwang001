@@ -626,7 +626,15 @@ function HomeProcurementCommand({
     <section className="store-home-command-panel" aria-label="快捷入口">
       <div className="store-home-command-panel__intro">
         <h2>快捷入口</h2>
-        <p>活动、分类、订单和服务集中进入</p>
+        <UnifiedButton
+          type="button"
+          className="store-home-command-panel__shop"
+          onClick={() => onNavigate("/categories")}
+          aria-label="去选购，进入全部分类页面"
+        >
+          <PackageSearch size={14} aria-hidden />
+          <span>去选购</span>
+        </UnifiedButton>
       </div>
       <div className="store-home-command-panel__actions">
         {actions.map((action) => {

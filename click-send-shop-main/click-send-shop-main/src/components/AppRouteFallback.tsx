@@ -94,6 +94,31 @@ export function StoreOutletFallback() {
   );
 }
 
+export function StoreTabContentFallback() {
+  return (
+    <main
+      data-route-fallback="store-tab-content"
+      className="mx-auto w-full max-w-screen-xl px-[var(--store-page-x)] pb-6 pt-[var(--store-page-y)] md:px-6"
+      aria-busy="true"
+      aria-label="页面加载中"
+    >
+      <div className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 shadow-[var(--store-card-shadow)]">
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-10 w-10 shrink-0 rounded-full" />
+          <div className="min-w-0 flex-1 space-y-2">
+            <Skeleton className="h-4 w-32 max-w-full rounded-full" />
+            <Skeleton className="h-3 w-44 max-w-full rounded-full" />
+          </div>
+        </div>
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          <Skeleton className="h-28 rounded-xl" />
+          <Skeleton className="h-28 rounded-xl" />
+        </div>
+      </div>
+    </main>
+  );
+}
+
 export function HomeShellSkeleton() {
   return (
     <div

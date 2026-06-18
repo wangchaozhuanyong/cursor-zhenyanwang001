@@ -555,7 +555,7 @@
   flex: 1;
   height: 1px;
   margin-left: 6px;
-  background: linear-gradient(90deg, rgba(244, 198, 111, 0.38), rgba(244, 198, 111, 0.14) 68%, transparent);
+  background: linear-gradient(90deg, var(--gold-line), var(--gold-line-weak) 68%, transparent);
 }
 
 .member-page .sparkles {
@@ -714,7 +714,7 @@
   justify-content: center;
   gap: 6px;
   margin-top: 14px;
-  color: rgba(255, 244, 214, 0.34);
+  color: var(--text-muted);
   font-size: 11px;
 }
 

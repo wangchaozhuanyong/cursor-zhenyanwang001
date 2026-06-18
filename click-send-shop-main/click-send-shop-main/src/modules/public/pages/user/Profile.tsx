@@ -30,9 +30,9 @@ import type { OrderSummary } from "@/types/order";
 import { hasPendingReview } from "@/utils/orderBuyerStatus";
 import { formatUnreadBadge } from "@/utils/notificationBadge";
 import { THIRD_PARTY_LOGIN_ENABLED } from "@/constants/authLogin";
-import { STORE_COPY } from "@/constants/storeCopy";
 import { computeUpgradeProgress } from "@/utils/memberBenefitPresentation";
 import { preloadStoreRoute } from "@/utils/storeRoutePreload";
+import { scheduleIdleTask } from "@/utils/idleScheduler";
 import {
   buildAccountFeaturesByKeys,
   type AccountFeatureContext,
@@ -70,7 +70,6 @@ export default function Profile() {
   const loggedIn = isLoggedIn();
   const siteInfo = useSiteInfo();
   const capabilities = useSiteCapabilities();
-  const siteName = siteInfo.siteName || STORE_COPY.brandName;
   const logoSrc = resolveSiteLogoUrl(siteInfo);
   const authStore = useAuthStore();
   const { nickname, avatar, pointsBalance, inviteCode, memberLevel, wechatLogin, loadProfile } = useUserStore();
@@ -88,35 +87,70 @@ export default function Profile() {
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const [inviteCodeVisible, setInviteCodeVisible] = useState(false);
   const [activeReturnCount, setActiveReturnCount] = useState(0);
+  const [memberBenefitsQueryEnabled, setMemberBenefitsQueryEnabled] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
   const memberBenefitsQuery = useQuery<MemberBenefitsOverview>({
     queryKey: memberBenefitsService.memberBenefitsQueryKey,
     queryFn: memberBenefitsService.fetchMemberBenefits,
-    enabled: loggedIn && capabilities.memberLevelEnabled,
+    enabled: memberBenefitsQueryEnabled,
   });
   const memberBenefits = memberBenefitsQuery.data ?? null;
 
   useEffect(() => {
+    if (!loggedIn || !capabilities.memberLevelEnabled) {
+      setMemberBenefitsQueryEnabled(false);
+      return;
+    }
+    setMemberBenefitsQueryEnabled(false);
+    return scheduleIdleTask("profile-member-benefits", () => setMemberBenefitsQueryEnabled(true), {
+      delayMs: 650,
+      timeoutMs: 1800,
+      jitterMs: 120,
+    });
+  }, [capabilities.memberLevelEnabled, loggedIn]);
+
+  useEffect(() => {
     if (!loggedIn) return;
+    let cancelled = false;
+    const cancelTasks: Array<() => void> = [];
+
+    const scheduleProfileTask = (key: string, task: () => Promise<unknown>, delayMs: number) => {
+      const cancel = scheduleIdleTask(`profile-${key}`, () => {
+        if (cancelled) return;
+        void task().catch(() => {});
+      }, {
+        delayMs,
+        timeoutMs: 1800,
+        jitterMs: 160,
+      });
+      cancelTasks.push(cancel);
+    };
 
     meService.fetchMeSummary().then((summary) => {
+      if (cancelled) return;
       setInviteCount(Number(summary?.inviteStats?.directCount || 0));
       setRewardBalance(Number(summary?.rewardBalance?.balance || 0));
       setOrderSummary(summary?.orderSummary || null);
       setLoyaltyConfig(summary?.loyaltyConfig || null);
       useNotificationStore.setState({ unreadCount: Number(summary?.unreadCount || 0) });
     }).catch(() => {
-      loadProfile().catch(() => {});
-      loadOrders().catch(() => {});
-      loadCoupons().catch(() => {});
-      loadFavorites().catch(() => {});
-      useNotificationStore.getState().fetchUnreadCount();
-      inviteService.fetchInviteStats().then((s) => setInviteCount(s.directCount || 0)).catch(() => {});
-      rewardService.fetchRewardBalance().then((res) => setRewardBalance(Number(res.balance || 0))).catch(() => setRewardBalance(0));
-      orderService.fetchOrderSummary().then((res) => setOrderSummary(res)).catch(() => setOrderSummary(null));
-      loyaltyService.fetchLoyaltyConfig().then((cfg) => setLoyaltyConfig(cfg)).catch(() => setLoyaltyConfig(null));
+      if (cancelled) return;
+      scheduleProfileTask("profile", () => loadProfile(), 0);
+      scheduleProfileTask("orders", () => loadOrders(), 120);
+      scheduleProfileTask("coupons", () => loadCoupons(), 220);
+      scheduleProfileTask("favorites", () => loadFavorites(), 320);
+      scheduleProfileTask("notifications", () => useNotificationStore.getState().fetchUnreadCount(), 420);
+      scheduleProfileTask("invite-stats", () => inviteService.fetchInviteStats().then((s) => setInviteCount(s.directCount || 0)), 520);
+      scheduleProfileTask("reward-balance", () => rewardService.fetchRewardBalance().then((res) => setRewardBalance(Number(res.balance || 0))), 620);
+      scheduleProfileTask("order-summary", () => orderService.fetchOrderSummary().then((res) => setOrderSummary(res)), 720);
+      scheduleProfileTask("loyalty-config", () => loyaltyService.fetchLoyaltyConfig().then((cfg) => setLoyaltyConfig(cfg)), 820);
     });
+
+    return () => {
+      cancelled = true;
+      cancelTasks.forEach((cancel) => cancel());
+    };
   }, [loadCoupons, loadFavorites, loadOrders, loadProfile, loggedIn]);
 
   useEffect(() => {
@@ -124,9 +158,24 @@ export default function Profile() {
       setActiveReturnCount(0);
       return;
     }
-    void returnService.fetchReturnRequests({ page: 1, pageSize: 50 })
-      .then((r) => setActiveReturnCount(countActiveReturns(r.list || [])))
-      .catch(() => setActiveReturnCount(0));
+    let cancelled = false;
+    const cancel = scheduleIdleTask("profile-active-returns", () => {
+      void returnService.fetchReturnRequests({ page: 1, pageSize: 50 })
+        .then((r) => {
+          if (!cancelled) setActiveReturnCount(countActiveReturns(r.list || []));
+        })
+        .catch(() => {
+          if (!cancelled) setActiveReturnCount(0);
+        });
+    }, {
+      delayMs: 760,
+      timeoutMs: 2200,
+      jitterMs: 160,
+    });
+    return () => {
+      cancelled = true;
+      cancel();
+    };
   }, [loggedIn]);
 
   const handleLogout = async () => {
@@ -310,7 +359,6 @@ export default function Profile() {
         <div className="store-profile-stack client-profile-stack min-w-0 space-y-3 sm:space-y-4 xl:max-w-4xl">
           {!loggedIn ? (
             <ProfileGuestCard
-              siteName={siteName}
               onLogin={() => navigateStorePath("/login", { from: "/profile" })}
               onRegister={() => navigateStorePath("/register", { from: "/profile" })}
             />
@@ -324,7 +372,7 @@ export default function Profile() {
                 progress={memberProgress}
                 assets={assetItems}
                 unreadCount={unreadCount}
-                onMessageClick={() => navigateFeature("notifications")}
+                onMessageClick={() => navigateStorePath("/notifications", { requireAuth: true, from: "/profile" })}
                 onMemberLevelClick={() => navigateFeature("memberBenefits")}
                 onProfileClick={() => navigateFeature("settings")}
                 onViewAllBenefits={() => navigateFeature("memberBenefits")}

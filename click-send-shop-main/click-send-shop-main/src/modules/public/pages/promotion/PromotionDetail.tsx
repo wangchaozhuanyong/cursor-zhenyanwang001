@@ -455,7 +455,7 @@ export default function PromotionDetail() {
               <h2 className="text-lg font-semibold text-[var(--theme-text)]">{t("promotion.couponRewards")}</h2>
               <p className="mt-1 text-sm text-[var(--theme-text-muted)]">{t("promotion.couponRewardsHint")}</p>
             </div>
-            <Link className="inline-flex items-center gap-2 rounded-full border border-[var(--theme-border)] px-4 py-2 text-sm font-medium text-[var(--theme-text)]" to={localizedPath("/coupons")}>
+            <Link className="store-v12-compact-cta inline-flex items-center gap-2 rounded-full border border-[var(--theme-border)] px-4 py-2 text-sm font-medium text-[var(--theme-text)]" to={localizedPath("/coupons")}>
               <TicketPercent size={16} />
               {t("promotion.goCoupons")}
             </Link>
@@ -488,7 +488,7 @@ export default function PromotionDetail() {
                     type="button"
                     disabled={actionState.disabled || claimingId === coupon.id}
                     onClick={() => void handleClaimCoupon(coupon)}
-                    className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full px-4 py-2"
+                    className="store-v12-compact-cta mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full px-4 py-2"
                   >
                     {claimingId === coupon.id ? <Loader2 size={16} className="animate-spin" /> : <TicketPercent size={16} />}
                     {claimingId === coupon.id ? t("promotion.claimingCoupon") : actionState.actionLabel}

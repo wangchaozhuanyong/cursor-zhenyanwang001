@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowRight, Clock3, ReceiptText, Users, WalletCards } from "lucide-react";
+import { ArrowRight, Clock3, ReceiptText, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
@@ -59,12 +59,6 @@ export default function Wallet() {
   return (
     <StoreAccountLayout title="返现余额" onBack={goBack} className="store-v12-page store-wallet-v12-page store-account-subpage-v12-page pb-8">
       <section className="store-wallet-v12-hero" aria-label="返现余额">
-        <div className="store-wallet-v12-hero__head">
-          <span className="store-wallet-v12-hero__icon" aria-hidden>
-            <WalletCards size={22} />
-          </span>
-          <span>返现余额</span>
-        </div>
         <p className="store-wallet-v12-hero__label">可用返现</p>
         <strong className="store-wallet-v12-hero__amount">
           {loading ? "RM --" : rewardsEnabled ? `RM ${money(rewardBalance)}` : "未开启"}

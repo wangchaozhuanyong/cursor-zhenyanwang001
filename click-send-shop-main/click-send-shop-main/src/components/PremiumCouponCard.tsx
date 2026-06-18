@@ -54,7 +54,7 @@ function resolveCouponTemplate(input: {
 function VerticalActionLabel({ label }: { label: string }) {
   const chars = Array.from(label);
   return (
-    <span className="inline-flex flex-col items-center justify-center gap-0 leading-none tracking-tight">
+    <span className="store-coupon-card__action-label store-coupon-card__action-label--vertical inline-flex flex-col items-center justify-center gap-0 leading-none tracking-tight">
       {chars.map((ch, i) => (
         <span key={`${ch}-${i}`} className="block text-[11px] font-semibold leading-[1.15]">
           {ch}
@@ -66,7 +66,7 @@ function VerticalActionLabel({ label }: { label: string }) {
 
 function HorizontalActionLabel({ label }: { label: string }) {
   return (
-    <span className="block max-w-full text-center text-[11px] font-bold leading-tight sm:text-xs">
+    <span className="store-coupon-card__action-label store-coupon-card__action-label--horizontal block max-w-full text-center text-[11px] font-bold leading-tight sm:text-xs">
       {label}
     </span>
   );
@@ -285,7 +285,6 @@ export default function PremiumCouponCard({
         skin.cardPadding,
         skin.gridClass,
         skin.shellClass,
-        disabled && "opacity-60",
         selected && "ring-2 ring-[var(--theme-primary)]",
         className,
       )}

@@ -114,7 +114,6 @@ export default function Returns() {
     {
       label: "全部售后",
       value: list.length,
-      hint: "退款/退货/换货/维修",
       icon: FileText,
     },
     {
@@ -123,19 +122,16 @@ export default function Returns() {
         const action = getBuyerReturnAction(item, locale);
         return action?.key === "evidence" || action?.key === "logistics" || action?.key === "confirm";
       }).length,
-      hint: "需补凭证或物流",
       icon: Clock3,
     },
     {
       label: "处理中",
       value: list.filter((item) => shouldShowReturnInFilter(item, "processing")).length,
-      hint: "商家审核/收货中",
       icon: RefreshCw,
     },
     {
       label: "已完成",
       value: list.filter((item) => item.status === "completed").length,
-      hint: "售后已结束",
       icon: PackageCheck,
     },
   ], [list, locale]);
@@ -195,7 +191,6 @@ export default function Returns() {
                 </span>
                 <strong>{item.value}</strong>
                 <span>{item.label}</span>
-                <small>{item.hint}</small>
               </div>
             );
           })}

@@ -25,7 +25,30 @@ import type { Product } from "@/types/product";
 
 const HISTORY_KEY = "search_history";
 const MAX_HISTORY = 10;
-const FALLBACK_HOT_TERMS = ["礼盒", "会员价", "本周热销", "RM 99 以下", "东马可送", "积分兑换"];
+const MAX_HOT_TERMS = 10;
+const PRIORITY_HOT_TERMS = ["正品香烟", "工作签证", "商业装修", "正品槟榔"];
+const FALLBACK_HOT_TERMS = [...PRIORITY_HOT_TERMS, "礼盒", "会员价", "本周热销", "RM 99 以下", "东马可送", "积分兑换"];
+
+function normalizeHotTerm(term: string): string {
+  return term.trim().replace(/\s+/g, " ");
+}
+
+function buildHotTermLabels(terms: HotSearchTerm[]): string[] {
+  const seen = new Set<string>();
+  const labels: string[] = [];
+  const pushTerm = (term: string) => {
+    const label = normalizeHotTerm(term);
+    const key = label.toLocaleLowerCase();
+    if (!label || seen.has(key)) return;
+    seen.add(key);
+    labels.push(label);
+  };
+
+  PRIORITY_HOT_TERMS.forEach(pushTerm);
+  const rankedTerms = terms.length > 0 ? terms.map((term) => term.keyword) : FALLBACK_HOT_TERMS;
+  rankedTerms.forEach(pushTerm);
+  return labels.slice(0, MAX_HOT_TERMS);
+}
 
 function getHistory(): string[] {
   try {
@@ -180,7 +203,7 @@ export default function Search() {
     commitSearch(query);
   }, [commitSearch, query]);
 
-  const hotTermLabels = hotTerms.length > 0 ? hotTerms.map((term) => term.keyword) : FALLBACK_HOT_TERMS;
+  const hotTermLabels = useMemo(() => buildHotTermLabels(hotTerms), [hotTerms]);
   const shouldShowSuggestions = query.trim().length > 0 && suggestions.length > 0 && query.trim() !== submittedQuery.trim();
   const shouldShowDiscovery = !submittedQuery.trim();
   const siteName = siteInfo.siteName || STORE_COPY.brandName;

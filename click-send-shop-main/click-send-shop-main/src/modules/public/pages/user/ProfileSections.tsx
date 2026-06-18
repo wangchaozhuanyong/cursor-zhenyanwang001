@@ -232,11 +232,9 @@ export function ProfileHeroCard({
 }
 
 export function ProfileGuestCard({
-  siteName,
   onLogin,
   onRegister,
 }: {
-  siteName: string;
   onLogin: () => void;
   onRegister: () => void;
 }) {
@@ -254,7 +252,14 @@ export function ProfileGuestCard({
         <span className="profile-guest-avatar" aria-hidden="true">?</span>
         <div className="profile-vip-copy">
           <p className="profile-vip-name profile-guest-title">未登录</p>
-          <p className="profile-guest-desc">登录后同步 {siteName} 订单、优惠和会员权益</p>
+        </div>
+        <div className="profile-guest-auth-actions" aria-label="登录注册入口">
+          <UnifiedButton type="button" onClick={onLogin} className="profile-vip-action profile-vip-action--gold">
+            登录
+          </UnifiedButton>
+          <UnifiedButton type="button" onClick={onRegister} className="profile-vip-action profile-vip-action--ghost">
+            注册
+          </UnifiedButton>
         </div>
       </div>
       <div className="profile-guest-highlights" aria-label="登录后可用能力">
@@ -267,14 +272,6 @@ export function ProfileGuestCard({
             <small>{item.desc}</small>
           </div>
         ))}
-      </div>
-      <div className="profile-vip-actions">
-        <UnifiedButton type="button" onClick={onLogin} className="profile-vip-action profile-vip-action--gold">
-          登录
-        </UnifiedButton>
-        <UnifiedButton type="button" onClick={onRegister} className="profile-vip-action profile-vip-action--ghost">
-          注册
-        </UnifiedButton>
       </div>
     </section>
   );

@@ -28,6 +28,7 @@ import type { PromotionType, StorefrontPromotion } from "@/services/marketingSer
 type PromotionFilter = PromotionType | "";
 const PROMOTIONS_BASE_PATH = "/promotions";
 const PROMOTION_LIST_TTL_MS = 5 * 60 * 1000;
+const PROMOTION_LOADING_CARD_COUNT = 3;
 
 const promotionListCache = new Map<string, { list: StorefrontPromotion[]; cachedAt: number }>();
 
@@ -363,19 +364,22 @@ function PromotionStatePanel({
   );
 }
 
-function PromotionSkeleton() {
+function PromotionSkeleton({ className = "" }: { className?: string }) {
   return (
-    <div className="store-promotions-v12-card store-promotions-v12-card--poster rounded-[1.1rem] border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3.5">
-      <div className="flex items-center justify-between gap-3">
-        <div className="skeleton-base skeleton-shimmer h-6 w-20 rounded-full" />
-        <div className="skeleton-base skeleton-shimmer h-6 w-14 rounded-full" />
-      </div>
-      <div className="mt-3 space-y-2">
-        <div className="skeleton-base skeleton-shimmer h-4 w-24 rounded-full" />
-        <div className="skeleton-base skeleton-shimmer h-6 w-4/5 rounded" />
-        <div className="skeleton-base skeleton-shimmer h-4 w-24 rounded-full" />
-        <div className="skeleton-base skeleton-shimmer h-4 w-full rounded" />
-        <div className="skeleton-base skeleton-shimmer h-4 w-3/5 rounded" />
+    <div className={cn("store-promotions-v12-card store-promotions-v12-card--poster rounded-[1.1rem] border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3.5", className)}>
+      <div className="store-promotions-v12-card__media skeleton-base skeleton-shimmer block aspect-[16/9] overflow-hidden rounded-[14px]" />
+      <div className="mt-3">
+        <div className="flex items-center justify-between gap-3">
+          <div className="skeleton-base skeleton-shimmer h-6 w-20 rounded-full" />
+          <div className="skeleton-base skeleton-shimmer h-6 w-14 rounded-full" />
+        </div>
+        <div className="mt-3 space-y-2">
+          <div className="skeleton-base skeleton-shimmer h-4 w-24 rounded-full" />
+          <div className="skeleton-base skeleton-shimmer h-6 w-4/5 rounded" />
+          <div className="skeleton-base skeleton-shimmer h-4 w-24 rounded-full" />
+          <div className="skeleton-base skeleton-shimmer h-4 w-full rounded" />
+          <div className="skeleton-base skeleton-shimmer h-4 w-3/5 rounded" />
+        </div>
       </div>
     </div>
   );
@@ -543,7 +547,9 @@ export default function Promotions() {
 
         {showFullSkeleton ? (
           <section className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3" aria-busy="true" aria-label={t("common.loadingPromotions")}>
-            {Array.from({ length: 6 }).map((_, index) => <PromotionSkeleton key={index} />)}
+            {Array.from({ length: PROMOTION_LOADING_CARD_COUNT }).map((_, index) => (
+              <PromotionSkeleton key={index} className={index > 0 ? "hidden sm:block" : ""} />
+            ))}
           </section>
         ) : error && list.length === 0 ? (
           <PromotionStatePanel kind="error" onRetry={() => void load()} />

@@ -21,6 +21,7 @@ import {
   ShieldCheck,
   Smartphone,
   Sparkles,
+  Tag,
   Ticket,
   Wine,
 } from "lucide-react";
@@ -44,6 +45,8 @@ const ICON_TOKENS = {
   local: MapPin,
   deals: BadgePercent,
   deal: BadgePercent,
+  tag: Tag,
+  tags: Tag,
   coupon: Ticket,
   coupons: Ticket,
   new: Sparkles,

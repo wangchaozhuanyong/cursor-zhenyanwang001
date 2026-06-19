@@ -4,8 +4,16 @@ import { cn } from "@/lib/utils";
 import { startGlobalLoadingImmediate, stopGlobalLoading, subscribeGlobalLoading } from "@/lib/loadingProgress";
 
 type BarState = { progress: number; visible: boolean; animatingOut: boolean };
+type RouterLoadingLocation = ReturnType<typeof useLocation>;
+type RouterLoadingBridgeProps = {
+  getRouteKey?: (location: RouterLoadingLocation) => string | null;
+};
 
 const INITIAL_STATE: BarState = { progress: 0, visible: false, animatingOut: false };
+
+function defaultRouteKey(location: RouterLoadingLocation) {
+  return `${location.pathname}${location.search}`;
+}
 
 export function TopProgressBar() {
   const [state, setState] = useState<BarState>(INITIAL_STATE);
@@ -35,8 +43,9 @@ export function TopProgressBar() {
   );
 }
 
-export function RouterLoadingBridge() {
+export function RouterLoadingBridge({ getRouteKey = defaultRouteKey }: RouterLoadingBridgeProps = {}) {
   const location = useLocation();
+  const routeKey = getRouteKey(location);
   const mountedRef = useRef(false);
   const tokenRef = useRef<symbol | null>(null);
 
@@ -50,6 +59,8 @@ export function RouterLoadingBridge() {
       stopGlobalLoading(tokenRef.current);
       tokenRef.current = null;
     }
+
+    if (!routeKey) return;
 
     const token = startGlobalLoadingImmediate();
     tokenRef.current = token;
@@ -74,7 +85,7 @@ export function RouterLoadingBridge() {
       window.cancelAnimationFrame(frameTwo);
       window.clearTimeout(finishTimer);
     };
-  }, [location.pathname, location.search]);
+  }, [routeKey]);
 
   useEffect(() => () => {
     if (tokenRef.current) {

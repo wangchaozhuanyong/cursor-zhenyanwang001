@@ -33,6 +33,7 @@ import { queryClient } from "@/lib/queryClient";
 import { buildSiteFaviconLinkTargets, rememberSiteFaviconUrl } from "@/utils/siteBrandAssets";
 import { POINTS_GIFT_REDEEM_CLIENT_ENABLED } from "@/constants/pointsClientFeatures";
 import { scheduleIdleTask } from "@/utils/idleScheduler";
+import { isStoreTabPath } from "@/utils/storeBottomInset";
 import { NEW_ARRIVAL_CATEGORY_PATH } from "@/constants/newArrivalNavigation";
 import {
   getRememberedStoreScrollPosition,
@@ -75,6 +76,11 @@ const SonnerToaster = lazy(() => import("@/components/ui/sonner").then((module) 
 const RouteAnalyticsTracker = lazy(() => import("@/components/RouteAnalyticsTracker"));
 const ChinaBrowserCompatNotice = lazy(() => import("@/components/ChinaBrowserCompatNotice"));
 const PwaUpdateToast = lazy(() => import("@/components/PwaUpdateToast"));
+
+function getStoreProgressRouteKey(location: { pathname: string; search: string }) {
+  if (isStoreTabPath(location.pathname)) return null;
+  return `${location.pathname}${location.search}`;
+}
 
 function shouldDeferNonCriticalWidgets(pathname: string) {
   return !/^\/(cart|checkout|orders|payment|login)(\/|$)/.test(stripPublicLocaleFromPathname(pathname));
@@ -573,7 +579,7 @@ function MainStoreRoutes() {
         <ModalLayerProvider>
           <DownloadConfirmProvider>
             <TopProgressBar />
-            <RouterLoadingBridge />
+            <RouterLoadingBridge getRouteKey={getStoreProgressRouteKey} />
             <AuthSessionSync />
             <SiteIdentitySync />
             <ReferralInviteSync />

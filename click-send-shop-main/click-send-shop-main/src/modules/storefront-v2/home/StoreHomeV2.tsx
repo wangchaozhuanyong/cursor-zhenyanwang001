@@ -468,11 +468,11 @@ function HomeBuyingStatusBoard({
     },
     {
       key: "pricing",
-      label: couponEnabled ? "优惠确认" : "价格确认",
-      value: "系统",
-      desc: couponEnabled ? "结算页确认可用优惠" : "结算页确认金额",
+      label: couponEnabled ? "可用优惠" : "金额确认",
+      value: couponEnabled ? "优惠" : "结算",
+      desc: couponEnabled ? "下单前查看活动与券" : "下单前核对金额",
       icon: ShieldCheck,
-      path: couponEnabled ? "/promotions" : "/categories",
+      path: couponEnabled ? "/coupons" : "/categories",
     },
   ];
 

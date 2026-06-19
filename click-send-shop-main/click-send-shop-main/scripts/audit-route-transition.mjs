@@ -14,7 +14,7 @@ const SAMPLE_INTERVAL_MS = Number(process.env.ROUTE_AUDIT_SAMPLE_INTERVAL_MS || 
 const SAMPLE_WINDOW_MS = Number(process.env.ROUTE_AUDIT_SAMPLE_WINDOW_MS || "920");
 const NEW_ARRIVAL_CATEGORY_PATH = "/categories?is_new=1&home_new_arrivals_rule=1";
 
-const publicRoutes = ["/", "/categories", "/cart", "/profile", "/search", NEW_ARRIVAL_CATEGORY_PATH];
+const publicRoutes = ["/", "/categories", "/promotions", "/cart", "/profile", "/search", NEW_ARRIVAL_CATEGORY_PATH];
 const adminRoutes = ["/admin", "/admin/products", "/admin/orders", "/admin/settings/theme"];
 
 const issues = [];
@@ -425,7 +425,7 @@ async function auditPublicMobile(browser, baseUrl) {
   await waitForRouteSettle(page, "/");
 
   const results = [];
-  for (const path of ["/categories", "/cart", "/profile", "/search", "/"]) {
+  for (const path of ["/categories", "/promotions", "/cart", "/profile", "/search", "/"]) {
     results.push(await auditTransition(page, `public-mobile ${path}`, path, { scope: "store", viewport: "mobile" }));
   }
   await context.close();
@@ -444,7 +444,7 @@ async function auditPublicDesktop(browser, baseUrl) {
   await waitForRouteSettle(page, "/");
 
   const results = [];
-  for (const path of ["/categories", NEW_ARRIVAL_CATEGORY_PATH, "/search", "/"]) {
+  for (const path of ["/categories", "/promotions", NEW_ARRIVAL_CATEGORY_PATH, "/search", "/"]) {
     results.push(await auditTransition(page, `public-desktop ${path}`, path, { scope: "store", viewport: "desktop" }));
   }
 

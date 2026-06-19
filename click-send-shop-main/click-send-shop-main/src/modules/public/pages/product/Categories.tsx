@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef, type FormEvent } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { ChevronDown, LayoutGrid, Search, ShieldCheck, SlidersHorizontal, X } from "lucide-react";
 import { useProductStore } from "@/stores/useProductStore";
 import { STORE_COPY } from "@/constants/storeCopy";
@@ -51,7 +51,6 @@ export default function Categories() {
     [siteCapabilities.restrictedProductComplianceEnabled, siteInfo],
   );
   const { viewMode, setViewMode } = useCategoryListView();
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const syncedSearchKeyRef = useRef(searchParams.toString());
   const syncingFromUrlRef = useRef(false);
@@ -182,11 +181,6 @@ export default function Categories() {
   const handleTopSearchSubmit = useCallback((nextValue?: string) => {
     setSubmittedQuery((nextValue ?? query).trim());
   }, [query]);
-
-  const openSearchPage = useCallback((nextValue?: string) => {
-    const keyword = (nextValue ?? query).trim();
-    navigate(keyword ? `/search?keyword=${encodeURIComponent(keyword)}` : "/search");
-  }, [navigate, query]);
 
   const handleClearTopSearch = useCallback(() => {
     setQuery("");
@@ -556,7 +550,6 @@ export default function Categories() {
           hasActiveSearchFilters={activeSearchFilterCount > 0}
           onQueryChange={setQuery}
           onSubmit={handleTopSearchSubmit}
-          onOpenSearch={openSearchPage}
           onClearSearch={handleClearTopSearch}
           onResetFilters={clearFilters}
         />
@@ -590,7 +583,6 @@ export default function Categories() {
                   hasActiveSearchFilters={activeSearchFilterCount > 0}
                   onQueryChange={setQuery}
                   onSubmit={handleTopSearchSubmit}
-                  onOpenSearch={openSearchPage}
                   onClearSearch={handleClearTopSearch}
                   onResetFilters={clearFilters}
                 />
@@ -848,7 +840,6 @@ function CategorySearchHero({
   hasActiveSearchFilters,
   onQueryChange,
   onSubmit,
-  onOpenSearch,
   onClearSearch,
   onResetFilters,
 }: {
@@ -862,21 +853,22 @@ function CategorySearchHero({
   hasActiveSearchFilters: boolean;
   onQueryChange: (value: string) => void;
   onSubmit: (value?: string) => void;
-  onOpenSearch?: (value?: string) => void;
   onClearSearch: () => void;
   onResetFilters: () => void;
 }) {
   const inputId = `category-search-${variant}`;
+  const suggestionsId = `${inputId}-suggestions`;
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
   const allAction = quickActions.find((action) => action.key === "all");
-  const isMobile = variant === "mobile";
+  const visibleSuggestions = quickActions.filter((action) => action.key !== "all").slice(0, 4);
+  const trimmedQuery = query.trim();
+  const showSuggestions = suggestionsOpen && (visibleSuggestions.length > 0 || trimmedQuery);
 
   const submitCurrentQuery = () => {
-    if (isMobile && onOpenSearch) {
-      onOpenSearch(inputRef.current?.value ?? query);
-      return;
-    }
-    onSubmit(inputRef.current?.value ?? query);
+    const value = inputRef.current?.value ?? query;
+    onSubmit(value);
+    setSuggestionsOpen(false);
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -893,7 +885,11 @@ function CategorySearchHero({
       </div>
 
       <div className="store-category-search-hero__panel">
-        <form className="store-category-search-dock" onSubmit={handleSubmit} aria-label="分类页搜索">
+        <form
+          className={cn("store-category-search-dock", suggestionsOpen && "is-focused", trimmedQuery && "has-query")}
+          onSubmit={handleSubmit}
+          aria-label="分类页搜索"
+        >
           <UnifiedButton
             type="button"
             className="store-category-search-scope"
@@ -912,10 +908,17 @@ function CategorySearchHero({
               name="categoryKeyword"
               type="search"
               value={query}
-              readOnly={isMobile}
-              onClick={isMobile ? () => onOpenSearch?.(query) : undefined}
-              onFocus={isMobile ? () => onOpenSearch?.(query) : undefined}
-              onChange={isMobile ? undefined : (event) => onQueryChange(event.target.value)}
+              aria-expanded={showSuggestions}
+              aria-controls={showSuggestions ? suggestionsId : undefined}
+              onClick={() => setSuggestionsOpen(true)}
+              onFocus={() => setSuggestionsOpen(true)}
+              onBlur={() => {
+                setTimeout(() => setSuggestionsOpen(false), 120);
+              }}
+              onChange={(event) => {
+                onQueryChange(event.target.value);
+                setSuggestionsOpen(true);
+              }}
               onKeyDown={(event) => {
                 if (event.key === "Enter") {
                   event.preventDefault();
@@ -942,7 +945,51 @@ function CategorySearchHero({
           </UnifiedButton>
         </form>
 
-        {!isMobile ? (
+        {showSuggestions ? (
+          <div
+            id={suggestionsId}
+            className="store-category-search-suggestions"
+            role="listbox"
+            aria-label="搜索建议"
+            onMouseDown={(event) => event.preventDefault()}
+          >
+            {trimmedQuery ? (
+              <UnifiedButton
+                type="button"
+                className="store-category-search-suggestion-primary"
+                onClick={submitCurrentQuery}
+                role="option"
+              >
+                <Search size={14} aria-hidden />
+                搜索「{trimmedQuery}」
+              </UnifiedButton>
+            ) : null}
+            {visibleSuggestions.length > 0 ? (
+              <div className="store-category-search-suggestion-group">
+                <span className="store-category-search-suggestion-label">热门入口</span>
+                <div className="store-category-search-suggestion-list">
+                  {visibleSuggestions.map((action) => (
+                    <UnifiedButton
+                      key={action.key}
+                      type="button"
+                      className={cn("store-category-search-suggestion-chip", action.active && "is-active")}
+                      aria-pressed={action.active}
+                      onClick={() => {
+                        action.onClick();
+                        setSuggestionsOpen(false);
+                      }}
+                      role="option"
+                    >
+                      {action.label}
+                    </UnifiedButton>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+
+        {variant === "desktop" ? (
           <div className="store-category-search-meta">
             <div className="store-category-search-actions" role="group" aria-label="快速筛选">
               {quickActions.map((action) => (

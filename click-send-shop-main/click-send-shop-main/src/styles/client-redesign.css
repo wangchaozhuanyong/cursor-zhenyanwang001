@@ -5517,19 +5517,26 @@ html[data-app-scope="store"] .store-v12-page :where(a, button).rounded-full:wher
 
 html[data-app-scope="store"] .store-home-v12-shelf__action {
   display: inline-flex;
+  min-width: 84px;
   min-height: 32px;
   height: 32px;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 5px;
+  border: 1px solid color-mix(in srgb, var(--theme-primary) 18%, transparent);
   border-radius: 999px;
-  background: color-mix(in srgb, var(--theme-primary) 8%, var(--theme-surface));
-  padding: 0 10px;
-  color: var(--theme-primary);
+  background: var(--theme-primary);
+  box-shadow: 0 10px 22px color-mix(in srgb, var(--theme-primary) 18%, transparent);
+  padding: 0 12px;
+  color: #ffffff;
   font-size: 12px;
-  font-weight: 860;
+  font-weight: 760;
   line-height: 1;
   white-space: nowrap;
+}
+
+html[data-app-scope="store"] .store-home-v12-shelf__action svg {
+  flex: 0 0 auto;
 }
 
 html[data-app-scope="store"] .store-home-v12-shelf__stats {
@@ -5851,10 +5858,9 @@ html[data-app-scope="store"] [data-store-home-version="v2"] .store-home-v4-campa
 }
 
 html[data-app-scope="store"] [data-store-home-version="v2"] .store-home-v4-campaigns--festive .store-home-v12-shelf__action {
-  min-width: 4.75rem;
-  background: linear-gradient(135deg, var(--theme-price), color-mix(in srgb, var(--theme-price) 70%, var(--client-gold)));
-  color: var(--theme-price-foreground);
-  box-shadow: 0 10px 22px -16px var(--theme-price);
+  background: var(--theme-primary);
+  color: #ffffff;
+  box-shadow: 0 10px 22px color-mix(in srgb, var(--theme-primary) 18%, transparent);
 }
 
 html[data-app-scope="store"] [data-store-home-version="v2"] .store-home-v4-campaign-grid {
@@ -8441,6 +8447,12 @@ html[data-app-scope="store"] .store-home-v12-shelf__empty {
     min-width: 78px;
     min-height: 32px;
     height: 32px;
+    font-size: 11.5px;
+    padding: 0 10px;
+  }
+
+  html[data-app-scope="store"] .store-home-v12-shelf__action {
+    min-width: 78px;
     font-size: 11.5px;
     padding: 0 10px;
   }

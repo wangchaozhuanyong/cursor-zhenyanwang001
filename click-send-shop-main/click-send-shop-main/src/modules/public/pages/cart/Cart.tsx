@@ -320,9 +320,6 @@ export default function Cart() {
                           {t("cart.loginSyncTitle")}
                         </p>
                       </div>
-                      <p className="mt-1 text-xs leading-5 text-[var(--theme-text-muted)]">
-                        {t("cart.loginSyncDesc")}
-                      </p>
                     </div>
                   </div>
                   <UnifiedButton

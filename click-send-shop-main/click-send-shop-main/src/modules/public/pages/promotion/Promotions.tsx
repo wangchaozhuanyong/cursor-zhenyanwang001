@@ -388,10 +388,29 @@ export default function Promotions() {
     return FILTERABLE_PROMOTION_TYPES.includes(raw as PromotionType) ? raw as PromotionType : "";
   }, [searchParams]);
   const initialCache = useMemo(() => readPromotionListCache(selectedType), [selectedType]);
+  const initialSummaryCache = useMemo(() => readPromotionListCache(""), []);
   const [list, setList] = useState<StorefrontPromotion[]>(() => initialCache?.list || []);
+  const [summaryList, setSummaryList] = useState<StorefrontPromotion[]>(() => initialSummaryCache?.list || []);
   const [loading, setLoading] = useState(() => !initialCache);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
+
+  const loadSummary = useCallback(async () => {
+    const cached = readPromotionListCache("");
+    if (cached) {
+      setSummaryList(cached.list);
+      return;
+    }
+
+    try {
+      const promotionResult = await marketingService.fetchPromotions({ pageSize: 60, type: "" });
+      const nextList = promotionResult.list || [];
+      writePromotionListCache("", nextList);
+      setSummaryList(nextList);
+    } catch {
+      setSummaryList((current) => current);
+    }
+  }, []);
 
   const load = useCallback(async () => {
     const cached = readPromotionListCache(selectedType);
@@ -409,6 +428,9 @@ export default function Promotions() {
       const nextList = promotionResult.list || [];
       writePromotionListCache(selectedType, nextList);
       setList(nextList);
+      if (!selectedType) {
+        setSummaryList(nextList);
+      }
     } catch {
       setList((current) => current.length > 0 ? current : []);
       setError(t("promotion.errorFallback"));
@@ -422,12 +444,20 @@ export default function Promotions() {
     void load();
   }, [load]);
 
-  const summary = useMemo(() => ({
-    active: list.filter((item) => item.runtime_status === "active").length,
-    coupon: list.filter((item) => item.type === "coupon").length,
-    flash: list.filter((item) => item.type === "flash_sale" || item.type === "limited_time_discount").length,
-    member: list.filter((item) => ["member_price", "points_reward", "checkin_reward"].includes(item.type)).length,
-  }), [list]);
+  useEffect(() => {
+    if (selectedType) {
+      void loadSummary();
+    }
+  }, [loadSummary, selectedType]);
+
+  const summary = useMemo(() => {
+    const summarySource = summaryList.length > 0 ? summaryList : selectedType ? [] : list;
+    return {
+      active: summarySource.filter((item) => item.runtime_status === "active").length,
+      coupon: summarySource.filter((item) => item.type === "coupon").length,
+      flash: summarySource.filter((item) => item.type === "flash_sale" || item.type === "limited_time_discount").length,
+    };
+  }, [list, selectedType, summaryList]);
   const activeFilterKey = filterScrollKey(selectedType);
   const { containerRef: filtersRef, setItemRef: setFilterRef, scrollToKey: scrollFilterToKey } =
     useHorizontalActiveScroll<HTMLElement, HTMLAnchorElement>(activeFilterKey, FILTERS.length);

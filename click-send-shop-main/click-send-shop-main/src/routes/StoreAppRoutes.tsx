@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Navigate, Outlet, Route, Routes, useLocation, useNavigationType, useParams } from "react-router-dom";
-import { TopProgressBar } from "@/components/ui/top-progress-bar";
+import { RouterLoadingBridge, TopProgressBar } from "@/components/ui/top-progress-bar";
 import AppRouteFallback, { DelayedRouteFallback, HomeShellSkeleton, StoreOutletFallback } from "@/components/AppRouteFallback";
 import AppBootReady from "@/components/AppBootReady";
 import RouteSeoGuard from "@/components/RouteSeoGuard";
@@ -59,6 +59,15 @@ const CARD_EQUAL_MOBILE_FIX_STYLE_ID = "store-card-equal-mobile-fix";
 const GLOBAL_WIDGET_DELAY_MS = 9000;
 const PRIVACY_TRACKING_DELAY_MS = 1000;
 const ENABLE_LEGACY_CARD_OVERLAP_FIX = false;
+const CRITICAL_STORE_ROUTE_PRELOADS = [
+  "/categories",
+  "/promotions",
+  "/cart",
+  "/profile",
+  "/search",
+  "/coupons",
+  "/help",
+];
 
 const CookieConsentBanner = lazy(() => import("@/components/CookieConsentBanner"));
 const TrackingManager = lazy(() => import("@/components/TrackingManager"));
@@ -195,6 +204,38 @@ function ReferralInviteSync() {
   useEffect(() => {
     syncLockedInviteCodeBySearch(location.search);
   }, [location.search]);
+  return null;
+}
+
+function StoreCriticalRoutePreloader() {
+  useEffect(() => {
+    let cancelled = false;
+    const timers = new Set<number>();
+    const cancelIdle = scheduleIdleTask("store-critical-route-preload", () => {
+      void import("@/utils/storeRoutePreload").then(({ preloadStoreRoute }) => {
+        if (cancelled) return;
+        CRITICAL_STORE_ROUTE_PRELOADS.forEach((path, index) => {
+          const timer = window.setTimeout(() => {
+            timers.delete(timer);
+            preloadStoreRoute(path, "idle");
+          }, index * 120);
+          timers.add(timer);
+        });
+      }).catch(() => undefined);
+    }, {
+      delayMs: 650,
+      timeoutMs: 2500,
+      jitterMs: 450,
+    });
+
+    return () => {
+      cancelled = true;
+      cancelIdle();
+      timers.forEach((timer) => window.clearTimeout(timer));
+      timers.clear();
+    };
+  }, []);
+
   return null;
 }
 
@@ -530,62 +571,64 @@ function MainStoreRoutes() {
     <ErrorBoundary resetKey={`${location.pathname}${location.search}`}>
       <QueryClientProvider client={queryClient}>
         <ModalLayerProvider>
-        <DownloadConfirmProvider>
-          <TopProgressBar />
-          <AuthSessionSync />
-          <SiteIdentitySync />
-          <ReferralInviteSync />
-          <StoreScrollRestoration />
-          <StorePerformanceDiagnostics />
-          <AnalyticsCapabilitySync />
-          <PwaStandaloneAnalytics />
-          <AppScopeSync />
-          <RouteBackTracker />
-          <RouteSeoGuard />
-          <LanguageGate />
-          <AgeGate />
-          {ENABLE_LEGACY_CARD_OVERLAP_FIX ? <StoreCardOverlapFix /> : null}
-          <Suspense fallback={<DelayedRouteFallback fallback={<StoreOutletFallback />} delayMs={180} />}>
-            <AppBootReady />
-            <Routes>
-              {renderFrontLayoutRoutes(capabilities)}
-              {renderStandalonePublicRoutes(capabilities)}
+          <DownloadConfirmProvider>
+            <TopProgressBar />
+            <RouterLoadingBridge />
+            <AuthSessionSync />
+            <SiteIdentitySync />
+            <ReferralInviteSync />
+            <StoreCriticalRoutePreloader />
+            <StoreScrollRestoration />
+            <StorePerformanceDiagnostics />
+            <AnalyticsCapabilitySync />
+            <PwaStandaloneAnalytics />
+            <AppScopeSync />
+            <RouteBackTracker />
+            <RouteSeoGuard />
+            <LanguageGate />
+            <AgeGate />
+            {ENABLE_LEGACY_CARD_OVERLAP_FIX ? <StoreCardOverlapFix /> : null}
+            <Suspense fallback={<DelayedRouteFallback fallback={<StoreOutletFallback />} delayMs={320} />}>
+              <AppBootReady />
+              <Routes>
+                {renderFrontLayoutRoutes(capabilities)}
+                {renderStandalonePublicRoutes(capabilities)}
 
-              <Route path="/:locale" element={<PublicLocaleRouteScope multilingualEnabled={capabilities.storefrontMultilingualEnabled} />}>
-                {renderFrontLayoutRoutes(capabilities, true)}
-                {renderStandalonePublicRoutes(capabilities, true)}
+                <Route path="/:locale" element={<PublicLocaleRouteScope multilingualEnabled={capabilities.storefrontMultilingualEnabled} />}>
+                  {renderFrontLayoutRoutes(capabilities, true)}
+                  {renderStandalonePublicRoutes(capabilities, true)}
+                  <Route path="*" element={<NotFound />} />
+                </Route>
+
+                <Route path="/admin/*" element={<NotFound />} />
                 <Route path="*" element={<NotFound />} />
-              </Route>
-
-              <Route path="/admin/*" element={<NotFound />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Suspense>
-          <DeferredGlobalMount delayMs={PRIVACY_TRACKING_DELAY_MS}>
-            <Suspense fallback={null}>
-              <SonnerToaster />
+              </Routes>
             </Suspense>
-          </DeferredGlobalMount>
-          <DeferredGlobalMount delayMs={nonCriticalWidgetDelayMs}>
-            <Suspense fallback={null}>
-              <TrackingManager />
-            </Suspense>
-          </DeferredGlobalMount>
-          {!suppressMarketingPopups ? (
-          <DeferredGlobalMount delayMs={nonCriticalWidgetDelayMs}>
-            <Suspense fallback={null}>
-              <CookieConsentBanner />
-              <PwaUpdateToast />
-            </Suspense>
-          </DeferredGlobalMount>
-          ) : null}
-          <DeferredGlobalMount delayMs={nonCriticalWidgetDelayMs}>
-            <Suspense fallback={null}>
-              {capabilities.trafficAnalyticsEnabled ? <RouteAnalyticsTracker /> : null}
-              <ChinaBrowserCompatNotice />
-            </Suspense>
-          </DeferredGlobalMount>
-        </DownloadConfirmProvider>
+            <DeferredGlobalMount delayMs={PRIVACY_TRACKING_DELAY_MS}>
+              <Suspense fallback={null}>
+                <SonnerToaster />
+              </Suspense>
+            </DeferredGlobalMount>
+            <DeferredGlobalMount delayMs={nonCriticalWidgetDelayMs}>
+              <Suspense fallback={null}>
+                <TrackingManager />
+              </Suspense>
+            </DeferredGlobalMount>
+            {!suppressMarketingPopups ? (
+              <DeferredGlobalMount delayMs={nonCriticalWidgetDelayMs}>
+                <Suspense fallback={null}>
+                  <CookieConsentBanner />
+                  <PwaUpdateToast />
+                </Suspense>
+              </DeferredGlobalMount>
+            ) : null}
+            <DeferredGlobalMount delayMs={nonCriticalWidgetDelayMs}>
+              <Suspense fallback={null}>
+                {capabilities.trafficAnalyticsEnabled ? <RouteAnalyticsTracker /> : null}
+                <ChinaBrowserCompatNotice />
+              </Suspense>
+            </DeferredGlobalMount>
+          </DownloadConfirmProvider>
         </ModalLayerProvider>
       </QueryClientProvider>
     </ErrorBoundary>

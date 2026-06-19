@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ShieldCheck, Truck, Wallet } from "lucide-react";
+import SeoHead from "@/components/SeoHead";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { isLoyaltyFeatureEnabled } from "@/utils/loyaltyFeatureVisibility";
@@ -351,6 +352,10 @@ export default function Profile() {
 
   return (
     <div className="store-page store-page-shell store-v12-page store-profile-v12-page store-profile-page client-profile-page store-bottom-safe text-[var(--theme-text)]">
+      <SeoHead
+        title={`我的｜${siteInfo.siteName || "大马通"}`}
+        description="查看订单、购物服务、会员权益和账户功能。"
+      />
       <main className="client-profile-layout mx-auto grid w-full max-w-screen-xl gap-4 px-[var(--store-page-x)] pb-5 pt-2 sm:px-4 sm:pt-3 md:max-w-5xl md:gap-5 md:px-6 md:pb-8 md:pt-4 lg:max-w-6xl lg:grid-cols-[220px_minmax(0,1fr)] lg:items-start lg:gap-6 xl:max-w-screen-xl xl:grid-cols-[240px_minmax(0,1fr)] xl:gap-8 xl:px-8 xl:pb-12 xl:pt-4">
         <aside className="client-profile-sidebar hidden lg:block">
           <StoreAccountNav className="sticky top-[var(--store-tablet-sticky-top)] xl:top-[var(--store-desktop-sticky-top)]" />

@@ -1,6 +1,6 @@
 import React, { lazy, Suspense, useEffect } from "react";
 import { Outlet, useLocation } from "react-router-dom";
-import { DelayedRouteFallback, StoreTabContentFallback } from "@/components/AppRouteFallback";
+import { DelayedRouteFallback } from "@/components/AppRouteFallback";
 import FrontPageTransition from "@/components/FrontPageTransition";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import StoreShell from "@/layouts/StoreShell";
@@ -35,7 +35,7 @@ const FrontLayout = React.forwardRef<HTMLDivElement>((_, ref) => {
       <StoreShell>
         <div className="relative isolate w-full">
           <FrontPageTransition>
-            <Suspense fallback={<DelayedRouteFallback fallback={<StoreTabContentFallback />} delayMs={140} />}>
+            <Suspense fallback={<DelayedRouteFallback fallback={null} delayMs={260} />}>
               <Outlet />
             </Suspense>
           </FrontPageTransition>

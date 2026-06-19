@@ -16,7 +16,6 @@ import { stripPublicLocaleFromPathname, usePublicLocale } from "@/i18n/publicLoc
 
 /** 轻触允许的最大位移（px）；略放宽，避免「刚滑完页面就点底栏」被误判为滑动 */
 const TAP_MOVE_THRESHOLD = 28;
-const TAB_PRELOAD_WAIT_MS = 180;
 type ActivePointer = {
   path: string;
   pointerId: number;
@@ -32,13 +31,6 @@ function preloadTabRoute(path: string) {
 
 function preloadIdleTabRoute(path: string) {
   preloadStoreRoute(path, "idle");
-}
-
-function waitForTabWarmup(path: string) {
-  return Promise.race([
-    preloadTabRoute(path),
-    new Promise<void>((resolve) => window.setTimeout(resolve, TAB_PRELOAD_WAIT_MS)),
-  ]).catch(() => undefined);
 }
 
 export default function BottomNav() {
@@ -102,12 +94,11 @@ export default function BottomNav() {
     if (last && last.path === path && now - last.at < 400) return;
     lastNavTapRef.current = { path, at: now };
     setPendingPath(path);
-    void waitForTabWarmup(path).finally(() => {
-      handleNavigate(path);
-      window.setTimeout(() => {
-        setPendingPath((value) => (value === path ? null : value));
-      }, 900);
-    });
+    void preloadTabRoute(path);
+    handleNavigate(path);
+    window.setTimeout(() => {
+      setPendingPath((value) => (value === path ? null : value));
+    }, 900);
   }, [handleNavigate]);
 
   if (shouldHideBottomNav(location.pathname)) return null;

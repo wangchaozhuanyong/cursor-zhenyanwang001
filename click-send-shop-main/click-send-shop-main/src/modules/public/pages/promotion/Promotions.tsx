@@ -341,6 +341,7 @@ function PromotionStatePanel({
       </span>
       <div className="store-promotions-v12-state-panel__copy">
         <h2>{isError ? t("promotion.errorFallback") : t("promotion.emptyTitle")}</h2>
+        <p>{isError ? t("promotion.errorActionHint") : t("promotion.emptyHint")}</p>
       </div>
       <div className="store-promotions-v12-state-panel__actions">
         {isError ? (
@@ -390,8 +391,9 @@ export default function Promotions() {
   const initialCache = useMemo(() => readPromotionListCache(selectedType), [selectedType]);
   const initialSummaryCache = useMemo(() => readPromotionListCache(""), []);
   const [list, setList] = useState<StorefrontPromotion[]>(() => initialCache?.list || []);
-  const [summaryList, setSummaryList] = useState<StorefrontPromotion[]>(() => initialSummaryCache?.list || []);
+  const [summaryList, setSummaryList] = useState<StorefrontPromotion[]>(() => initialSummaryCache?.list || (!selectedType && initialCache?.list) || []);
   const [loading, setLoading] = useState(() => !initialCache);
+  const [summaryLoading, setSummaryLoading] = useState(() => Boolean(selectedType && !initialSummaryCache));
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
 
@@ -399,9 +401,11 @@ export default function Promotions() {
     const cached = readPromotionListCache("");
     if (cached) {
       setSummaryList(cached.list);
+      setSummaryLoading(false);
       return;
     }
 
+    setSummaryLoading(true);
     try {
       const promotionResult = await marketingService.fetchPromotions({ pageSize: 60, type: "" });
       const nextList = promotionResult.list || [];
@@ -409,6 +413,8 @@ export default function Promotions() {
       setSummaryList(nextList);
     } catch {
       setSummaryList((current) => current);
+    } finally {
+      setSummaryLoading(false);
     }
   }, []);
 
@@ -458,6 +464,7 @@ export default function Promotions() {
       flash: summarySource.filter((item) => item.type === "flash_sale" || item.type === "limited_time_discount").length,
     };
   }, [list, selectedType, summaryList]);
+  const summaryPending = summaryLoading && selectedType && summaryList.length === 0;
   const activeFilterKey = filterScrollKey(selectedType);
   const { containerRef: filtersRef, setItemRef: setFilterRef, scrollToKey: scrollFilterToKey } =
     useHorizontalActiveScroll<HTMLElement, HTMLAnchorElement>(activeFilterKey, FILTERS.length);
@@ -483,15 +490,15 @@ export default function Promotions() {
         <section className="store-promotions-v12-hero overflow-hidden rounded-[1.35rem] border border-[color-mix(in_srgb,var(--theme-price)_20%,var(--theme-border))] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--theme-price)_14%,var(--theme-surface))_0%,var(--theme-surface)_58%,color-mix(in_srgb,var(--theme-primary)_8%,var(--theme-bg))_100%)] p-4 shadow-[0_18px_50px_color-mix(in_srgb,var(--theme-price)_10%,transparent)] sm:p-6">
           <div className="store-promotions-v12-hero__stats" aria-label="活动统计">
             <div>
-              <strong>{formatCount(summary.active)}</strong>
+              <strong>{summaryPending ? "..." : formatCount(summary.active)}</strong>
               <span>{t("promotion.active")}</span>
             </div>
             <div>
-              <strong>{formatCount(summary.flash)}</strong>
+              <strong>{summaryPending ? "..." : formatCount(summary.flash)}</strong>
               <span>{t("promotion.timed")}</span>
             </div>
             <div>
-              <strong>{formatCount(summary.coupon)}</strong>
+              <strong>{summaryPending ? "..." : formatCount(summary.coupon)}</strong>
               <span>可领券</span>
             </div>
           </div>

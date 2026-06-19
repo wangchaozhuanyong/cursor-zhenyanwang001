@@ -14,6 +14,9 @@ export function isTransientErrorMessage(message: string): boolean {
 }
 
 export function storefrontErrorHint(message: string): string | null {
+  if (/Cannot\s+(GET|POST|PUT|PATCH|DELETE)\s+\/?api\/|\/api\/|Unexpected token|<!doctype html>/i.test(message)) {
+    return "页面数据暂时没有同步成功，可以重试或先浏览其他内容。";
+  }
   if (/网络连接失败|Failed to fetch/i.test(message)) {
     return "请检查网络连接后重试，或稍后再访问。";
   }
@@ -27,6 +30,21 @@ export function storefrontErrorHint(message: string): string | null {
     return "商城服务暂时无法连接，请稍后重试或联系客服。";
   }
   return null;
+}
+
+export function storefrontDisplayErrorMessage(message: string, fallback = "内容暂时没有加载成功"): string {
+  const raw = message?.trim();
+  if (!raw) return fallback;
+  if (/Cannot\s+(GET|POST|PUT|PATCH|DELETE)\s+\/?api\/products|\/products\?/i.test(raw)) {
+    return "商品列表暂时没有加载成功";
+  }
+  if (/Cannot\s+(GET|POST|PUT|PATCH|DELETE)\s+\/?api\/marketing|\/marketing\/promotions/i.test(raw)) {
+    return "优惠活动暂时没有加载成功";
+  }
+  if (/Cannot\s+(GET|POST|PUT|PATCH|DELETE)\s+\/?api\/|\/api\/|Unexpected token|<!doctype html>|TypeError:|404 Not Found/i.test(raw)) {
+    return fallback;
+  }
+  return raw;
 }
 
 export function adminLoginErrorMessage(error: unknown, fallback: string): string {

@@ -1,3 +1,4 @@
+import { startTransition } from "react";
 import type { NavigateFunction, NavigateOptions, To } from "react-router-dom";
 import { rememberCurrentStoreScrollPosition } from "@/utils/storeScrollRestoration";
 
@@ -7,6 +8,8 @@ export function navigateWithStoreTransition(
   options?: NavigateOptions,
 ) {
   rememberCurrentStoreScrollPosition();
-  if (typeof to === "number") navigate(to);
-  else navigate(to, options);
+  startTransition(() => {
+    if (typeof to === "number") navigate(to);
+    else navigate(to, options);
+  });
 }

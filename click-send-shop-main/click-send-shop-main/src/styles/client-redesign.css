@@ -5390,6 +5390,34 @@ html[data-app-scope="store"] .store-home-v12-status-board__cta {
   white-space: nowrap;
 }
 
+html[data-app-scope="store"] .store-home-v12-status-board__cta,
+html[data-app-scope="store"] .store-home-v12-shelf__action,
+html[data-app-scope="store"] .store-home-command-panel__shop {
+  min-width: 84px;
+  min-height: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border: 1px solid color-mix(in srgb, var(--theme-primary) 18%, transparent);
+  border-radius: 999px;
+  background: var(--theme-primary);
+  box-shadow: 0 10px 22px color-mix(in srgb, var(--theme-primary) 18%, transparent);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 760;
+  line-height: 1;
+  padding: 0 12px;
+  white-space: nowrap;
+}
+
+html[data-app-scope="store"] .store-home-v12-status-board__cta span,
+html[data-app-scope="store"] .store-home-v12-shelf__action span,
+html[data-app-scope="store"] .store-home-command-panel__shop span {
+  min-width: 0;
+}
+
 html[data-app-scope="store"] .store-home-v12-status-board__cta svg {
   flex: 0 0 auto;
 }
@@ -5543,7 +5571,7 @@ html[data-app-scope="store"] .store-home-v12-shelf__action {
   border: 1px solid color-mix(in srgb, var(--theme-primary) 18%, transparent);
   border-radius: 999px;
   background: var(--theme-primary);
-  box-shadow: var(--client-v12-control-shadow);
+  box-shadow: 0 10px 22px color-mix(in srgb, var(--theme-primary) 18%, transparent);
   padding: 0 12px;
   color: #ffffff;
   font-size: 12px;
@@ -5917,11 +5945,7 @@ html[data-app-scope="store"] [data-store-home-version="v2"] .store-home-v4-campa
 }
 
 html[data-app-scope="store"] [data-store-home-version="v2"] .store-home-v4-campaign-card::before {
-  content: "";
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 4px;
-  background: color-mix(in srgb, var(--theme-price) 76%, var(--client-gold));
+  content: none;
 }
 
 html[data-app-scope="store"] [data-store-home-version="v2"] .store-home-v4-campaign-card[data-campaign-priority="primary"] {
@@ -5933,13 +5957,7 @@ html[data-app-scope="store"] [data-store-home-version="v2"] .store-home-v4-campa
 }
 
 html[data-app-scope="store"] [data-store-home-version="v2"] .store-home-v4-campaign-card[data-campaign-priority="primary"]::after {
-  content: "";
-  position: absolute;
-  inset: auto 12px 10px auto;
-  width: 52px;
-  height: 6px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, color-mix(in srgb, var(--theme-price) 32%, transparent), color-mix(in srgb, var(--client-gold) 48%, transparent));
+  content: none;
 }
 
 html[data-app-scope="store"] [data-store-home-version="v2"] .store-home-v4-campaign-card[data-campaign-type="coupon"],

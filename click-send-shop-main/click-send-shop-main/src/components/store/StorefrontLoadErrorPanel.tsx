@@ -1,6 +1,6 @@
 import { RefreshCw, Headphones, Grid3X3 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { storefrontErrorHint } from "@/utils/storefrontError";
+import { storefrontDisplayErrorMessage, storefrontErrorHint } from "@/utils/storefrontError";
 import { THEME_ALERT_ERROR_SOFT } from "@/utils/themeVisuals";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { usePublicLocale } from "@/i18n/publicLocale";
@@ -23,6 +23,7 @@ export default function StorefrontLoadErrorPanel({
   const navigate = useNavigate();
   const { localizedPath, t } = usePublicLocale();
   const hint = storefrontErrorHint(message);
+  const displayMessage = storefrontDisplayErrorMessage(message);
 
   return (
     <div
@@ -32,7 +33,7 @@ export default function StorefrontLoadErrorPanel({
           : `rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-8 text-center ${THEME_ALERT_ERROR_SOFT}`
       }
     >
-      <p className="font-medium text-[var(--theme-text)]">{message}</p>
+      <p className="font-medium text-[var(--theme-text)]">{displayMessage}</p>
       {hint ? (
         <p className="mt-2 text-xs leading-relaxed text-[color-mix(in_srgb,var(--theme-text-on-surface)_72%,var(--theme-text-muted))]">
           {hint}

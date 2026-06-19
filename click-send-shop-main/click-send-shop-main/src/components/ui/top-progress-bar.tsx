@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { subscribeGlobalLoading } from "@/lib/loadingProgress";
+import { startGlobalLoadingImmediate, stopGlobalLoading, subscribeGlobalLoading } from "@/lib/loadingProgress";
 
 type BarState = { progress: number; visible: boolean; animatingOut: boolean };
 
@@ -35,6 +36,52 @@ export function TopProgressBar() {
 }
 
 export function RouterLoadingBridge() {
-  // Keep component for backward compatibility; route change no longer forces global loading bar.
+  const location = useLocation();
+  const mountedRef = useRef(false);
+  const tokenRef = useRef<symbol | null>(null);
+
+  useEffect(() => {
+    if (!mountedRef.current) {
+      mountedRef.current = true;
+      return;
+    }
+
+    if (tokenRef.current) {
+      stopGlobalLoading(tokenRef.current);
+      tokenRef.current = null;
+    }
+
+    const token = startGlobalLoadingImmediate();
+    tokenRef.current = token;
+    let frameOne = 0;
+    let frameTwo = 0;
+    let finishTimer = 0;
+
+    const finish = () => {
+      if (tokenRef.current !== token) return;
+      stopGlobalLoading(token);
+      tokenRef.current = null;
+    };
+
+    frameOne = window.requestAnimationFrame(() => {
+      frameTwo = window.requestAnimationFrame(() => {
+        finishTimer = window.setTimeout(finish, 180);
+      });
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frameOne);
+      window.cancelAnimationFrame(frameTwo);
+      window.clearTimeout(finishTimer);
+    };
+  }, [location.pathname, location.search]);
+
+  useEffect(() => () => {
+    if (tokenRef.current) {
+      stopGlobalLoading(tokenRef.current);
+      tokenRef.current = null;
+    }
+  }, []);
+
   return null;
 }

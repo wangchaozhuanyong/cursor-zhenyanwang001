@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Download, FileDown, Loader2, Pencil, PackageSearch, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
@@ -21,7 +21,8 @@ import { AdminFilterButton, AdminFilterSelect } from "@/components/admin/AdminFi
 import AdminCsvImportDialog from "@/components/admin/AdminCsvImportDialog";
 import PermissionGate from "@/components/admin/PermissionGate";
 import SafeImage from "@/components/admin/SafeImage";
-import { batchDeleteProducts, batchUpdateProductStatus, deleteProduct, exportProductsCsv, fetchProducts, importProductsCsv, previewProductsImport } from "@/services/admin/productService";
+import { batchDeleteProducts, batchUpdateProductStatus, deleteProduct, exportProductsCsv, fetchProductById, fetchProducts, fetchProductTags, importProductsCsv, previewProductsImport } from "@/services/admin/productService";
+import * as categoryService from "@/services/admin/categoryService";
 import { downloadProductCsvTemplate } from "@/utils/productCsvTemplate";
 import type { Product, ProductListParams, ProductStatus } from "@/types/product";
 import { toastErrorMessage } from "@/utils/errorMessage";
@@ -33,6 +34,13 @@ import { useAdminT } from "@/hooks/useAdminT";
 import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import { AdminSideDrawer } from "@/modules/admin/components/AdminSideDrawer";
 import AdminProductForm from "@/modules/admin/pages/product/AdminProductForm";
+import {
+  readAdminProductsViewState,
+  writeAdminProductsViewState,
+  type ProductCostFilter,
+  type ProductSortValue,
+  type ProductStockFilter,
+} from "@/modules/admin/pages/product/adminProductsViewState";
 import {
   DEFAULT_PRODUCT_LIST_SORT,
   PRODUCT_SORT_LABELS,
@@ -50,10 +58,7 @@ import { invalidatePublicProductStoreCache } from "@/stores/useProductStore";
 
 const PAGE_SIZE = 20;
 const ACTION_COLUMN_CLASS = "sticky right-0 z-[2] bg-[var(--theme-surface)] shadow-[-8px_0_14px_-14px_rgba(15,23,42,0.45)]";
-
-type StockFilter = "" | "normal" | "low" | "out";
-type CostFilter = "" | "normal" | "missing";
-type SortValue = NonNullable<ProductListParams["sort"]>;
+const PRODUCT_FORM_PREFETCH_STALE_MS = 60_000;
 
 const PRODUCT_STATUS_LABELS: Record<ProductStatus, string> = {
   active: "上架",
@@ -61,13 +66,13 @@ const PRODUCT_STATUS_LABELS: Record<ProductStatus, string> = {
   inactive: "下架",
 };
 
-const STOCK_LABELS: Record<Exclude<StockFilter, "">, string> = {
+const STOCK_LABELS: Record<Exclude<ProductStockFilter, "">, string> = {
   normal: "库存正常",
   low: "库存预警",
   out: "缺货",
 };
 
-const COST_LABELS: Record<Exclude<CostFilter, "">, string> = {
+const COST_LABELS: Record<Exclude<ProductCostFilter, "">, string> = {
   normal: "成本正常",
   missing: "缺成本",
 };
@@ -140,13 +145,14 @@ export default function AdminProducts() {
   const { tText } = useAdminT();
   const { confirm } = useAdminConfirm();
   const queryClient = useQueryClient();
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState("");
+  const initialViewState = useMemo(() => readAdminProductsViewState(), []);
+  const [page, setPage] = useState(initialViewState.page);
+  const [search, setSearch] = useState(initialViewState.search);
   const [selected, setSelected] = useState<string[]>([]);
-  const [statusFilter, setStatusFilter] = useState<"" | ProductStatus>("");
-  const [stockFilter, setStockFilter] = useState<StockFilter>("");
-  const [costFilter, setCostFilter] = useState<CostFilter>("");
-  const [sort, setSort] = useState<SortValue>(DEFAULT_PRODUCT_LIST_SORT);
+  const [statusFilter, setStatusFilter] = useState<"" | ProductStatus>(initialViewState.statusFilter);
+  const [stockFilter, setStockFilter] = useState<ProductStockFilter>(initialViewState.stockFilter);
+  const [costFilter, setCostFilter] = useState<ProductCostFilter>(initialViewState.costFilter);
+  const [sort, setSort] = useState<ProductSortValue>(initialViewState.sort);
   const [exportingScope, setExportingScope] = useState<"filtered" | "selected" | null>(null);
   const [importOpen, setImportOpen] = useState(false);
   const [editingProductId, setEditingProductId] = useState("");
@@ -163,9 +169,14 @@ export default function AdminProducts() {
 
   const mfaStepUpPending = useAdminMfaStepUpPending();
 
+  useEffect(() => {
+    writeAdminProductsViewState({ page, search, statusFilter, stockFilter, costFilter, sort });
+  }, [costFilter, page, search, sort, statusFilter, stockFilter]);
+
   const productsQuery = useQuery({
     queryKey: adminQueryKeys.products(queryParams),
     queryFn: () => fetchProducts(queryParams),
+    placeholderData: (previous) => previous,
     staleTime: 60_000,
     refetchOnMount: true,
     refetchInterval: mfaStepUpPending ? false : 120_000,
@@ -259,7 +270,33 @@ export default function AdminProducts() {
     setSelected((prev) => allSelectedOnPage ? prev.filter((id) => !pageIds.includes(id)) : pageIds);
   };
 
+  const warmProductForm = (productId: string) => {
+    void queryClient.prefetchQuery({
+      queryKey: adminQueryKeys.categories(),
+      queryFn: categoryService.fetchCategories,
+      staleTime: PRODUCT_FORM_PREFETCH_STALE_MS,
+    });
+    void queryClient.prefetchQuery({
+      queryKey: adminQueryKeys.productTags(),
+      queryFn: fetchProductTags,
+      staleTime: PRODUCT_FORM_PREFETCH_STALE_MS,
+    });
+    if (productId === "new") return;
+    void queryClient.prefetchQuery({
+      queryKey: adminQueryKeys.productForm(productId),
+      queryFn: () => fetchProductById(productId),
+      staleTime: PRODUCT_FORM_PREFETCH_STALE_MS,
+    });
+  };
+
+  const getProductFormIntentHandlers = (productId: string) => ({
+    onPointerEnter: () => warmProductForm(productId),
+    onFocus: () => warmProductForm(productId),
+    onPointerDown: () => warmProductForm(productId),
+  });
+
   const openProductDrawer = (productId: string) => {
+    warmProductForm(productId);
     setEditingProductId(productId);
   };
 
@@ -488,6 +525,7 @@ export default function AdminProducts() {
           <PermissionGate permission="product.manage">
             <UnifiedButton
               type="button"
+              {...getProductFormIntentHandlers(product.id)}
               onClick={() => openProductDrawer(product.id)}
               className="touch-manipulation inline-flex w-full items-center justify-center gap-1 rounded-lg border border-border px-3 py-2 text-xs font-medium text-foreground transition hover:bg-secondary sm:flex-1"
             >
@@ -531,7 +569,14 @@ export default function AdminProducts() {
             </AdminFilterButton>
           </PermissionGate>
           <PermissionGate permission="product.manage">
-            <AdminFilterButton className="px-4 font-semibold" variant="card" onClick={() => openProductDrawer("new")}><Tx>新增商品</Tx></AdminFilterButton>
+            <AdminFilterButton
+              className="px-4 font-semibold"
+              variant="card"
+              {...getProductFormIntentHandlers("new")}
+              onClick={() => openProductDrawer("new")}
+            >
+              <Tx>新增商品</Tx>
+            </AdminFilterButton>
           </PermissionGate>
           <AdminFilterButton onClick={() => void productsQuery.refetch()} variant="card" className="font-medium"><Tx>刷新</Tx></AdminFilterButton>
         </div>
@@ -554,13 +599,13 @@ export default function AdminProducts() {
                 <option value="draft"><Tx>草稿</Tx></option>
                 <option value="inactive"><Tx>下架</Tx></option>
               </AdminFilterSelect>
-              <AdminFilterSelect value={stockFilter} onChange={(e) => { setStockFilter(e.target.value as StockFilter); setPage(1); }} variant="card">
+              <AdminFilterSelect value={stockFilter} onChange={(e) => { setStockFilter(e.target.value as ProductStockFilter); setPage(1); }} variant="card">
                 <option value=""><Tx>全部库存</Tx></option>
                 <option value="normal"><Tx>库存正常</Tx></option>
                 <option value="low"><Tx>库存预警</Tx></option>
                 <option value="out"><Tx>缺货</Tx></option>
               </AdminFilterSelect>
-              <AdminFilterSelect value={costFilter} onChange={(e) => { setCostFilter(e.target.value as CostFilter); setPage(1); }} variant="card">
+              <AdminFilterSelect value={costFilter} onChange={(e) => { setCostFilter(e.target.value as ProductCostFilter); setPage(1); }} variant="card">
                 <option value=""><Tx>全部成本</Tx></option>
                 <option value="normal"><Tx>成本正常</Tx></option>
                 <option value="missing"><Tx>缺成本</Tx></option>
@@ -800,7 +845,15 @@ export default function AdminProducts() {
               <td className={adminTdClassName(`${ADMIN_TABLE_NOWRAP_CLASS} ${ACTION_COLUMN_CLASS}`, "right")}>
                 <div className="inline-flex max-w-full flex-nowrap items-center justify-end gap-1.5">
                   <PermissionGate permission="product.manage">
-                    <UnifiedButton type="button" onClick={() => openProductDrawer(product.id)} className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-secondary"><Pencil size={13} /><Tx>编辑</Tx></UnifiedButton>
+                    <UnifiedButton
+                      type="button"
+                      {...getProductFormIntentHandlers(product.id)}
+                      onClick={() => openProductDrawer(product.id)}
+                      className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-secondary"
+                    >
+                      <Pencil size={13} />
+                      <Tx>编辑</Tx>
+                    </UnifiedButton>
                     <UnifiedButton
                       type="button"
                       disabled={!canDeleteProduct || deleteOneMutation.isPending}

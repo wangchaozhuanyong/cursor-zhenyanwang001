@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { Copy, Download, Loader2, Package, Truck } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
@@ -42,7 +43,11 @@ import {
   getFirstItemSummary,
   money,
 } from "@/modules/admin/pages/order/orderListDisplayUtils";
+import { ADMIN_ORDERS_PAGE_SIZE_OPTIONS } from "@/modules/admin/pages/order/adminOrdersViewState";
 import { useAdminOrders } from "@/modules/admin/pages/order/useAdminOrders";
+import { useAdminRouteIntentPreload } from "@/hooks/useAdminRouteIntentPreload";
+import { adminQueryKeys } from "@/lib/adminQueryKeys";
+import { fetchOrderById } from "@/services/admin/orderService";
 import {
   adminTableAlignClass,
   type AdminTableAlign,
@@ -68,9 +73,12 @@ const ORDER_COLUMN_ALIGNS: AdminTableAlign[] = [
 
 const ACTION_COLUMN_CLASS = "sticky right-0 z-[2] bg-[var(--theme-surface)] shadow-[-8px_0_14px_-14px_rgba(15,23,42,0.45)]";
 const ACTION_COLUMN_HEADER_CLASS = `${ACTION_COLUMN_CLASS} z-[3]`;
+const ORDER_DETAIL_PREFETCH_STALE_MS = 15_000;
 
 export default function AdminOrders() {
+  const queryClient = useQueryClient();
   const can = useAdminPermissionStore((s) => s.can);
+  const warmAdminRoute = useAdminRouteIntentPreload();
   const orderStatusFilterOptions = useAdminOrderStatusFilterOptions();
   const paymentStatusFilterOptions = useAdminPaymentStatusFilterOptions();
   const {
@@ -218,16 +226,36 @@ export default function AdminOrders() {
     return items;
   };
 
+  const getOrderDetailPath = (orderId: string) => `/admin/orders/${orderId}`;
+
+  const warmOrderDetail = (orderId: string, path: string, options?: { showProgress?: boolean }) => {
+    warmAdminRoute(path, options);
+    void queryClient.prefetchQuery({
+      queryKey: adminQueryKeys.orderDetail(orderId),
+      queryFn: () => fetchOrderById(orderId),
+      staleTime: ORDER_DETAIL_PREFETCH_STALE_MS,
+    });
+  };
+
+  const getOrderDetailLinkHandlers = (orderId: string, path: string) => ({
+    onPointerEnter: () => warmOrderDetail(orderId, path),
+    onFocus: () => warmOrderDetail(orderId, path),
+    onPointerDown: () => warmOrderDetail(orderId, path),
+    onClick: () => warmOrderDetail(orderId, path, { showProgress: true }),
+  });
+
   const renderActions = (o: Order) => {
     const baseBtn =
       "inline-flex h-8 items-center justify-center gap-1.5 rounded-md px-2.5 text-xs font-medium transition-colors";
+    const detailPath = getOrderDetailPath(o.id);
 
     const buttons: React.ReactNode[] = [];
 
     buttons.push(
       <Link
         key="detail"
-        to={`/admin/orders/${o.id}`}
+        to={detailPath}
+        {...getOrderDetailLinkHandlers(o.id, detailPath)}
         className={`${baseBtn} border border-[var(--theme-border)] bg-[var(--theme-surface)] text-foreground hover:bg-[var(--theme-bg)]`}
       >
         <Tx>详情</Tx>
@@ -327,6 +355,7 @@ export default function AdminOrders() {
   };
 
   const renderRow = (o: Order) => {
+    const detailPath = getOrderDetailPath(o.id);
     const checked = selectedOrderIds.includes(o.id);
     const afterSale = afterSaleLabel(o, tText);
     const discount = Number(o.total_discount_amount ?? (
@@ -370,7 +399,8 @@ export default function AdminOrders() {
         </td>
         <td className={`max-w-[10rem] whitespace-nowrap px-4 py-2.5 align-middle ${adminTableAlignClass("left")}`}>
           <Link
-            to={`/admin/orders/${o.id}`}
+            to={detailPath}
+            {...getOrderDetailLinkHandlers(o.id, detailPath)}
             title={`${tText("订单号")}：${o.order_no}`}
             className="block min-w-0 max-w-[9.5rem] truncate text-left font-mono text-xs font-semibold text-[var(--theme-price)] hover:underline"
           >
@@ -435,7 +465,8 @@ export default function AdminOrders() {
           <AdminRowActionsMenu
             primary={(
               <Link
-                to={`/admin/orders/${o.id}`}
+                to={detailPath}
+                {...getOrderDetailLinkHandlers(o.id, detailPath)}
                 className="inline-flex h-8 min-w-[3.25rem] shrink-0 items-center justify-center rounded-md border border-[var(--theme-border)] bg-[var(--theme-surface)] px-2.5 text-xs font-medium text-foreground hover:bg-[var(--theme-bg)]"
               >
                 <Tx>详情</Tx>
@@ -450,6 +481,7 @@ export default function AdminOrders() {
   };
 
   const renderMobileCard = (o: Order) => {
+    const detailPath = getOrderDetailPath(o.id);
     const checked = selectedOrderIds.includes(o.id);
     const afterSale = afterSaleLabel(o, tText);
     const badges = buildOrderBadges(o, tText);
@@ -476,7 +508,8 @@ export default function AdminOrders() {
                 <p className="text-xs text-muted-foreground">{formatDateTime(o.created_at)}</p>
               </div>
               <Link
-                to={`/admin/orders/${o.id}`}
+                to={detailPath}
+                {...getOrderDetailLinkHandlers(o.id, detailPath)}
                 className="shrink-0 text-xs text-[var(--theme-price)] hover:underline"
               >
                 <Tx>详情</Tx>
@@ -685,7 +718,7 @@ export default function AdminOrders() {
             ))}
           </tr>
         )}
-        footer={<Pagination total={total} page={page} pageSize={pageSize} onPageChange={setPage} onPageSizeChange={(n) => { setPageSize(n); setPage(1); }} />}
+        footer={<Pagination total={total} page={page} pageSize={pageSize} pageSizeOptions={[...ADMIN_ORDERS_PAGE_SIZE_OPTIONS]} onPageChange={setPage} onPageSizeChange={(n) => { setPageSize(n); setPage(1); }} />}
         emptyIcon={ordersEmptyGuide.icon}
         emptyTitle={ordersEmptyGuide.title}
         emptyDescription={ordersEmptyGuide.description}

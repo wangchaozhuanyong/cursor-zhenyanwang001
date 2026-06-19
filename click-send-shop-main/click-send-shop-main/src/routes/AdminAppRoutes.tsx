@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
-import { TopProgressBar } from "@/components/ui/top-progress-bar";
+import { RouterLoadingBridge, TopProgressBar } from "@/components/ui/top-progress-bar";
 import AppRouteFallback from "@/components/AppRouteFallback";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import ChinaBrowserCompatNotice from "@/components/ChinaBrowserCompatNotice";
@@ -9,11 +9,22 @@ import RouteBackTracker from "@/components/RouteBackTracker";
 import { useAdminLoginT } from "@/i18n/adminLogin";
 import { queryClient } from "@/lib/queryClient";
 import { ModalLayerProvider } from "@/modules/micro-interactions/modal/ModalLayerProvider";
+import { preloadAdminRoute } from "@/routes/adminLazyPages";
+import { scheduleIdleTask } from "@/utils/idleScheduler";
 
 const AdminLogin = lazy(() => import("@/modules/admin/pages/auth/AdminLogin"));
 const AdminRouteFallback = lazy(() => import("@/modules/admin/pages/error/AdminRouteFallback"));
 const AdminShellRoutes = lazy(() => import("@/routes/AdminShellRoutes"));
 const AdminToastHost = lazy(() => import("@/components/ui/sonner").then((module) => ({ default: module.Toaster })));
+
+const CRITICAL_ADMIN_ROUTE_PRELOADS = [
+  "/admin",
+  "/admin/products",
+  "/admin/orders",
+  "/admin/marketing",
+  "/admin/reports/overview",
+  "/admin/settings/site",
+];
 
 type IdleWindow = Window & {
   requestIdleCallback?: (callback: () => void, options?: { timeout?: number }) => number;
@@ -43,6 +54,35 @@ function AdminLoginTitleSync() {
 
 function AdminShellRouteElement() {
   return <AdminShellRoutes />;
+}
+
+function AdminCriticalRoutePreloader() {
+  useEffect(() => {
+    let cancelled = false;
+    const timers = new Set<number>();
+    const cancelIdle = scheduleIdleTask("admin-critical-route-preload", () => {
+      CRITICAL_ADMIN_ROUTE_PRELOADS.forEach((path, index) => {
+        const timer = window.setTimeout(() => {
+          timers.delete(timer);
+          if (!cancelled) void preloadAdminRoute(path);
+        }, index * 160);
+        timers.add(timer);
+      });
+    }, {
+      delayMs: 900,
+      jitterMs: 500,
+      timeoutMs: 3_000,
+    });
+
+    return () => {
+      cancelled = true;
+      cancelIdle();
+      timers.forEach((timer) => window.clearTimeout(timer));
+      timers.clear();
+    };
+  }, []);
+
+  return null;
 }
 
 function DeferredAdminToastHost() {
@@ -82,6 +122,8 @@ export function AdminAppRoutes() {
         <ModalLayerProvider>
           <DeferredAdminToastHost />
           <TopProgressBar />
+          <RouterLoadingBridge />
+          <AdminCriticalRoutePreloader />
           <AppScopeSync />
           <AdminLoginTitleSync />
           <RouteBackTracker />

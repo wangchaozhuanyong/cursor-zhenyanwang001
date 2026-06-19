@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { ChevronDown, ChevronLeft, ChevronRight, Pin } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, Loader2, Pin } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { ADMIN_WORK_TABS_MAX, adminTabPathKey } from "@/config/adminWorkTab";
@@ -23,6 +23,7 @@ type TabMenuState = {
 
 const TAB_MENU_WIDTH = 160;
 const TAB_SCROLL_STEP = 180;
+const TAB_PENDING_TIMEOUT_MS = 3_500;
 
 export default function AdminWorkTabs() {
   const { tText } = useAdminT();
@@ -33,9 +34,11 @@ export default function AdminWorkTabs() {
   const listBtnRef = useRef<HTMLButtonElement>(null);
   const [menu, setMenu] = useState<TabMenuState | null>(null);
   const tabMenuAnchorRef = useRef<HTMLElement | null>(null);
+  const pendingTabTimerRef = useRef<number | null>(null);
   const [listOpen, setListOpen] = useState(false);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
+  const [pendingTabId, setPendingTabId] = useState<string | null>(null);
 
   const tabs = useAdminWorkTabsStore((s) => s.tabs);
   const activeTabId = useAdminWorkTabsStore((s) => s.activeTabId);
@@ -50,6 +53,26 @@ export default function AdminWorkTabs() {
 
   const currentKey = adminTabPathKey(`${location.pathname}${location.search}`);
   const isFull = tabs.length >= ADMIN_WORK_TABS_MAX;
+
+  const clearPendingTab = useCallback(() => {
+    if (pendingTabTimerRef.current !== null) {
+      window.clearTimeout(pendingTabTimerRef.current);
+      pendingTabTimerRef.current = null;
+    }
+    setPendingTabId(null);
+  }, []);
+
+  const markPendingTab = useCallback(
+    (tabId: string) => {
+      clearPendingTab();
+      setPendingTabId(tabId);
+      pendingTabTimerRef.current = window.setTimeout(() => {
+        pendingTabTimerRef.current = null;
+        setPendingTabId((current) => (current === tabId ? null : current));
+      }, TAB_PENDING_TIMEOUT_MS);
+    },
+    [clearPendingTab],
+  );
 
   const refreshScrollState = useCallback(() => {
     const el = scrollRef.current;
@@ -67,6 +90,12 @@ export default function AdminWorkTabs() {
     toast.error(tText(`已打开 ${ADMIN_WORK_TABS_MAX} 个页面，请先关闭不需要的页面后再打开新页面。`));
     consumeLimitNotice();
   }, [consumeLimitNotice, lastLimitNoticeAt, tText]);
+
+  useEffect(() => {
+    if (pendingTabId && pendingTabId === currentKey) clearPendingTab();
+  }, [clearPendingTab, currentKey, pendingTabId]);
+
+  useEffect(() => clearPendingTab, [clearPendingTab]);
 
   useEffect(() => {
     const el = scrollRef.current?.querySelector<HTMLElement>(`[data-tab-id="${activeTabId}"]`);
@@ -110,11 +139,14 @@ export default function AdminWorkTabs() {
     (tab: AdminWorkTab) => {
       setActiveTab(tab.id);
       if (`${location.pathname}${location.search}` !== tab.path) {
+        markPendingTab(tab.id);
         void preloadAdminRoute(tab.path);
-        void adminNavigate(tab.path);
+        void adminNavigate(tab.path).then((ok) => {
+          if (!ok) setPendingTabId((current) => (current === tab.id ? null : current));
+        });
       }
     },
-    [adminNavigate, location.pathname, location.search, setActiveTab],
+    [adminNavigate, location.pathname, location.search, markPendingTab, setActiveTab],
   );
 
   const handleClose = useCallback(
@@ -202,12 +234,14 @@ export default function AdminWorkTabs() {
           {tabs.map((tab) => {
             const active = tab.id === activeTabId || tab.id === currentKey;
             const dirty = isTabDirty(tab.id);
+            const pending = pendingTabId === tab.id && tab.id !== currentKey;
             return (
               <div
                 key={tab.id}
                 data-tab-id={tab.id}
                 role="tab"
                 aria-selected={active}
+                aria-busy={pending}
                 onContextMenu={(e) => openContextMenu(tab, e)}
                 className={cn(
                   "admin-work-tab-item group relative flex h-7 max-w-[12rem] shrink-0 items-center overflow-hidden rounded-full border px-2.5 text-xs leading-none transition-all",
@@ -224,7 +258,11 @@ export default function AdminWorkTabs() {
                   onClick={() => activateTab(tab)}
                   title={tab.title}
                 >
-                  {tab.pinned ? <Pin size={11} className="shrink-0 opacity-70" /> : null}
+                  {pending ? (
+                    <Loader2 size={11} className="shrink-0 animate-spin opacity-70" />
+                  ) : tab.pinned ? (
+                    <Pin size={11} className="shrink-0 opacity-70" />
+                  ) : null}
                   <span className="truncate">{tab.title}</span>
                   {dirty ? <span aria-label={tText("未保存")} className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" /> : null}
                 </UnifiedButton>
@@ -270,10 +308,12 @@ export default function AdminWorkTabs() {
                 {tabs.map((tab) => {
                   const active = tab.id === activeTabId || tab.id === currentKey;
                   const dirty = isTabDirty(tab.id);
+                  const pending = pendingTabId === tab.id && tab.id !== currentKey;
                   return (
                     <UnifiedButton
                       key={tab.id}
                       type="button"
+                      aria-busy={pending}
                       className={cn(
                         "flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-secondary",
                         active ? "font-semibold text-foreground" : "text-muted-foreground",
@@ -285,7 +325,13 @@ export default function AdminWorkTabs() {
                         setListOpen(false);
                       }}
                     >
-                      {tab.pinned ? <Pin size={12} className="shrink-0 opacity-70" /> : <span className="w-3 shrink-0" />}
+                      {pending ? (
+                        <Loader2 size={12} className="shrink-0 animate-spin opacity-70" />
+                      ) : tab.pinned ? (
+                        <Pin size={12} className="shrink-0 opacity-70" />
+                      ) : (
+                        <span className="w-3 shrink-0" />
+                      )}
                       <span className="min-w-0 flex-1 truncate">{tab.title}</span>
                       {dirty ? <span aria-label={tText("未保存")} className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" /> : null}
                     </UnifiedButton>

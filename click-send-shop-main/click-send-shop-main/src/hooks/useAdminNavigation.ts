@@ -1,15 +1,15 @@
-import { useCallback } from "react";
-import { useLocation, useNavigate, type NavigateOptions } from "react-router-dom";
+import { startTransition, useCallback } from "react";
+import { useLocation, useNavigate, type NavigateFunction, type NavigateOptions } from "react-router-dom";
 import { toast } from "sonner";
 import { ADMIN_WORK_TABS_MAX, adminTabPathKey, normalizeAdminTabPath, shouldTrackAdminWorkTab } from "@/config/adminWorkTab";
 import { canAccessAdminPath, getFirstAllowedAdminPath } from "@/config/adminNavAccess";
 import { useAdminDirtyGuard } from "@/modules/admin/context/AdminDirtyGuardContext";
 import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import { adminNavDebug } from "@/modules/admin/utils/adminDebug";
-import { preloadAdminRoute } from "@/routes/adminLazyPages";
 import { clearAdminDraft } from "@/stores/useAdminDraftStore";
 import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 import { useAdminWorkTabsStore } from "@/stores/useAdminWorkTabsStore";
+import { useAdminRouteIntentPreload } from "@/hooks/useAdminRouteIntentPreload";
 import { useAdminT } from "@/hooks/useAdminT";
 
 function resolveAdminTarget(to: string) {
@@ -21,10 +21,17 @@ function resolveAdminTarget(to: string) {
   };
 }
 
+function navigateWithAdminTransition(navigate: NavigateFunction, to: string, options?: NavigateOptions) {
+  startTransition(() => {
+    navigate(to, options);
+  });
+}
+
 export function useAdminNavigation() {
   const navigate = useNavigate();
   const location = useLocation();
   const { tText } = useAdminT();
+  const warmAdminRoute = useAdminRouteIntentPreload();
   const guard = useAdminDirtyGuard();
   const { confirmAsync } = useAdminConfirm();
   const can = useAdminPermissionStore((s) => s.can);
@@ -62,7 +69,9 @@ export function useAdminNavigation() {
       if (permHydrated && !canAccessAdminPath(target.pathname, can, canAny)) {
         toast.error(tText("没有权限访问该后台页面。"));
         adminNavDebug({ stage: "blocked", reason: "permission", from: currentFullPath, to: target.fullPath });
-        navigate(getFirstAllowedAdminPath(can, canAny), { replace: true });
+        const fallbackPath = getFirstAllowedAdminPath(can, canAny);
+        warmAdminRoute(fallbackPath, { showProgress: true });
+        navigateWithAdminTransition(navigate, fallbackPath, { replace: true });
         return false;
       }
 
@@ -104,13 +113,25 @@ export function useAdminNavigation() {
         closeTab(victim.id);
       }
 
-      void preloadAdminRoute(target.fullPath)?.catch(() => {
-        adminNavDebug({ stage: "blocked", reason: "preload_failed", from: currentFullPath, to: target.fullPath });
-      });
-      navigate(to, options);
+      warmAdminRoute(target.fullPath, { showProgress: true });
+      navigateWithAdminTransition(navigate, to, options);
       adminNavDebug({ stage: "success", from: currentFullPath, to: target.fullPath, duration: performance.now() - startedAt });
       return true;
     },
-    [can, canAny, canOpenTab, closeTab, confirmAsync, guard, location.pathname, location.search, navigate, permHydrated, tabs, tText],
+    [
+      can,
+      canAny,
+      canOpenTab,
+      closeTab,
+      confirmAsync,
+      guard,
+      location.pathname,
+      location.search,
+      navigate,
+      permHydrated,
+      tabs,
+      tText,
+      warmAdminRoute,
+    ],
   );
 }

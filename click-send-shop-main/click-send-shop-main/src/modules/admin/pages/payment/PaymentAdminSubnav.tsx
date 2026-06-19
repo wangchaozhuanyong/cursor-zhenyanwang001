@@ -1,6 +1,6 @@
 import { NavLink } from "react-router-dom";
+import { useAdminRouteIntentPreload } from "@/hooks/useAdminRouteIntentPreload";
 import { useAdminT } from "@/hooks/useAdminT";
-import { preloadAdminRoute } from "@/routes/adminLazyPages";
 
 const tabs = [
   { to: "/admin/payments/channels", label: "渠道配置" },
@@ -11,6 +11,7 @@ const tabs = [
 
 export default function PaymentAdminSubnav() {
   const { tText } = useAdminT();
+  const warmAdminRoute = useAdminRouteIntentPreload();
   return (
     <div className="mb-6 flex flex-wrap gap-2 border-b border-[var(--theme-border)] pb-3">
       {tabs.map((tab) => (
@@ -24,8 +25,10 @@ export default function PaymentAdminSubnav() {
                 : "text-muted-foreground hover:bg-secondary"
             }`
           }
-          onPointerEnter={() => { void preloadAdminRoute(tab.to); }}
-          onFocus={() => { void preloadAdminRoute(tab.to); }}
+          onPointerEnter={() => warmAdminRoute(tab.to)}
+          onFocus={() => warmAdminRoute(tab.to)}
+          onPointerDown={() => warmAdminRoute(tab.to)}
+          onClick={() => warmAdminRoute(tab.to, { showProgress: true })}
         >
           {tText(tab.label)}
         </NavLink>

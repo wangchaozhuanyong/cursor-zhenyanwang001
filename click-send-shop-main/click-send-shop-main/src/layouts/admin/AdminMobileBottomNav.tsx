@@ -17,6 +17,7 @@ type AdminMobileBottomNavProps = {
     more: string;
   };
   onNavigate: (path: string) => void;
+  onPreload?: (path: string) => void;
   onOpenMore: (trigger: HTMLElement) => void;
 };
 
@@ -28,6 +29,7 @@ export default function AdminMobileBottomNav({
   showNotifications,
   labels,
   onNavigate,
+  onPreload,
   onOpenMore,
 }: AdminMobileBottomNavProps) {
   return (
@@ -41,6 +43,7 @@ export default function AdminMobileBottomNav({
             icon={LayoutDashboard}
             label={labels.home}
             active={tab === "dash"}
+            onPreload={() => onPreload?.("/admin")}
             onClick={() => onNavigate("/admin")}
           />
         ) : null}
@@ -49,6 +52,7 @@ export default function AdminMobileBottomNav({
             icon={Package}
             label={labels.products}
             active={tab === "products"}
+            onPreload={() => onPreload?.("/admin/products")}
             onClick={() => onNavigate("/admin/products")}
           />
         ) : null}
@@ -57,6 +61,7 @@ export default function AdminMobileBottomNav({
             icon={ShoppingCart}
             label={labels.orders}
             active={tab === "orders"}
+            onPreload={() => onPreload?.("/admin/orders")}
             onClick={() => onNavigate("/admin/orders")}
           />
         ) : null}
@@ -65,6 +70,7 @@ export default function AdminMobileBottomNav({
             icon={Bell}
             label={labels.notifications}
             active={tab === "notifications"}
+            onPreload={() => onPreload?.("/admin/notifications")}
             onClick={() => onNavigate("/admin/notifications")}
           />
         ) : null}

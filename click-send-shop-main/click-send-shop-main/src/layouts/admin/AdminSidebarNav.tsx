@@ -91,6 +91,7 @@ function AdminSidebarNav({
               <UnifiedButton
                 type="button"
                 onPointerEnter={() => preloadPath(item.path)}
+                onPointerDown={() => preloadPath(item.path)}
                 onFocus={() => preloadPath(item.path)}
                 onClick={() => {
                   if (item.children?.length) {
@@ -141,6 +142,7 @@ function AdminSidebarNav({
                                   type="button"
                                   key={nested.path ?? nested.label}
                                   onPointerEnter={() => preloadPath(nested.path)}
+                                  onPointerDown={() => preloadPath(nested.path)}
                                   onFocus={() => preloadPath(nested.path)}
                                   onClick={() => nested.path && onNavigate(nested.path)}
                                   className={`flex min-h-[40px] w-full items-center gap-2 rounded-lg px-2.5 py-2 text-sm transition-colors active:bg-secondary/80 ${
@@ -161,6 +163,7 @@ function AdminSidebarNav({
                         type="button"
                         key={child.path ?? child.label}
                         onPointerEnter={() => preloadPath(child.path)}
+                        onPointerDown={() => preloadPath(child.path)}
                         onFocus={() => preloadPath(child.path)}
                         onClick={() => child.path && onNavigate(child.path)}
                         className={`flex min-h-[44px] w-full items-center gap-2 rounded-lg px-2.5 py-2.5 text-sm transition-colors active:bg-secondary/80 ${
@@ -199,16 +202,21 @@ export function AdminNavTab({
   icon: Icon,
   label,
   active,
+  onPreload,
   onClick,
 }: {
   icon: LucideIcon;
   label: string;
   active: boolean;
+  onPreload?: () => void;
   onClick: (event: MouseEvent<HTMLButtonElement>) => void;
 }) {
   return (
     <UnifiedButton
       type="button"
+      onPointerEnter={onPreload}
+      onPointerDown={onPreload}
+      onFocus={onPreload}
       onClick={onClick}
       className={`touch-manipulation flex min-h-[52px] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-1 active:opacity-80 ${
         active ? "text-[var(--theme-primary)]" : "text-muted-foreground"

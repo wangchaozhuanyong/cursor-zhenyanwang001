@@ -18,12 +18,19 @@ import { ORDER_STATUS } from "@/constants/statusDictionary";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { initialSummary, paymentMethodOptions, shippingOptions } from "@/modules/admin/pages/order/orderListConstants";
 import { money } from "@/modules/admin/pages/order/orderListDisplayUtils";
+import {
+  DEFAULT_ADMIN_ORDERS_VIEW_STATE,
+  readAdminOrdersViewState,
+  writeAdminOrdersViewState,
+  type AdminOrdersViewState,
+} from "@/modules/admin/pages/order/adminOrdersViewState";
 
 const ORDER_LIST_REFRESH_MS = 300_000;
 
 export function useAdminOrders() {
   const { tText } = useAdminT();
   const [searchParams] = useSearchParams();
+  const urlKeyword = (searchParams.get("keyword") || "").replace(/^#+/, "").trim();
   const queryClient = useQueryClient();
   const { confirm } = useAdminConfirm();
 
@@ -37,33 +44,37 @@ export function useAdminOrders() {
   );
 
   const [shipTarget, setShipTarget] = useState<{ id: string; orderNo: string } | null>(null);
-  const [advancedFiltersOpen, setAdvancedFiltersOpen] = useState(false);
-  const [statusFilter, setStatusFilter] = useState("");
-  const [paymentFilter, setPaymentFilter] = useState<"" | PaymentStatus>("");
-  const [search, setSearch] = useState(() => (searchParams.get("keyword") || "").replace(/^#+/, "").trim());
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("");
-  const [paymentChannel, setPaymentChannel] = useState("");
-  const [shippingName, setShippingName] = useState("");
-  const [returnStatus, setReturnStatus] = useState<"" | "none" | "active" | "any">("");
-  const [refundStatus, setRefundStatus] = useState("");
-  const [hasNote, setHasNote] = useState<"" | "1" | "0">("");
-  const [costStatus, setCostStatus] = useState<"" | "normal" | "missing">("");
-  const [overduePayment, setOverduePayment] = useState<"" | "1" | "0">("");
-  const [overdueShipment, setOverdueShipment] = useState<"" | "1" | "0">("");
-  const [buyerType, setBuyerType] = useState<"" | "new" | "repeat">("");
-  const [amountMin, setAmountMin] = useState("");
-  const [amountMax, setAmountMax] = useState("");
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(30);
+  const [initialViewState] = useState(() => (
+    readAdminOrdersViewState(urlKeyword ? { search: urlKeyword, page: 1 } : undefined)
+  ));
+  const [advancedFiltersOpen, setAdvancedFiltersOpen] = useState(initialViewState.advancedFiltersOpen);
+  const [statusFilter, setStatusFilter] = useState<AdminOrdersViewState["statusFilter"]>(initialViewState.statusFilter);
+  const [paymentFilter, setPaymentFilter] = useState<"" | PaymentStatus>(initialViewState.paymentFilter);
+  const [search, setSearch] = useState(initialViewState.search);
+  const [dateFrom, setDateFrom] = useState(initialViewState.dateFrom);
+  const [dateTo, setDateTo] = useState(initialViewState.dateTo);
+  const [paymentMethod, setPaymentMethod] = useState(initialViewState.paymentMethod);
+  const [paymentChannel, setPaymentChannel] = useState(initialViewState.paymentChannel);
+  const [shippingName, setShippingName] = useState(initialViewState.shippingName);
+  const [returnStatus, setReturnStatus] = useState<AdminOrdersViewState["returnStatus"]>(initialViewState.returnStatus);
+  const [refundStatus, setRefundStatus] = useState(initialViewState.refundStatus);
+  const [hasNote, setHasNote] = useState<AdminOrdersViewState["hasNote"]>(initialViewState.hasNote);
+  const [costStatus, setCostStatus] = useState<AdminOrdersViewState["costStatus"]>(initialViewState.costStatus);
+  const [overduePayment, setOverduePayment] = useState<AdminOrdersViewState["overduePayment"]>(initialViewState.overduePayment);
+  const [overdueShipment, setOverdueShipment] = useState<AdminOrdersViewState["overdueShipment"]>(initialViewState.overdueShipment);
+  const [buyerType, setBuyerType] = useState<AdminOrdersViewState["buyerType"]>(initialViewState.buyerType);
+  const [amountMin, setAmountMin] = useState(initialViewState.amountMin);
+  const [amountMax, setAmountMax] = useState(initialViewState.amountMax);
+  const [page, setPage] = useState(initialViewState.page);
+  const [pageSize, setPageSize] = useState(initialViewState.pageSize);
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
   const [exportingScope, setExportingScope] = useState<"filtered" | "selected" | null>(null);
 
   useEffect(() => {
-    const kw = (searchParams.get("keyword") || "").replace(/^#+/, "").trim();
-    if (kw) setSearch(kw);
-  }, [searchParams]);
+    if (!urlKeyword) return;
+    setSearch(urlKeyword);
+    setPage(1);
+  }, [urlKeyword]);
 
   const clearFilters = () => {
     setStatusFilter("");
@@ -84,6 +95,7 @@ export function useAdminOrders() {
     setAmountMin("");
     setAmountMax("");
     setPage(1);
+    setAdvancedFiltersOpen(DEFAULT_ADMIN_ORDERS_VIEW_STATE.advancedFiltersOpen);
   };
 
   const filterState = useMemo(
@@ -154,6 +166,52 @@ export function useAdminOrders() {
   const ordersEmptyGuide = useLocalizedAdminEmptyGuide(
     filtersActive ? ADMIN_EMPTY_GUIDES.ordersFiltered : ADMIN_EMPTY_GUIDES.orders,
   );
+
+  useEffect(() => {
+    writeAdminOrdersViewState({
+      advancedFiltersOpen,
+      statusFilter,
+      paymentFilter,
+      search,
+      dateFrom,
+      dateTo,
+      paymentMethod,
+      paymentChannel,
+      shippingName,
+      returnStatus,
+      refundStatus,
+      hasNote,
+      costStatus,
+      overduePayment,
+      overdueShipment,
+      buyerType,
+      amountMin,
+      amountMax,
+      page,
+      pageSize,
+    });
+  }, [
+    advancedFiltersOpen,
+    amountMax,
+    amountMin,
+    buyerType,
+    costStatus,
+    dateFrom,
+    dateTo,
+    hasNote,
+    overduePayment,
+    overdueShipment,
+    page,
+    pageSize,
+    paymentChannel,
+    paymentFilter,
+    paymentMethod,
+    refundStatus,
+    returnStatus,
+    search,
+    shippingName,
+    statusFilter,
+  ]);
 
   const queryParams = useMemo<OrderListParams>(() => ({
     page,

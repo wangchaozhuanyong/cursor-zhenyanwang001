@@ -32,6 +32,11 @@ import { preloadAdminRoute } from "@/routes/adminLazyPages";
 import { adminLogout, fetchAdminProfile, isAdminAuthenticated } from "@/services/admin/accountService";
 import { useAdminPermissionStore } from "@/stores/useAdminPermissionStore";
 import { syncAdminWorkTabFromLocation, useAdminWorkTabsStore } from "@/stores/useAdminWorkTabsStore";
+import { normalizeAdminTabPath } from "@/config/adminWorkTab";
+import {
+  getRememberedAdminScrollPosition,
+  rememberAdminScrollPosition,
+} from "@/utils/adminScrollRestoration";
 
 const MONITORING_SUBNAV_PATHS = new Set([
   "/admin/monitoring",
@@ -55,6 +60,8 @@ function AdminLayoutInner() {
   const [loggingOut, setLoggingOut] = useState(false);
   const mainScrollRef = useRef<HTMLElement | null>(null);
   const previousPathRef = useRef(location.pathname);
+  const activeScrollKey = normalizeAdminTabPath(location.pathname, location.search);
+  const previousScrollKeyRef = useRef(activeScrollKey);
   const sidebarReturnFocusRef = useRef<HTMLElement | null>(null);
 
   const can = useAdminPermissionStore((s) => s.can);
@@ -90,13 +97,51 @@ function AdminLayoutInner() {
     setSidebarOpen(false);
   }, [location.pathname]);
 
+  useEffect(() => {
+    const el = mainScrollRef.current;
+    if (!el) return;
+    let frameId = 0;
+    const save = () => {
+      frameId = 0;
+      rememberAdminScrollPosition(activeScrollKey, el);
+    };
+    const onScroll = () => {
+      if (frameId) return;
+      frameId = window.requestAnimationFrame(save);
+    };
+
+    el.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("pagehide", save);
+    return () => {
+      el.removeEventListener("scroll", onScroll);
+      window.removeEventListener("pagehide", save);
+      if (frameId) window.cancelAnimationFrame(frameId);
+      rememberAdminScrollPosition(activeScrollKey, el);
+    };
+  }, [activeScrollKey]);
+
   useLayoutEffect(() => {
+    const previousScrollKey = previousScrollKeyRef.current;
+    if (previousScrollKey !== activeScrollKey) {
+      rememberAdminScrollPosition(previousScrollKey, mainScrollRef.current);
+      previousScrollKeyRef.current = activeScrollKey;
+    }
+
     const previousPath = previousPathRef.current;
     previousPathRef.current = location.pathname;
-    if (navigationType === "POP") return;
+    const rememberedTop = getRememberedAdminScrollPosition(activeScrollKey);
+    if (rememberedTop !== undefined) {
+      mainScrollRef.current?.scrollTo({ top: rememberedTop, left: 0, behavior: "auto" });
+      return;
+    }
+
+    if (navigationType === "POP") {
+      mainScrollRef.current?.scrollTo({ top: 0, left: 0, behavior: "auto" });
+      return;
+    }
     if (isMonitoringSubnavSwitch(previousPath, location.pathname)) return;
     mainScrollRef.current?.scrollTo({ top: 0, left: 0, behavior: "auto" });
-  }, [location.pathname, navigationType]);
+  }, [activeScrollKey, location.pathname, navigationType]);
 
   const handleSidebarNavigate = useCallback(
     (path: string) => {
@@ -234,6 +279,7 @@ function AdminLayoutInner() {
                       more: t("layout.mobileMore"),
                     }}
                     onNavigate={handleBottomNavigate}
+                    onPreload={handleSidebarPreload}
                     onOpenMore={handleOpenMobileSidebar}
                   />
                 </div>

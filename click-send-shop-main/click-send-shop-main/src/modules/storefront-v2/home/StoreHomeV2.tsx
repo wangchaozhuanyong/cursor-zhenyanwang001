@@ -489,7 +489,8 @@ function HomeBuyingStatusBoard({
           className="store-home-v12-status-board__cta"
           onClick={() => onNavigate("/checkout")}
         >
-          去结算
+          <ShoppingCart size={14} aria-hidden />
+          <span>去结算</span>
         </UnifiedButton>
       </div>
       <div className="store-home-v12-status-board__grid">

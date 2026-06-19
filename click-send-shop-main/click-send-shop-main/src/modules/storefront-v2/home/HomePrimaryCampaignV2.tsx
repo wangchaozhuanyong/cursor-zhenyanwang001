@@ -82,8 +82,8 @@ export default function HomePrimaryCampaignV2({
             className="store-home-v12-shelf__action"
             aria-label="去领取，进入优惠活动页面"
           >
-            去领取
-            <ArrowRight size={14} aria-hidden />
+            <Gift size={14} aria-hidden />
+            <span>去领取</span>
           </UnifiedButton>
         )}
       />

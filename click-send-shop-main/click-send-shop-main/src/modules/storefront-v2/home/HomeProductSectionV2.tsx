@@ -1,4 +1,4 @@
-import { ArrowRight } from "lucide-react";
+import { PackageSearch } from "lucide-react";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import type { Product } from "@/types/product";
 import ProductCardV2 from "../product/ProductCardV2";
@@ -47,8 +47,8 @@ export default function HomeProductSectionV2({
               onClick={() => onNavigate(actionPath)}
               className="store-home-v12-shelf__action"
             >
-              {actionLabel}
-              <ArrowRight size={14} />
+              <PackageSearch size={14} aria-hidden />
+              <span>{actionLabel}</span>
             </UnifiedButton>
           )}
         />
@@ -76,8 +76,8 @@ export default function HomeProductSectionV2({
             onClick={() => onNavigate(actionPath)}
             className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-[color-mix(in_srgb,var(--theme-primary)_8%,var(--theme-surface))] px-3 py-2 text-xs font-black text-[var(--theme-primary)]"
           >
-            {emptyActionLabel}
-            <ArrowRight size={14} />
+            <PackageSearch size={14} aria-hidden />
+            <span>{emptyActionLabel}</span>
           </UnifiedButton>
         </div>
       ) : null}

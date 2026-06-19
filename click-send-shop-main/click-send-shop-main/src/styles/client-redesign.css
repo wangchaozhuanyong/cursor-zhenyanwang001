@@ -2603,9 +2603,12 @@ html[data-app-scope="store"] {
   --client-gold: #b88a32;
   --client-v12-ink: #111827;
   --client-v12-subtle: #f4f6f8;
-  --client-v12-page-bg: linear-gradient(180deg, #f8fafc 0%, color-mix(in srgb, var(--theme-primary) 4%, #f8fafc) 28rem, #f6f8fb 100%);
-  --client-v12-card-shadow: 0 14px 36px rgba(15, 23, 42, 0.08);
-  --client-v12-card-shadow-hover: 0 18px 44px rgba(15, 23, 42, 0.12);
+  --client-v12-page-bg: linear-gradient(180deg, color-mix(in srgb, var(--store-page-top, #fffdf8) 88%, #ffffff) 0%, color-mix(in srgb, var(--store-page-base, #f7f4ed) 78%, #f8fafc) 24rem, color-mix(in srgb, var(--theme-primary) 3%, var(--store-page-tint, #eef1e9)) 100%);
+  --client-v12-card-bg: color-mix(in srgb, var(--client-surface) 96%, var(--store-page-top, #fffdf8));
+  --client-v12-card-border: color-mix(in srgb, var(--client-border) 78%, rgba(107, 88, 50, 0.18));
+  --client-v12-card-shadow: 0 16px 42px -34px rgba(31, 39, 35, 0.36), 0 1px 0 rgba(255, 255, 255, 0.72);
+  --client-v12-card-shadow-hover: 0 22px 52px -38px rgba(31, 39, 35, 0.44), 0 1px 0 rgba(255, 255, 255, 0.76);
+  --client-v12-control-shadow: 0 10px 22px -18px color-mix(in srgb, var(--theme-primary) 34%, transparent);
 }
 
 html[data-app-scope="store"] .store-v12-page {
@@ -2615,9 +2618,9 @@ html[data-app-scope="store"] .store-v12-page {
 
 html[data-app-scope="store"] .store-v12-info-hero,
 html[data-app-scope="store"] .store-v12-info-card {
-  border: 1px solid color-mix(in srgb, var(--client-border) 82%, transparent);
+  border: 1px solid var(--client-v12-card-border);
   border-radius: var(--client-card-radius);
-  background: color-mix(in srgb, var(--client-surface) 95%, transparent);
+  background: var(--client-v12-card-bg);
   box-shadow: var(--client-v12-card-shadow);
 }
 
@@ -5217,9 +5220,9 @@ html[data-app-scope="store"] .store-v12-page .store-glass-surface,
 html[data-app-scope="store"] .store-tablet-bar,
 html[data-app-scope="store"] .store-desktop-header,
 html[data-app-scope="store"] .store-bottom-nav-inner {
-  border-color: color-mix(in srgb, var(--client-border) 74%, transparent);
-  background: color-mix(in srgb, var(--client-surface) 90%, transparent);
-  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.06);
+  border-color: color-mix(in srgb, var(--client-v12-card-border) 86%, transparent);
+  background: color-mix(in srgb, var(--client-surface) 92%, transparent);
+  box-shadow: 0 10px 30px -24px rgba(31, 39, 35, 0.32);
   backdrop-filter: blur(18px);
 }
 
@@ -5245,17 +5248,17 @@ html[data-app-scope="store"] .store-home-v12-page .store-home-v4-hero-media {
 
 html[data-app-scope="store"] .store-home-v12-page .store-home-v4-search-dock {
   border-radius: 14px;
-  border: 1px solid color-mix(in srgb, var(--client-border) 70%, transparent);
-  background: color-mix(in srgb, #ffffff 88%, transparent);
-  box-shadow: 0 16px 42px rgba(15, 23, 42, 0.14);
+  border: 1px solid color-mix(in srgb, var(--client-v12-card-border) 78%, transparent);
+  background: color-mix(in srgb, #ffffff 92%, transparent);
+  box-shadow: 0 18px 46px -30px rgba(31, 39, 35, 0.42);
 }
 
 html[data-app-scope="store"] .store-home-command-panel {
   display: grid;
   gap: 12px;
-  border: 1px solid color-mix(in srgb, var(--client-border) 82%, transparent);
+  border: 1px solid var(--client-v12-card-border);
   border-radius: var(--client-card-radius);
-  background: color-mix(in srgb, var(--client-surface) 94%, transparent);
+  background: var(--client-v12-card-bg);
   padding: 14px;
   box-shadow: var(--client-v12-card-shadow);
 }
@@ -5281,13 +5284,13 @@ html[data-app-scope="store"] .store-home-command-card {
   align-items: flex-start;
   justify-content: space-between;
   gap: 8px;
-  border: 1px solid color-mix(in srgb, var(--client-border) 78%, transparent);
+  border: 1px solid color-mix(in srgb, var(--client-v12-card-border) 88%, transparent);
   border-radius: 14px;
-  background: linear-gradient(180deg, #ffffff 0%, color-mix(in srgb, var(--client-v12-subtle) 72%, #ffffff) 100%);
+  background: linear-gradient(180deg, color-mix(in srgb, #ffffff 96%, var(--store-page-top, #fffdf8)) 0%, color-mix(in srgb, var(--client-v12-subtle) 66%, #ffffff) 100%);
   padding: 10px;
   color: var(--theme-text);
   text-align: left;
-  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.04);
+  box-shadow: 0 10px 24px -22px rgba(31, 39, 35, 0.28);
 }
 
 html[data-app-scope="store"] .store-home-command-card__icon {
@@ -5332,7 +5335,7 @@ html[data-app-scope="store"] .store-home-command-panel__member {
   justify-content: center;
   gap: 8px;
   border-radius: 12px;
-  background: linear-gradient(135deg, var(--theme-primary), color-mix(in srgb, var(--theme-primary) 72%, #111827));
+  background: linear-gradient(135deg, var(--theme-primary), color-mix(in srgb, var(--theme-primary) 74%, #10231d));
   color: var(--theme-primary-foreground);
   font-weight: 760;
 }
@@ -5340,11 +5343,11 @@ html[data-app-scope="store"] .store-home-command-panel__member {
 html[data-app-scope="store"] .store-home-v12-status-board {
   display: grid;
   gap: 12px;
-  border: 1px solid color-mix(in srgb, var(--client-border) 82%, transparent);
+  border: 1px solid var(--client-v12-card-border);
   border-radius: var(--client-card-radius);
   background:
-    linear-gradient(135deg, color-mix(in srgb, var(--theme-primary) 6%, #ffffff) 0%, #ffffff 62%),
-    var(--client-surface);
+    linear-gradient(135deg, color-mix(in srgb, var(--theme-primary) 5%, #ffffff) 0%, color-mix(in srgb, var(--client-v12-card-bg) 96%, #ffffff) 62%),
+    var(--client-v12-card-bg);
   padding: 14px;
   box-shadow: var(--client-v12-card-shadow);
 }
@@ -5367,14 +5370,28 @@ html[data-app-scope="store"] .store-home-v12-status-board__head h2 {
 }
 
 html[data-app-scope="store"] .store-home-v12-status-board__cta {
-  min-height: 36px;
+  display: inline-flex;
+  min-width: 84px;
+  min-height: 32px;
+  height: 32px;
   flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border: 1px solid color-mix(in srgb, var(--theme-primary) 18%, transparent);
   border-radius: 999px;
   background: var(--theme-primary);
-  padding: 0 14px;
-  color: var(--theme-primary-foreground);
+  box-shadow: var(--client-v12-control-shadow);
+  padding: 0 12px;
+  color: #ffffff;
   font-size: 12px;
-  font-weight: 820;
+  font-weight: 760;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+html[data-app-scope="store"] .store-home-v12-status-board__cta svg {
+  flex: 0 0 auto;
 }
 
 html[data-app-scope="store"] .store-home-v12-status-board__grid {
@@ -5389,9 +5406,9 @@ html[data-app-scope="store"] .store-home-v12-status-card {
   grid-template-columns: auto minmax(0, 1fr);
   align-items: start;
   gap: 9px;
-  border: 1px solid color-mix(in srgb, var(--client-border) 76%, transparent);
+  border: 1px solid color-mix(in srgb, var(--client-v12-card-border) 86%, transparent);
   border-radius: 14px;
-  background: color-mix(in srgb, var(--client-surface) 94%, transparent);
+  background: color-mix(in srgb, var(--client-v12-card-bg) 94%, #ffffff);
   padding: 10px;
   text-align: left;
 }
@@ -5442,9 +5459,9 @@ html[data-app-scope="store"] .store-home-v12-status-card__copy small {
 html[data-app-scope="store"] .store-home-v12-shelf {
   display: grid;
   gap: 12px;
-  border: 1px solid color-mix(in srgb, var(--client-border) 82%, transparent);
+  border: 1px solid var(--client-v12-card-border);
   border-radius: var(--client-card-radius);
-  background: color-mix(in srgb, var(--client-surface) 94%, transparent);
+  background: var(--client-v12-card-bg);
   padding: 12px;
   box-shadow: var(--client-v12-card-shadow);
 }
@@ -5526,7 +5543,7 @@ html[data-app-scope="store"] .store-home-v12-shelf__action {
   border: 1px solid color-mix(in srgb, var(--theme-primary) 18%, transparent);
   border-radius: 999px;
   background: var(--theme-primary);
-  box-shadow: 0 10px 22px color-mix(in srgb, var(--theme-primary) 18%, transparent);
+  box-shadow: var(--client-v12-control-shadow);
   padding: 0 12px;
   color: #ffffff;
   font-size: 12px;
@@ -5609,10 +5626,19 @@ html[data-app-scope="store"] .store-returns-v12-page .rounded-2xl,
 html[data-app-scope="store"] .store-return-detail-v12-page .rounded-2xl,
 html[data-app-scope="store"] .store-payment-result-v12-card,
 html[data-app-scope="store"] .store-logistics-v12-card {
-  border-color: color-mix(in srgb, var(--client-border) 82%, transparent);
+  border-color: var(--client-v12-card-border);
   border-radius: var(--client-card-radius);
-  background: color-mix(in srgb, var(--client-surface) 95%, transparent);
+  background: var(--client-v12-card-bg);
   box-shadow: var(--client-v12-card-shadow);
+}
+
+html[data-app-scope="store"] .store-home-v4-nav-panel,
+html[data-app-scope="store"] .store-product-card-v2,
+html[data-app-scope="store"] .store-promotions-v12-card,
+html[data-app-scope="store"] .store-cart-item,
+html[data-app-scope="store"] .store-cart-v12-overview {
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.68), rgba(255, 255, 255, 0));
 }
 
 html[data-app-scope="store"] .store-promotions-v12-hero {
@@ -5823,18 +5849,13 @@ html[data-app-scope="store"] [data-store-home-version="v2"] .store-home-v4-campa
 }
 
 html[data-app-scope="store"] [data-store-home-version="v2"] .store-home-v4-campaigns--festive::before {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto;
-  z-index: -1;
-  height: 5px;
-  background: linear-gradient(90deg, var(--theme-price), color-mix(in srgb, var(--client-gold) 82%, #ffffff), var(--theme-primary));
+  content: none;
 }
 
 html[data-app-scope="store"] [data-store-home-version="v2"] .store-home-v4-campaigns--festive::after {
   content: "";
   position: absolute;
-  inset: 5px 0 0;
+  inset: 0;
   z-index: -1;
   pointer-events: none;
   background:
@@ -6143,11 +6164,11 @@ html[data-app-scope="store"] .store-promotions-v12-state-panel {
   justify-items: center;
   gap: 14px;
   margin-top: 18px;
-  border: 1px dashed color-mix(in srgb, var(--client-border) 92%, transparent);
+  border: 1px dashed color-mix(in srgb, var(--client-v12-card-border) 94%, transparent);
   border-radius: 20px;
   background:
-    linear-gradient(135deg, color-mix(in srgb, var(--theme-primary) 5%, #ffffff) 0%, #ffffff 72%),
-    var(--client-surface);
+    linear-gradient(135deg, color-mix(in srgb, var(--theme-primary) 5%, #ffffff) 0%, color-mix(in srgb, var(--client-v12-card-bg) 96%, #ffffff) 72%),
+    var(--client-v12-card-bg);
   padding: 26px 18px;
   text-align: center;
   box-shadow: var(--client-v12-card-shadow);
@@ -6481,6 +6502,8 @@ html[data-app-scope="store"] .store-promotion-detail-v12-rules dl div {
 
 html[data-app-scope="store"] .store-product-card-v2 {
   overflow: hidden;
+  outline: 1px solid rgba(255, 255, 255, 0.58);
+  outline-offset: -2px;
 }
 
 html[data-app-scope="store"] .store-product-card-v2 img,
@@ -7513,17 +7536,17 @@ html[data-app-scope="store"] .store-trust-card > * {
 
 html[data-app-scope="store"] .store-cart-page .store-checkout-summary {
   background:
-    linear-gradient(135deg, color-mix(in srgb, var(--theme-primary) 5%, #ffffff), #ffffff 62%),
-    var(--client-surface);
+    linear-gradient(135deg, color-mix(in srgb, var(--theme-primary) 5%, #ffffff), color-mix(in srgb, var(--client-v12-card-bg) 96%, #ffffff) 62%),
+    var(--client-v12-card-bg);
 }
 
 html[data-app-scope="store"] .store-cart-item {
   margin-bottom: 10px;
-  border: 1px solid color-mix(in srgb, var(--client-border) 76%, transparent);
+  border: 1px solid var(--client-v12-card-border);
   border-radius: var(--client-card-radius);
-  background: color-mix(in srgb, var(--client-surface) 96%, transparent);
+  background-color: var(--client-v12-card-bg);
   padding: 10px;
-  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.055);
+  box-shadow: var(--client-v12-card-shadow);
 }
 
 html[data-app-scope="store"] .store-cart-item:last-child {
@@ -7531,7 +7554,9 @@ html[data-app-scope="store"] .store-cart-item:last-child {
 }
 
 html[data-app-scope="store"] .store-cart-media {
-  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+  border: 1px solid color-mix(in srgb, var(--client-v12-card-border) 74%, transparent);
+  background: color-mix(in srgb, var(--theme-primary) 4%, #f8fafc);
+  box-shadow: 0 10px 22px -18px rgba(31, 39, 35, 0.34);
 }
 
 html[data-app-scope="store"] .store-cart-item-row {
@@ -8605,11 +8630,11 @@ html[data-app-scope="store"] .store-cart-v12-overview {
   display: grid;
   gap: 12px;
   margin: 4px 0 14px;
-  border: 1px solid color-mix(in srgb, var(--client-border) 76%, transparent);
+  border: 1px solid var(--client-v12-card-border);
   border-radius: var(--client-card-radius);
   background:
-    linear-gradient(135deg, color-mix(in srgb, var(--theme-primary) 7%, #ffffff) 0%, color-mix(in srgb, var(--client-surface) 96%, transparent) 58%),
-    var(--client-surface);
+    linear-gradient(135deg, color-mix(in srgb, var(--theme-primary) 6%, #ffffff) 0%, color-mix(in srgb, var(--client-v12-card-bg) 96%, #ffffff) 58%),
+    var(--client-v12-card-bg);
   padding: 14px;
   box-shadow: var(--client-v12-card-shadow);
 }
@@ -8626,9 +8651,9 @@ html[data-app-scope="store"] .store-cart-v12-overview__stats > div {
   grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
   gap: 2px 8px;
-  border: 1px solid color-mix(in srgb, var(--client-border) 72%, transparent);
+  border: 1px solid color-mix(in srgb, var(--client-v12-card-border) 86%, transparent);
   border-radius: 14px;
-  background: color-mix(in srgb, var(--client-surface) 92%, transparent);
+  background: color-mix(in srgb, var(--client-v12-card-bg) 94%, #ffffff);
   padding: 10px;
 }
 
@@ -9431,11 +9456,11 @@ html[data-app-scope="store"] .store-promotion-detail-v12-state-panel__ghost {
 
   html[data-app-scope="store"] .store-promotions-v12-state-panel {
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    gap: 10px;
-    align-items: start;
-    padding: 14px;
-    text-align: left;
+    grid-template-columns: 1fr;
+    justify-items: center;
+    gap: 12px;
+    padding: 16px 14px;
+    text-align: center;
   }
 
   html[data-app-scope="store"] .store-promotions-v12-state-panel__icon {
@@ -9460,7 +9485,7 @@ html[data-app-scope="store"] .store-promotion-detail-v12-state-panel__ghost {
   }
 
   html[data-app-scope="store"] .store-promotions-v12-state-panel__actions {
-    grid-column: 1 / -1;
+    width: 100%;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 6px;
   }

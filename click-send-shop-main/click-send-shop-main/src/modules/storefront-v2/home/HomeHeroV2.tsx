@@ -134,10 +134,7 @@ export default function HomeHeroV2({
                 id="home-v4-search"
                 type="search"
                 value={keyword}
-                readOnly
                 onChange={(event) => setKeyword(event.target.value)}
-                onClick={() => openSearchPage()}
-                onFocus={() => openSearchPage()}
                 placeholder={t("hero.searchPlaceholder")}
                 className="store-home-v4-search-input"
               />

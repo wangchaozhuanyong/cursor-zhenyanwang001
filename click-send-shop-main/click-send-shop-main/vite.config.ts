@@ -172,7 +172,23 @@ function stripOriginHeaderForDevProxy(proxy: {
   });
 }
 
-const DEFAULT_DEV_API_PROXY_TARGET = "http://localhost:3000";
+function createLocalApiProxy(target: string) {
+  return {
+    "/api": {
+      target,
+      changeOrigin: true,
+      configure: stripOriginHeaderForDevProxy,
+    },
+    // 上传接口返回的 /uploads/... 静态文件在 Node 上，开发/预览时需同源代理才能预览
+    "/uploads": {
+      target,
+      changeOrigin: true,
+      configure: stripOriginHeaderForDevProxy,
+    },
+  };
+}
+
+const DEFAULT_DEV_API_PROXY_TARGET = "http://127.0.0.1:3100";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode, command }) => {
@@ -209,19 +225,10 @@ export default defineConfig(({ mode, command }) => {
     hmr: {
       overlay: false,
     },
-    proxy: {
-      "/api": {
-        target: devApiProxyTarget,
-        changeOrigin: true,
-        configure: stripOriginHeaderForDevProxy,
-      },
-      // 上传接口返回的 /uploads/... 静态文件在 Node 上，开发时需同源代理才能预览
-      "/uploads": {
-        target: devApiProxyTarget,
-        changeOrigin: true,
-        configure: stripOriginHeaderForDevProxy,
-      },
-    },
+    proxy: createLocalApiProxy(devApiProxyTarget),
+  },
+  preview: {
+    proxy: createLocalApiProxy(devApiProxyTarget),
   },
   plugins: [
     replaceViteClientPlaceholders(),

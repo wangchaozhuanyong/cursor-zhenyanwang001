@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, ShoppingCart } from "lucide-react";
 import ProductCoverImage from "@/components/ProductCoverImage";
 import { THEME_PRODUCT_MEDIA_ASPECT_STYLE } from "@/constants/productMediaAspect";
 import { cn } from "@/lib/utils";
@@ -148,8 +148,8 @@ export default function ProductCardV2({
         {showPrice ? (
           <div className="mt-auto flex items-end justify-between gap-2 pt-3">
             <StorefrontPrice amount={vm.priceText} originalAmount={vm.originalPriceText} />
-            <span className={actionClassName}>
-              <ArrowUpRight size={14} />
+            <span className={cn("store-product-card-v2__action", actionClassName)}>
+              <ShoppingCart size={14} />
             </span>
           </div>
         ) : null}

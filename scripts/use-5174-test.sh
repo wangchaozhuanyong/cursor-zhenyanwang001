@@ -5,9 +5,11 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 FRONTEND_DIR="$ROOT_DIR/click-send-shop-main/click-send-shop-main"
 SERVER_DIR="$ROOT_DIR/server"
 PORT="${PORT:-5174}"
-API_PORT="${API_PORT:-3000}"
+API_PORT="${API_PORT:-3100}"
 FRONTEND_SESSION="${FRONTEND_SESSION:-zhenyan-frontend-5174}"
-SERVER_SESSION="${SERVER_SESSION:-zhenyan-local-server-3000}"
+DEFAULT_SERVER_SESSION="zhenyan-local-server-${API_PORT}"
+SERVER_SESSION="${SERVER_SESSION:-$DEFAULT_SERVER_SESSION}"
+SERVER_ENV_FILE="${SERVER_ENV_FILE:-}"
 NPM_BIN="${NPM_BIN:-npm}"
 NODE_BIN="${NODE_BIN:-node}"
 NPM_CI_FLAGS="${NPM_CI_FLAGS:---ignore-scripts}"
@@ -31,6 +33,9 @@ Notes:
   - This script does not push to GitHub and does not deploy production.
   - If merge conflicts happen, resolve them manually before testing.
   - Set SKIP_FRONTEND_BUILD=1 only when dist is already current.
+  - API_PORT defaults to ${API_PORT} to avoid colliding with other local projects.
+  - SERVER_ENV_FILE can point to a local env file; if server/.env is absent,
+    server/.env.test is used when present.
 USAGE
 }
 
@@ -63,6 +68,40 @@ prepare_local_node() {
   printf "%s" "$local_node"
 }
 
+pid_cwd() {
+  local pid="$1"
+  lsof -a -p "$pid" -d cwd -Fn 2>/dev/null | sed -n 's/^n//p' | head -n 1
+}
+
+kill_project_port_listeners() {
+  local port="$1"
+  local expected_root="$2"
+  local label="$3"
+  local pids
+  pids="$(lsof -tiTCP:"$port" -sTCP:LISTEN 2>/dev/null || true)"
+  if [[ -z "$pids" ]]; then
+    return
+  fi
+
+  local allowed_pids=()
+  local pid
+  for pid in $pids; do
+    local cwd
+    cwd="$(pid_cwd "$pid")"
+    if [[ "$cwd" == "$expected_root"* ]]; then
+      allowed_pids+=("$pid")
+    else
+      echo "Refusing to kill $label listener on port $port: pid $pid belongs to ${cwd:-unknown cwd}."
+      echo "Set a different PORT/API_PORT or stop that process yourself."
+      exit 1
+    fi
+  done
+
+  if [[ "${#allowed_pids[@]}" -gt 0 ]]; then
+    kill "${allowed_pids[@]}" >/dev/null 2>&1 || true
+  fi
+}
+
 NODE_BIN="$(prepare_local_node "$(command -v "$NODE_BIN")")"
 
 current_branch="$(git rev-parse --abbrev-ref HEAD)"
@@ -84,8 +123,17 @@ for branch in "$@"; do
   git merge --no-ff --no-edit "$branch"
 done
 
-if [[ ! -f "$SERVER_DIR/.env" ]]; then
-  echo "Missing $SERVER_DIR/.env. Copy local development .env before starting 5174."
+if [[ -z "$SERVER_ENV_FILE" && ! -f "$SERVER_DIR/.env" && -f "$SERVER_DIR/.env.test" ]]; then
+  SERVER_ENV_FILE="$SERVER_DIR/.env.test"
+fi
+
+if [[ ! -f "$SERVER_DIR/.env" && -z "$SERVER_ENV_FILE" ]]; then
+  echo "Missing $SERVER_DIR/.env. Set SERVER_ENV_FILE=/path/to/local.env before starting 5174."
+  exit 1
+fi
+
+if [[ -n "$SERVER_ENV_FILE" && ! -f "$SERVER_ENV_FILE" ]]; then
+  echo "SERVER_ENV_FILE not found: $SERVER_ENV_FILE"
   exit 1
 fi
 
@@ -107,18 +155,16 @@ fi
 screen -S "$FRONTEND_SESSION" -X quit >/dev/null 2>&1 || true
 screen -S "$SERVER_SESSION" -X quit >/dev/null 2>&1 || true
 
-existing_frontend_pids="$(lsof -tiTCP:"$PORT" -sTCP:LISTEN 2>/dev/null || true)"
-if [[ -n "$existing_frontend_pids" ]]; then
-  kill $existing_frontend_pids >/dev/null 2>&1 || true
+kill_project_port_listeners "$PORT" "$FRONTEND_DIR" "frontend"
+kill_project_port_listeners "$API_PORT" "$SERVER_DIR" "API"
+
+server_env_source=""
+if [[ -n "$SERVER_ENV_FILE" ]]; then
+  server_env_source="set -a; source '$SERVER_ENV_FILE'; set +a;"
 fi
 
-existing_api_pids="$(lsof -tiTCP:"$API_PORT" -sTCP:LISTEN 2>/dev/null || true)"
-if [[ -n "$existing_api_pids" ]]; then
-  kill $existing_api_pids >/dev/null 2>&1 || true
-fi
-
-screen -dmS "$SERVER_SESSION" bash -lc "cd '$SERVER_DIR' && '$NODE_BIN' -r tsx/cjs src/index.js >> /tmp/${SERVER_SESSION}.log 2>&1"
-screen -dmS "$FRONTEND_SESSION" bash -lc "cd '$FRONTEND_DIR' && '$NODE_BIN' node_modules/vite/bin/vite.js preview --host 127.0.0.1 --port '$PORT' --strictPort >> /tmp/${FRONTEND_SESSION}.log 2>&1"
+screen -dmS "$SERVER_SESSION" bash -lc "cd '$SERVER_DIR' && $server_env_source PORT='$API_PORT' PUBLIC_APP_URL='http://127.0.0.1:$PORT' CORS_ORIGINS='http://127.0.0.1:$PORT,http://127.0.0.1:$API_PORT' ADMIN_ALLOWED_ORIGINS='http://127.0.0.1:$PORT,http://127.0.0.1:$API_PORT' '$NODE_BIN' -r tsx/cjs src/index.js >> /tmp/${SERVER_SESSION}.log 2>&1"
+screen -dmS "$FRONTEND_SESSION" bash -lc "cd '$FRONTEND_DIR' && VITE_DEV_API_PROXY_TARGET='http://127.0.0.1:$API_PORT' '$NODE_BIN' node_modules/vite/bin/vite.js preview --host 127.0.0.1 --port '$PORT' --strictPort >> /tmp/${FRONTEND_SESSION}.log 2>&1"
 
 echo "[5174] waiting for services"
 for _ in {1..30}; do

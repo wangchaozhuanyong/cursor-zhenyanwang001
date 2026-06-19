@@ -2,18 +2,15 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react
 import {
   BadgePercent,
   ClipboardList,
-  Download,
   Gift,
   Heart,
   PackageSearch,
   RefreshCw,
-  Share2,
   ShieldCheck,
   ShoppingCart,
   Sparkles,
   Ticket,
   Truck,
-  UserRound,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import SeoHead from "@/components/SeoHead";
@@ -294,19 +291,20 @@ export default function StoreHomeV2() {
         <HomeProcurementCommand
           couponEnabled={siteCapabilities.couponEnabled}
           pointsEnabled={siteCapabilities.pointsEnabled}
-          customerServiceDownloadEnabled={siteCapabilities.customerServiceDownloadEnabled}
           onNavigate={navigatePath}
         />
 
-        <HomeBuyingStatusBoard
-          authenticated={isAuthenticated}
-          cartCount={cartItems.length}
-          pendingOrderCount={pendingOrderCount}
-          favoriteCount={favoriteIds.length}
-          historyCount={historyProducts.length}
-          couponEnabled={siteCapabilities.couponEnabled}
-          onNavigate={navigatePath}
-        />
+        {isAuthenticated ? (
+          <HomeBuyingStatusBoard
+            authenticated={isAuthenticated}
+            cartCount={cartItems.length}
+            pendingOrderCount={pendingOrderCount}
+            favoriteCount={favoriteIds.length}
+            historyCount={historyProducts.length}
+            couponEnabled={siteCapabilities.couponEnabled}
+            onNavigate={navigatePath}
+          />
+        ) : null}
 
         {showNavGrid ? (
           <div className="store-home-v4-nav-panel overflow-hidden">
@@ -522,14 +520,31 @@ function HomeBuyingStatusBoard({
 function HomeProcurementCommand({
   couponEnabled,
   pointsEnabled,
-  customerServiceDownloadEnabled,
   onNavigate,
 }: {
   couponEnabled: boolean;
   pointsEnabled: boolean;
-  customerServiceDownloadEnabled: boolean;
   onNavigate: (path: string) => void;
 }) {
+  const benefitAction = couponEnabled
+    ? {
+        key: "coupons",
+        label: "优惠券",
+        description: "可用券与活动",
+        icon: Ticket,
+        path: "/coupons",
+        tone: "wine",
+        enabled: true,
+      }
+    : {
+        key: "points",
+        label: "积分福利",
+        description: "签到奖励与积分福利",
+        icon: BadgePercent,
+        path: "/points",
+        tone: "gold",
+        enabled: pointsEnabled,
+      };
   const actions = [
     {
       key: "categories",
@@ -547,7 +562,7 @@ function HomeProcurementCommand({
       icon: Gift,
       path: "/promotions",
       tone: "wine",
-      enabled: couponEnabled || pointsEnabled,
+      enabled: true,
     },
     {
       key: "new",
@@ -558,33 +573,7 @@ function HomeProcurementCommand({
       tone: "gold",
       enabled: true,
     },
-    {
-      key: "coupons",
-      label: "优惠券",
-      description: "可用券与活动",
-      icon: Ticket,
-      path: "/coupons",
-      tone: "wine",
-      enabled: couponEnabled,
-    },
-    {
-      key: "points",
-      label: "积分签到",
-      description: "签到奖励与积分福利",
-      icon: BadgePercent,
-      path: "/points",
-      tone: "gold",
-      enabled: pointsEnabled,
-    },
-    {
-      key: "cart",
-      label: "购物车",
-      description: "检查库存与总价",
-      icon: ShoppingCart,
-      path: "/cart",
-      tone: "teal",
-      enabled: true,
-    },
+    benefitAction,
     {
       key: "logistics",
       label: "物流售后",
@@ -601,24 +590,6 @@ function HomeProcurementCommand({
       icon: ClipboardList,
       path: "/orders",
       tone: "slate",
-      enabled: true,
-    },
-    {
-      key: "favorites",
-      label: "收藏历史",
-      description: "常买商品快速回访",
-      icon: Heart,
-      path: "/favorites",
-      tone: "jade",
-      enabled: true,
-    },
-    {
-      key: "install",
-      label: customerServiceDownloadEnabled ? "安装下载" : "邀请返现",
-      description: customerServiceDownloadEnabled ? "添加到桌面，打开更快" : "邀请好友领福利",
-      icon: customerServiceDownloadEnabled ? Download : Share2,
-      path: customerServiceDownloadEnabled ? "/install" : "/invite",
-      tone: "gold",
       enabled: true,
     },
   ].filter((item) => item.enabled);
@@ -659,16 +630,6 @@ function HomeProcurementCommand({
           );
         })}
       </div>
-      {pointsEnabled ? (
-        <UnifiedButton
-          type="button"
-          className="store-home-command-panel__member"
-          onClick={() => onNavigate("/points")}
-        >
-          <UserRound size={16} aria-hidden />
-          <span>去积分签到</span>
-        </UnifiedButton>
-      ) : null}
     </section>
   );
 }

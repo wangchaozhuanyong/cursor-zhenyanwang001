@@ -9,7 +9,6 @@ import {
   Gift,
   PackageSearch,
   RefreshCw,
-  Sparkles,
   Store,
   TicketPercent,
   Timer,
@@ -220,19 +219,6 @@ function promotionActionLabel(type: PromotionType) {
   return labels[type] || "查看活动";
 }
 
-function PromotionVisualIcon({ type }: { type: PromotionType }) {
-  const Icon = type === "coupon" || type === "full_reduction" || type === "full_discount"
-    ? TicketPercent
-    : type === "flash_sale" || type === "limited_time_discount"
-      ? Zap
-      : type === "member_price"
-        ? Gem
-        : type === "points_reward" || type === "checkin_reward"
-          ? Sparkles
-          : Gift;
-  return <Icon size={30} aria-hidden />;
-}
-
 function buildFilterHref(type: PromotionFilter) {
   return type ? `${PROMOTIONS_BASE_PATH}?type=${type}` : PROMOTIONS_BASE_PATH;
 }
@@ -263,6 +249,12 @@ function PromotionCard({ promotion }: { promotion: StorefrontPromotion }) {
   const benefitLabel = promotionBenefitLabel(promotion);
   const actionLabel = promotionActionLabel(promotion.type);
   const scopeLabel = promotionScopeLabel(promotion.scope_type, t);
+  const typeLabel = promotionTypeLabel(promotion.type);
+  const showBenefit = benefitLabel
+    && benefitLabel !== typeLabel
+    && benefitLabel !== displayTitle
+    && benefitLabel !== displaySubtitle
+    && (benefitLabel.includes("RM") || benefitLabel.includes("%") || benefitLabel.includes("券") || isDisplayablePromoLabel(promotion.promo_label));
 
   return (
     <article
@@ -283,27 +275,20 @@ function PromotionCard({ promotion }: { promotion: StorefrontPromotion }) {
       <div className="store-promotions-v12-card__body flex min-h-0 flex-1 flex-col p-3.5 sm:p-4">
         <div className="store-promotions-v12-card__ribbon flex min-w-0 items-start justify-between gap-2">
           <span className={cn("store-promotions-v12-card__type inline-flex shrink-0 items-center rounded-full border px-2.5 py-1 text-[11px] font-black", typeTone(promotion.type))}>
-            {promotionTypeLabel(promotion.type)}
+            {typeLabel}
           </span>
           <span className={cn("store-promotions-v12-card__runtime inline-flex shrink-0 rounded-full px-2 py-1 text-[11px] font-semibold", statusTone(promotion.runtime_status))}>
             {runtimeStatusLabel(promotion.runtime_status, t)}
           </span>
         </div>
 
-        <div className="store-promotions-v12-card__headline mt-3 grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
+        <div className="store-promotions-v12-card__headline mt-3 min-w-0">
           <Link to={detailPath} className="block min-w-0">
-            <p className="store-promotions-v12-card__benefit">{benefitLabel}</p>
-            <h2 className="line-clamp-2 text-base font-black leading-6 text-[var(--theme-text)] sm:text-lg">
+            <h2 className="store-promotions-v12-card__title line-clamp-2 text-base font-black leading-6 text-[var(--theme-text)] sm:text-lg">
               {displayTitle}
             </h2>
+            {showBenefit ? <p className="store-promotions-v12-card__benefit">{benefitLabel}</p> : null}
             <p className="store-promotions-v12-card__subtitle line-clamp-2">{displaySubtitle}</p>
-          </Link>
-          <Link to={detailPath} className="store-promotions-v12-card__visual" aria-label={displayTitle}>
-            {promotion.cover_image ? (
-              <img src={promotion.cover_image} alt="" loading="lazy" />
-            ) : (
-              <PromotionVisualIcon type={promotion.type} />
-            )}
           </Link>
         </div>
 
@@ -322,25 +307,7 @@ function PromotionCard({ promotion }: { promotion: StorefrontPromotion }) {
           </span>
         </div>
 
-        <div className="store-promotions-v12-card__tags mt-3 flex flex-wrap gap-1.5">
-          {isDisplayablePromoLabel(promotion.promo_label) ? (
-            <span className="rounded-full bg-[color-mix(in_srgb,var(--theme-price)_10%,var(--theme-surface))] px-2 py-1 text-[11px] font-black text-[var(--theme-price)]">
-              {promotion.promo_label}
-            </span>
-          ) : null}
-          {couponCount ? (
-            <span className="rounded-full bg-[color-mix(in_srgb,var(--theme-primary)_8%,var(--theme-surface))] px-2 py-1 text-[11px] font-semibold text-[var(--theme-primary)]">
-              {couponCount} {t("promotion.couponUnit")}
-            </span>
-          ) : null}
-          {itemCount ? (
-            <span className="rounded-full bg-[var(--theme-muted)] px-2 py-1 text-[11px] font-semibold text-[var(--theme-text-muted)]">
-              {itemCount} {t("promotion.items")}
-            </span>
-          ) : null}
-        </div>
-
-        <div className="store-promotions-v12-card__footer mt-auto flex items-center justify-between gap-3 pt-4">
+        <div className="store-promotions-v12-card__footer mt-4 flex items-center justify-between gap-3">
           <span className="min-w-0 truncate text-[11px] font-medium text-[var(--theme-text-muted)]">
             {itemCount ? `${itemCount} 件商品参与` : couponCount ? `${couponCount} 张券可用` : "限时福利"}
           </span>
@@ -484,14 +451,6 @@ export default function Promotions() {
 
       <main className="mx-auto w-full max-w-6xl px-[var(--store-page-x)] pb-6 pt-3 md:px-6 md:py-8 lg:px-8">
         <section className="store-promotions-v12-hero overflow-hidden rounded-[1.35rem] border border-[color-mix(in_srgb,var(--theme-price)_20%,var(--theme-border))] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--theme-price)_14%,var(--theme-surface))_0%,var(--theme-surface)_58%,color-mix(in_srgb,var(--theme-primary)_8%,var(--theme-bg))_100%)] p-4 shadow-[0_18px_50px_color-mix(in_srgb,var(--theme-price)_10%,transparent)] sm:p-6">
-          <div className="store-promotions-v12-hero__copy">
-            <span className="store-promotions-v12-hero__eyebrow">
-              <Gift size={15} aria-hidden />
-              大马通优惠活动中心
-            </span>
-            <h1>今日优惠集中领取</h1>
-            <p>秒杀、满减、满折、优惠券一处查看</p>
-          </div>
           <div className="store-promotions-v12-hero__stats" aria-label="活动统计">
             <div>
               <strong>{formatCount(summary.active)}</strong>

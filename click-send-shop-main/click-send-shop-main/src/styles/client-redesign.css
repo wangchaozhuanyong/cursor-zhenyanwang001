@@ -12158,18 +12158,21 @@ html[data-app-scope="store"] .store-search-field:focus-within {
 html[data-app-scope="store"] .store-home-v12-page[data-store-home-version="v2"] .store-home-hero-v4 {
   --store-home-hero-radius: clamp(16px, 2vw, 22px);
   --store-home-hero-inset: clamp(0.58rem, 1.55vw, 1rem);
-  --store-home-hero-stage: color-mix(in srgb, var(--theme-text) 78%, var(--theme-primary));
-  --store-home-hero-stage-soft: color-mix(in srgb, var(--theme-primary) 48%, var(--theme-text));
-  border-color: color-mix(in srgb, var(--theme-warning) 24%, var(--theme-border)) !important;
+  --store-home-hero-stage: #241413;
+  --store-home-hero-stage-soft: #34201e;
+  --store-home-hero-stage-deep: #160f0e;
+  --store-home-hero-rim: color-mix(in srgb, var(--theme-warning) 30%, #fff4df);
+  border-color: color-mix(in srgb, var(--store-home-hero-rim) 32%, transparent) !important;
   border-radius: var(--store-home-hero-radius) !important;
   background:
-    linear-gradient(145deg, var(--store-home-hero-stage) 0%, var(--store-home-hero-stage-soft) 54%, color-mix(in srgb, var(--theme-text) 88%, var(--theme-primary)) 100%),
+    radial-gradient(circle at 74% 16%, color-mix(in srgb, var(--theme-warning) 18%, transparent) 0%, transparent 34%),
+    linear-gradient(148deg, var(--store-home-hero-stage) 0%, var(--store-home-hero-stage-soft) 56%, var(--store-home-hero-stage-deep) 100%),
     var(--store-home-hero-stage) !important;
   padding: var(--store-home-hero-inset) !important;
   color: var(--theme-primary-foreground) !important;
   box-shadow:
-    0 28px 72px -58px color-mix(in srgb, var(--theme-text) 74%, transparent),
-    0 0 0 1px color-mix(in srgb, var(--theme-warning) 12%, transparent) !important;
+    0 28px 72px -58px rgba(22, 12, 10, 0.78),
+    0 0 0 1px color-mix(in srgb, var(--store-home-hero-rim) 14%, transparent) !important;
 }
 
 html[data-app-scope="store"] .store-home-v12-page[data-store-home-version="v2"] .store-home-hero-v4 > .store-home-v4-chrome {
@@ -12178,8 +12181,8 @@ html[data-app-scope="store"] .store-home-v12-page[data-store-home-version="v2"] 
   min-height: 3.05rem;
   z-index: 2 !important;
   margin: 0 0 var(--store-home-hero-inset) !important;
-  border-color: color-mix(in srgb, var(--theme-primary-foreground) 18%, transparent) !important;
-  background: color-mix(in srgb, var(--theme-primary-foreground) 8%, transparent) !important;
+  border-color: color-mix(in srgb, var(--store-home-hero-rim) 24%, transparent) !important;
+  background: color-mix(in srgb, var(--theme-primary-foreground) 9%, transparent) !important;
   color: var(--theme-primary-foreground) !important;
   box-shadow: none !important;
   backdrop-filter: none !important;
@@ -12198,8 +12201,8 @@ html[data-app-scope="store"] .store-home-v12-page[data-store-home-version="v2"] 
 html[data-app-scope="store"] .store-home-v12-page[data-store-home-version="v2"] .store-home-v4-action-button,
 html[data-app-scope="store"] .store-home-v12-page[data-store-home-version="v2"] .store-home-v4-action-button.store-notification-button,
 html[data-app-scope="store"] .store-home-v12-page[data-store-home-version="v2"] .store-home-v4-icon-button {
-  border-color: color-mix(in srgb, var(--theme-primary-foreground) 28%, transparent) !important;
-  background: color-mix(in srgb, var(--theme-primary-foreground) 18%, transparent) !important;
+  border-color: color-mix(in srgb, var(--store-home-hero-rim) 24%, transparent) !important;
+  background: color-mix(in srgb, var(--theme-primary-foreground) 13%, transparent) !important;
   color: var(--theme-primary-foreground) !important;
   box-shadow: none !important;
 }
@@ -12215,7 +12218,9 @@ html[data-app-scope="store"] .store-home-v12-page[data-store-home-version="v2"] 
 html[data-app-scope="store"] .store-home-v12-page[data-store-home-version="v2"] .store-home-v4-fallback {
   min-height: clamp(18rem, 36vw, 25rem) !important;
   border-radius: calc(var(--store-home-hero-radius) - 8px) !important;
-  background: color-mix(in srgb, var(--store-home-hero-stage) 84%, var(--theme-bg)) !important;
+  background:
+    radial-gradient(circle at 72% 26%, rgba(173, 123, 58, 0.12), transparent 38%),
+    linear-gradient(135deg, #201514 0%, #2a1a19 54%, #130e0d 100%) !important;
   aspect-ratio: auto !important;
 }
 
@@ -12232,8 +12237,8 @@ html[data-app-scope="store"] .store-home-v12-page[data-store-home-version="v2"] 
   z-index: 12;
   pointer-events: none;
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-text) 28%, transparent) 0%, transparent 34%, color-mix(in srgb, var(--theme-text) 42%, transparent) 100%),
-    linear-gradient(90deg, color-mix(in srgb, var(--theme-text) 34%, transparent) 0%, transparent 46%, color-mix(in srgb, var(--theme-warning) 10%, transparent) 100%) !important;
+    linear-gradient(180deg, rgba(20, 12, 10, 0.22) 0%, transparent 34%, rgba(18, 10, 9, 0.42) 100%),
+    linear-gradient(90deg, rgba(24, 14, 12, 0.38) 0%, transparent 48%, rgba(173, 123, 58, 0.1) 100%) !important;
 }
 
 html[data-app-scope="store"] .store-home-v12-page[data-store-home-version="v2"] .store-home-v4-hero-media .store-hero-copy-zone,

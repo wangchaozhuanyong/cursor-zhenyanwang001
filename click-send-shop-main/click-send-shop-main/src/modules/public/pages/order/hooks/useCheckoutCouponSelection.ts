@@ -107,6 +107,15 @@ export function useCheckoutCouponSelection({
   useEffect(() => {
     if (couponInitDone || pickerCouponsLoading) return;
 
+    if (preferredCouponId === "none") {
+      setSelectedCoupon(null);
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.delete("coupon_id");
+      setSearchParams(nextParams, { replace: true });
+      setCouponInitDone(true);
+      return;
+    }
+
     const candidates = pickerCoupons.filter(
       (coupon) =>
         coupon.usable !== false

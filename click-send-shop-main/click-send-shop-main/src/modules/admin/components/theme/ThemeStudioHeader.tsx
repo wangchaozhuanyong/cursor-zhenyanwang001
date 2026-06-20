@@ -1,4 +1,4 @@
-import { CheckCircle2, Eye, Gift, MonitorSmartphone } from "lucide-react";
+import { CheckCircle2, Gift, LayoutDashboard, Maximize2, MonitorSmartphone, Store } from "lucide-react";
 import { useMemo } from "react";
 import { LoadingButton } from "@/modules/micro-interactions";
 import PermissionGate from "@/components/admin/PermissionGate";
@@ -15,7 +15,9 @@ export type ThemeStudioHeaderProps = {
   dirty: boolean;
   saving: boolean;
   saveDisabled?: boolean;
-  onPreview: () => void;
+  onClientPreview: () => void;
+  onAdminPreview: () => void;
+  onFullscreenPreview: () => void;
   onSave: () => void;
   onSetClientSkin: () => void;
   onSetHolidaySkin: () => void;
@@ -30,7 +32,9 @@ export default function ThemeStudioHeader({
   dirty,
   saving,
   saveDisabled,
-  onPreview,
+  onClientPreview,
+  onAdminPreview,
+  onFullscreenPreview,
   onSave,
   onSetClientSkin,
   onSetHolidaySkin,
@@ -67,11 +71,27 @@ export default function ThemeStudioHeader({
         <div className="flex flex-wrap items-center gap-2">
           <UnifiedButton
             type="button"
-            onClick={onPreview}
+            onClick={onClientPreview}
+            className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-border px-3 text-xs font-semibold text-foreground hover:bg-secondary"
+          >
+            <Store size={14} />
+            客户端预览
+          </UnifiedButton>
+          <UnifiedButton
+            type="button"
+            onClick={onAdminPreview}
             className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-border px-3 text-xs hover:bg-secondary"
           >
-            <Eye size={14} />
-            预览
+            <LayoutDashboard size={14} />
+            后台预览
+          </UnifiedButton>
+          <UnifiedButton
+            type="button"
+            onClick={onFullscreenPreview}
+            className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-border px-3 text-xs hover:bg-secondary"
+          >
+            <Maximize2 size={14} />
+            全屏预览
           </UnifiedButton>
 
           <PermissionGate permission="settings.manage">

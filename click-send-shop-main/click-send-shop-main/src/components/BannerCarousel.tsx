@@ -26,6 +26,8 @@ interface BannerCarouselProps {
   ariaLabelPrefix?: string;
   themeConfigOverride?: ThemeConfig;
   autoRotateMs?: number;
+  showCopyLayer?: boolean;
+  onActiveBannerChange?: (banner: Banner | null) => void;
 }
 
 const AUTO_ROTATE_MS = 5200;
@@ -116,6 +118,8 @@ export default function BannerCarousel({
   ariaLabelPrefix = "首页轮播图",
   themeConfigOverride,
   autoRotateMs,
+  showCopyLayer = true,
+  onActiveBannerChange,
 }: BannerCarouselProps) {
   const { themeConfig: runtimeConfig } = useThemeRuntime();
   const bannerStyle = themeConfigOverride?.bannerStyle ?? runtimeConfig.bannerStyle;
@@ -131,7 +135,7 @@ export default function BannerCarousel({
   const bannerDescription = banner?.description?.trim() || "";
   const bannerCopy = splitBannerDescription(bannerDescription);
   const bannerCtaText = banner ? getBannerCtaText(banner) : "";
-  const hasTextLayer = Boolean(bannerTitle || bannerDescription || bannerCtaText);
+  const hasTextLayer = showCopyLayer && Boolean(bannerTitle || bannerDescription || bannerCtaText);
   const showControls = banners.length > 1;
   const fallbackLabel = `${ariaLabelPrefix} ${safeIndex + 1}`;
   const nextBannerImage = banners.length > 1
@@ -153,6 +157,10 @@ export default function BannerCarousel({
   const resolvedAutoRotateMs = typeof autoRotateMs === "number" && Number.isFinite(autoRotateMs)
     ? Math.min(20_000, Math.max(3_000, Math.trunc(Number(autoRotateMs))))
     : AUTO_ROTATE_MS;
+
+  useEffect(() => {
+    onActiveBannerChange?.(banner);
+  }, [banner, onActiveBannerChange]);
 
   const refreshCopyTone = useCallback(() => {
     if (!hasTextLayer) return;

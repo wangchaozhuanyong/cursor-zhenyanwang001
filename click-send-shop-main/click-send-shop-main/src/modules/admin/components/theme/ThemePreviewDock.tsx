@@ -4,7 +4,12 @@ import type { ThemeConfig } from "@/types/theme";
 import ThemeHealthCheck from "./ThemeHealthCheck";
 import ThemeHealthSummary from "./ThemeHealthSummary";
 import ThemeRealRoutePreview from "./ThemeRealRoutePreview";
-import type { PreviewDevice, PreviewMode } from "./themeStudioConstants";
+import {
+  PREVIEW_ROUTE_SCENES,
+  type PreviewDevice,
+  type PreviewMode,
+  type PreviewRouteMode,
+} from "./themeStudioConstants";
 import { Tx } from "@/components/admin/AdminText";
 import { useAdminT } from "@/hooks/useAdminT";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
@@ -20,6 +25,12 @@ export type ThemePreviewDockProps = {
   onOptimizeTextContrast?: () => void;
 };
 
+function toRouteMode(mode: PreviewMode): PreviewRouteMode {
+  if (mode === "admin" || mode === "components") return "admin_home";
+  if (mode === "mobile") return "home";
+  return mode;
+}
+
 export default function ThemePreviewDock({
   config,
   skinKey,
@@ -33,6 +44,9 @@ export default function ThemePreviewDock({
   const { tText } = useAdminT();
   const [collapsed, setCollapsed] = useState(false);
   const [healthOpen, setHealthOpen] = useState(false);
+  const routeMode = toRouteMode(mode);
+  const currentScene = PREVIEW_ROUTE_SCENES.find((item) => item.id === routeMode) ?? PREVIEW_ROUTE_SCENES[0];
+  const previewLabel = currentScene.group === "admin" ? "后台预览" : "客户端预览";
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -48,10 +62,11 @@ export default function ThemePreviewDock({
       <UnifiedButton
         type="button"
         onClick={() => setCollapsed(false)}
-        className="fixed bottom-6 right-4 z-20 inline-flex h-10 items-center gap-2 rounded-xl border border-border bg-card px-3 text-xs shadow-md 2xl:hidden"
+        className="fixed bottom-6 right-4 z-20 inline-flex h-10 max-w-[calc(100vw-2rem)] items-center gap-2 rounded-xl border border-border bg-card px-3 text-xs shadow-md 2xl:hidden"
+        aria-label={`${previewLabel}：${currentScene.label}`}
       >
         <PanelRightOpen size={14} />
-        打开预览
+        <span className="truncate">{previewLabel}：{currentScene.label}</span>
       </UnifiedButton>
     );
   }
@@ -59,7 +74,10 @@ export default function ThemePreviewDock({
   return (
     <aside className="w-full shrink-0 rounded-2xl border border-border bg-card shadow-sm 2xl:sticky 2xl:top-24 2xl:flex 2xl:h-[calc(100vh-112px)] 2xl:w-[clamp(560px,36vw,760px)] 2xl:flex-col 2xl:overflow-hidden">
       <div className="flex items-center justify-between border-b border-border px-3 py-2">
-        <p className="text-sm font-semibold text-foreground"><Tx>实时预览</Tx></p>
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-foreground"><Tx>实时预览</Tx></p>
+          <p className="truncate text-[11px] text-muted-foreground">{previewLabel}：{currentScene.label} · {device === "phone" ? "手机" : device === "tablet" ? "平板" : "桌面"}</p>
+        </div>
         <div className="flex items-center gap-1">
           {onFullscreen ? (
             <UnifiedButton type="button" onClick={onFullscreen} className="rounded-lg border border-border p-1.5 text-muted-foreground hover:bg-secondary" title={tText("全屏预览")}>

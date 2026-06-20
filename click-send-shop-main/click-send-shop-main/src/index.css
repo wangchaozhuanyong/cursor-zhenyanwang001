@@ -547,7 +547,8 @@
   }
   .store-bottom-cart-space {
     padding-bottom: calc(
-      var(--store-bottom-nav-height, 78px) + var(--store-action-bar-height, 4.75rem) +
+      var(--store-bottom-nav-height, 78px) +
+        var(--store-cart-checkout-bar-height, var(--store-action-bar-height, 4.75rem)) + 16px +
         env(safe-area-inset-bottom, 0px)
     );
   }

@@ -1,5 +1,4 @@
 import { X } from "lucide-react";
-import { useState } from "react";
 import { Tx } from "@/components/admin/AdminText";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { useAdminT } from "@/hooks/useAdminT";
@@ -11,13 +10,24 @@ type Props = {
   open: boolean;
   config: ThemeConfig;
   skinKey: string;
+  mode: PreviewMode;
+  device: PreviewDevice;
+  onModeChange: (mode: PreviewMode) => void;
+  onDeviceChange: (device: PreviewDevice) => void;
   onClose: () => void;
 };
 
-export default function ThemeFullscreenPreview({ open, config, skinKey, onClose }: Props) {
+export default function ThemeFullscreenPreview({
+  open,
+  config,
+  skinKey,
+  mode,
+  device,
+  onModeChange,
+  onDeviceChange,
+  onClose,
+}: Props) {
   const { tText } = useAdminT();
-  const [mode, setMode] = useState<PreviewMode>("home");
-  const [device, setDevice] = useState<PreviewDevice>("desktop");
 
   if (!open) return null;
 
@@ -49,8 +59,8 @@ export default function ThemeFullscreenPreview({ open, config, skinKey, onClose 
           skinKey={skinKey}
           mode={mode}
           device={device}
-          onModeChange={setMode}
-          onDeviceChange={setDevice}
+          onModeChange={onModeChange}
+          onDeviceChange={onDeviceChange}
           fullscreen
         />
       </div>

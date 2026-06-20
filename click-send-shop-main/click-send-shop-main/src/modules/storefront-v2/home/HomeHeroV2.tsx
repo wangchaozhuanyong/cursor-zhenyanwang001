@@ -1,10 +1,11 @@
-import { useState, type CSSProperties, type FormEvent, type MouseEvent, type ReactNode } from "react";
-import { ChevronDown, Grid3X3, Search, ShoppingCart, UserRound } from "lucide-react";
+import { useState, type CSSProperties, type FormEvent, type MouseEvent } from "react";
+import { ArrowRight, ChevronDown, Search, UserRound } from "lucide-react";
 import BannerCarousel from "@/components/BannerCarousel";
 import NotificationIconButton from "@/components/NotificationIconButton";
 import StoreBrandLogo from "@/components/store/StoreBrandLogo";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { cn } from "@/lib/utils";
+import { getBannerCtaText } from "@/utils/bannerCta";
 import { isDarkClientDesignStyle, type ClientDesignStyle } from "@/utils/clientDesignStyle";
 import type { Banner } from "@/types/banner";
 import type { ThemeConfig } from "@/types/theme";
@@ -40,10 +41,18 @@ export default function HomeHeroV2({
 }: HomeHeroV2Props) {
   const hasBanner = bannerEnabled && (bannersLoading || banners.length > 0);
   const [keyword, setKeyword] = useState("");
+  const [activeHeroBanner, setActiveHeroBanner] = useState<Banner | null>(null);
   const clientStyle = useClientDesignStyle();
   const { locale, localizedPath, t } = usePublicLocale();
   const displaySlogan = locale !== "zh" && containsCjk(slogan) ? t("hero.siteSlogan") : slogan;
   const displayDescription = locale !== "zh" && containsCjk(description) ? t("hero.siteDescription") : description;
+  const activeBannerTitle = activeHeroBanner?.title?.trim() || "";
+  const activeBannerDescription = activeHeroBanner?.description?.trim() || "";
+  const activeBannerLink = activeHeroBanner?.link?.trim() || "";
+  const activeBannerCtaText = activeHeroBanner ? getBannerCtaText(activeHeroBanner) : "";
+  const heroTitle = hasBanner && activeBannerTitle ? activeBannerTitle : displaySlogan;
+  const heroDescription = hasBanner && activeBannerDescription ? activeBannerDescription : displayDescription;
+  const showHeroCta = Boolean(hasBanner && activeBannerCtaText && activeBannerLink);
   const isBlackGold = clientStyle === "black_gold";
   const blackGoldHeroVars: CSSProperties | undefined = isBlackGold
     ? {
@@ -64,6 +73,15 @@ export default function HomeHeroV2({
     event.preventDefault();
     event.stopPropagation();
     openSearchPage();
+  };
+
+  const openHeroBannerCta = () => {
+    if (!activeBannerLink) return;
+    if (/^https?:\/\//i.test(activeBannerLink)) {
+      window.open(activeBannerLink, "_blank", "noopener,noreferrer");
+      return;
+    }
+    onNavigate(localizedPath(activeBannerLink.startsWith("/") ? activeBannerLink : `/${activeBannerLink}`));
   };
 
   return (
@@ -94,6 +112,8 @@ export default function HomeHeroV2({
             themeConfigOverride={themeConfig}
             autoRotateMs={autoRotateMs}
             trackingModule="home_v2_banner"
+            showCopyLayer={false}
+            onActiveBannerChange={setActiveHeroBanner}
           />
         ) : (
           <HeroFallbackVisual
@@ -104,54 +124,62 @@ export default function HomeHeroV2({
             description={displayDescription}
           />
         )}
+      </div>
 
-        <div className="pointer-events-none absolute inset-0 z-[35] flex flex-col">
-          <div className="store-home-v4-copy pointer-events-auto mt-auto w-full px-4 pb-5 sm:px-6 sm:pb-6 lg:px-9 lg:pb-8">
-            {!hasBanner ? (
-              <div className="store-home-v4-title-wrap mb-4 max-w-2xl text-white">
-                <span className="store-home-v4-kicker">{t("hero.bannerKicker")}</span>
-                <h2 className="store-home-v4-title">{displaySlogan}</h2>
-                <p className="store-home-v4-desc">{displayDescription}</p>
-              </div>
-            ) : null}
-            <form
-              onSubmit={submitSearch}
-              className="store-home-v4-search-dock"
-              onClick={stopPropagation}
-              aria-label={t("hero.searchAria")}
-            >
-              <button
-                type="button"
-                className="store-home-v4-search-scope"
-                onClick={() => onNavigate(localizedPath("/search"))}
-              >
-                {t("common.searchScopeAll")}
-                <ChevronDown size={14} aria-hidden />
-              </button>
-              <Search size={19} className="store-home-v4-search-icon" aria-hidden />
-              <label className="sr-only" htmlFor="home-v4-search">{t("hero.searchLabel")}</label>
-              <input
-                id="home-v4-search"
-                type="search"
-                value={keyword}
-                onChange={(event) => setKeyword(event.target.value)}
-                placeholder={t("hero.searchPlaceholder")}
-                className="store-home-v4-search-input"
-              />
-              <UnifiedButton
-                type="submit"
-                className="store-home-v4-search-submit"
-              >
-                {t("common.searchSubmit")}
-              </UnifiedButton>
-            </form>
-            <div className="store-home-v4-hot-terms" aria-label={t("hero.searchLabel")}>
-              <UnifiedButton type="button" onClick={() => onNavigate(localizedPath("/categories?sort=sales_desc"))}>{t("hero.hotSales")}</UnifiedButton>
-              <UnifiedButton type="button" onClick={() => onNavigate(localizedPath("/coupons"))}>{t("common.coupons")}</UnifiedButton>
-              <UnifiedButton type="button" onClick={() => onNavigate(localizedPath("/categories?keyword=%E6%9C%AC%E5%9C%B0%E9%85%8D%E9%80%81"))}>{t("hero.hotLocalDelivery")}</UnifiedButton>
+      <div className="store-home-v4-copy">
+        <div className="store-home-v4-title-wrap">
+          {!hasBanner ? <span className="store-home-v4-kicker">{t("hero.bannerKicker")}</span> : null}
+          <div className="store-home-v4-copy-main">
+            <div className="store-home-v4-copy-text">
+              <h2 className="store-home-v4-title">{heroTitle}</h2>
+              <p className="store-home-v4-desc">{heroDescription}</p>
             </div>
+            {showHeroCta ? (
+              <UnifiedButton
+                type="button"
+                className="store-home-v4-copy-cta"
+                onClick={openHeroBannerCta}
+              >
+                <span className="truncate">{activeBannerCtaText}</span>
+                <ArrowRight size={14} aria-hidden />
+              </UnifiedButton>
+            ) : null}
           </div>
         </div>
+      </div>
+
+      <div className="store-home-v4-search-workbench">
+        <form
+          onSubmit={submitSearch}
+          className="store-home-v4-search-dock"
+          onClick={stopPropagation}
+          aria-label={t("hero.searchAria")}
+        >
+          <button
+            type="button"
+            className="store-home-v4-search-scope"
+            onClick={() => onNavigate(localizedPath("/search"))}
+          >
+            {t("common.searchScopeAll")}
+            <ChevronDown size={14} aria-hidden />
+          </button>
+          <Search size={19} className="store-home-v4-search-icon" aria-hidden />
+          <label className="sr-only" htmlFor="home-v4-search">{t("hero.searchLabel")}</label>
+          <input
+            id="home-v4-search"
+            type="search"
+            value={keyword}
+            onChange={(event) => setKeyword(event.target.value)}
+            placeholder={t("hero.searchPlaceholder")}
+            className="store-home-v4-search-input"
+          />
+          <UnifiedButton
+            type="submit"
+            className="store-home-v4-search-submit"
+          >
+            {t("common.searchSubmit")}
+          </UnifiedButton>
+        </form>
       </div>
     </section>
   );
@@ -212,16 +240,6 @@ function HeroChrome({
           onClick={() => onNavigate(localizedPath("/notifications"))}
           className="store-home-v4-action-button"
         />
-        <HeroChromeActionButton
-          label={t("common.categories")}
-          onClick={() => onNavigate(localizedPath("/categories"))}
-          icon={<Grid3X3 size={16} aria-hidden />}
-        />
-        <HeroChromeActionButton
-          label={t("common.cart")}
-          onClick={() => onNavigate(localizedPath("/cart"))}
-          icon={<ShoppingCart size={16} aria-hidden />}
-        />
         <UnifiedButton
           type="button"
           className="store-home-v4-action-button store-home-v4-icon-button"
@@ -232,28 +250,6 @@ function HeroChrome({
         </UnifiedButton>
       </div>
     </div>
-  );
-}
-
-function HeroChromeActionButton({
-  label,
-  icon,
-  onClick,
-}: {
-  label: string;
-  icon: ReactNode;
-  onClick: () => void;
-}) {
-  return (
-    <UnifiedButton
-      type="button"
-      className="store-home-v4-action-button store-home-v4-icon-button"
-      onClick={onClick}
-      aria-label={label}
-      title={label}
-    >
-      {icon}
-    </UnifiedButton>
   );
 }
 

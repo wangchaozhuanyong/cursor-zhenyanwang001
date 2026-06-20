@@ -92,6 +92,32 @@ function formatAppliedTime(timestamp: number | null) {
   }).format(timestamp);
 }
 
+function getPendingHealth(): HealthItem[] {
+  return [
+    { id: "load", label: "页面加载", status: "pending" },
+    { id: "theme", label: "草稿主题", status: "pending" },
+    { id: "overflow", label: "横向溢出", status: "pending" },
+    { id: "images", label: "图片状态", status: "pending" },
+  ];
+}
+
+function buildThemeHealth(lastAppliedAt: number | null, frameReady: boolean): HealthItem {
+  if (lastAppliedAt) {
+    return {
+      id: "theme",
+      label: "草稿主题",
+      status: "ok",
+      detail: `已发送 ${formatAppliedTime(lastAppliedAt)}`,
+    };
+  }
+  return {
+    id: "theme",
+    label: "草稿主题",
+    status: frameReady ? "warn" : "pending",
+    detail: frameReady ? "预览页未就绪，请刷新预览" : "等待预览页就绪",
+  };
+}
+
 export default function ThemeRealRoutePreview({
   config,
   skinKey,
@@ -103,17 +129,15 @@ export default function ThemeRealRoutePreview({
 }: Props) {
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const inspectTimerRef = useRef<number | null>(null);
+  const lastAppliedAtRef = useRef<number | null>(null);
   const routeMode = toRouteMode(mode);
   const [reloadKey, setReloadKey] = useState(0);
   const [productPath, setProductPath] = useState<string | null>(null);
   const [productStatus, setProductStatus] = useState<"idle" | "loading" | "ready" | "empty" | "error">("idle");
   const [frameReady, setFrameReady] = useState(false);
+  const [previewTimedOut, setPreviewTimedOut] = useState(false);
   const [lastAppliedAt, setLastAppliedAt] = useState<number | null>(null);
-  const [health, setHealth] = useState<HealthItem[]>([
-    { id: "load", label: "页面加载", status: "pending" },
-    { id: "overflow", label: "横向溢出", status: "pending" },
-    { id: "images", label: "图片状态", status: "pending" },
-  ]);
+  const [health, setHealth] = useState<HealthItem[]>(getPendingHealth);
 
   useEffect(() => {
     let cancelled = false;
@@ -156,6 +180,7 @@ export default function ThemeRealRoutePreview({
   const postDraftTheme = useCallback(() => {
     const target = iframeRef.current?.contentWindow;
     if (!target) return;
+    const appliedAt = Date.now();
     target.postMessage(
       {
         type: THEME_PREVIEW_APPLY,
@@ -164,7 +189,8 @@ export default function ThemeRealRoutePreview({
       },
       window.location.origin,
     );
-    setLastAppliedAt(Date.now());
+    lastAppliedAtRef.current = appliedAt;
+    setLastAppliedAt(appliedAt);
   }, [config, skinKey]);
 
   const inspectFrame = useCallback(() => {
@@ -175,6 +201,7 @@ export default function ThemeRealRoutePreview({
       if (!doc?.documentElement) {
         setHealth([
           { id: "load", label: "页面加载", status: frameReady ? "ok" : "pending" },
+          buildThemeHealth(lastAppliedAtRef.current, frameReady),
           { id: "overflow", label: "横向溢出", status: "pending" },
           { id: "images", label: "图片状态", status: "pending" },
         ]);
@@ -197,6 +224,7 @@ export default function ThemeRealRoutePreview({
           status: "ok",
           detail: interactiveCount > 0 ? `${interactiveCount} 个可交互元素` : "未检测到交互元素",
         },
+        buildThemeHealth(lastAppliedAtRef.current, frameReady),
         {
           id: "overflow",
           label: "横向溢出",
@@ -213,6 +241,7 @@ export default function ThemeRealRoutePreview({
     } catch {
       setHealth([
         { id: "load", label: "页面加载", status: frameReady ? "ok" : "pending" },
+        buildThemeHealth(lastAppliedAtRef.current, frameReady),
         { id: "overflow", label: "横向溢出", status: "warn", detail: "无法读取预览页" },
         { id: "images", label: "图片状态", status: "warn", detail: "无法读取预览页" },
       ]);
@@ -247,12 +276,20 @@ export default function ThemeRealRoutePreview({
 
   useEffect(() => {
     setFrameReady(false);
-    setHealth([
-      { id: "load", label: "页面加载", status: "pending" },
-      { id: "overflow", label: "横向溢出", status: "pending" },
-      { id: "images", label: "图片状态", status: "pending" },
-    ]);
+    setPreviewTimedOut(false);
+    lastAppliedAtRef.current = null;
+    setLastAppliedAt(null);
+    setHealth(getPendingHealth());
   }, [src]);
+
+  useEffect(() => {
+    if (frameReady) {
+      setPreviewTimedOut(false);
+      return undefined;
+    }
+    const timer = window.setTimeout(() => setPreviewTimedOut(true), 6000);
+    return () => window.clearTimeout(timer);
+  }, [frameReady, src]);
 
   useEffect(() => () => {
     if (inspectTimerRef.current) window.clearTimeout(inspectTimerRef.current);
@@ -267,8 +304,22 @@ export default function ThemeRealRoutePreview({
         ? "正在查找真实商品"
         : productStatus === "ready"
           ? "真实商品详情页"
-          : "无可用商品，已显示分类页";
+          : productStatus === "error"
+            ? "商品接口不可用，已显示分类页"
+            : "无可用商品，已显示分类页";
   const deviceWidthStyle = width === "100%" ? "min(100%, 1280px)" : `${width}px`;
+  const sceneGroups = [
+    {
+      id: "store",
+      label: "客户端真实页面",
+      scenes: PREVIEW_ROUTE_SCENES.filter((item) => item.group === "store"),
+    },
+    {
+      id: "admin",
+      label: "后台真实页面",
+      scenes: PREVIEW_ROUTE_SCENES.filter((item) => item.group === "admin"),
+    },
+  ];
 
   return (
     <section
@@ -307,21 +358,28 @@ export default function ThemeRealRoutePreview({
           </div>
         </div>
 
-        <div className="mt-2 flex gap-1 overflow-x-auto pb-1">
-          {PREVIEW_ROUTE_SCENES.map((item) => (
-            <UnifiedButton
-              key={item.id}
-              type="button"
-              onClick={() => onModeChange(item.id)}
-              className={cn(
-                "shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium transition",
-                routeMode === item.id
-                  ? "bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]"
-                  : "bg-secondary text-muted-foreground hover:text-foreground",
-              )}
-            >
-              {item.label}
-            </UnifiedButton>
+        <div className="mt-2 space-y-2">
+          {sceneGroups.map((group) => (
+            <div key={group.id} className="space-y-1">
+              <p className="text-[10px] font-semibold text-muted-foreground">{group.label}</p>
+              <div className="flex gap-1 overflow-x-auto pb-1">
+                {group.scenes.map((item) => (
+                  <UnifiedButton
+                    key={item.id}
+                    type="button"
+                    onClick={() => onModeChange(item.id)}
+                    className={cn(
+                      "shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium transition",
+                      routeMode === item.id
+                        ? "bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]"
+                        : "bg-secondary text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    {item.label}
+                  </UnifiedButton>
+                ))}
+              </div>
+            </div>
           ))}
         </div>
 
@@ -350,7 +408,7 @@ export default function ThemeRealRoutePreview({
       <div className="min-h-0 flex-1 overflow-auto bg-muted/40 p-3">
         <div
           className={cn(
-            "mx-auto h-full min-h-[520px] overflow-hidden bg-background shadow-sm",
+            "relative mx-auto h-full min-h-[520px] overflow-hidden bg-background shadow-sm",
             device === "phone"
               ? "rounded-[2rem] border-[10px] border-neutral-900 shadow-xl"
               : "rounded-xl border border-border",
@@ -371,6 +429,14 @@ export default function ThemeRealRoutePreview({
               scheduleInspection();
             }}
           />
+          {!frameReady ? (
+            <div className="absolute inset-0 flex items-center justify-center bg-background/90 p-4 text-center">
+              <div className="max-w-xs rounded-xl border border-border bg-card px-4 py-3 text-xs text-muted-foreground shadow-sm">
+                <Loader2 size={16} className="mx-auto mb-2 animate-spin text-[var(--theme-primary)]" />
+                {previewTimedOut ? "预览页未响应，请刷新预览" : "正在加载真实预览"}
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
 

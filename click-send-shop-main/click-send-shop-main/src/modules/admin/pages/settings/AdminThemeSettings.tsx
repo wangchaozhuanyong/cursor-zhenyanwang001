@@ -337,6 +337,18 @@ export default function AdminThemeSettings() {
     toast.success(L("已自动优化，可在预览区确认效果", "Auto-optimized; check the preview area"));
   };
 
+  const openClientPreview = useCallback(() => {
+    setPreviewMode("home");
+    setPreviewDevice("phone");
+    setFullscreenOpen(true);
+  }, []);
+
+  const openAdminPreview = useCallback(() => {
+    setPreviewMode("admin_home");
+    setPreviewDevice("desktop");
+    setFullscreenOpen(true);
+  }, []);
+
   return (
     <AdminPageShell hint={L("统一管理前台、移动端和管理后台的视觉风格；保存草稿或保存并应用后才会写入站点配置。", "Manage the visual style for storefront, mobile, and admin in one place; changes are written only after saving draft or saving and applying.")}>
     <div className="w-full bg-muted/20 p-2 pb-12 sm:p-4">
@@ -353,7 +365,9 @@ export default function AdminThemeSettings() {
             dirty={dirty}
             saving={saving}
             saveDisabled={!selectedSkin?.name?.trim()}
-            onPreview={() => setFullscreenOpen(true)}
+            onClientPreview={openClientPreview}
+            onAdminPreview={openAdminPreview}
+            onFullscreenPreview={() => setFullscreenOpen(true)}
             onSave={() => void onSaveSettings()}
             onSetClientSkin={() => void onSetClientSkin()}
             onSetHolidaySkin={() => void onSetHolidaySkin()}
@@ -545,6 +559,10 @@ export default function AdminThemeSettings() {
             open={fullscreenOpen}
             config={themeConfig}
             skinKey={selectedSkinId}
+            mode={previewMode}
+            device={previewDevice}
+            onModeChange={setPreviewMode}
+            onDeviceChange={setPreviewDevice}
             onClose={() => setFullscreenOpen(false)}
           />
         </>

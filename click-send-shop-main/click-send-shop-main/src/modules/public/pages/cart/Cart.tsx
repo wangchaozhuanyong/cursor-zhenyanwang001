@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import { Calculator, Coins, Heart, Minus, PackageCheck, Pin, Plus, Share2, Trash2, ShoppingBag, Loader2, Check, LogIn, ShieldCheck, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { BadgePercent, Calculator, Coins, Heart, Minus, PackageCheck, Pin, Plus, Share2, Trash2, ShoppingBag, Loader2, Check, LogIn, ShieldCheck, Sparkles, X } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import StorePageHeader from "@/components/store/StorePageHeader";
 import { STORE_MOBILE_PAGE_HEADER_CLASS } from "@/constants/storeLayout";
@@ -7,7 +7,9 @@ import { THEME_PRODUCT_MEDIA_ASPECT_STYLE } from "@/constants/productMediaAspect
 import { cartLineKey, useCartStore } from "@/stores/useCartStore";
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
 import ProductCoverImage from "@/components/ProductCoverImage";
-import type { CartItem } from "@/types/cart";
+import type { CartItem, CartPromotionPreview } from "@/types/cart";
+import type { CheckoutPickerCoupon } from "@/types/coupon";
+import type { SubmitOrderParams } from "@/types/order";
 import { isLoggedIn } from "@/utils/token";
 import { copyToClipboard } from "@/utils/clipboard";
 import TrustInfo from "@/components/TrustInfo";
@@ -24,6 +26,13 @@ import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { DesktopPurchaseCard, DesktopPurchaseTwoColumn } from "@/components/store/DesktopPurchasePattern";
 import { ClientButton, EmptyState as ClientEmptyState } from "@/components/client";
 import { usePublicLocale } from "@/i18n/publicLocale";
+import CartPromotionNudge from "@/modules/storefront-v2/cart/CartPromotionNudge";
+import CouponPicker from "@/components/CouponPicker";
+import { useCheckoutPickerCoupons } from "@/hooks/useCheckoutPickerCoupons";
+import { estimateCheckoutCouponDiscount } from "@/modules/public/pages/order/utils/checkoutCouponDiscount";
+import { fetchCartPromotionPreview } from "@/services/cartService";
+import { estimateCartWeightKg } from "@/lib/shippingFee";
+import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 
 const CART_ACTION_WIDTH = 244;
 const CART_ACTION_REVEAL_THRESHOLD = 64;
@@ -34,6 +43,7 @@ export default function Cart() {
   const navigate = useNavigate();
   const location = useLocation();
   const currentPath = `${location.pathname}${location.search}${location.hash}`;
+  const capabilities = useSiteCapabilities();
   const {
     items,
     loading,
@@ -61,6 +71,12 @@ export default function Cart() {
   const [openActionKey, setOpenActionKey] = useState<string | null>(null);
   const [quantityTargetKey, setQuantityTargetKey] = useState<string | null>(null);
   const [quantityDraft, setQuantityDraft] = useState("");
+  const [cartPreview, setCartPreview] = useState<CartPromotionPreview | null>(null);
+  const [cartPreviewLoading, setCartPreviewLoading] = useState(false);
+  const [cartPreviewError, setCartPreviewError] = useState<string | null>(null);
+  const [selectedCoupon, setSelectedCoupon] = useState<CheckoutPickerCoupon | null>(null);
+  const [couponSelectionTouched, setCouponSelectionTouched] = useState(false);
+  const discountPanelRef = useRef<HTMLDivElement | null>(null);
   const backgroundSyncStartedRef = useRef(false);
 
   const selectedCount = items.filter((i) => selection[cartLineKey(i.product.id, i.variant_id)] !== false).length;
@@ -69,6 +85,57 @@ export default function Cart() {
   const totalQty = items.reduce((s, i) => s + i.qty, 0);
   const selectedQty = totalItemsSelected();
   const selectedPoints = totalPointsSelected();
+  const selectedAmount = Number(totalAmountSelected() || 0);
+  const selectedItems = useMemo(
+    () => items.filter((item) => selection[cartLineKey(item.product.id, item.variant_id)] !== false),
+    [items, selection],
+  );
+  const cartPreviewSignature = useMemo(
+    () => items.map((item) => `${cartLineKey(item.product.id, item.variant_id)}:${item.qty}`).join("|"),
+    [items],
+  );
+  const couponPreviewParams = useMemo<SubmitOrderParams | null>(() => {
+    if (!capabilities.couponEnabled || !isLoggedIn() || selectedItems.length === 0) return null;
+    return {
+      items: selectedItems.map((item) => ({
+        product_id: item.product.id,
+        variant_id: item.variant_id || undefined,
+        sku_code: item.sku_code || undefined,
+        qty: item.qty,
+      })),
+      contact_name: "购物车优惠预览",
+      contact_phone: "60000000000",
+      address: "MY",
+      estimated_weight_kg: estimateCartWeightKg(selectedItems),
+      payment_method: "online",
+    };
+  }, [capabilities.couponEnabled, selectedItems]);
+  const {
+    coupons: cartCoupons,
+    unusableCoupons: cartUnusableCoupons,
+    loading: rawCartCouponsLoading,
+  } = useCheckoutPickerCoupons(selectedAmount, couponPreviewParams);
+  const cartCouponsLoading = capabilities.couponEnabled && Boolean(couponPreviewParams) ? rawCartCouponsLoading : false;
+  const usableCartCoupons = useMemo(
+    () => cartCoupons.filter((coupon) => isCartCouponUsable(coupon, selectedAmount)),
+    [cartCoupons, selectedAmount],
+  );
+  const bestCartCoupon = useMemo(
+    () => usableCartCoupons.reduce<CheckoutPickerCoupon | null>((best, current) => {
+      if (!best) return current;
+      return getCartCouponDiscount(current, selectedAmount) > getCartCouponDiscount(best, selectedAmount) ? current : best;
+    }, null),
+    [usableCartCoupons, selectedAmount],
+  );
+  const selectedCouponDiscount = selectedCoupon ? getCartCouponDiscount(selectedCoupon, selectedAmount) : 0;
+  const previewCouponDiscount = Number(cartPreview?.coupon_discount || cartPreview?.order_snapshot?.coupon_discount_amount || 0);
+  const previewTotalDiscount = Number(cartPreview?.discount_amount || cartPreview?.order_snapshot?.total_discount_amount || 0);
+  const canUseCartPreviewDiscount = allSelected && items.length > 0;
+  const previewActivityDiscount = canUseCartPreviewDiscount
+    ? Math.max(0, previewTotalDiscount - previewCouponDiscount)
+    : 0;
+  const estimatedDiscount = Math.min(selectedAmount, Math.max(0, previewActivityDiscount + selectedCouponDiscount));
+  const estimatedPayable = Math.max(0, selectedAmount - estimatedDiscount);
   const checkoutLabel =
     selectedQty > 0 ? (
       <>
@@ -77,7 +144,6 @@ export default function Cart() {
     ) : (
       t("cart.checkout")
     );
-  const isEmptyCart = !loading && items.length === 0;
   const quantityTargetItem = quantityTargetKey
     ? items.find((item) => cartLineKey(item.product.id, item.variant_id) === quantityTargetKey) ?? null
     : null;
@@ -103,12 +169,67 @@ export default function Cart() {
     return () => window.clearTimeout(timer);
   }, [hasLoaded, items.length, loadCart]);
 
+  useEffect(() => {
+    if (!isLoggedIn() || items.length === 0) {
+      setCartPreview(null);
+      setCartPreviewLoading(false);
+      setCartPreviewError(null);
+      return;
+    }
+    let cancelled = false;
+    setCartPreviewLoading(true);
+    setCartPreviewError(null);
+    fetchCartPromotionPreview()
+      .then((preview) => {
+        if (!cancelled) setCartPreview(preview);
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setCartPreview(null);
+          setCartPreviewError(err instanceof Error ? err.message : t("cart.discountPreviewFailed"));
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setCartPreviewLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [cartPreviewSignature, items.length, t]);
+
+  useEffect(() => {
+    if (selectedQty === 0) {
+      setSelectedCoupon(null);
+      setCouponSelectionTouched(false);
+      return;
+    }
+    if (!selectedCoupon) return;
+    const stillUsable = usableCartCoupons.some((coupon) => coupon.id === selectedCoupon.id);
+    if (!stillUsable) {
+      setSelectedCoupon(couponSelectionTouched ? null : bestCartCoupon);
+    }
+  }, [bestCartCoupon, couponSelectionTouched, selectedCoupon, selectedQty, usableCartCoupons]);
+
+  useEffect(() => {
+    if (couponSelectionTouched || cartCouponsLoading || selectedQty === 0) return;
+    setSelectedCoupon(bestCartCoupon);
+  }, [bestCartCoupon, cartCouponsLoading, couponSelectionTouched, selectedQty]);
+
+  const handleCartCouponSelect = (coupon: CheckoutPickerCoupon | null) => {
+    setCouponSelectionTouched(true);
+    setSelectedCoupon(coupon);
+  };
+
+  const focusDiscountPanel = () => {
+    discountPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
+
   const handleCheckout = () => {
     if (totalItemsSelected() === 0) {
       toast.error(t("cart.selectItemsFirst"));
       return;
     }
-    const couponId = (location.state as { coupon_id?: string } | null)?.coupon_id;
+    const couponId = couponSelectionTouched && !selectedCoupon ? "none" : selectedCoupon?.id;
     navigate(couponId ? localizedPath(`/checkout?coupon_id=${couponId}`) : localizedPath("/checkout"), {
       state: { from: currentPath },
     });
@@ -207,17 +328,6 @@ export default function Cart() {
         matchTabHeaderHeight
         centerTitle
         title={headerTitle}
-        rightSlot={
-          !isEmptyCart && items.length > 0 ? (
-            <UnifiedButton
-              type="button"
-              onClick={() => setSelectAll(!allSelected)}
-              className="inline-flex min-h-9 items-center rounded-full px-2 text-xs font-semibold text-[var(--theme-primary)]"
-            >
-              {allSelected ? t("cart.cancelSelectAll") : t("cart.selectAll")}
-            </UnifiedButton>
-          ) : null
-        }
       />
 
       <main className="mx-auto w-full max-w-screen-xl px-[var(--store-page-x)] md:px-6 md:py-4">
@@ -226,12 +336,34 @@ export default function Cart() {
           itemCount={items.length}
           selectedLineCount={selectedCount}
           selectedQty={selectedQty}
-          selectedAmount={Number(totalAmountSelected() || 0)}
+          selectedAmount={selectedAmount}
           selectedPoints={selectedPoints}
           allSelected={allSelected}
           onPromotions={() => navigate(localizedPath("/promotions"))}
-          onCoupons={() => navigate(localizedPath("/coupons"))}
+          onCoupons={focusDiscountPanel}
         />
+        {items.length > 0 ? (
+          <div ref={discountPanelRef}>
+            <CartDiscountPanel
+              selectedAmount={selectedAmount}
+              estimatedDiscount={estimatedDiscount}
+              estimatedPayable={estimatedPayable}
+              activityDiscount={previewActivityDiscount}
+              selectedCoupon={selectedCoupon}
+              selectedCouponDiscount={selectedCouponDiscount}
+              coupons={cartCoupons}
+              unusableCoupons={cartUnusableCoupons}
+              couponsLoading={cartCouponsLoading}
+              previewLoading={cartPreviewLoading}
+              previewError={cartPreviewError}
+              canUseCartPreviewDiscount={canUseCartPreviewDiscount}
+              promotionEvaluation={cartPreview?.promotion_evaluation ?? null}
+              onCouponSelect={handleCartCouponSelect}
+              onBrowse={() => navigate(localizedPath("/categories"))}
+              t={t}
+            />
+          </div>
+        ) : null}
         {/* 桌面端：左商品列表 / 右结算摘要 */}
         {items.length > 0 ? (
           <DesktopPurchaseTwoColumn
@@ -239,15 +371,9 @@ export default function Cart() {
             aside={
               <DesktopPurchaseCard title={t("cart.summary")} className="store-checkout-summary">
                 <div className="space-y-2.5 text-sm">
-                  <div className="flex items-center justify-between rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2 text-xs">
-                    <span className="text-muted-foreground">{t("cart.couponHint")}</span>
-                    <UnifiedButton
-                      type="button"
-                      onClick={() => navigate(localizedPath("/coupons"))}
-                      className="font-semibold text-[var(--theme-price)]"
-                    >
-                      {t("cart.claimCoupons")}
-                    </UnifiedButton>
+                  <div className="store-cart-summary-discount-callout">
+                    <span>{estimatedDiscount > 0 ? t("cart.autoDiscountSaved") : t("cart.autoDiscountTitle")}</span>
+                    <strong>{estimatedDiscount > 0 ? `RM ${formatCartMoney(estimatedDiscount)}` : t("cart.discountPending")}</strong>
                   </div>
                   <div className="flex justify-between text-muted-foreground">
                     <span>{t("cart.selectedItems")}</span>
@@ -257,8 +383,14 @@ export default function Cart() {
                   </div>
                   <div className="flex justify-between text-muted-foreground">
                     <span>{showSstCartHint ? t("cart.subtotalTaxIncluded") : t("cart.subtotal")}</span>
-                    <span>RM {totalAmountSelected()}</span>
+                    <span>RM {formatCartMoney(selectedAmount)}</span>
                   </div>
+                  {estimatedDiscount > 0 ? (
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>{t("cart.savedAmount")}</span>
+                      <span className="font-semibold text-[var(--theme-price)]">-RM {formatCartMoney(estimatedDiscount)}</span>
+                    </div>
+                  ) : null}
                   {showSstCartHint ? (
                     <p className="text-[11px] leading-relaxed text-muted-foreground">
                       {sstCartNote || t("cart.sstIncludedNote")}
@@ -268,7 +400,7 @@ export default function Cart() {
                   <div className="flex items-baseline justify-between">
                     <span className="text-sm text-foreground">{t("cart.total")}</span>
                     <span className="text-[18px] font-extrabold text-[var(--theme-price)] sm:text-xl">
-                      <AnimatedNumber value={totalAmountSelected()} decimals={2} format={(n) => `RM ${n.toFixed(2)}`} />
+                      <AnimatedNumber value={estimatedPayable} decimals={2} format={(n) => `RM ${n.toFixed(2)}`} />
                     </span>
                   </div>
                 </div>
@@ -514,6 +646,12 @@ export default function Cart() {
                                 {item.product.name}
                               </h3>
                               {item.variant_name ? <p className="store-caption store-cart-item-variant mt-1 truncate text-muted-foreground">规格：{item.variant_name}</p> : null}
+                              {getCartLineDealLabel(item, t) ? (
+                                <span className="store-cart-item-deal-badge">
+                                  <BadgePercent size={12} aria-hidden />
+                                  {getCartLineDealLabel(item, t)}
+                                </span>
+                              ) : null}
                             </div>
                             <div className="store-cart-item-bottom mt-2 flex min-w-0 items-center justify-between gap-2">
                               <StorePriceAmount
@@ -645,16 +783,17 @@ export default function Cart() {
       </main>
       {/* 移动端：底部固定结算栏 */}
       {items.length > 0 && (
-        <div className="store-mobile-submit-bar fixed bottom-[calc(var(--store-bottom-nav-height,78px)+env(safe-area-inset-bottom,0px))] left-0 right-0 z-checkout-bar border-t border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md md:hidden">
-          <div className="mx-auto flex w-full flex-col gap-2 px-[var(--store-page-x)] py-2.5 sm:max-w-lg sm:px-4">
+        <div className="store-mobile-submit-bar store-cart-checkout-bar fixed bottom-[calc(var(--store-bottom-nav-height,78px)+env(safe-area-inset-bottom,0px))] left-0 right-0 z-checkout-bar border-t border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md md:hidden">
+          <div className="store-cart-checkout-bar__inner mx-auto flex w-full items-center gap-2 px-[var(--store-page-x)] sm:max-w-lg sm:px-4">
             <SquishButton
               type="button"
               variant="ghost"
               onClick={() => setSelectAll(!allSelected)}
-              className="flex items-center gap-2 self-start rounded-none bg-transparent text-xs text-muted-foreground !min-h-0 !px-0 !py-0"
+              aria-pressed={allSelected}
+              className="store-cart-checkout-select flex shrink-0 items-center justify-center gap-1.5 rounded-none bg-transparent text-xs font-semibold text-[var(--theme-text-muted)] !min-h-0 !px-0 !py-0"
             >
               <span
-                className={`flex h-5 w-5 items-center justify-center rounded border-2 ${
+                className={`store-cart-checkout-select__box flex items-center justify-center rounded border-2 ${
                   allSelected
                     ? "border-[var(--theme-price)] btn-theme-price"
                     : someSelected
@@ -667,25 +806,26 @@ export default function Cart() {
               </span>
               {t("cart.selectAll")}
             </SquishButton>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-foreground">
-                  {t("cart.totalSelected")}:{" "}
-                  <span className="text-[18px] font-extrabold text-[var(--theme-price)]">
-                    <AnimatedNumber value={totalAmountSelected()} decimals={2} format={(n) => `RM ${n.toFixed(2)}`} />
-                  </span>
-                </p>
-              </div>
-              <SquishButton
-                type="button"
-                variant="gold"
-                onClick={handleCheckout}
-                disabled={selectedQty === 0}
-                className="rounded-full px-8 py-3.5 text-sm font-bold transition-all disabled:cursor-not-allowed disabled:opacity-50 !min-h-0"
-              >
-                {checkoutLabel}
-              </SquishButton>
+            <div className="store-cart-checkout-total min-w-0 flex-1">
+              <span className="store-cart-checkout-total__label">{estimatedDiscount > 0 ? t("cart.estimatedPayable") : t("cart.total")}</span>
+              <span className="store-cart-checkout-total__price">
+                <AnimatedNumber value={estimatedPayable} decimals={2} format={(n) => `RM ${n.toFixed(2)}`} />
+              </span>
+              {estimatedDiscount > 0 ? (
+                <span className="store-cart-checkout-total__discount">
+                  {t("cart.savedAmount")} RM {formatCartMoney(estimatedDiscount)}
+                </span>
+              ) : null}
             </div>
+            <SquishButton
+              type="button"
+              variant="gold"
+              onClick={handleCheckout}
+              disabled={selectedQty === 0}
+              className="store-cart-checkout-button shrink-0 text-sm font-bold transition-all disabled:cursor-not-allowed disabled:opacity-50 !min-h-0"
+            >
+              {checkoutLabel}
+            </SquishButton>
           </div>
         </div>
       )}
@@ -802,6 +942,143 @@ function buildCartQuantityOptions(currentQty: number, maxQty: number) {
   return unique.sort((a, b) => a - b).slice(0, 10);
 }
 
+function formatCartMoney(value: number) {
+  const n = Number(value || 0);
+  return (Number.isFinite(n) ? n : 0).toFixed(2);
+}
+
+function isCartCouponUsable(coupon: CheckoutPickerCoupon, amount: number) {
+  return coupon.usable !== false && amount >= coupon.condition && coupon.discountType !== "shipping";
+}
+
+function getCartCouponDiscount(coupon: CheckoutPickerCoupon, amount: number) {
+  return estimateCheckoutCouponDiscount(coupon, amount, 0);
+}
+
+function getCartLineDealLabel(item: CartItem, t: (key: string) => string) {
+  const activity = item.product.active_activity;
+  if (activity?.type === "flash_sale") return t("cart.lineDealFlashSale");
+  if (activity?.type === "limited_time_discount") return t("cart.lineDealLimitedTime");
+  if (activity?.type === "member_price") return t("cart.lineDealMemberPrice");
+  if (activity?.type === "full_reduction") return t("cart.lineDealFullReduction");
+  if (activity?.type === "full_discount") return t("cart.lineDealFullDiscount");
+  if (activity) return t("cart.lineDealPromotion");
+  return item.product.activity_promo_label || null;
+}
+
+function CartDiscountPanel({
+  selectedAmount,
+  estimatedDiscount,
+  estimatedPayable,
+  activityDiscount,
+  selectedCoupon,
+  selectedCouponDiscount,
+  coupons,
+  unusableCoupons,
+  couponsLoading,
+  previewLoading,
+  previewError,
+  canUseCartPreviewDiscount,
+  promotionEvaluation,
+  onCouponSelect,
+  onBrowse,
+  t,
+}: {
+  selectedAmount: number;
+  estimatedDiscount: number;
+  estimatedPayable: number;
+  activityDiscount: number;
+  selectedCoupon: CheckoutPickerCoupon | null;
+  selectedCouponDiscount: number;
+  coupons: CheckoutPickerCoupon[];
+  unusableCoupons: CheckoutPickerCoupon[];
+  couponsLoading: boolean;
+  previewLoading: boolean;
+  previewError: string | null;
+  canUseCartPreviewDiscount: boolean;
+  promotionEvaluation: CartPromotionPreview["promotion_evaluation"] | null;
+  onCouponSelect: (coupon: CheckoutPickerCoupon | null) => void;
+  onBrowse: () => void;
+  t: (key: string) => string;
+}) {
+  const loading = couponsLoading || previewLoading;
+  const hasDiscount = estimatedDiscount > 0;
+  const selectedCouponLabel = selectedCoupon
+    ? `${t("cart.selectedCoupon")}：${selectedCoupon.title}`
+    : couponsLoading
+      ? t("cart.couponLoading")
+      : coupons.length > 0
+        ? t("cart.autoCouponReady")
+        : t("cart.noCouponMatched");
+
+  return (
+    <section className="store-cart-discount-panel" aria-label={t("cart.discountDetails")}>
+      <div className="store-cart-discount-panel__head">
+        <span className="store-cart-discount-panel__icon" aria-hidden>
+          <Sparkles size={17} />
+        </span>
+        <div className="store-cart-discount-panel__copy">
+          <p>{t("cart.autoDiscountTitle")}</p>
+          <strong>
+            {loading && !hasDiscount
+              ? t("cart.autoDiscountChecking")
+              : hasDiscount
+                ? `${t("cart.autoDiscountSaved")} RM ${formatCartMoney(estimatedDiscount)}`
+                : t("cart.autoDiscountNone")}
+          </strong>
+          <small>{selectedCouponLabel}</small>
+        </div>
+        <div className="store-cart-discount-panel__total">
+          <small>{t("cart.estimatedPayable")}</small>
+          <b>RM {formatCartMoney(estimatedPayable)}</b>
+        </div>
+      </div>
+
+      <div className="store-cart-discount-panel__rows">
+        {activityDiscount > 0 ? (
+          <div>
+            <span>{t("cart.activityDiscount")}</span>
+            <strong>-RM {formatCartMoney(activityDiscount)}</strong>
+          </div>
+        ) : null}
+        {selectedCouponDiscount > 0 ? (
+          <div>
+            <span>{t("cart.couponDiscount")}</span>
+            <strong>-RM {formatCartMoney(selectedCouponDiscount)}</strong>
+          </div>
+        ) : null}
+        {!canUseCartPreviewDiscount ? (
+          <p>{t("cart.selectedSubsetDiscountNote")}</p>
+        ) : previewError ? (
+          <p>{previewError}</p>
+        ) : (
+          <p>{t("cart.discountEstimateNote")}</p>
+        )}
+      </div>
+
+      <CouponPicker
+        embedded
+        totalAmount={selectedAmount}
+        selectedCouponId={selectedCoupon?.id ?? null}
+        onSelect={onCouponSelect}
+        coupons={coupons}
+        unusableCoupons={unusableCoupons}
+        loading={couponsLoading}
+      />
+
+      {canUseCartPreviewDiscount && promotionEvaluation ? (
+        <CartPromotionNudge
+          campaign={null}
+          amount={selectedAmount}
+          evaluation={promotionEvaluation}
+          className="store-cart-discount-panel__nudge"
+          onBrowse={onBrowse}
+        />
+      ) : null}
+    </section>
+  );
+}
+
 function CartV12Overview({
   loading,
   itemCount,
@@ -872,7 +1149,7 @@ function CartV12Overview({
           活动中心
         </UnifiedButton>
         <UnifiedButton type="button" onClick={onCoupons}>
-          先领券
+          优惠明细
         </UnifiedButton>
       </div>
     </section>

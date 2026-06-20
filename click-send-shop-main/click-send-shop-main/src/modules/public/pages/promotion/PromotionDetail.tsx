@@ -72,6 +72,42 @@ function couponIdsFromConfig(config: Record<string, unknown> | null) {
   return ids.map((id) => String(id || "").trim()).filter(Boolean);
 }
 
+const ruleConfigLabelKeys: Record<string, string> = {
+  badge: "promotion.ruleBadge",
+  countdown: "promotion.ruleCountdown",
+  limit_per_user: "promotion.limitPerUser",
+  stock_progress: "promotion.stockProgress",
+};
+
+function normalizeRuleConfigKey(key: string) {
+  return key
+    .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
+    .replace(/[-\s]+/g, "_")
+    .toLowerCase();
+}
+
+function formatRuleConfigKey(key: string, t: (key: string) => string) {
+  const normalized = normalizeRuleConfigKey(key);
+  const labelKey = ruleConfigLabelKeys[normalized];
+  if (labelKey) return t(labelKey);
+  return t("promotion.ruleCustomField");
+}
+
+function formatRuleConfigValue(value: unknown, t: (key: string) => string): string {
+  if (typeof value === "boolean") return t(value ? "common.yes" : "common.no");
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === "true") return t("common.yes");
+    if (normalized === "false") return t("common.no");
+    return value;
+  }
+  if (Array.isArray(value)) {
+    return value.map((item) => formatRuleConfigValue(item, t)).join(" / ");
+  }
+  if (value && typeof value === "object") return JSON.stringify(value);
+  return String(value);
+}
+
 function ruleEntries(promotion: StorefrontPromotion | null, t: (key: string) => string) {
   const config = promotion?.rule_config || null;
   if (!config) return [];
@@ -132,8 +168,8 @@ function ruleEntries(promotion: StorefrontPromotion | null, t: (key: string) => 
     if (entries.length >= 8) break;
     if (consumedKeys.has(key) || value === null || value === undefined || value === "") continue;
     entries.push({
-      key,
-      value: typeof value === "object" ? JSON.stringify(value) : String(value),
+      key: formatRuleConfigKey(key, t),
+      value: formatRuleConfigValue(value, t),
     });
   }
 
@@ -240,16 +276,6 @@ export default function PromotionDetail() {
   const rules = useMemo(() => ruleEntries(promotion, t), [promotion, t]);
   const policies = useMemo(() => policyEntries(promotion, t, promotionTypeLabel), [promotion, promotionTypeLabel, t]);
   const coupons = promotion?.coupons || [];
-  const primaryCta = useMemo(() => {
-    if (!promotion) return { path: "/categories", label: t("common.browseProducts") };
-    if (promotion.type === "coupon") return { path: "/coupons", label: t("promotion.goCoupons") };
-    if (promotion.type === "points_reward" || promotion.type === "checkin_reward") return { path: "/points", label: t("common.points") };
-    const firstProductId = promotion.items?.find((item) => item.product_id)?.product_id;
-    if (firstProductId && ["flash_sale", "limited_time_discount", "member_price"].includes(promotion.type)) {
-      return { path: `/product/${firstProductId}`, label: t("common.browseProducts") };
-    }
-    return { path: "/categories", label: t("common.browseProducts") };
-  }, [promotion, t]);
   const statusLabel = promotion?.runtime_status === "scheduled"
     ? t("promotion.notStarted")
     : promotion?.runtime_status === "ended"
@@ -261,7 +287,6 @@ export default function PromotionDetail() {
       ? formatDuration(countdownSeconds)
       : t("promotion.endingSoon");
   const itemCount = promotion?.items?.length || 0;
-  const couponCount = coupons.length;
 
   const handleClaimCoupon = async (coupon: StorefrontPromotionCoupon) => {
     setClaimingId(coupon.id);
@@ -320,10 +345,10 @@ export default function PromotionDetail() {
       canonical={buildCanonical(`${PROMOTIONS_BASE_PATH}/${promotion.slug || slug}`)}
       robots="index,follow"
     />
-    <main className="store-page-shell store-v12-page store-promotion-detail-v12-page mx-auto max-w-6xl px-4 py-8">
+    <main className="store-page-shell store-v12-page store-promotion-detail-v12-page mx-auto max-w-6xl px-[var(--store-page-x)] pb-6 pt-[var(--store-page-y)] md:px-6 md:pb-8 md:pt-6 lg:px-8">
       <button
         type="button"
-        className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-[var(--theme-text-muted)]"
+        className="store-promotion-detail-v12-back mb-2 inline-flex h-9 items-center gap-1.5 rounded-full px-1 text-sm font-semibold text-[var(--theme-text-muted)] transition-colors hover:text-[var(--theme-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--theme-primary)_24%,transparent)] md:mb-3"
         onClick={() => navigate(-1)}
       >
         <ArrowLeft size={16} />
@@ -369,55 +394,7 @@ export default function PromotionDetail() {
               <strong>{promotion.scope_type || "all"} · {itemCount} 件商品</strong>
             </div>
           </div>
-
-          <div className="store-promotion-detail-v12-hero__guardrail">
-            <ShieldCheck size={18} aria-hidden />
-            <div>
-              <strong>结算页会自动确认可用优惠</strong>
-              <p>活动时间、商品范围、会员等级、限购、库存、优惠券和叠加关系会在结算页确认。</p>
-            </div>
-          </div>
-
-          <div className="store-promotion-detail-v12-hero__actions">
-            {promotion.runtime_status === "ended" ? (
-              <span className="store-promotion-detail-v12-hero__ended">
-                <ShoppingBag size={16} />
-                {t("promotion.ended")}
-              </span>
-            ) : (
-              <Link className="store-promotion-detail-v12-hero__primary" to={localizedPath(primaryCta.path)}>
-                <ShoppingBag size={16} />
-                {primaryCta.label}
-              </Link>
-            )}
-            {couponCount > 0 ? (
-              <Link className="store-promotion-detail-v12-hero__secondary" to={localizedPath("/coupons")}>
-                <TicketPercent size={16} />
-                {couponCount} 张券可领
-              </Link>
-            ) : null}
-            <Link className="store-promotion-detail-v12-hero__secondary" to={localizedPath(PROMOTIONS_BASE_PATH)}>
-              {t("common.allPromotions")}
-            </Link>
-          </div>
         </div>
-      </section>
-
-      <section className="store-promotion-detail-v12-checks">
-        {[
-          "命中活动后，商品页、购物车和结算页会显示对应优惠。",
-          promotion.stackable
-            ? "该活动允许与符合条件的优惠叠加，结算页会展示可用组合。"
-            : "该活动存在互斥限制，若与其他优惠冲突，结算页会给出不可用原因。",
-          promotion.usage_limit_per_user
-            ? `每人最多参与 ${promotion.usage_limit_per_user} 次。`
-            : "暂无每人参与次数限制，库存和券余量会实时更新。",
-        ].map((text) => (
-          <div key={text}>
-            <CheckCircle2 size={17} aria-hidden />
-            <span>{text}</span>
-          </div>
-        ))}
       </section>
 
       {policies.length ? (
@@ -501,37 +478,41 @@ export default function PromotionDetail() {
       ) : null}
 
       {promotion.items?.length ? (
-        <section className="mt-6">
+        <section className="store-promotion-detail-v12-products mt-6">
           <h2 className="text-lg font-semibold text-[var(--theme-text)]">{t("promotion.items")}</h2>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="store-promotion-detail-v12-products__list mt-4 grid gap-3">
             {promotion.items.map((item) => (
-              <Link className="rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 shadow-sm" key={item.product_id} to={localizedPath(`/product/${item.product_id}`)}>
-                {item.cover_image ? <img className="aspect-square w-full rounded-lg object-cover" src={item.cover_image} alt={item.product_name} /> : null}
-                <h3 className="mt-3 line-clamp-2 text-sm font-semibold text-[var(--theme-text)]">{item.product_name}</h3>
-                <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
-                  {item.activity_price > 0 ? <strong className="text-base text-[var(--theme-price)]">{money(item.activity_price)}</strong> : null}
-                  {item.product_price > item.activity_price && item.activity_price > 0 ? (
-                    <span className="text-xs text-[var(--theme-text-muted)] line-through">{money(item.product_price)}</span>
-                  ) : null}
-                  {item.saving_amount > 0 ? (
-                    <span className="rounded-full bg-rose-50 px-2 py-0.5 text-xs font-semibold text-rose-700">
-                      {t("promotion.save")} {money(item.saving_amount)}
-                    </span>
-                  ) : null}
-                </div>
-                <div className="mt-3">
-                  <div className="flex items-center justify-between text-xs text-[var(--theme-text-muted)]">
+              <Link className="store-promotion-detail-v12-product-row rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 shadow-sm" key={item.product_id} to={localizedPath(`/product/${item.product_id}`)}>
+                {item.cover_image ? (
+                  <div className="store-promotion-detail-v12-product-row__media">
+                    <img className="h-full w-full object-cover" src={item.cover_image} alt={item.product_name} />
+                  </div>
+                ) : null}
+                <div className="store-promotion-detail-v12-product-row__content">
+                  <h3 className="line-clamp-2 text-sm font-semibold text-[var(--theme-text)]">{item.product_name}</h3>
+                  <div className="store-promotion-detail-v12-product-row__price">
+                    {item.activity_price > 0 ? <strong className="text-[var(--theme-price)]">{money(item.activity_price)}</strong> : null}
+                    {item.product_price > item.activity_price && item.activity_price > 0 ? (
+                      <span className="text-[var(--theme-text-muted)] line-through">{money(item.product_price)}</span>
+                    ) : null}
+                    {item.saving_amount > 0 ? (
+                      <span className="store-promotion-detail-v12-product-row__save">
+                        {t("promotion.save")} {money(item.saving_amount)}
+                      </span>
+                    ) : null}
+                  </div>
+                  <div className="store-promotion-detail-v12-product-row__stock">
                     <span>{t("promotion.sold")} {item.sold_count}</span>
                     <span>{item.sold_out ? t("promotion.soldOut") : `${t("promotion.stock")} ${item.remaining_stock}`}</span>
                   </div>
-                  <div className="mt-1 h-2 overflow-hidden rounded-full bg-[var(--theme-muted)]">
+                  <div className="store-promotion-detail-v12-product-row__progress">
                     <div
-                      className="h-full rounded-full bg-[var(--theme-primary)]"
+                      className="store-promotion-detail-v12-product-row__progress-fill"
                       style={{ width: `${clampPercent(item.stock_progress_percent)}%` }}
                     />
                   </div>
                   {item.limit_per_user > 0 ? (
-                    <p className="mt-2 text-xs text-[var(--theme-text-muted)]">{t("promotion.limitPerUser")} {item.limit_per_user}</p>
+                    <p className="store-promotion-detail-v12-product-row__limit">{t("promotion.limitPerUser")} {item.limit_per_user}</p>
                   ) : null}
                 </div>
               </Link>

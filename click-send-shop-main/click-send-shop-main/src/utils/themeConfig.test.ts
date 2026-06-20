@@ -53,6 +53,7 @@ describe("themeConfig", () => {
       categoryIconStyle: "solid",
       motionLevel: "none",
       density: "compact",
+      radius: "10px",
     });
     const palette = generateThemePalette(config);
 
@@ -64,6 +65,8 @@ describe("themeConfig", () => {
     expect(palette["--theme-category-icon-style"]).toBe("solid");
     expect(palette["--theme-motion-level"]).toBe("none");
     expect(palette["--theme-density"]).toBe("compact");
+    expect(palette["--store-card-radius"]).toContain("10px");
+    expect(palette["--store-panel-radius"]).toContain("10px");
   });
 
   it("keeps structural theme CSS wired to core storefront pages", () => {

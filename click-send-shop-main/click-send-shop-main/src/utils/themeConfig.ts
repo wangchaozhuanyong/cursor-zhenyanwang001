@@ -73,7 +73,7 @@ const PRESET_SCENE_BY_ID: Record<string, ThemeSceneTag> = {
   client_sky_tech: "mall",
   client_black_gold: "premium",
   client_deep_enterprise: "visa",
-  premium_champagne_ivory: "premium",
+  premium_champagne_ivory: "mall",
   premium_pearl_blush: "premium",
   premium_porcelain_jade: "premium",
   premium_sky_silk: "mall",
@@ -234,10 +234,10 @@ export function normalizeThemeSkin(skin: Partial<ThemeSkin> & { id: string; name
   };
 }
 
-/** 两套系统皮肤固定保留，避免后台误删后前台质感规则失效。 */
+/** 系统默认皮肤固定保留，避免后台误删后前台质感规则失效。 */
 export function canDeleteThemeSkin(skinId: string, defaultSkinId: string, skinCount: number): { ok: boolean; message?: string } {
   if (THEME_PRESETS.some((skin) => skin.id === skinId)) {
-    return { ok: false, message: "系统保留的日常皮肤和节日皮肤不能删除" };
+    return { ok: false, message: "系统保留的默认皮肤不能删除" };
   }
   if (skinCount <= 1) return { ok: false, message: "至少保留一套皮肤" };
   if (skinId === defaultSkinId) return { ok: false, message: "默认皮肤无法删除，请先将其他皮肤设为默认" };

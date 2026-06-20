@@ -2595,11 +2595,11 @@ html[data-app-scope="store"] .store-trust-item[data-trust-tone="delivery"] .stor
 }
 
 html[data-app-scope="store"] .store-trust-item[data-trust-tone="support"] .store-trust-icon__glyph {
-  color: color-mix(in srgb, var(--theme-primary) 72%, #0f766e);
+  color: color-mix(in srgb, var(--theme-primary) 72%, var(--theme-price));
 }
 
 html[data-app-scope="store"] .store-trust-item[data-trust-tone="aftercare"] .store-trust-icon__glyph {
-  color: color-mix(in srgb, var(--theme-primary) 78%, #047857);
+  color: color-mix(in srgb, var(--theme-primary) 78%, var(--theme-success));
 }
 
 html[data-app-scope="store"] .store-trust-label {
@@ -8855,21 +8855,21 @@ html[data-app-scope="store"] .store-coupon-card--template .store-coupon-card__ro
 
 /* Customer-side texture tuning for the 7 premium light skins. */
 html[data-app-scope="store"][data-theme-skin-id="premium_champagne_ivory"] {
-  --home-hero-jade: #211a14;
-  --home-hero-jade-deep: #140f0b;
-  --home-hero-gold: #b08a45;
-  --home-hero-ivory: #fffdf8;
-  --premium-skin-ink: #211a14;
-  --premium-skin-deep: #140f0b;
-  --premium-skin-metal: #b08a45;
-  --premium-skin-metal-soft: #f1dfb6;
-  --premium-skin-paper: #fffdf8;
-  --premium-skin-paper-deep: #efe6da;
-  --premium-skin-wash: #f6f1e8;
-  --premium-skin-line: #d6c08f;
-  --premium-skin-ticket-main: #c2412d;
-  --premium-skin-ticket-deep: #7c2016;
-  --premium-skin-ticket-soft: #d7674b;
+  --home-hero-jade: #be2633;
+  --home-hero-jade-deep: #2b1715;
+  --home-hero-gold: #ad7b3a;
+  --home-hero-ivory: #fffdf9;
+  --premium-skin-ink: #201a17;
+  --premium-skin-deep: #2b1715;
+  --premium-skin-metal: #ad7b3a;
+  --premium-skin-metal-soft: #efd7ad;
+  --premium-skin-paper: #fffdf9;
+  --premium-skin-paper-deep: #f3e6dd;
+  --premium-skin-wash: #f7f3ee;
+  --premium-skin-line: #d8b277;
+  --premium-skin-ticket-main: #d84024;
+  --premium-skin-ticket-deep: #8a1c17;
+  --premium-skin-ticket-soft: #e66a4f;
 }
 
 html[data-app-scope="store"][data-theme-skin-id="premium_pearl_blush"] {
@@ -9194,15 +9194,15 @@ html[data-app-scope="store"]:where(
 /* Damatong supermarket client redesign: first production slice. */
 html[data-app-scope="store"] [data-store-home-version="v2"],
 html[data-app-scope="store"] .store-category-page {
-  --market-ink: #16211b;
-  --market-jade: color-mix(in srgb, #0d5c48 88%, var(--theme-primary));
-  --market-jade-soft: color-mix(in srgb, #2b8b73 76%, var(--theme-primary));
-  --market-gold: color-mix(in srgb, #c69a42 72%, var(--theme-price));
-  --market-wine: color-mix(in srgb, #9b334f 76%, var(--theme-price));
+  --market-ink: var(--theme-text);
+  --market-jade: color-mix(in srgb, var(--theme-primary) 92%, var(--theme-text));
+  --market-jade-soft: color-mix(in srgb, var(--theme-primary) 74%, var(--theme-price));
+  --market-gold: color-mix(in srgb, var(--theme-accent) 80%, var(--theme-price));
+  --market-wine: color-mix(in srgb, var(--theme-price) 84%, var(--theme-primary));
   --market-paper: color-mix(in srgb, #fffaf0 78%, var(--theme-surface));
   --market-paper-deep: color-mix(in srgb, #f1e7d1 54%, var(--theme-bg));
   --market-line: color-mix(in srgb, var(--market-gold) 18%, var(--theme-border));
-  --market-shadow: 0 18px 44px -34px rgba(38, 46, 34, 0.42);
+  --market-shadow: 0 18px 44px -34px color-mix(in srgb, var(--theme-primary) 38%, transparent);
 }
 
 html[data-app-scope="store"] [data-store-home-version="v2"] {
@@ -9215,9 +9215,9 @@ html[data-app-scope="store"] [data-store-home-version="v2"] .store-home-hero-v4 
   border: 1px solid color-mix(in srgb, var(--market-gold) 18%, transparent);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 42%),
-    linear-gradient(135deg, #153a2f 0%, var(--market-jade) 48%, #24372d 100%);
+    linear-gradient(135deg, color-mix(in srgb, var(--theme-text) 92%, var(--theme-primary)) 0%, color-mix(in srgb, var(--market-jade) 88%, var(--theme-text)) 48%, color-mix(in srgb, var(--theme-text) 86%, var(--theme-accent)) 100%);
   box-shadow:
-    0 22px 54px -40px rgba(5, 34, 25, 0.58),
+    0 22px 54px -40px color-mix(in srgb, var(--theme-primary) 46%, transparent),
     0 0 0 1px color-mix(in srgb, white 8%, transparent);
 }
 
@@ -9259,7 +9259,7 @@ html[data-app-scope="store"] [data-store-home-version="v2"] .store-home-v4-searc
     var(--theme-surface);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.86),
-    0 18px 38px -28px rgba(5, 34, 25, 0.56);
+    0 18px 38px -28px color-mix(in srgb, var(--theme-primary) 38%, transparent);
 }
 
 html[data-app-scope="store"] [data-store-home-version="v2"] .store-home-v4-search-scope {
@@ -9618,8 +9618,8 @@ html[data-app-scope="store"] .store-filter-summary {
 
 /* Store home V2 visual refinement: scoped to the current homepage only. */
 html[data-app-scope="store"] [data-store-home-version="v2"] .store-home-hero-v4 {
-  --home-v4-jade: color-mix(in srgb, #075f4a 86%, var(--theme-primary));
-  --home-v4-jade-soft: color-mix(in srgb, #0f766e 82%, var(--theme-primary));
+  --home-v4-jade: color-mix(in srgb, var(--theme-primary) 92%, var(--theme-text));
+  --home-v4-jade-soft: color-mix(in srgb, var(--theme-primary) 72%, var(--theme-price));
   --home-v4-blue: var(--home-v4-jade);
   --home-v4-cyan: var(--home-v4-jade-soft);
   --home-v4-glass: rgba(255, 255, 255, 0.11);
@@ -9649,7 +9649,7 @@ html[data-app-scope="store"] [data-store-home-version="v2"] .store-home-v4-chrom
   margin-top: 0.75rem;
   border-color: var(--home-v4-glass-border);
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.08));
-  box-shadow: 0 10px 28px rgba(3, 33, 28, 0.12);
+  box-shadow: 0 10px 28px color-mix(in srgb, var(--theme-primary) 12%, transparent);
   backdrop-filter: blur(14px) saturate(1.04);
   -webkit-backdrop-filter: blur(14px) saturate(1.04);
 }
@@ -9678,7 +9678,7 @@ html[data-app-scope="store"] [data-store-home-version="v2"] .store-home-v4-links
 html[data-app-scope="store"] [data-store-home-version="v2"] .store-home-v4-search-dock {
   border-color: rgba(255, 255, 255, 0.68);
   background: rgba(255, 255, 255, 0.96);
-  box-shadow: 0 14px 34px rgba(3, 33, 28, 0.18);
+  box-shadow: 0 14px 34px color-mix(in srgb, var(--theme-primary) 18%, transparent);
 }
 
 html[data-app-scope="store"] [data-store-home-version="v2"] .store-home-v4-search-submit {
@@ -13369,14 +13369,14 @@ html[data-app-scope="store"] [data-store-home-version="v2"] .store-home-v4-hero-
   --store-hero-copy-title-shadow: 0 1px 0 rgba(255, 255, 255, 0.72);
   --store-hero-copy-subtitle-shadow: 0 1px 0 rgba(255, 255, 255, 0.58);
   --store-hero-copy-desc-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
-  --store-hero-copy-divider-bg: linear-gradient(90deg, rgba(15, 106, 92, 0.38) 0 38%, transparent 38% 44%, rgba(184, 138, 50, 0.28) 44% 100%);
+  --store-hero-copy-divider-bg: linear-gradient(90deg, color-mix(in srgb, var(--theme-primary) 38%, transparent) 0 38%, transparent 38% 44%, color-mix(in srgb, var(--theme-accent) 28%, transparent) 44% 100%);
 }
 
 html[data-app-scope="store"] [data-store-home-version="v2"] .store-home-v4-hero-media .store-hero-copy-panel {
   border: 1px solid rgba(255, 255, 255, 0.74);
   background:
     linear-gradient(105deg, rgba(255, 255, 255, 0.92), rgba(255, 252, 242, 0.8)),
-    linear-gradient(180deg, rgba(15, 106, 92, 0.05), transparent 64%);
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-primary) 5%, transparent), transparent 64%);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.82),
     0 18px 42px -30px rgba(23, 33, 31, 0.4);
@@ -13403,9 +13403,9 @@ html[data-app-scope="store"] [data-store-home-version="v2"] .store-home-v4-title
 }
 
 html[data-app-scope="store"] [data-store-home-version="v2"] .store-home-v4-kicker {
-  border-color: rgba(15, 106, 92, 0.14);
+  border-color: color-mix(in srgb, var(--theme-primary) 14%, transparent);
   background: rgba(255, 255, 255, 0.74);
-  color: #0f6a5c;
+  color: var(--theme-primary);
 }
 
 html[data-app-scope="store"] [data-store-home-version="v2"] .store-home-v4-title {
@@ -13418,7 +13418,7 @@ html[data-app-scope="store"] [data-store-home-version="v2"] .store-home-v4-desc 
 }
 
 html[data-app-scope="store"] [data-store-home-version="v2"] .store-home-v4-hot-terms > button {
-  border-color: rgba(15, 106, 92, 0.12);
+  border-color: color-mix(in srgb, var(--theme-primary) 12%, transparent);
   background: rgba(255, 255, 255, 0.66);
   color: rgba(23, 33, 31, 0.74);
 }
@@ -13436,7 +13436,7 @@ html[data-app-scope="store"] [data-store-home-version="v2"] .store-home-v4-chrom
   color: #17211f;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.78),
-    0 14px 34px -28px rgba(3, 33, 28, 0.38);
+    0 14px 34px -28px color-mix(in srgb, var(--theme-primary) 28%, transparent);
   backdrop-filter: blur(16px) saturate(1.06);
   -webkit-backdrop-filter: blur(16px) saturate(1.06);
 }
@@ -13459,7 +13459,7 @@ html[data-app-scope="store"] [data-store-home-version="v2"] .store-home-v4-brand
   background: rgba(255, 255, 255, 0.82);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.72),
-    0 10px 24px -18px rgba(3, 33, 28, 0.34);
+    0 10px 24px -18px color-mix(in srgb, var(--theme-primary) 26%, transparent);
 }
 
 html[data-app-scope="store"] [data-store-home-version="v2"] .store-home-v4-brand-copy {
@@ -13490,7 +13490,7 @@ html[data-app-scope="store"] [data-store-home-version="v2"] .store-home-v4-links
 
 html[data-app-scope="store"] [data-store-home-version="v2"] .store-home-v4-links > button:first-child,
 html[data-app-scope="store"] [data-store-home-version="v2"] .store-home-v4-links > button:hover {
-  color: #0f6a5c;
+  color: color-mix(in srgb, var(--theme-primary) 88%, var(--theme-text));
 }
 
 html[data-app-scope="store"] [data-store-home-version="v2"] .store-home-v4-actions {
@@ -13506,12 +13506,12 @@ html[data-app-scope="store"] [data-store-home-version="v2"] .store-home-v4-actio
   height: 2.28rem;
   place-items: center;
   border-radius: 0.78rem;
-  border-color: rgba(15, 106, 92, 0.14);
+  border-color: color-mix(in srgb, var(--theme-primary) 16%, transparent);
   background: rgba(255, 255, 255, 0.84);
-  color: #0f6a5c;
+  color: color-mix(in srgb, var(--theme-primary) 88%, var(--theme-text));
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.7),
-    0 10px 22px -18px rgba(3, 33, 28, 0.3);
+    0 10px 22px -18px color-mix(in srgb, var(--theme-primary) 32%, transparent);
 }
 
 html[data-app-scope="store"] [data-store-home-version="v2"] .store-home-v4-action-button svg,
@@ -13532,12 +13532,12 @@ html[data-app-scope="store"] [data-store-home-version="v2"] .store-home-v4-searc
     var(--theme-surface);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.86),
-    0 18px 38px -28px rgba(5, 34, 25, 0.56);
+    0 18px 38px -28px color-mix(in srgb, var(--theme-primary) 38%, transparent);
 }
 
 html[data-app-scope="store"] [data-store-home-version="v2"] .store-home-v4-search-submit {
   border-radius: 0.72rem;
-  background: linear-gradient(135deg, var(--market-jade, #0d5c48), var(--market-jade-soft, #2b8b73));
+  background: linear-gradient(135deg, var(--market-jade, var(--theme-primary)), var(--market-jade-soft, var(--theme-price)));
 }
 
 @media (max-width: 767px) {

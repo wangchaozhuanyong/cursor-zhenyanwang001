@@ -11,9 +11,19 @@ const FESTIVAL_SPRING_RUBY_GOLD_SKIN_ID = 'festival_spring_ruby_gold';
 const FESTIVAL_MOON_ORANGE_GOLD_SKIN_ID = 'festival_moon_orange_gold';
 
 const DEFAULT_SKIN_ID = PREMIUM_CHAMPAGNE_IVORY_SKIN_ID;
-const DEFAULT_HOLIDAY_SKIN_ID = FESTIVAL_SPRING_RUBY_GOLD_SKIN_ID;
+const DEFAULT_HOLIDAY_SKIN_ID = PREMIUM_CHAMPAGNE_IVORY_SKIN_ID;
 
 const RETIRED_SYSTEM_SKIN_IDS = new Set([
+  PREMIUM_PEARL_BLUSH_SKIN_ID,
+  PREMIUM_PORCELAIN_JADE_SKIN_ID,
+  PREMIUM_SKY_SILK_SKIN_ID,
+  PREMIUM_APRICOT_SAND_SKIN_ID,
+  CLIENT_BLUE_PORTAL_SKIN_ID,
+  CLIENT_SKY_TECH_SKIN_ID,
+  CLIENT_BLACK_GOLD_SKIN_ID,
+  CLIENT_DEEP_ENTERPRISE_SKIN_ID,
+  FESTIVAL_SPRING_RUBY_GOLD_SKIN_ID,
+  FESTIVAL_MOON_ORANGE_GOLD_SKIN_ID,
   'premium_ivory_jade',
   'default_life_green',
   'festive_ruby_gold',
@@ -25,11 +35,11 @@ const RETIRED_SYSTEM_SKIN_IDS = new Set([
 ]);
 
 const DAILY_COMMERCE_SKIN_ID = PREMIUM_CHAMPAGNE_IVORY_SKIN_ID;
-const FESTIVAL_SKIN_ID = FESTIVAL_SPRING_RUBY_GOLD_SKIN_ID;
+const FESTIVAL_SKIN_ID = PREMIUM_CHAMPAGNE_IVORY_SKIN_ID;
 
 const STOREFRONT_THEME_DEFAULTS = {
   radius: '14px',
-  fontFamily: "system-ui, -apple-system, 'PingFang SC', sans-serif",
+  fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'HarmonyOS Sans SC', 'PingFang SC', 'Microsoft YaHei UI', 'Microsoft YaHei', sans-serif",
   shadowStyle: 'soft',
   buttonStyle: 'pill',
   navStyle: 'glass',
@@ -52,20 +62,39 @@ const STOREFRONT_THEME_DEFAULTS = {
 };
 
 const PREMIUM_CHAMPAGNE_IVORY_CONFIG = {
-  skinName: '象牙曜石·臻选商城',
-  bgColor: '#F6F1E8',
-  surfaceColor: '#FFFDF8',
-  primaryColor: '#211A14',
-  secondaryColor: '#EFE6DA',
-  accentColor: '#B08A45',
-  priceColor: '#C2412D',
-  textColor: '#211A14',
-  mutedTextColor: '#6F675D',
-  borderColor: '#E2D8C8',
-  successColor: '#7A6230',
-  warningColor: '#B0782A',
-  dangerColor: '#B63A2F',
+  skinName: '曜石朱砂·优选商城',
+  bgColor: '#F7F3EE',
+  surfaceColor: '#FFFDF9',
+  primaryColor: '#BE2633',
+  secondaryColor: '#F3E6DD',
+  accentColor: '#AD7B3A',
+  priceColor: '#D84024',
+  textColor: '#201A17',
+  mutedTextColor: '#6F655E',
+  borderColor: '#E5DAD0',
+  successColor: '#2F7A56',
+  warningColor: '#B7791F',
+  dangerColor: '#C6282D',
   ...STOREFRONT_THEME_DEFAULTS,
+  radius: '12px',
+  shadowStyle: 'subtle',
+  buttonStyle: 'rounded',
+  navStyle: 'clean',
+  badgeStyle: 'soft',
+  priceStyle: 'bold',
+  productCardVariant: 'standard',
+  cardStyle: 'bordered',
+  cardTextAlign: 'left',
+  imageRatio: '1 / 1',
+  imageFit: 'cover',
+  homeLayout: 'magazine',
+  headerStyle: 'clean',
+  bannerStyle: 'dark',
+  couponStyle: 'deal',
+  memberCardStyle: 'blackGold',
+  categoryIconStyle: 'outline',
+  motionLevel: 'soft',
+  density: 'compact',
 };
 
 const PREMIUM_PEARL_BLUSH_CONFIG = {
@@ -316,10 +345,10 @@ const FESTIVAL_MOON_ORANGE_GOLD_CONFIG = {
 
 const PREMIUM_CHAMPAGNE_IVORY_SKIN = {
   id: PREMIUM_CHAMPAGNE_IVORY_SKIN_ID,
-  name: '象牙曜石·臻选商城',
-  description: '长期默认主商城皮肤。象牙浅底、曜石咖黑主色、赤陶价格强调和香槟金细节，适合长期购物平台使用，克制、高级、不抢商品图。',
+  name: '曜石朱砂',
+  description: '长期默认主商城皮肤。浅暖灰页面底、瓷白商品面、朱砂交易色、琥珀细节和墨色文字，适合长期购物平台使用，清楚、耐看、有转化感。',
   category: '高端商城',
-  sceneTag: 'premium',
+  sceneTag: 'mall',
   config: PREMIUM_CHAMPAGNE_IVORY_CONFIG,
 };
 
@@ -458,16 +487,6 @@ const DEFAULT_THEME_HOLIDAY_RULES = [
 const FALLBACK_THEME_SKIN = PREMIUM_CHAMPAGNE_IVORY_SKIN;
 const THEME_PRESETS = [
   PREMIUM_CHAMPAGNE_IVORY_SKIN,
-  CLIENT_BLUE_PORTAL_SKIN,
-  CLIENT_SKY_TECH_SKIN,
-  CLIENT_BLACK_GOLD_SKIN,
-  CLIENT_DEEP_ENTERPRISE_SKIN,
-  PREMIUM_PEARL_BLUSH_SKIN,
-  PREMIUM_PORCELAIN_JADE_SKIN,
-  PREMIUM_SKY_SILK_SKIN,
-  PREMIUM_APRICOT_SAND_SKIN,
-  FESTIVAL_SPRING_RUBY_GOLD_SKIN,
-  FESTIVAL_MOON_ORANGE_GOLD_SKIN,
 ];
 
 module.exports = {

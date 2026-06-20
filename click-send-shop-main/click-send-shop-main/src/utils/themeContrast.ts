@@ -410,6 +410,14 @@ function buildGiftBadgeSurface(price: RGB, surface: RGB): GradientSurfaceTokens 
   };
 }
 
+function buildStoreRadiusTokens(radius: string): Record<string, string> {
+  const base = radius.trim() || "12px";
+  return {
+    "--store-card-radius": `max(8px, min(16px, ${base}))`,
+    "--store-panel-radius": `max(12px, min(20px, calc(${base} + 4px)))`,
+  };
+}
+
 function buildCouponCardLightSurface(
   variant: "premium" | "deal",
   colors: { primary: RGB; secondary: RGB; danger: RGB; warning: RGB },
@@ -433,9 +441,10 @@ function buildStorefrontSurface(colors: {
   secondary: RGB;
   price: RGB;
   text: RGB;
+  radius: string;
   isDarkBg: boolean;
 }): Record<string, string> {
-  const { bg, surface, primary, secondary, price, text, isDarkBg } = colors;
+  const { bg, surface, primary, secondary, price, text, radius, isDarkBg } = colors;
   const canvas = isDarkBg
     ? mixColors(bg, BLACK, 0.14)
     : mixColors(mixColors(bg, WHITE, 0.72), primary, 0.025);
@@ -481,8 +490,7 @@ function buildStorefrontSurface(colors: {
     "--store-border-strong": rgbToCss(borderStrong),
     "--store-text": surfaceText,
     "--store-muted": muted,
-    "--store-card-radius": "16px",
-    "--store-panel-radius": "22px",
+    ...buildStoreRadiusTokens(radius),
     "--store-card-shadow": `0 18px 42px -30px ${rgbToRgba(cardShadowTone, isDarkBg ? 0.72 : 0.28)}, 0 2px 12px -10px ${rgbToRgba(brandShadowTone, isDarkBg ? 0.42 : 0.18)}`,
     "--store-card-shadow-hover": `0 24px 54px -30px ${rgbToRgba(cardShadowTone, isDarkBg ? 0.84 : 0.34)}, 0 8px 18px -14px ${rgbToRgba(brandShadowTone, isDarkBg ? 0.52 : 0.22)}`,
     "--store-soft-shadow": `0 12px 30px -24px ${rgbToRgba(cardShadowTone, isDarkBg ? 0.7 : 0.24)}`,
@@ -589,6 +597,7 @@ export function generateThemePalette(adminConfig: ThemeConfig) {
     secondary,
     price,
     text: parseColor(text),
+    radius: config.radius,
     isDarkBg,
   });
   const shadowTone = isDarkBg ? BLACK : mixColors(primary, BLACK, 0.76);

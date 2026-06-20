@@ -5,7 +5,6 @@ import SeoHead from "@/components/SeoHead";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { isLoyaltyFeatureEnabled } from "@/utils/loyaltyFeatureVisibility";
-import { isLoggedIn } from "@/utils/token";
 import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
 import { toast } from "sonner";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
@@ -15,7 +14,6 @@ import { useAuthStore } from "@/stores/useAuthStore";
 import { useCouponStore } from "@/stores/useCouponStore";
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
 import { useNotificationStore } from "@/stores/useNotificationStore";
-import { useOrderStore } from "@/stores/useOrderStore";
 import { useUserStore } from "@/stores/useUserStore";
 import * as inviteService from "@/services/inviteService";
 import * as orderService from "@/services/orderService";
@@ -28,7 +26,6 @@ import * as memberBenefitsService from "@/services/memberBenefitsService";
 import * as uploadService from "@/services/uploadService";
 import type { MemberBenefitsOverview } from "@/services/memberBenefitsService";
 import type { OrderSummary } from "@/types/order";
-import { hasPendingReview } from "@/utils/orderBuyerStatus";
 import { formatUnreadBadge } from "@/utils/notificationBadge";
 import { THIRD_PARTY_LOGIN_ENABLED } from "@/constants/authLogin";
 import { computeUpgradeProgress } from "@/utils/memberBenefitPresentation";
@@ -61,20 +58,39 @@ const ProfileWechatBindSection = THIRD_PARTY_LOGIN_ENABLED
   ? lazy(() => import("./ProfileWechatBindSection"))
   : null;
 
+let cachedProfileOrderSummary: OrderSummary | null = null;
+
 function formatGrowthValue(value: number) {
   const safeValue = Math.max(0, Math.round(Number(value) || 0));
   return safeValue.toLocaleString("zh-CN");
 }
 
+function ProfileAuthLoadingCard() {
+  return (
+    <section className={`${PROFILE_CARD_CLASS} px-[var(--store-card-x)] py-[var(--store-card-y)]`} aria-busy="true">
+      <div className="flex items-center gap-3">
+        <span className="h-12 w-12 rounded-full bg-[color-mix(in_srgb,var(--theme-primary)_10%,var(--theme-surface))]" />
+        <span className="grid min-w-0 flex-1 gap-2">
+          <span className="h-4 w-28 rounded-full bg-[color-mix(in_srgb,var(--theme-text)_10%,transparent)]" />
+          <span className="h-3 w-40 rounded-full bg-[color-mix(in_srgb,var(--theme-text-muted)_12%,transparent)]" />
+        </span>
+      </div>
+      <p className="mt-3 text-xs font-semibold text-[var(--theme-text-muted)]">正在同步账号状态...</p>
+    </section>
+  );
+}
+
 export default function Profile() {
   const { navigateFeature, navigateStorePath } = useStoreNavigationGuard();
-  const loggedIn = isLoggedIn();
   const siteInfo = useSiteInfo();
   const capabilities = useSiteCapabilities();
   const logoSrc = resolveSiteLogoUrl(siteInfo);
-  const authStore = useAuthStore();
+  const authHydrated = useAuthStore((s) => s.authHydrated);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const logout = useAuthStore((s) => s.logout);
+  const loggedIn = authHydrated && isAuthenticated;
+  const authPending = !authHydrated;
   const { nickname, avatar, pointsBalance, inviteCode, memberLevel, wechatLogin, loadProfile } = useUserStore();
-  const { orders, loadOrders } = useOrderStore();
   const unreadCount = useNotificationStore((s) => s.unreadCount);
   const favoriteCount = useFavoritesStore((s) => s.favoriteIds.length);
   const loadFavorites = useFavoritesStore((s) => s.loadFavorites);
@@ -83,7 +99,7 @@ export default function Profile() {
 
   const [inviteCount, setInviteCount] = useState(0);
   const [rewardBalance, setRewardBalance] = useState(0);
-  const [orderSummary, setOrderSummary] = useState<OrderSummary | null>(null);
+  const [orderSummary, setOrderSummary] = useState<OrderSummary | null>(() => cachedProfileOrderSummary);
   const [loyaltyConfig, setLoyaltyConfig] = useState<loyaltyService.LoyaltyConfig | null>(null);
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
   const [inviteCodeVisible, setInviteCodeVisible] = useState(false);
@@ -99,7 +115,7 @@ export default function Profile() {
   const memberBenefits = memberBenefitsQuery.data ?? null;
 
   useEffect(() => {
-    if (!loggedIn || !capabilities.memberLevelEnabled) {
+    if (!authHydrated || !loggedIn || !capabilities.memberLevelEnabled) {
       setMemberBenefitsQueryEnabled(false);
       return;
     }
@@ -109,10 +125,15 @@ export default function Profile() {
       timeoutMs: 1800,
       jitterMs: 120,
     });
-  }, [capabilities.memberLevelEnabled, loggedIn]);
+  }, [authHydrated, capabilities.memberLevelEnabled, loggedIn]);
 
   useEffect(() => {
-    if (!loggedIn) return;
+    if (!authHydrated) return;
+    if (!loggedIn) {
+      cachedProfileOrderSummary = null;
+      setOrderSummary(null);
+      return;
+    }
     let cancelled = false;
     const cancelTasks: Array<() => void> = [];
 
@@ -132,19 +153,22 @@ export default function Profile() {
       if (cancelled) return;
       setInviteCount(Number(summary?.inviteStats?.directCount || 0));
       setRewardBalance(Number(summary?.rewardBalance?.balance || 0));
-      setOrderSummary(summary?.orderSummary || null);
+      cachedProfileOrderSummary = summary?.orderSummary || null;
+      setOrderSummary(cachedProfileOrderSummary);
       setLoyaltyConfig(summary?.loyaltyConfig || null);
       useNotificationStore.setState({ unreadCount: Number(summary?.unreadCount || 0) });
     }).catch(() => {
       if (cancelled) return;
       scheduleProfileTask("profile", () => loadProfile(), 0);
-      scheduleProfileTask("orders", () => loadOrders(), 120);
       scheduleProfileTask("coupons", () => loadCoupons(), 220);
       scheduleProfileTask("favorites", () => loadFavorites(), 320);
       scheduleProfileTask("notifications", () => useNotificationStore.getState().fetchUnreadCount(), 420);
       scheduleProfileTask("invite-stats", () => inviteService.fetchInviteStats().then((s) => setInviteCount(s.directCount || 0)), 520);
       scheduleProfileTask("reward-balance", () => rewardService.fetchRewardBalance().then((res) => setRewardBalance(Number(res.balance || 0))), 620);
-      scheduleProfileTask("order-summary", () => orderService.fetchOrderSummary().then((res) => setOrderSummary(res)), 720);
+      scheduleProfileTask("order-summary", () => orderService.fetchOrderSummary().then((res) => {
+        cachedProfileOrderSummary = res;
+        setOrderSummary(res);
+      }), 720);
       scheduleProfileTask("loyalty-config", () => loyaltyService.fetchLoyaltyConfig().then((cfg) => setLoyaltyConfig(cfg)), 820);
     });
 
@@ -152,9 +176,10 @@ export default function Profile() {
       cancelled = true;
       cancelTasks.forEach((cancel) => cancel());
     };
-  }, [loadCoupons, loadFavorites, loadOrders, loadProfile, loggedIn]);
+  }, [authHydrated, loadCoupons, loadFavorites, loadProfile, loggedIn]);
 
   useEffect(() => {
+    if (!authHydrated) return;
     if (!loggedIn) {
       setActiveReturnCount(0);
       return;
@@ -177,10 +202,10 @@ export default function Profile() {
       cancelled = true;
       cancel();
     };
-  }, [loggedIn]);
+  }, [authHydrated, loggedIn]);
 
   const handleLogout = async () => {
-    await authStore.logout();
+    await logout();
     toast.success("已退出登录", toastPresetQuickSuccess);
     navigateStorePath("/login", { from: "/profile" });
   };
@@ -215,15 +240,7 @@ export default function Profile() {
   const code = inviteCode?.trim() || "暂无";
   const couponCount = useMemo(() => coupons.filter((c) => !c.used_at).length, [coupons]);
 
-  const orderPending = useMemo(() => orders.filter((o) => o.status === "pending" && o.payment_status !== "paid").length, [orders]);
-  const orderShipping = useMemo(() => orders.filter((o) => o.status === "paid" || (o.payment_status === "paid" && o.status !== "shipped" && o.status !== "completed" && o.status !== "cancelled" && o.status !== "refunding" && o.status !== "refunded")).length, [orders]);
-  const orderReceiving = useMemo(() => orders.filter((o) => o.status === "shipped").length, [orders]);
-  const pendingReviewCount = useMemo(() => orders.filter((o) => hasPendingReview(o)).length, [orders]);
-  const orderRefundCount = useMemo(
-    () => orders.filter((o) => o.status === "refunding" || o.status === "refunded").length,
-    [orders],
-  );
-  const afterSaleCount = Math.max(orderSummary?.after_sale ?? orderRefundCount, activeReturnCount);
+  const afterSaleCount = Math.max(orderSummary?.after_sale ?? 0, activeReturnCount);
 
   const rewardsEnabled = isLoyaltyFeatureEnabled("reward", capabilities, loyaltyConfig);
   const inviteEnabled = isLoyaltyFeatureEnabled("referral", capabilities, loyaltyConfig);
@@ -281,10 +298,10 @@ export default function Profile() {
       wallet: `RM ${rewardBalance.toFixed(2)}`,
     },
     counts: {
-      orderPendingPayment: loggedIn ? orderSummary?.pending_payment ?? orderPending : 0,
-      orderPaid: loggedIn ? orderSummary?.pending_ship ?? orderShipping : 0,
-      orderShipped: loggedIn ? orderSummary?.pending_receive ?? orderReceiving : 0,
-      orderPendingReview: loggedIn ? orderSummary?.pending_review ?? pendingReviewCount : 0,
+      orderPendingPayment: loggedIn ? orderSummary?.pending_payment ?? 0 : 0,
+      orderPaid: loggedIn ? orderSummary?.pending_ship ?? 0 : 0,
+      orderShipped: loggedIn ? orderSummary?.pending_receive ?? 0 : 0,
+      orderPendingReview: loggedIn ? orderSummary?.pending_review ?? 0 : 0,
       orderAfterSale: loggedIn ? orderSummary?.after_sale ?? afterSaleCount : 0,
     },
   }), [
@@ -295,11 +312,7 @@ export default function Profile() {
     loggedIn,
     loyaltyConfig,
     notificationBadgeText,
-    orderPending,
-    orderReceiving,
-    orderShipping,
     orderSummary,
-    pendingReviewCount,
     pointsBalance,
     rewardBalance,
   ]);
@@ -340,8 +353,11 @@ export default function Profile() {
   );
 
   const handleFeatureNavigate = (key: string, fallbackPath: string, requireAuth?: boolean) => {
-    if (key && navigateFeature(key as AccountFeatureKey)) return;
-    navigateStorePath(fallbackPath, { requireAuth, from: "/profile" });
+    if (fallbackPath) {
+      navigateStorePath(fallbackPath, { requireAuth, from: "/profile" });
+      return;
+    }
+    if (key) navigateFeature(key as AccountFeatureKey);
   };
 
   const trustItems = useMemo<ProfileTrustItem[]>(() => [
@@ -362,7 +378,9 @@ export default function Profile() {
         </aside>
 
         <div className="store-profile-stack client-profile-stack min-w-0 space-y-3 sm:space-y-4 xl:max-w-4xl">
-          {!loggedIn ? (
+          {authPending ? (
+            <ProfileAuthLoadingCard />
+          ) : !loggedIn ? (
             <ProfileGuestCard
               onLogin={() => navigateStorePath("/login", { from: "/profile" })}
               onRegister={() => navigateStorePath("/register", { from: "/profile" })}
@@ -378,9 +396,9 @@ export default function Profile() {
                 assets={assetItems}
                 unreadCount={unreadCount}
                 onMessageClick={() => navigateStorePath("/notifications", { requireAuth: true, from: "/profile" })}
-                onMemberLevelClick={() => navigateFeature("memberBenefits")}
-                onProfileClick={() => navigateFeature("settings")}
-                onViewAllBenefits={() => navigateFeature("memberBenefits")}
+                onMemberLevelClick={() => handleFeatureNavigate("memberBenefits", "/member/benefits", true)}
+                onProfileClick={() => handleFeatureNavigate("settings", "/settings", true)}
+                onViewAllBenefits={() => handleFeatureNavigate("memberBenefits", "/member/benefits", true)}
                 onAssetNavigate={(item) => handleFeatureNavigate(item.key, item.path, item.auth)}
                 onAvatarClick={() => avatarInputRef.current?.click()}
               />
@@ -389,7 +407,7 @@ export default function Profile() {
                 <Suspense fallback={null}>
                   <ProfileWechatBindSection
                     wechatLogin={wechatLogin}
-                    onNavigateSettings={() => navigateFeature("settings")}
+                    onNavigateSettings={() => handleFeatureNavigate("settings", "/settings", true)}
                     cardClass={PROFILE_CARD_CLASS}
                     menuTapClass={PROFILE_MENU_TAP}
                   />
@@ -398,12 +416,12 @@ export default function Profile() {
             </>
           )}
 
-          <div className="client-profile-dashboard-grid">
+          {!authPending ? <div className="client-profile-dashboard-grid">
             <div className="client-profile-dashboard-main">
               {loggedIn ? (
                 <ProfileOrderPanel
                   items={orderActions}
-                  onViewAll={() => navigateFeature("orders")}
+                  onViewAll={() => handleFeatureNavigate("orders", "/orders", true)}
                   onNavigate={(item) => handleFeatureNavigate(item.key || "", item.path, item.auth)}
                 />
               ) : null}
@@ -415,10 +433,10 @@ export default function Profile() {
                   rewardBalance={rewardBalance}
                   inviteCode={code}
                   inviteCodeVisible={inviteCodeVisible}
-                  onPrimaryClick={() => loggedIn ? navigateFeature("invite") : navigateStorePath("/login", { from: "/profile" })}
+                  onPrimaryClick={() => loggedIn ? handleFeatureNavigate("invite", "/invite", true) : navigateStorePath("/login", { from: "/profile" })}
                   onToggleInviteCode={() => loggedIn ? setInviteCodeVisible((v) => !v) : navigateStorePath("/login", { from: "/profile" })}
                   onCopyInviteCode={handleCopyInviteCode}
-                  onRecordClick={() => navigateFeature("invite")}
+                  onRecordClick={() => handleFeatureNavigate("invite", "/invite", true)}
                 />
               ) : null}
 
@@ -446,7 +464,7 @@ export default function Profile() {
 
               {loggedIn ? <ProfileLogoutButton onClick={() => setLogoutConfirmOpen(true)} /> : null}
             </aside>
-          </div>
+          </div> : null}
         </div>
       </main>
 

@@ -1,5 +1,4 @@
 import type { ThemeConfig } from "@/types/theme";
-import { STOREFRONT_DESIGN_LOCKS } from "@/constants/themeDesignLocks";
 
 type RGB = { r: number; g: number; b: number };
 
@@ -505,7 +504,7 @@ function buildStorefrontSurface(colors: {
 }
 
 export function generateThemePalette(adminConfig: ThemeConfig) {
-  const config = { ...adminConfig, ...STOREFRONT_DESIGN_LOCKS };
+  const config = adminConfig;
   const bg = parseColor(config.bgColor, WHITE);
   const surface = parseColor(config.surfaceColor, bg);
   const primary = parseColor(config.primaryColor, BLACK);

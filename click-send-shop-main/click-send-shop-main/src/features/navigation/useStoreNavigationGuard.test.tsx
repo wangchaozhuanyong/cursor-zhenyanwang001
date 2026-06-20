@@ -7,6 +7,10 @@ import { DEFAULT_SITE_CAPABILITIES } from "@/types/siteCapabilities";
 import { useStoreNavigationGuard } from "./useStoreNavigationGuard";
 
 const mocks = vi.hoisted(() => ({
+  authState: {
+    authHydrated: true,
+    isAuthenticated: true,
+  },
   capabilitiesReady: false,
   loyaltyLoading: false,
   preloadStoreRoute: vi.fn(() => Promise.resolve()),
@@ -25,8 +29,10 @@ vi.mock("@/hooks/useLoyaltyVisibility", () => ({
   }),
 }));
 
-vi.mock("@/utils/token", () => ({
-  isLoggedIn: () => true,
+vi.mock("@/stores/useAuthStore", () => ({
+  useAuthStore: (selector?: (state: typeof mocks.authState) => unknown) => (
+    selector ? selector(mocks.authState) : mocks.authState
+  ),
 }));
 
 vi.mock("@/utils/storeRoutePreload", () => ({
@@ -45,7 +51,7 @@ function LocationProbe() {
 }
 
 function NavigationProbe() {
-  const { navigateFeature } = useStoreNavigationGuard();
+  const { navigateFeature, navigateStorePath } = useStoreNavigationGuard();
   return (
     <>
       <button type="button" onClick={() => navigateFeature("notifications")}>
@@ -53,6 +59,9 @@ function NavigationProbe() {
       </button>
       <button type="button" onClick={() => navigateFeature("memberBenefits")}>
         会员权益
+      </button>
+      <button type="button" onClick={() => navigateStorePath("/address", { requireAuth: true, from: "/profile" })}>
+        地址
       </button>
       <LocationProbe />
     </>
@@ -88,6 +97,8 @@ describe("useStoreNavigationGuard", () => {
     container?.remove();
     container = null;
     root = null;
+    mocks.authState.authHydrated = true;
+    mocks.authState.isAuthenticated = true;
     mocks.capabilitiesReady = false;
     mocks.loyaltyLoading = false;
     vi.clearAllMocks();
@@ -108,7 +119,7 @@ describe("useStoreNavigationGuard", () => {
     expect(mocks.toastInfo).not.toHaveBeenCalledWith("功能配置加载中，请稍后再试");
   });
 
-  it("waits for capability config only when the feature depends on capabilities", async () => {
+  it("routes capability-backed features while config is loading", async () => {
     mocks.capabilitiesReady = false;
     await renderNavigationProbe();
 
@@ -120,7 +131,23 @@ describe("useStoreNavigationGuard", () => {
       memberButton?.click();
     });
 
+    expect(container?.querySelector("[data-testid='location']")?.textContent).toBe("/member/benefits");
+    expect(mocks.toastInfo).not.toHaveBeenCalledWith("功能配置加载中，请稍后再试");
+  });
+
+  it("does not route protected targets before auth session hydration finishes", async () => {
+    mocks.authState.authHydrated = false;
+    await renderNavigationProbe();
+
+    const addressButton = [...(container?.querySelectorAll<HTMLButtonElement>("button") ?? [])]
+      .find((button) => button.textContent === "地址");
+    expect(addressButton).not.toBeNull();
+
+    await act(async () => {
+      addressButton?.click();
+    });
+
     expect(container?.querySelector("[data-testid='location']")?.textContent).toBe("/profile");
-    expect(mocks.toastInfo).toHaveBeenCalledWith("功能配置加载中，请稍后再试");
+    expect(mocks.toastInfo).toHaveBeenCalledWith("登录状态同步中，请稍后再试");
   });
 });

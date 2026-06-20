@@ -1,5 +1,5 @@
 import type { ThemeConfig, ThemeHolidayRule, ThemeSkin } from "@/types/theme";
-import { STOREFRONT_DESIGN_LOCKS } from "@/constants/themeDesignLocks";
+import { STOREFRONT_THEME_DEFAULTS } from "@/constants/themeDesignLocks";
 
 export const PREMIUM_CHAMPAGNE_IVORY_SKIN_ID = "premium_champagne_ivory";
 export const PREMIUM_PEARL_BLUSH_SKIN_ID = "premium_pearl_blush";
@@ -13,7 +13,7 @@ export const CLIENT_DEEP_ENTERPRISE_SKIN_ID = "client_deep_enterprise";
 export const FESTIVAL_SPRING_RUBY_GOLD_SKIN_ID = "festival_spring_ruby_gold";
 export const FESTIVAL_MOON_ORANGE_GOLD_SKIN_ID = "festival_moon_orange_gold";
 
-export const DEFAULT_SKIN_ID = CLIENT_SKY_TECH_SKIN_ID;
+export const DEFAULT_SKIN_ID = PREMIUM_CHAMPAGNE_IVORY_SKIN_ID;
 export const DEFAULT_HOLIDAY_SKIN_ID = FESTIVAL_SPRING_RUBY_GOLD_SKIN_ID;
 
 export const RETIRED_SYSTEM_SKIN_IDS = new Set([
@@ -27,24 +27,24 @@ export const RETIRED_SYSTEM_SKIN_IDS = new Set([
   "organic_sandstone",
 ]);
 
-export const DAILY_COMMERCE_SKIN_ID = CLIENT_SKY_TECH_SKIN_ID;
+export const DAILY_COMMERCE_SKIN_ID = PREMIUM_CHAMPAGNE_IVORY_SKIN_ID;
 export const FESTIVAL_SKIN_ID = FESTIVAL_SPRING_RUBY_GOLD_SKIN_ID;
 
 export const PREMIUM_CHAMPAGNE_IVORY_CONFIG: ThemeConfig = {
-  skinName: "象牙白金·默认推荐",
-  bgColor: "#F4EFE7",
+  skinName: "象牙曜石·臻选商城",
+  bgColor: "#F6F1E8",
   surfaceColor: "#FFFDF8",
-  primaryColor: "#2A211B",
-  secondaryColor: "#E9DDCB",
-  accentColor: "#B99A52",
-  priceColor: "#B94A33",
-  textColor: "#211812",
-  mutedTextColor: "#756A5E",
-  borderColor: "#DDD0BD",
-  successColor: "#327A55",
-  warningColor: "#B77A22",
-  dangerColor: "#B33F35",
-  ...STOREFRONT_DESIGN_LOCKS,
+  primaryColor: "#211A14",
+  secondaryColor: "#EFE6DA",
+  accentColor: "#B08A45",
+  priceColor: "#C2412D",
+  textColor: "#211A14",
+  mutedTextColor: "#6F675D",
+  borderColor: "#E2D8C8",
+  successColor: "#7A6230",
+  warningColor: "#B0782A",
+  dangerColor: "#B63A2F",
+  ...STOREFRONT_THEME_DEFAULTS,
 };
 
 export const PREMIUM_PEARL_BLUSH_CONFIG: ThemeConfig = {
@@ -61,7 +61,7 @@ export const PREMIUM_PEARL_BLUSH_CONFIG: ThemeConfig = {
   successColor: "#337A55",
   warningColor: "#B77A22",
   dangerColor: "#B33F35",
-  ...STOREFRONT_DESIGN_LOCKS,
+  ...STOREFRONT_THEME_DEFAULTS,
 };
 
 export const PREMIUM_PORCELAIN_JADE_CONFIG: ThemeConfig = {
@@ -78,7 +78,7 @@ export const PREMIUM_PORCELAIN_JADE_CONFIG: ThemeConfig = {
   successColor: "#3E7D55",
   warningColor: "#AD7924",
   dangerColor: "#B13F32",
-  ...STOREFRONT_DESIGN_LOCKS,
+  ...STOREFRONT_THEME_DEFAULTS,
 };
 
 export const PREMIUM_SKY_SILK_CONFIG: ThemeConfig = {
@@ -95,7 +95,7 @@ export const PREMIUM_SKY_SILK_CONFIG: ThemeConfig = {
   successColor: "#237D68",
   warningColor: "#A97622",
   dangerColor: "#B94338",
-  ...STOREFRONT_DESIGN_LOCKS,
+  ...STOREFRONT_THEME_DEFAULTS,
 };
 
 export const PREMIUM_APRICOT_SAND_CONFIG: ThemeConfig = {
@@ -112,7 +112,7 @@ export const PREMIUM_APRICOT_SAND_CONFIG: ThemeConfig = {
   successColor: "#557D5E",
   warningColor: "#A9772B",
   dangerColor: "#A94734",
-  ...STOREFRONT_DESIGN_LOCKS,
+  ...STOREFRONT_THEME_DEFAULTS,
 };
 
 export const CLIENT_BLUE_PORTAL_CONFIG: ThemeConfig = {
@@ -129,7 +129,26 @@ export const CLIENT_BLUE_PORTAL_CONFIG: ThemeConfig = {
   successColor: "#0F8A63",
   warningColor: "#B7791F",
   dangerColor: "#C24132",
-  ...STOREFRONT_DESIGN_LOCKS,
+  ...STOREFRONT_THEME_DEFAULTS,
+  radius: "12px",
+  shadowStyle: "subtle",
+  buttonStyle: "rounded",
+  navStyle: "clean",
+  badgeStyle: "outline",
+  priceStyle: "bold",
+  productCardVariant: "standard",
+  cardStyle: "bordered",
+  cardTextAlign: "left",
+  imageRatio: "16 / 9",
+  imageFit: "cover",
+  homeLayout: "magazine",
+  headerStyle: "clean",
+  bannerStyle: "clean",
+  couponStyle: "minimal",
+  memberCardStyle: "light",
+  categoryIconStyle: "outline",
+  motionLevel: "soft",
+  density: "compact",
 };
 
 export const CLIENT_SKY_TECH_CONFIG: ThemeConfig = {
@@ -146,7 +165,26 @@ export const CLIENT_SKY_TECH_CONFIG: ThemeConfig = {
   successColor: "#0F8A63",
   warningColor: "#B7791F",
   dangerColor: "#C24132",
-  ...STOREFRONT_DESIGN_LOCKS,
+  ...STOREFRONT_THEME_DEFAULTS,
+  radius: "12px",
+  shadowStyle: "subtle",
+  buttonStyle: "rounded",
+  navStyle: "floating",
+  badgeStyle: "soft",
+  priceStyle: "bold",
+  productCardVariant: "compact",
+  cardStyle: "minimal",
+  cardTextAlign: "left",
+  imageRatio: "1 / 1",
+  imageFit: "cover",
+  homeLayout: "classic",
+  headerStyle: "premium",
+  bannerStyle: "fresh",
+  couponStyle: "minimal",
+  memberCardStyle: "fresh",
+  categoryIconStyle: "soft",
+  motionLevel: "soft",
+  density: "compact",
 };
 
 export const CLIENT_BLACK_GOLD_CONFIG: ThemeConfig = {
@@ -163,7 +201,26 @@ export const CLIENT_BLACK_GOLD_CONFIG: ThemeConfig = {
   successColor: "#69A67D",
   warningColor: "#D0A23A",
   dangerColor: "#D56A4A",
-  ...STOREFRONT_DESIGN_LOCKS,
+  ...STOREFRONT_THEME_DEFAULTS,
+  radius: "18px",
+  shadowStyle: "glow",
+  buttonStyle: "pill",
+  navStyle: "glass",
+  badgeStyle: "solid",
+  priceStyle: "luxury",
+  productCardVariant: "premium",
+  cardStyle: "elevated",
+  cardTextAlign: "left",
+  imageRatio: "4 / 5",
+  imageFit: "cover",
+  homeLayout: "premium",
+  headerStyle: "dark",
+  bannerStyle: "dark",
+  couponStyle: "premium",
+  memberCardStyle: "blackGold",
+  categoryIconStyle: "solid",
+  motionLevel: "rich",
+  density: "comfortable",
 };
 
 export const CLIENT_DEEP_ENTERPRISE_CONFIG: ThemeConfig = {
@@ -180,7 +237,26 @@ export const CLIENT_DEEP_ENTERPRISE_CONFIG: ThemeConfig = {
   successColor: "#0F8A63",
   warningColor: "#B7791F",
   dangerColor: "#C24132",
-  ...STOREFRONT_DESIGN_LOCKS,
+  ...STOREFRONT_THEME_DEFAULTS,
+  radius: "10px",
+  shadowStyle: "subtle",
+  buttonStyle: "square",
+  navStyle: "clean",
+  badgeStyle: "outline",
+  priceStyle: "normal",
+  productCardVariant: "standard",
+  cardStyle: "bordered",
+  cardTextAlign: "left",
+  imageRatio: "16 / 9",
+  imageFit: "cover",
+  homeLayout: "magazine",
+  headerStyle: "premium",
+  bannerStyle: "clean",
+  couponStyle: "ticket",
+  memberCardStyle: "light",
+  categoryIconStyle: "outline",
+  motionLevel: "none",
+  density: "compact",
 };
 
 export const FESTIVAL_SPRING_RUBY_GOLD_CONFIG: ThemeConfig = {
@@ -197,7 +273,7 @@ export const FESTIVAL_SPRING_RUBY_GOLD_CONFIG: ThemeConfig = {
   successColor: "#257A55",
   warningColor: "#B98324",
   dangerColor: "#B91F29",
-  ...STOREFRONT_DESIGN_LOCKS,
+  ...STOREFRONT_THEME_DEFAULTS,
 };
 
 export const FESTIVAL_MOON_ORANGE_GOLD_CONFIG: ThemeConfig = {
@@ -214,13 +290,13 @@ export const FESTIVAL_MOON_ORANGE_GOLD_CONFIG: ThemeConfig = {
   successColor: "#467B58",
   warningColor: "#B88122",
   dangerColor: "#B13C25",
-  ...STOREFRONT_DESIGN_LOCKS,
+  ...STOREFRONT_THEME_DEFAULTS,
 };
 
 export const PREMIUM_CHAMPAGNE_IVORY_SKIN: ThemeSkin = {
   id: PREMIUM_CHAMPAGNE_IVORY_SKIN_ID,
-  name: "象牙白金",
-  description: "默认推荐。象牙浅底、低饱和金色和深棕文字，干净、高级、温暖，适合长期购物展示。",
+  name: "象牙曜石",
+  description: "默认主商城皮肤。象牙浅底、曜石咖黑主色、赤陶价格强调和香槟金细节，适合长期购物平台使用，克制、高级、不抢商品图。",
   category: "高端商城",
   sceneTag: "premium",
   config: PREMIUM_CHAMPAGNE_IVORY_CONFIG,
@@ -318,18 +394,18 @@ export const FESTIVAL_MOON_ORANGE_GOLD_SKIN: ThemeSkin = {
 
 export const DEFAULT_LIFE_GREEN_CONFIG = PREMIUM_CHAMPAGNE_IVORY_CONFIG;
 export const PREMIUM_IVORY_JADE_CONFIG = PREMIUM_CHAMPAGNE_IVORY_CONFIG;
-export const DAILY_COMMERCE_SKIN = CLIENT_SKY_TECH_SKIN;
+export const DAILY_COMMERCE_SKIN = PREMIUM_CHAMPAGNE_IVORY_SKIN;
 export const FESTIVAL_RUBY_GOLD_SKIN = FESTIVAL_SPRING_RUBY_GOLD_SKIN;
 export const PREMIUM_IVORY_JADE_SKIN = PREMIUM_CHAMPAGNE_IVORY_SKIN;
 
-export const FALLBACK_THEME_SKIN = CLIENT_SKY_TECH_SKIN;
+export const FALLBACK_THEME_SKIN = PREMIUM_CHAMPAGNE_IVORY_SKIN;
 export const THEME_PRESETS: ThemeSkin[] = [
+  PREMIUM_CHAMPAGNE_IVORY_SKIN,
   CLIENT_SKY_TECH_SKIN,
   CLIENT_BLUE_PORTAL_SKIN,
   CLIENT_DEEP_ENTERPRISE_SKIN,
   CLIENT_BLACK_GOLD_SKIN,
   PREMIUM_SKY_SILK_SKIN,
-  PREMIUM_CHAMPAGNE_IVORY_SKIN,
   PREMIUM_PEARL_BLUSH_SKIN,
   PREMIUM_PORCELAIN_JADE_SKIN,
   PREMIUM_APRICOT_SAND_SKIN,

@@ -398,7 +398,6 @@ export default function Promotions() {
   const [summaryList, setSummaryList] = useState<StorefrontPromotion[]>(() => initialSummaryCache?.list || (!selectedType && initialCache?.list) || []);
   const [loading, setLoading] = useState(() => !initialCache);
   const [summaryLoading, setSummaryLoading] = useState(() => Boolean(selectedType && !initialSummaryCache));
-  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
 
   const loadSummary = useCallback(async () => {
@@ -427,10 +426,8 @@ export default function Promotions() {
     if (cached) {
       setList(cached.list);
       setLoading(false);
-      setRefreshing(true);
     } else {
       setLoading(true);
-      setRefreshing(false);
     }
     setError("");
     try {
@@ -446,7 +443,6 @@ export default function Promotions() {
       setError(t("promotion.errorFallback"));
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
   }, [selectedType, t]);
 
@@ -473,7 +469,6 @@ export default function Promotions() {
   const { containerRef: filtersRef, setItemRef: setFilterRef, scrollToKey: scrollFilterToKey } =
     useHorizontalActiveScroll<HTMLElement, HTMLAnchorElement>(activeFilterKey, FILTERS.length);
   const showFullSkeleton = loading && list.length === 0;
-  const showSoftRefreshing = refreshing && list.length > 0;
 
   return (
     <div className="store-page-shell store-v12-page store-promotions-v12-page store-bottom-safe min-h-[100dvh] bg-[var(--theme-bg)] text-[var(--theme-text)]">
@@ -539,12 +534,6 @@ export default function Promotions() {
             );
           })}
         </nav>
-        {showSoftRefreshing ? (
-          <p className="mt-3 rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-center text-xs font-semibold text-[var(--theme-text-muted)]">
-            正在同步最新优惠
-          </p>
-        ) : null}
-
         {showFullSkeleton ? (
           <section className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3" aria-busy="true" aria-label={t("common.loadingPromotions")}>
             {Array.from({ length: PROMOTION_LOADING_CARD_COUNT }).map((_, index) => (

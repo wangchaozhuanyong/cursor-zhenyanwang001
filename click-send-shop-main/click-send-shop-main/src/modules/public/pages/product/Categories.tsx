@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef, type FormEvent } from "react";
 import { useSearchParams } from "react-router-dom";
-import { ChevronDown, LayoutGrid, Search, ShieldCheck, SlidersHorizontal, X } from "lucide-react";
+import { LayoutGrid, Search, ShieldCheck, SlidersHorizontal, X } from "lucide-react";
 import { useProductStore } from "@/stores/useProductStore";
 import { STORE_COPY } from "@/constants/storeCopy";
 import { cn } from "@/lib/utils";
@@ -303,18 +303,18 @@ export default function Categories() {
   const activeCategoryName = activeCategory?.name || "";
   const categoryDescription = activeCategory?.description?.trim() || "";
   const siteName = (siteInfo.siteName || STORE_COPY.brandName).trim();
-  const pageHeading = isNew ? NEW_ARRIVAL_CATEGORY_LABEL : activeCategoryName || "全部分类";
+  const pageHeading = isNew ? NEW_ARRIVAL_CATEGORY_LABEL : activeCategoryName || "分类";
   const categoryDescriptionText = categoryDescription || (isNew
     ? `查看${siteName}最近上架的商品和服务。`
     : "用关键词、分类和筛选条件快速找到合适商品。");
   const title = isNew
     ? `新品上市｜${siteName}`
-    : activeCategory?.seo_title?.trim() || (activeCategoryName ? `${activeCategoryName}｜${siteName}` : `全部分类｜${siteName}`);
+    : activeCategory?.seo_title?.trim() || (activeCategoryName ? `${activeCategoryName}｜${siteName}` : `分类｜${siteName}`);
   const description = isNew
     ? `查看${siteName}新品商品，发现最近上架的商品和服务。`
     : activeCategory?.seo_description?.trim() || (activeCategoryName
     ? categoryDescription || `查看${siteName}${activeCategoryName}分类，发现更多相关商品和服务。`
-    : `查看${siteName}全部分类，快速找到更多商品和服务。`);
+    : `查看${siteName}分类，快速找到更多商品和服务。`);
   const robots = hasComplexParams ? "noindex,follow" : "index,follow";
   const canonical = isNew
     ? buildCanonical("/categories", NEW_ARRIVAL_CATEGORY_CANONICAL_SEARCH, { keepParams: ["is_new"] })
@@ -721,12 +721,12 @@ function CategoryDesktopWorkbench({
   const hasMoreCategories = categories.length > visibleCategories.length;
 
   return (
-    <aside className="store-category-v12-sidebar hidden lg:block" aria-label="商品分类">
+    <aside className="store-category-v12-sidebar hidden lg:block" aria-label="分类">
       <div className="store-category-v12-sidebar__inner">
         <div className="store-category-v12-sidebar__head">
           <span>
             <LayoutGrid size={16} aria-hidden />
-            商品分类
+            分类
           </span>
           <h2>{pageHeading}</h2>
           <p>选择分类和筛选后查看对应商品。</p>
@@ -860,7 +860,6 @@ function CategorySearchHero({
   const suggestionsId = `${inputId}-suggestions`;
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
-  const allAction = quickActions.find((action) => action.key === "all");
   const visibleSuggestions = quickActions.filter((action) => action.key !== "all").slice(0, 4);
   const trimmedQuery = query.trim();
   const showSuggestions = suggestionsOpen && (visibleSuggestions.length > 0 || trimmedQuery);
@@ -879,7 +878,7 @@ function CategorySearchHero({
   return (
     <section className="store-category-search-hero" data-category-search-hero={variant} aria-label="分类搜索">
       <div className="store-category-search-hero__intro">
-        <p className="store-category-search-hero__eyebrow">分类目录</p>
+        <p className="store-category-search-hero__eyebrow">分类</p>
         <h1 className="store-category-search-hero__title">{pageHeading}</h1>
         <p className="store-category-search-hero__description">{description}</p>
       </div>
@@ -890,15 +889,6 @@ function CategorySearchHero({
           onSubmit={handleSubmit}
           aria-label="分类页搜索"
         >
-          <UnifiedButton
-            type="button"
-            className="store-category-search-scope"
-            onClick={allAction?.onClick}
-            aria-label="切换到全部分类"
-          >
-            全部分类
-            <ChevronDown size={14} aria-hidden />
-          </UnifiedButton>
           <div className="store-category-search-input-shell">
             <Search size={18} className="store-category-search-icon" aria-hidden />
             <label className="sr-only" htmlFor={inputId}>搜索分类商品</label>

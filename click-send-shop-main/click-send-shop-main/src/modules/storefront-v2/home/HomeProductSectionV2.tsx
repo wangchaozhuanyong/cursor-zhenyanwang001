@@ -29,7 +29,7 @@ export default function HomeProductSectionV2({
   actionLabel = "更多",
   actionPath = "/categories",
   emptyText = "暂无商品",
-  emptyActionLabel = "去全部分类",
+  emptyActionLabel = "去分类",
   showPrice = true,
   className,
   onNavigate,

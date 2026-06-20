@@ -8854,21 +8854,21 @@ html[data-app-scope="store"] .store-coupon-card--template .store-coupon-card__ro
 
 /* Customer-side texture tuning for the 7 premium light skins. */
 html[data-app-scope="store"][data-theme-skin-id="premium_champagne_ivory"] {
-  --home-hero-jade: #b99a52;
-  --home-hero-jade-deep: #2a211b;
-  --home-hero-gold: #b99a52;
+  --home-hero-jade: #211a14;
+  --home-hero-jade-deep: #140f0b;
+  --home-hero-gold: #b08a45;
   --home-hero-ivory: #fffdf8;
-  --premium-skin-ink: #211812;
-  --premium-skin-deep: #2a211b;
-  --premium-skin-metal: #b99a52;
-  --premium-skin-metal-soft: #f5e7be;
+  --premium-skin-ink: #211a14;
+  --premium-skin-deep: #140f0b;
+  --premium-skin-metal: #b08a45;
+  --premium-skin-metal-soft: #f1dfb6;
   --premium-skin-paper: #fffdf8;
-  --premium-skin-paper-deep: #e9ddcb;
-  --premium-skin-wash: #f4efe7;
-  --premium-skin-line: #d7bf88;
-  --premium-skin-ticket-main: #b99a52;
-  --premium-skin-ticket-deep: #6e552a;
-  --premium-skin-ticket-soft: #d7bf88;
+  --premium-skin-paper-deep: #efe6da;
+  --premium-skin-wash: #f6f1e8;
+  --premium-skin-line: #d6c08f;
+  --premium-skin-ticket-main: #c2412d;
+  --premium-skin-ticket-deep: #7c2016;
+  --premium-skin-ticket-soft: #d7674b;
 }
 
 html[data-app-scope="store"][data-theme-skin-id="premium_pearl_blush"] {

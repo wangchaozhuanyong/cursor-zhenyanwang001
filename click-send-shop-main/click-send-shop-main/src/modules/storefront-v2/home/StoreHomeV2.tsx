@@ -331,8 +331,8 @@ export default function StoreHomeV2() {
             skeletonCount={8}
             actionLabel="查看新品"
             actionPath={NEW_ARRIVAL_CATEGORY_PATH}
-            emptyText="新品正在整理中，可以先看全部分类。"
-            emptyActionLabel="去全部分类"
+            emptyText="新品正在整理中，可以先看分类。"
+            emptyActionLabel="去分类"
             showPrice={siteInfo.newArrivalShowPrice !== "0"}
             className="store-home-v12-shelf--new-arrivals"
             onNavigate={navigatePath}
@@ -548,7 +548,7 @@ function HomeProcurementCommand({
   const actions = [
     {
       key: "categories",
-      label: "全部分类",
+      label: "分类",
       description: "按分类快速找货",
       icon: PackageSearch,
       path: "/categories",
@@ -602,7 +602,7 @@ function HomeProcurementCommand({
           type="button"
           className="store-home-command-panel__shop"
           onClick={() => onNavigate("/categories")}
-          aria-label="去选购，进入全部分类页面"
+          aria-label="去选购，进入分类页面"
         >
           <PackageSearch size={14} aria-hidden />
           <span>去选购</span>
@@ -653,7 +653,7 @@ function buildSupportNav(customNav: FooterNavItem[] | null) {
   }
   return dedupeFooterNav([
     { label: "首页", path: "/" },
-    { label: "全部分类", path: "/categories" },
+    { label: "分类", path: "/categories" },
     { label: "购物车", path: "/cart" },
     { label: "我的订单", path: "/orders" },
   ]);

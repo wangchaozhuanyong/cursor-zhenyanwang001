@@ -10,7 +10,7 @@ import {
 } from "@/features/account/accountFeatureRegistry";
 import { useSiteCapabilities, useSiteCapabilitiesReady } from "@/hooks/useSiteCapabilities";
 import { useLoyaltyVisibility } from "@/hooks/useLoyaltyVisibility";
-import { isLoggedIn } from "@/utils/token";
+import { useAuthStore } from "@/stores/useAuthStore";
 import { preloadStoreRoute } from "@/utils/storeRoutePreload";
 import { usePublicLocale } from "@/i18n/publicLocale";
 
@@ -21,6 +21,8 @@ export function useStoreNavigationGuard() {
   const capabilitiesReady = useSiteCapabilitiesReady();
   const { localizedPath } = usePublicLocale();
   const { config: loyaltyConfig, loading: loyaltyLoading } = useLoyaltyVisibility();
+  const authHydrated = useAuthStore((s) => s.authHydrated);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   const navigateStorePath = useCallback((
     path: string,
@@ -34,7 +36,11 @@ export function useStoreNavigationGuard() {
   ) => {
     const from = options.from || `${location.pathname}${location.search}`;
     const target = localizedPath(path);
-    if (options.requireAuth && !isLoggedIn()) {
+    if (options.requireAuth && !authHydrated) {
+      toast.info("登录状态同步中，请稍后再试");
+      return false;
+    }
+    if (options.requireAuth && !isAuthenticated) {
       navigate(localizedPath("/login"), { state: { from: target, fromState: options.state } });
       return false;
     }
@@ -45,7 +51,7 @@ export function useStoreNavigationGuard() {
     void preloadStoreRoute(path).catch(() => {});
     navigate(target, { state: { from: localizedPath(from), ...(options.state || {}) } });
     return true;
-  }, [localizedPath, location.pathname, location.search, navigate]);
+  }, [authHydrated, isAuthenticated, localizedPath, location.pathname, location.search, navigate]);
 
   const navigateFeature = useCallback((featureKey: AccountFeatureKey) => {
     const feature = getAccountFeature(featureKey);
@@ -58,8 +64,10 @@ export function useStoreNavigationGuard() {
       (Boolean(feature.capability) && !capabilitiesReady) ||
       (Boolean(feature.loyaltyFeature) && loyaltyLoading);
     if (waitingForFeatureConfig) {
-      toast.info("功能配置加载中，请稍后再试");
-      return false;
+      return navigateStorePath(resolveAccountFeaturePath(feature, ctx), {
+        requireAuth: feature.requireAuth,
+        from: "/profile",
+      });
     }
     const enabled = isAccountFeatureEnabled(feature, ctx);
     return navigateStorePath(resolveAccountFeaturePath(feature, ctx), {

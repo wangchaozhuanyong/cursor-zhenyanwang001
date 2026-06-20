@@ -68,7 +68,7 @@ function normalizeText(value: string | undefined, fallback = ""): string {
 }
 
 const fallbackNavItems: HomeNavItem[] = [
-  { id: "fallback-1", title: "全部分类", icon_url: "categories", link_url: "/categories", target_type: "categories", target_category_id: null, target_support_channel_id: null, sort_order: 1, enabled: true },
+  { id: "fallback-1", title: "分类", icon_url: "categories", link_url: "/categories", target_type: "categories", target_category_id: null, target_support_channel_id: null, sort_order: 1, enabled: true },
   { id: "fallback-2", title: "新品上新", icon_url: "new", link_url: NEW_ARRIVAL_CATEGORY_PATH, target_type: "url", target_category_id: null, target_support_channel_id: null, sort_order: 2, enabled: true },
   { id: "fallback-3", title: "热销好物", icon_url: "hot", link_url: "/categories?sort=sales_desc", target_type: "url", target_category_id: null, target_support_channel_id: null, sort_order: 3, enabled: true },
   { id: "fallback-4", title: "优惠券", icon_url: "coupon", link_url: "/coupons", target_type: "url", target_category_id: null, target_support_channel_id: null, sort_order: 4, enabled: true },

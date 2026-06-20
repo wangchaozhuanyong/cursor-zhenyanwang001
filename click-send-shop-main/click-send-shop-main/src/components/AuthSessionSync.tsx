@@ -20,7 +20,7 @@ export default function AuthSessionSync() {
     let cancelled = false;
     const hydrateTimeout = window.setTimeout(() => {
       if (cancelled || useAuthStore.getState().authHydrated) return;
-      useAuthStore.setState({ authHydrated: true });
+      useAuthStore.setState({ isAuthenticated: false, authHydrated: true });
     }, AUTH_HYDRATE_TIMEOUT_MS);
 
     const finishHydrate = (isAuthenticated: boolean) => {
@@ -55,7 +55,6 @@ export default function AuthSessionSync() {
       };
     }
 
-    useAuthStore.setState({ isAuthenticated: flagged });
     void import("@/services/authService")
       .then((module) => module.restoreSessionFromCookie())
       .then((ok) => {

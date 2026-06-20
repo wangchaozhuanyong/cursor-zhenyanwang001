@@ -15,7 +15,7 @@ export type PublicTheme = (typeof PUBLIC_THEMES)[number];
 export const DEFAULT_PUBLIC_THEME: PublicTheme = "ivory-gold";
 
 export const PUBLIC_THEME_LABELS: Record<PublicTheme, string> = {
-  "ivory-gold": "象牙白金",
+  "ivory-gold": "象牙曜石",
   "pearl-slate": "珍珠蓝灰",
   "linen-walnut": "亚麻胡桃",
   "sage-stone": "鼠尾草石",
@@ -23,7 +23,7 @@ export const PUBLIC_THEME_LABELS: Record<PublicTheme, string> = {
 };
 
 export const PUBLIC_THEME_DESCRIPTIONS: Record<PublicTheme, string> = {
-  "ivory-gold": "默认推荐，适合装修官网和材料商城，干净、高级、温暖。",
+  "ivory-gold": "默认主商城皮肤，象牙浅底、曜石咖黑主色和赤陶价格强调，克制、高级、耐看。",
   "pearl-slate": "现代专业风，适合办公室、商业空间、工程装修。",
   "linen-walnut": "温馨家装风，适合家庭装修、软装、木质空间。",
   "sage-stone": "自然环保风，适合环保材料、原木风、侘寂风空间。",

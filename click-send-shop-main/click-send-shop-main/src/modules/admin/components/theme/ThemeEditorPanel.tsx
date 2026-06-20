@@ -1,7 +1,7 @@
 import { Sparkles, Undo2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import { AdminSectionTitle } from "@/components/admin/AdminFieldHint";
-import { LOCKED_STOREFRONT_THEME_FIELDS } from "@/constants/themeDesignLocks";
 import { useAdminT } from "@/hooks/useAdminT";
 import { useThemeStudioLabel } from "@/hooks/useThemeStudioLabel";
 import type { ThemeConfig, ThemeSkin } from "@/types/theme";
@@ -10,7 +10,14 @@ import { THEME_OUTLINE_WARNING } from "@/utils/themeVisuals";
 import ColorField from "./ColorField";
 import ThemeHealthCheck from "./ThemeHealthCheck";
 import type { ThemeHealthFixTarget } from "./themeHealthFixMeta";
-import type { ColorFieldKey } from "./themeStudioConstants";
+import {
+  EDITOR_TABS,
+  FIELD_HELP_TEXTS,
+  enumOptions,
+  enumValueLabels,
+  type ColorFieldKey,
+  type EditorTabId,
+} from "./themeStudioConstants";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 export type ThemeEditorPanelProps = {
@@ -33,17 +40,42 @@ const colorTabSections: Array<{ title: string; fields: ColorFieldKey[] }> = [
 ];
 
 const THEME_EDITOR_TAB_STORAGE_KEY = "admin-theme-editor-tab";
-const EDITOR_TABS = [
-  { id: "basic", label: "基础" },
-  { id: "colors", label: "颜色" },
-] as const;
-
-type EditorTabId = (typeof EDITOR_TABS)[number]["id"];
 
 const TAB_PANEL_HINTS: Record<EditorTabId, string> = {
-  basic: "管理皮肤名称、分类和启用关系；前台骨架由系统统一。",
-  colors: "只调整品牌色、页面色、文字色和状态色。",
+  basic: "管理皮肤名称、分类和启用关系。",
+  colors: "调整品牌色、页面色、文字色和状态色。",
+  components: "控制按钮、导航、徽标、价格、优惠券、会员卡和分类图标样式。",
+  product: "控制商品卡模板、卡片外壳、文案对齐和图片比例。",
+  home: "控制首页布局、头部和 Banner 气质。",
+  advanced: "控制圆角、阴影、动效、密度、字体和后台跟随策略。",
 };
+
+const CONFIG_FIELD_LABELS: Partial<Record<keyof ThemeConfig, string>> = {
+  buttonStyle: "按钮样式",
+  navStyle: "底部导航",
+  badgeStyle: "徽标样式",
+  priceStyle: "价格样式",
+  couponStyle: "优惠券样式",
+  memberCardStyle: "会员卡样式",
+  categoryIconStyle: "分类图标样式",
+  productCardVariant: "商品卡模板",
+  cardStyle: "卡片外壳",
+  cardTextAlign: "文案对齐",
+  imageRatio: "商品图比例",
+  imageFit: "商品图裁切",
+  homeLayout: "首页布局",
+  headerStyle: "头部样式",
+  bannerStyle: "Banner 样式",
+  radius: "全局圆角",
+  shadowStyle: "阴影强度",
+  motionLevel: "动效强度",
+  density: "页面密度",
+  adminThemeMode: "后台主题策略",
+  fontFamily: "字体族",
+};
+
+type EnumFieldKey = Extract<keyof typeof enumOptions, keyof ThemeConfig>;
+type TextFieldKey = Extract<"radius" | "fontFamily", keyof ThemeConfig>;
 
 function isEditorTabId(value: string): value is EditorTabId {
   return EDITOR_TABS.some((tab) => tab.id === value);
@@ -63,6 +95,98 @@ function mapHealthSectionToTab(sectionId: ThemeHealthFixTarget["sectionId"]): Ed
   return sectionId === "basic" ? "basic" : "colors";
 }
 
+function ThemeSelectField<K extends EnumFieldKey>({
+  field,
+  value,
+  highlighted,
+  onChange,
+}: {
+  field: K;
+  value: ThemeConfig[K];
+  highlighted: boolean;
+  onChange: (field: K, value: ThemeConfig[K]) => void;
+}) {
+  const tl = useThemeStudioLabel();
+  const options = enumOptions[field] as readonly ThemeConfig[K][];
+  const label = CONFIG_FIELD_LABELS[field] || field;
+  return (
+    <label
+      id={`theme-field-${field}`}
+      className={`grid gap-1.5 rounded-xl border bg-background/60 p-3 transition ${
+        highlighted ? "border-[var(--theme-primary)] ring-2 ring-[var(--theme-primary)]/20" : "border-border/80"
+      }`}
+    >
+      <span className="text-xs font-semibold text-foreground">{tl(label)}</span>
+      <select
+        value={String(value)}
+        onChange={(event) => onChange(field, event.target.value as ThemeConfig[K])}
+        className="h-10 w-full rounded-lg border border-border bg-card px-3 text-sm text-foreground"
+      >
+        {options.map((option) => (
+          <option key={String(option)} value={String(option)}>
+            {tl(enumValueLabels[String(option)] || String(option))}
+          </option>
+        ))}
+      </select>
+      <span className="text-[11px] leading-5 text-muted-foreground">{tl(FIELD_HELP_TEXTS[field] || "")}</span>
+    </label>
+  );
+}
+
+function ThemeTextField<K extends TextFieldKey>({
+  field,
+  value,
+  placeholder,
+  highlighted,
+  onChange,
+}: {
+  field: K;
+  value: ThemeConfig[K];
+  placeholder?: string;
+  highlighted: boolean;
+  onChange: (field: K, value: ThemeConfig[K]) => void;
+}) {
+  const tl = useThemeStudioLabel();
+  const label = CONFIG_FIELD_LABELS[field] || field;
+  return (
+    <label
+      id={`theme-field-${field}`}
+      className={`grid gap-1.5 rounded-xl border bg-background/60 p-3 transition ${
+        highlighted ? "border-[var(--theme-primary)] ring-2 ring-[var(--theme-primary)]/20" : "border-border/80"
+      }`}
+    >
+      <span className="text-xs font-semibold text-foreground">{tl(label)}</span>
+      <input
+        value={String(value)}
+        onChange={(event) => onChange(field, event.target.value as ThemeConfig[K])}
+        placeholder={placeholder}
+        className="h-10 w-full rounded-lg border border-border bg-card px-3 text-sm text-foreground"
+      />
+      <span className="text-[11px] leading-5 text-muted-foreground">{tl(FIELD_HELP_TEXTS[field] || "")}</span>
+    </label>
+  );
+}
+
+function ThemeFieldGroup({
+  title,
+  hint,
+  children,
+}: {
+  title: string;
+  hint: string;
+  children: ReactNode;
+}) {
+  const { tText } = useAdminT();
+  return (
+    <section className="rounded-2xl border border-border/80 bg-background/45 p-4 shadow-sm">
+      <div className="mb-3">
+        <AdminSectionTitle title={tText(title)} hint={tText(hint)} />
+      </div>
+      <div className="grid gap-3 md:grid-cols-2">{children}</div>
+    </section>
+  );
+}
+
 export default function ThemeEditorPanel({
   themeConfig,
   selectedSkin,
@@ -79,7 +203,7 @@ export default function ThemeEditorPanel({
   const panelRef = useRef<HTMLElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const [activeTab, setActiveTab] = useState<EditorTabId>(readStoredEditorTab);
-  const [highlightField, setHighlightField] = useState<ColorFieldKey | null>(null);
+  const [highlightField, setHighlightField] = useState<keyof ThemeConfig | null>(null);
   const highlightTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const selectTab = useCallback((tabId: EditorTabId) => {
@@ -192,27 +316,8 @@ export default function ThemeEditorPanel({
               </label>
               <p className="rounded-xl bg-secondary/60 px-3 py-2 text-xs text-muted-foreground md:col-span-2">{statusText}</p>
 
-              <div data-testid="theme-design-lock-summary" className="md:col-span-2 border-t border-border/70 pt-3">
-                <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-                  <div>
-                    <p className="text-xs font-semibold text-foreground">{tText("统一视觉骨架")}</p>
-                    <p className="mt-1 text-[11px] leading-5 text-muted-foreground">
-                      {tText("商品卡、优惠券、导航和首页结构由系统套装统一，后台只调整品牌气质，避免页面越调越散。")}
-                    </p>
-                  </div>
-                </div>
-                <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                  {LOCKED_STOREFRONT_THEME_FIELDS.map((item) => (
-                    <div
-                      key={item.key}
-                      data-theme-lock-field={item.key}
-                      className="flex items-center justify-between gap-2 rounded-lg bg-secondary/45 px-2.5 py-2 text-[11px]"
-                    >
-                      <span className="font-medium text-foreground">{tl(item.label)}</span>
-                      <span className="text-muted-foreground">{tl(item.reason)}</span>
-                    </div>
-                  ))}
-                </div>
+              <div className="md:col-span-2 rounded-xl border border-border/70 bg-secondary/45 px-3 py-2 text-xs text-muted-foreground">
+                {tText("这套皮肤的颜色、组件形态、商品卡、首页模块、动效和密度会同步到客户端；后台可读性仍由系统安全策略保护。")}
               </div>
             </div>
           </section>
@@ -260,6 +365,91 @@ export default function ThemeEditorPanel({
               </div>
             </div>
           </section>
+        ) : null}
+
+        {activeTab === "components" ? (
+          <ThemeFieldGroup title="组件形态" hint="这些字段会同步改变客户端按钮、导航、标签、营销和会员模块。">
+            {(["buttonStyle", "navStyle", "badgeStyle", "priceStyle", "couponStyle", "memberCardStyle", "categoryIconStyle"] as const).map((field) => (
+              <ThemeSelectField
+                key={field}
+                field={field}
+                value={themeConfig[field]}
+                highlighted={highlightField === field}
+                onChange={onConfigChange}
+              />
+            ))}
+          </ThemeFieldGroup>
+        ) : null}
+
+        {activeTab === "product" ? (
+          <ThemeFieldGroup title="商品卡" hint="控制商品列表、首页商品卡和分类页商品卡的结构气质。">
+            {(["productCardVariant", "cardStyle", "cardTextAlign", "imageRatio", "imageFit"] as const).map((field) => (
+              <ThemeSelectField
+                key={field}
+                field={field}
+                value={themeConfig[field]}
+                highlighted={highlightField === field}
+                onChange={onConfigChange}
+              />
+            ))}
+          </ThemeFieldGroup>
+        ) : null}
+
+        {activeTab === "home" ? (
+          <ThemeFieldGroup title="首页模块" hint="控制首页布局、头部和 Banner 的整体呈现方式。">
+            {(["homeLayout", "headerStyle", "bannerStyle"] as const).map((field) => (
+              <ThemeSelectField
+                key={field}
+                field={field}
+                value={themeConfig[field]}
+                highlighted={highlightField === field}
+                onChange={onConfigChange}
+              />
+            ))}
+          </ThemeFieldGroup>
+        ) : null}
+
+        {activeTab === "advanced" ? (
+          <ThemeFieldGroup title="高级设置" hint="控制全局圆角、阴影、动效、密度、字体和后台跟随策略。">
+            <ThemeTextField
+              field="radius"
+              value={themeConfig.radius}
+              placeholder="14px"
+              highlighted={highlightField === "radius"}
+              onChange={onConfigChange}
+            />
+            <ThemeSelectField
+              field="shadowStyle"
+              value={themeConfig.shadowStyle}
+              highlighted={highlightField === "shadowStyle"}
+              onChange={onConfigChange}
+            />
+            <ThemeSelectField
+              field="motionLevel"
+              value={themeConfig.motionLevel}
+              highlighted={highlightField === "motionLevel"}
+              onChange={onConfigChange}
+            />
+            <ThemeSelectField
+              field="density"
+              value={themeConfig.density}
+              highlighted={highlightField === "density"}
+              onChange={onConfigChange}
+            />
+            <ThemeSelectField
+              field="adminThemeMode"
+              value={themeConfig.adminThemeMode}
+              highlighted={highlightField === "adminThemeMode"}
+              onChange={onConfigChange}
+            />
+            <ThemeTextField
+              field="fontFamily"
+              value={themeConfig.fontFamily}
+              placeholder="system-ui, -apple-system, sans-serif"
+              highlighted={highlightField === "fontFamily"}
+              onChange={onConfigChange}
+            />
+          </ThemeFieldGroup>
         ) : null}
       </div>
     </section>

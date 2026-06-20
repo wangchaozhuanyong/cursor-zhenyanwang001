@@ -102,7 +102,7 @@ export default function CategorySideTree({
           activeTextClass="font-semibold text-[var(--theme-text)]"
           className="store-category-side-button mb-2 rounded-2xl px-3 py-2.5 text-sm"
         >
-          全部分类
+          分类
         </SideNavButton>
 
         <div className="space-y-1">

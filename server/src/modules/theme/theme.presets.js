@@ -3,6 +3,10 @@ const PREMIUM_PEARL_BLUSH_SKIN_ID = 'premium_pearl_blush';
 const PREMIUM_PORCELAIN_JADE_SKIN_ID = 'premium_porcelain_jade';
 const PREMIUM_SKY_SILK_SKIN_ID = 'premium_sky_silk';
 const PREMIUM_APRICOT_SAND_SKIN_ID = 'premium_apricot_sand';
+const CLIENT_BLUE_PORTAL_SKIN_ID = 'client_blue_portal';
+const CLIENT_SKY_TECH_SKIN_ID = 'client_sky_tech';
+const CLIENT_BLACK_GOLD_SKIN_ID = 'client_black_gold';
+const CLIENT_DEEP_ENTERPRISE_SKIN_ID = 'client_deep_enterprise';
 const FESTIVAL_SPRING_RUBY_GOLD_SKIN_ID = 'festival_spring_ruby_gold';
 const FESTIVAL_MOON_ORANGE_GOLD_SKIN_ID = 'festival_moon_orange_gold';
 
@@ -23,7 +27,7 @@ const RETIRED_SYSTEM_SKIN_IDS = new Set([
 const DAILY_COMMERCE_SKIN_ID = PREMIUM_CHAMPAGNE_IVORY_SKIN_ID;
 const FESTIVAL_SKIN_ID = FESTIVAL_SPRING_RUBY_GOLD_SKIN_ID;
 
-const STOREFRONT_DESIGN_LOCKS = {
+const STOREFRONT_THEME_DEFAULTS = {
   radius: '14px',
   fontFamily: "system-ui, -apple-system, 'PingFang SC', sans-serif",
   shadowStyle: 'soft',
@@ -48,20 +52,20 @@ const STOREFRONT_DESIGN_LOCKS = {
 };
 
 const PREMIUM_CHAMPAGNE_IVORY_CONFIG = {
-  skinName: '香槟象牙·高端日常',
-  bgColor: '#F7F1E6',
-  surfaceColor: '#FFFCF7',
-  primaryColor: '#9B6A24',
-  secondaryColor: '#EFE2CB',
-  accentColor: '#C6A15A',
-  priceColor: '#B94A33',
-  textColor: '#211A12',
-  mutedTextColor: '#746754',
-  borderColor: '#E4D6BF',
-  successColor: '#2F7657',
-  warningColor: '#A87320',
-  dangerColor: '#AF3B30',
-  ...STOREFRONT_DESIGN_LOCKS,
+  skinName: '象牙曜石·臻选商城',
+  bgColor: '#F6F1E8',
+  surfaceColor: '#FFFDF8',
+  primaryColor: '#211A14',
+  secondaryColor: '#EFE6DA',
+  accentColor: '#B08A45',
+  priceColor: '#C2412D',
+  textColor: '#211A14',
+  mutedTextColor: '#6F675D',
+  borderColor: '#E2D8C8',
+  successColor: '#7A6230',
+  warningColor: '#B0782A',
+  dangerColor: '#B63A2F',
+  ...STOREFRONT_THEME_DEFAULTS,
 };
 
 const PREMIUM_PEARL_BLUSH_CONFIG = {
@@ -78,7 +82,7 @@ const PREMIUM_PEARL_BLUSH_CONFIG = {
   successColor: '#3F8066',
   warningColor: '#B7813C',
   dangerColor: '#A93B48',
-  ...STOREFRONT_DESIGN_LOCKS,
+  ...STOREFRONT_THEME_DEFAULTS,
 };
 
 const PREMIUM_PORCELAIN_JADE_CONFIG = {
@@ -95,7 +99,7 @@ const PREMIUM_PORCELAIN_JADE_CONFIG = {
   successColor: '#137B5D',
   warningColor: '#AA7D2A',
   dangerColor: '#B13F32',
-  ...STOREFRONT_DESIGN_LOCKS,
+  ...STOREFRONT_THEME_DEFAULTS,
 };
 
 const PREMIUM_SKY_SILK_CONFIG = {
@@ -112,7 +116,7 @@ const PREMIUM_SKY_SILK_CONFIG = {
   successColor: '#237D68',
   warningColor: '#A97622',
   dangerColor: '#B94338',
-  ...STOREFRONT_DESIGN_LOCKS,
+  ...STOREFRONT_THEME_DEFAULTS,
 };
 
 const PREMIUM_APRICOT_SAND_CONFIG = {
@@ -129,7 +133,151 @@ const PREMIUM_APRICOT_SAND_CONFIG = {
   successColor: '#557D5E',
   warningColor: '#A9772B',
   dangerColor: '#A94734',
-  ...STOREFRONT_DESIGN_LOCKS,
+  ...STOREFRONT_THEME_DEFAULTS,
+};
+
+const CLIENT_BLUE_PORTAL_CONFIG = {
+  skinName: '蓝白内容门户·知识商城',
+  bgColor: '#F5F8FF',
+  surfaceColor: '#FFFFFF',
+  primaryColor: '#2563EB',
+  secondaryColor: '#E8F1FF',
+  accentColor: '#10B981',
+  priceColor: '#D94A34',
+  textColor: '#0F172A',
+  mutedTextColor: '#64748B',
+  borderColor: '#D9E6F7',
+  successColor: '#0F8A63',
+  warningColor: '#B7791F',
+  dangerColor: '#C24132',
+  ...STOREFRONT_THEME_DEFAULTS,
+  radius: '12px',
+  shadowStyle: 'subtle',
+  buttonStyle: 'rounded',
+  navStyle: 'clean',
+  badgeStyle: 'outline',
+  priceStyle: 'bold',
+  productCardVariant: 'standard',
+  cardStyle: 'bordered',
+  cardTextAlign: 'left',
+  imageRatio: '16 / 9',
+  imageFit: 'cover',
+  homeLayout: 'magazine',
+  headerStyle: 'clean',
+  bannerStyle: 'clean',
+  couponStyle: 'minimal',
+  memberCardStyle: 'light',
+  categoryIconStyle: 'outline',
+  motionLevel: 'soft',
+  density: 'compact',
+};
+
+const CLIENT_SKY_TECH_CONFIG = {
+  skinName: '浅蓝科技专业·高效客户端',
+  bgColor: '#F7FBFF',
+  surfaceColor: '#FFFFFF',
+  primaryColor: '#0EA5E9',
+  secondaryColor: '#E7F4FF',
+  accentColor: '#1D4ED8',
+  priceColor: '#C84A33',
+  textColor: '#111827',
+  mutedTextColor: '#64748B',
+  borderColor: '#D8E7F5',
+  successColor: '#0F8A63',
+  warningColor: '#B7791F',
+  dangerColor: '#C24132',
+  ...STOREFRONT_THEME_DEFAULTS,
+  radius: '12px',
+  shadowStyle: 'subtle',
+  buttonStyle: 'rounded',
+  navStyle: 'floating',
+  badgeStyle: 'soft',
+  priceStyle: 'bold',
+  productCardVariant: 'compact',
+  cardStyle: 'minimal',
+  cardTextAlign: 'left',
+  imageRatio: '1 / 1',
+  imageFit: 'cover',
+  homeLayout: 'classic',
+  headerStyle: 'premium',
+  bannerStyle: 'fresh',
+  couponStyle: 'minimal',
+  memberCardStyle: 'fresh',
+  categoryIconStyle: 'soft',
+  motionLevel: 'soft',
+  density: 'compact',
+};
+
+const CLIENT_BLACK_GOLD_CONFIG = {
+  skinName: '黑金高端·臻选商城',
+  bgColor: '#F5F5F3',
+  surfaceColor: '#FFFFFF',
+  primaryColor: '#D4AF37',
+  secondaryColor: '#F1E8D2',
+  accentColor: '#A47A22',
+  priceColor: '#A47A22',
+  textColor: '#1A1A1A',
+  mutedTextColor: '#6F6658',
+  borderColor: '#E3D9C6',
+  successColor: '#69A67D',
+  warningColor: '#D0A23A',
+  dangerColor: '#D56A4A',
+  ...STOREFRONT_THEME_DEFAULTS,
+  radius: '18px',
+  shadowStyle: 'glow',
+  buttonStyle: 'pill',
+  navStyle: 'glass',
+  badgeStyle: 'solid',
+  priceStyle: 'luxury',
+  productCardVariant: 'premium',
+  cardStyle: 'elevated',
+  cardTextAlign: 'left',
+  imageRatio: '4 / 5',
+  imageFit: 'cover',
+  homeLayout: 'premium',
+  headerStyle: 'dark',
+  bannerStyle: 'dark',
+  couponStyle: 'premium',
+  memberCardStyle: 'blackGold',
+  categoryIconStyle: 'solid',
+  motionLevel: 'rich',
+  density: 'comfortable',
+};
+
+const CLIENT_DEEP_ENTERPRISE_CONFIG = {
+  skinName: '深蓝企业系统·全站规范',
+  bgColor: '#F5F8FD',
+  surfaceColor: '#FFFFFF',
+  primaryColor: '#1D4ED8',
+  secondaryColor: '#E8EEF8',
+  accentColor: '#0F766E',
+  priceColor: '#C2412D',
+  textColor: '#0F172A',
+  mutedTextColor: '#5F6F85',
+  borderColor: '#D9E3F2',
+  successColor: '#0F8A63',
+  warningColor: '#B7791F',
+  dangerColor: '#C24132',
+  ...STOREFRONT_THEME_DEFAULTS,
+  radius: '10px',
+  shadowStyle: 'subtle',
+  buttonStyle: 'square',
+  navStyle: 'clean',
+  badgeStyle: 'outline',
+  priceStyle: 'normal',
+  productCardVariant: 'standard',
+  cardStyle: 'bordered',
+  cardTextAlign: 'left',
+  imageRatio: '16 / 9',
+  imageFit: 'cover',
+  homeLayout: 'magazine',
+  headerStyle: 'premium',
+  bannerStyle: 'clean',
+  couponStyle: 'ticket',
+  memberCardStyle: 'light',
+  categoryIconStyle: 'outline',
+  motionLevel: 'none',
+  density: 'compact',
 };
 
 const FESTIVAL_SPRING_RUBY_GOLD_CONFIG = {
@@ -146,7 +294,7 @@ const FESTIVAL_SPRING_RUBY_GOLD_CONFIG = {
   successColor: '#257A55',
   warningColor: '#B98324',
   dangerColor: '#B91F29',
-  ...STOREFRONT_DESIGN_LOCKS,
+  ...STOREFRONT_THEME_DEFAULTS,
 };
 
 const FESTIVAL_MOON_ORANGE_GOLD_CONFIG = {
@@ -163,13 +311,13 @@ const FESTIVAL_MOON_ORANGE_GOLD_CONFIG = {
   successColor: '#467B58',
   warningColor: '#B88122',
   dangerColor: '#B13C25',
-  ...STOREFRONT_DESIGN_LOCKS,
+  ...STOREFRONT_THEME_DEFAULTS,
 };
 
 const PREMIUM_CHAMPAGNE_IVORY_SKIN = {
   id: PREMIUM_CHAMPAGNE_IVORY_SKIN_ID,
-  name: '香槟象牙·高端日常',
-  description: '长期默认推荐皮肤。象牙白底、香槟金主色、柔和鼠尾草辅助色，整体干净、轻奢、耐看，适合购物网站长期使用。',
+  name: '象牙曜石·臻选商城',
+  description: '长期默认主商城皮肤。象牙浅底、曜石咖黑主色、赤陶价格强调和香槟金细节，适合长期购物平台使用，克制、高级、不抢商品图。',
   category: '高端商城',
   sceneTag: 'premium',
   config: PREMIUM_CHAMPAGNE_IVORY_CONFIG,
@@ -209,6 +357,42 @@ const PREMIUM_APRICOT_SAND_SKIN = {
   category: '日常商城',
   sceneTag: 'mall',
   config: PREMIUM_APRICOT_SAND_CONFIG,
+};
+
+const CLIENT_BLUE_PORTAL_SKIN = {
+  id: CLIENT_BLUE_PORTAL_SKIN_ID,
+  name: '蓝白内容门户',
+  description: '大面积留白、蓝色导航、内容平台式卡片与清晰信息层级，适合知识型商城和综合客户端。',
+  category: '客户端重构',
+  sceneTag: 'mall',
+  config: CLIENT_BLUE_PORTAL_CONFIG,
+};
+
+const CLIENT_SKY_TECH_SKIN = {
+  id: CLIENT_SKY_TECH_SKIN_ID,
+  name: '浅蓝科技专业',
+  description: '浅蓝科技感、干净高效、桌面和移动端都偏专业工具型，作为新版客户端默认风格。',
+  category: '客户端重构',
+  sceneTag: 'mall',
+  config: CLIENT_SKY_TECH_CONFIG,
+};
+
+const CLIENT_BLACK_GOLD_SKIN = {
+  id: CLIENT_BLACK_GOLD_SKIN_ID,
+  name: '黑金高端',
+  description: '黑金强调、精品卡片和高端会员质感，适合臻选、礼赠、精品商城。',
+  category: '客户端重构',
+  sceneTag: 'premium',
+  config: CLIENT_BLACK_GOLD_CONFIG,
+};
+
+const CLIENT_DEEP_ENTERPRISE_SKIN = {
+  id: CLIENT_DEEP_ENTERPRISE_SKIN_ID,
+  name: '深蓝企业系统',
+  description: '深蓝企业级秩序、方正组件和紧凑密度，适合签证留学、B2B 服务和规范型客户端。',
+  category: '客户端重构',
+  sceneTag: 'visa',
+  config: CLIENT_DEEP_ENTERPRISE_CONFIG,
 };
 
 const FESTIVAL_SPRING_RUBY_GOLD_SKIN = {
@@ -274,6 +458,10 @@ const DEFAULT_THEME_HOLIDAY_RULES = [
 const FALLBACK_THEME_SKIN = PREMIUM_CHAMPAGNE_IVORY_SKIN;
 const THEME_PRESETS = [
   PREMIUM_CHAMPAGNE_IVORY_SKIN,
+  CLIENT_BLUE_PORTAL_SKIN,
+  CLIENT_SKY_TECH_SKIN,
+  CLIENT_BLACK_GOLD_SKIN,
+  CLIENT_DEEP_ENTERPRISE_SKIN,
   PREMIUM_PEARL_BLUSH_SKIN,
   PREMIUM_PORCELAIN_JADE_SKIN,
   PREMIUM_SKY_SILK_SKIN,
@@ -292,11 +480,15 @@ module.exports = {
   PREMIUM_PORCELAIN_JADE_SKIN_ID,
   PREMIUM_SKY_SILK_SKIN_ID,
   PREMIUM_APRICOT_SAND_SKIN_ID,
+  CLIENT_BLUE_PORTAL_SKIN_ID,
+  CLIENT_SKY_TECH_SKIN_ID,
+  CLIENT_BLACK_GOLD_SKIN_ID,
+  CLIENT_DEEP_ENTERPRISE_SKIN_ID,
   FESTIVAL_SPRING_RUBY_GOLD_SKIN_ID,
   FESTIVAL_MOON_ORANGE_GOLD_SKIN_ID,
   RETIRED_SYSTEM_SKIN_IDS,
   DEFAULT_THEME_HOLIDAY_RULES,
-  STOREFRONT_DESIGN_LOCKS,
+  STOREFRONT_THEME_DEFAULTS,
   DEFAULT_LIFE_GREEN_CONFIG,
   FESTIVAL_RUBY_GOLD_CONFIG,
   PREMIUM_IVORY_JADE_CONFIG,
@@ -305,6 +497,10 @@ module.exports = {
   PREMIUM_PORCELAIN_JADE_CONFIG,
   PREMIUM_SKY_SILK_CONFIG,
   PREMIUM_APRICOT_SAND_CONFIG,
+  CLIENT_BLUE_PORTAL_CONFIG,
+  CLIENT_SKY_TECH_CONFIG,
+  CLIENT_BLACK_GOLD_CONFIG,
+  CLIENT_DEEP_ENTERPRISE_CONFIG,
   FESTIVAL_SPRING_RUBY_GOLD_CONFIG,
   FESTIVAL_MOON_ORANGE_GOLD_CONFIG,
   DAILY_COMMERCE_SKIN,
@@ -315,6 +511,10 @@ module.exports = {
   PREMIUM_PORCELAIN_JADE_SKIN,
   PREMIUM_SKY_SILK_SKIN,
   PREMIUM_APRICOT_SAND_SKIN,
+  CLIENT_BLUE_PORTAL_SKIN,
+  CLIENT_SKY_TECH_SKIN,
+  CLIENT_BLACK_GOLD_SKIN,
+  CLIENT_DEEP_ENTERPRISE_SKIN,
   FESTIVAL_SPRING_RUBY_GOLD_SKIN,
   FESTIVAL_MOON_ORANGE_GOLD_SKIN,
   FALLBACK_THEME_SKIN,

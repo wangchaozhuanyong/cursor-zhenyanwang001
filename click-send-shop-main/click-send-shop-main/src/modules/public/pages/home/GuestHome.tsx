@@ -233,7 +233,7 @@ export default function GuestHome() {
     }
     return dedupeFooterNav([
       { label: "首页", path: "/" },
-      { label: "全部分类", path: "/categories" },
+      { label: "分类", path: "/categories" },
       { label: "购物车", path: "/cart" },
       { label: "我的订单", path: "/orders" },
     ]);

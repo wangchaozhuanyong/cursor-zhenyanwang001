@@ -59,8 +59,13 @@ function applyThemeDataAttributes(root: HTMLElement, config: ThemeConfig, skin?:
   root.setAttribute("data-theme-button-style", config.buttonStyle);
   root.setAttribute("data-theme-nav-style", config.navStyle);
   root.setAttribute("data-theme-product-card-variant", config.productCardVariant);
+  root.setAttribute("data-theme-card-style", config.cardStyle);
+  root.setAttribute("data-theme-card-align", config.cardTextAlign);
+  root.setAttribute("data-theme-image-fit", config.imageFit);
+  root.setAttribute("data-theme-image-ratio", config.imageRatio);
   root.setAttribute("data-theme-badge-style", config.badgeStyle);
   root.setAttribute("data-theme-price-style", config.priceStyle);
+  root.setAttribute("data-theme-shadow-style", config.shadowStyle);
   root.setAttribute("data-theme-home-layout", config.homeLayout);
   root.setAttribute("data-theme-header-style", config.headerStyle);
   root.setAttribute("data-theme-banner-style", config.bannerStyle);

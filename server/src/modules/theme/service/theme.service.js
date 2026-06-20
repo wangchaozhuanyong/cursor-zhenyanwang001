@@ -6,7 +6,6 @@ const {
   DEFAULT_THEME_HOLIDAY_RULES,
   FALLBACK_THEME_SKIN,
   RETIRED_SYSTEM_SKIN_IDS,
-  STOREFRONT_DESIGN_LOCKS,
   THEME_PRESETS,
 } = require('../theme.presets');
 const { writeAuditLog } = require('../../../utils/auditLog');
@@ -146,7 +145,7 @@ function normalizeThemeConfig(rawConfig) {
     navStyle: pickEnum(raw.navStyle, 'navStyle', base.navStyle),
     badgeStyle: pickEnum(raw.badgeStyle, 'badgeStyle', base.badgeStyle),
     priceStyle: pickEnum(raw.priceStyle, 'priceStyle', base.priceStyle),
-    productCardVariant: pickEnum(raw.productCardVariant, 'productCardVariant', 'standard'),
+    productCardVariant: pickEnum(raw.productCardVariant, 'productCardVariant', base.productCardVariant),
     cardStyle: pickEnum(raw.cardStyle, 'cardStyle', base.cardStyle),
     cardTextAlign: pickEnum(raw.cardTextAlign, 'cardTextAlign', base.cardTextAlign),
     imageRatio: pickEnum(raw.imageRatio, 'imageRatio', base.imageRatio),
@@ -160,7 +159,6 @@ function normalizeThemeConfig(rawConfig) {
     motionLevel: pickEnum(raw.motionLevel, 'motionLevel', base.motionLevel),
     density: pickEnum(raw.density, 'density', base.density),
     adminThemeMode: pickEnum(raw.adminThemeMode, 'adminThemeMode', 'fixed'),
-    ...STOREFRONT_DESIGN_LOCKS,
   };
 }
 

@@ -8,7 +8,7 @@ export const STORE_COPY = {
   supportCenterTitle: "客服中心",
   supportSubtitle: "如需咨询商品、订单、售后或使用问题，请联系大马通客服。",
   supportDescription: "请选择下方客服渠道咨询商品、订单、售后或使用问题。",
-  browseAllCategories: "浏览全部分类",
+  browseAllCategories: "浏览分类",
   browseAllServices: "浏览全部服务",
   contactSupport: "联系客服",
 } as const;

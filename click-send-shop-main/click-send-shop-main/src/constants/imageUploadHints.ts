@@ -20,7 +20,7 @@ export const IMAGE_UPLOAD_HINT_HOME_NAV_ICON =
   "建议正方形清晰源图，192×192px 及以上；上传后会转成 256px WebP 小图。也可以直接填写内置图标词（如 phone、home、gift、coupon、support）、图片 URL、站内路径或 Emoji。";
 
 export const IMAGE_UPLOAD_HINT_BANNER_LAYOUT =
-  `比例 ${BANNER_ASPECT_RATIO.toFixed(2)}:1（推荐 ${BANNER_SIZE_PRESETS}）；图片里不要放文字、按钮、价格或二维码，前台会读取标题和说明字段叠加展示；服务器最长边 2560px，WebP quality 92。`;
+  `比例 ${BANNER_ASPECT_RATIO.toFixed(2)}:1（推荐 ${BANNER_SIZE_PRESETS}）；首页轮播以高级氛围图和宣传海报感为主，可少量放品牌或主题字；避免按钮文字、二维码、价格和密集小字；服务器最长边 2560px，WebP quality 92。`;
 
 export const IMAGE_UPLOAD_HINT_PRODUCT_LAYOUT =
   "封面与图集建议和站点外观里的商品图比例保持一致；上传后自动生成列表 / 详情 / 原图三档，数据库保存原图地址即可。";

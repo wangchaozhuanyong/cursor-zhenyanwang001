@@ -1,11 +1,10 @@
 import { useState, type CSSProperties, type FormEvent, type MouseEvent } from "react";
-import { ArrowRight, ChevronDown, Search, UserRound } from "lucide-react";
+import { ChevronDown, Search, UserRound } from "lucide-react";
 import BannerCarousel from "@/components/BannerCarousel";
 import NotificationIconButton from "@/components/NotificationIconButton";
 import StoreBrandLogo from "@/components/store/StoreBrandLogo";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { cn } from "@/lib/utils";
-import { getBannerCtaText } from "@/utils/bannerCta";
 import { isDarkClientDesignStyle, type ClientDesignStyle } from "@/utils/clientDesignStyle";
 import type { Banner } from "@/types/banner";
 import type { ThemeConfig } from "@/types/theme";
@@ -48,11 +47,8 @@ export default function HomeHeroV2({
   const displayDescription = locale !== "zh" && containsCjk(description) ? t("hero.siteDescription") : description;
   const activeBannerTitle = activeHeroBanner?.title?.trim() || "";
   const activeBannerDescription = activeHeroBanner?.description?.trim() || "";
-  const activeBannerLink = activeHeroBanner?.link?.trim() || "";
-  const activeBannerCtaText = activeHeroBanner ? getBannerCtaText(activeHeroBanner) : "";
   const heroTitle = hasBanner && activeBannerTitle ? activeBannerTitle : displaySlogan;
   const heroDescription = hasBanner && activeBannerDescription ? activeBannerDescription : displayDescription;
-  const showHeroCta = Boolean(hasBanner && activeBannerCtaText && activeBannerLink);
   const isBlackGold = clientStyle === "black_gold";
   const blackGoldHeroVars: CSSProperties | undefined = isBlackGold
     ? {
@@ -73,15 +69,6 @@ export default function HomeHeroV2({
     event.preventDefault();
     event.stopPropagation();
     openSearchPage();
-  };
-
-  const openHeroBannerCta = () => {
-    if (!activeBannerLink) return;
-    if (/^https?:\/\//i.test(activeBannerLink)) {
-      window.open(activeBannerLink, "_blank", "noopener,noreferrer");
-      return;
-    }
-    onNavigate(localizedPath(activeBannerLink.startsWith("/") ? activeBannerLink : `/${activeBannerLink}`));
   };
 
   return (
@@ -134,16 +121,6 @@ export default function HomeHeroV2({
               <h2 className="store-home-v4-title">{heroTitle}</h2>
               <p className="store-home-v4-desc">{heroDescription}</p>
             </div>
-            {showHeroCta ? (
-              <UnifiedButton
-                type="button"
-                className="store-home-v4-copy-cta"
-                onClick={openHeroBannerCta}
-              >
-                <span className="truncate">{activeBannerCtaText}</span>
-                <ArrowRight size={14} aria-hidden />
-              </UnifiedButton>
-            ) : null}
           </div>
         </div>
       </div>

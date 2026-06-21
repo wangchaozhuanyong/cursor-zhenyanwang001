@@ -241,8 +241,19 @@ export default function AdminThemeSettings() {
     setSaving(true);
     try {
       const saved = await publishThemeSkin(selectedSkinId, { config: themeConfig, setDefault: true });
-      applySavedPayload(saved, { selectedSkinId });
-      toast.success(L("已发布并设为默认商城皮肤", "Published and set as default storefront skin"));
+      const normalized = normalizeThemeSkinsPayload(saved);
+      applySavedPayload(normalized, { selectedSkinId });
+      const runtimeSkin = normalized.skins.find((skin) => skin.id === normalized.runtimeSkinId);
+      if (normalized.runtimeSkinId && normalized.runtimeSkinId !== selectedSkinId) {
+        toast.success(
+          L(
+            `已设为日常前台皮肤；当前节日规则仍由「${runtimeSkin?.name || normalized.runtimeSkinId}」实际生效`,
+            `Set as the daily storefront skin; the current holiday rule is still serving "${runtimeSkin?.name || normalized.runtimeSkinId}"`,
+          ),
+        );
+      } else {
+        toast.success(L("已发布并应用到前台商城", "Published and applied to the storefront"));
+      }
     } catch (error) {
       toast.error(toastErrorMessage(error, L("发布失败", "Publish failed")));
     } finally {

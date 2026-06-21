@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { normalizeThemeConfig } from "@/utils/themeConfig";
+import { normalizeThemeConfig, normalizeThemeSkinsPayload } from "@/utils/themeConfig";
 import { generateThemePalette } from "@/utils/themeContrast";
 
 describe("themeConfig", () => {
@@ -123,6 +123,31 @@ describe("themeConfig", () => {
     expect(palette["--mall-bg"]).toBeTruthy();
     expect(palette["--mall-grain-opacity"]).toBe("0.018");
     expect(palette["--theme-image-filter"]).toContain("contrast(0.94)");
+  });
+
+  it("uses the database default skin when runtimeSkinId is not present", () => {
+    const payload = normalizeThemeSkinsPayload({
+      skins: [
+        {
+          id: "polar",
+          name: "银翼极昼",
+          status: "published",
+          isDefault: false,
+          config: normalizeThemeConfig({ primaryColor: "#183B5B" }),
+        },
+        {
+          id: "moss",
+          name: "雾苔栖居",
+          status: "published",
+          isDefault: true,
+          config: normalizeThemeConfig({ primaryColor: "#405C43" }),
+        },
+      ],
+    });
+
+    expect(payload.defaultSkinId).toBe("moss");
+    expect(payload.activeSkinId).toBe("moss");
+    expect(payload.runtimeSkinId).toBe("moss");
   });
 
   it("keeps structural theme CSS wired to core storefront pages", () => {

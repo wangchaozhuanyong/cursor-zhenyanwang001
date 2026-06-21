@@ -98,12 +98,12 @@ async function upsertThemeSkin(row) {
   );
 }
 
-async function updateThemeSkinDraft(themeKey, draftConfigJson) {
+async function updateThemeSkinDraft(themeKey, draftConfigJson, status = 'draft') {
   const [result] = await db.query(
     `UPDATE theme_skins
-     SET draft_config_json = CAST(? AS JSON), status = 'draft', updated_at = CURRENT_TIMESTAMP
+     SET draft_config_json = CAST(? AS JSON), status = ?, updated_at = CURRENT_TIMESTAMP
      WHERE theme_key = ?`,
-    [draftConfigJson, themeKey],
+    [draftConfigJson, status, themeKey],
   );
   return result?.affectedRows || 0;
 }

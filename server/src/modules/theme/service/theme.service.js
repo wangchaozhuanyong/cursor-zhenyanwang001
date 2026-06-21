@@ -556,6 +556,12 @@ function toRepositoryRow(skin) {
   };
 }
 
+function statusAfterDraftSave(existingStatus) {
+  if (existingStatus === 'disabled') return 'disabled';
+  if (existingStatus === 'published') return 'published';
+  return 'draft';
+}
+
 async function upsertPayloadToTable(payload) {
   const normalized = normalizeThemeSkinsPayload(payload);
   await Promise.all(normalized.skins.map((skin) => repo.upsertThemeSkin(toRepositoryRow(skin))));
@@ -578,7 +584,11 @@ async function updateThemeConfig(themeConfig, adminUserId, req) {
   const next = normalizeThemeConfig(themeConfig);
   const payload = await getAdminThemeSkins();
   const activeId = payload.activeSkinId || payload.defaultSkinId || DEFAULT_SKIN_ID;
-  const skins = payload.skins.map((skin) => (skin.id === activeId ? { ...skin, config: next, status: 'draft' } : skin));
+  const skins = payload.skins.map((skin) => (
+    skin.id === activeId
+      ? { ...skin, config: next, status: statusAfterDraftSave(skin.status) }
+      : skin
+  ));
   const full = await upsertPayloadToTable({ ...payload, skins });
   await syncLegacySiteSettings(full);
   await writeAuditLog({
@@ -626,9 +636,9 @@ async function saveThemeSkinDraft(themeKey, data, adminUserId, req) {
     id: themeKey,
     themeKey,
     config: normalizeThemeConfig(data?.config || existing.config),
-    status: 'draft',
+    status: statusAfterDraftSave(existing.status),
   }, existing);
-  const affected = await repo.updateThemeSkinDraft(themeKey, JSON.stringify(nextSkin.config));
+  const affected = await repo.updateThemeSkinDraft(themeKey, JSON.stringify(nextSkin.config), nextSkin.status);
   if (!affected) {
     await repo.upsertThemeSkin({
       ...toRepositoryRow(nextSkin),
@@ -638,7 +648,7 @@ async function saveThemeSkinDraft(themeKey, data, adminUserId, req) {
   }
   if (data?.isDefault === true) await repo.setOnlyDefaultThemeSkin(themeKey);
   const next = await getAdminThemeSkins();
-  await syncLegacySiteSettings(next);
+  await syncLegacySiteSettings(await getThemeSkins());
   await writeAuditLog({
     req,
     operatorId: adminUserId,

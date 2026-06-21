@@ -112,12 +112,12 @@ export default function ThemeStudioHeader({
               type="button"
               variant="secondary"
               state={saving ? "loading" : "normal"}
-              disabled={saveDisabled || isClientSkin || status === "disabled"}
+              disabled={saveDisabled || status === "disabled" || (isClientSkin && !dirty && status === "published")}
               onClick={onSetClientSkin}
               className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-border bg-background px-3 text-xs font-semibold hover:bg-secondary"
             >
               <MonitorSmartphone size={14} />
-              设为默认
+              {isClientSkin ? "重新发布前台" : "发布并应用前台"}
             </LoadingButton>
             <LoadingButton
               type="button"

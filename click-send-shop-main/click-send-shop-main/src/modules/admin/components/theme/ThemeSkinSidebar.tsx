@@ -58,7 +58,7 @@ export default function ThemeSkinSidebar({
       <div className="flex flex-col gap-3">
         <div>
           <p className="text-sm font-semibold text-foreground">皮肤库</p>
-          <p className="mt-1 text-xs text-muted-foreground">分类用于后台管理；客户端使用哪套皮肤由“设为默认”决定。</p>
+          <p className="mt-1 text-xs text-muted-foreground">点击皮肤只切换编辑对象；同步前台请点“发布并应用前台”。</p>
         </div>
 
         <AdminSearchInput

@@ -426,7 +426,8 @@ export function normalizeThemeSkinsPayload(payload: {
     });
   }
 
-  const systemDefaultSkinId = skins.some((skin) => skin.id === DEFAULT_SKIN_ID) ? DEFAULT_SKIN_ID : skins[0].id;
+  const firstDefault = skins.find((skin) => skin.isDefault && skin.status !== "disabled");
+  const systemDefaultSkinId = firstDefault?.id ?? (skins.some((skin) => skin.id === DEFAULT_SKIN_ID) ? DEFAULT_SKIN_ID : skins[0].id);
   const hasSkin = (id: string | undefined | null) => !!id && skins.some((skin) => skin.id === id);
   const defaultSkinId = hasSkin(incoming.defaultSkinId) ? String(incoming.defaultSkinId) : systemDefaultSkinId;
   const activeSkinId = hasSkin(incoming.activeSkinId) ? String(incoming.activeSkinId) : defaultSkinId;
@@ -439,7 +440,9 @@ export function normalizeThemeSkinsPayload(payload: {
     ...rule,
     skinId: hasSkin(rule.skinId) ? rule.skinId : holidaySkinId,
   }));
-  const runtimeSkinId = hasSkin(incoming.runtimeSkinId) ? String(incoming.runtimeSkinId) : undefined;
+  const runtimeSkinId = hasSkin(incoming.runtimeSkinId)
+    ? String(incoming.runtimeSkinId)
+    : resolveRuntimeThemeSkinId({ activeSkinId, holidaySkinId, holidayRules, skins });
 
   return { defaultSkinId, activeSkinId, runtimeSkinId, holidaySkinId, holidayRules, skins };
 }

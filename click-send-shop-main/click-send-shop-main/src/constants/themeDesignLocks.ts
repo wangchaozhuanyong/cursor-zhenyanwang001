@@ -38,6 +38,33 @@ export const STOREFRONT_THEME_DEFAULTS = {
   motionLevel: "rich",
   density: "comfortable",
   adminThemeMode: "fixed",
+  texture: {
+    material: "quietPaper",
+    intensity: "subtle",
+    surface: "matte",
+    grain: "fineNoise",
+    grainOpacity: 0.012,
+    highlight: "softEdge",
+    highlightOpacity: 0.04,
+    metal: "none",
+    pattern: "none",
+    patternOpacity: 0,
+    line: "neutralHairline",
+    shadow: "softContact",
+    temperature: "neutral",
+    imageContrast: 0.9,
+    imageSaturation: 0.86,
+  },
+  festival: {
+    mode: "none",
+    activation: "manual",
+    dateMode: "solar",
+    leadDays: 0,
+    tailDays: 0,
+    decorativeDensity: "quiet",
+    showCountdown: false,
+    fallbackSkinId: null,
+  },
 } satisfies Pick<
   ThemeConfig,
   | "radius"
@@ -61,6 +88,8 @@ export const STOREFRONT_THEME_DEFAULTS = {
   | "motionLevel"
   | "density"
   | "adminThemeMode"
+  | "texture"
+  | "festival"
 >;
 
 export function applyStorefrontDesignDefaults(config: Partial<ThemeConfig>): ThemeConfig {

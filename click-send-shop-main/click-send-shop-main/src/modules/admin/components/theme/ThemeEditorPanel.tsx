@@ -47,6 +47,9 @@ const TAB_PANEL_HINTS: Record<EditorTabId, string> = {
   components: "控制按钮、导航、徽标、价格、优惠券、会员卡和分类图标样式。",
   product: "控制商品卡模板、卡片外壳、文案对齐和图片比例。",
   home: "控制首页布局、头部和 Banner 气质。",
+  texture: "控制材质、纹理、图案透明度和商品图质感。",
+  festival: "控制节日模式、农历排期、提前/延后窗口和 fallback。",
+  admin: "后台固定使用安全视觉策略，避免运营界面被商城皮肤影响。",
   advanced: "控制圆角、阴影、动效、密度、字体和后台跟随策略。",
 };
 
@@ -66,6 +69,8 @@ const CONFIG_FIELD_LABELS: Partial<Record<keyof ThemeConfig, string>> = {
   homeLayout: "首页布局",
   headerStyle: "头部样式",
   bannerStyle: "Banner 样式",
+  texture: "质感参数",
+  festival: "节日参数",
   radius: "全局圆角",
   shadowStyle: "阴影强度",
   motionLevel: "动效强度",
@@ -182,8 +187,71 @@ function ThemeFieldGroup({
       <div className="mb-3">
         <AdminSectionTitle title={tText(title)} hint={tText(hint)} />
       </div>
-      <div className="grid gap-3 md:grid-cols-2">{children}</div>
+      <div className="grid min-w-0 gap-3 md:grid-cols-2">{children}</div>
     </section>
+  );
+}
+
+function CompactTextInput({
+  label,
+  value,
+  onChange,
+  type = "text",
+  min,
+  max,
+  step,
+}: {
+  label: string;
+  value: string | number;
+  onChange: (value: string) => void;
+  type?: "text" | "number";
+  min?: number;
+  max?: number;
+  step?: number;
+}) {
+  const { tText } = useAdminT();
+  return (
+    <label className="grid min-w-0 gap-1.5 rounded-xl border border-border/80 bg-background/60 p-3">
+      <span className="text-xs font-semibold text-foreground">{tText(label)}</span>
+      <input
+        type={type}
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="h-10 min-w-0 rounded-lg border border-border bg-card px-3 text-sm text-foreground"
+      />
+    </label>
+  );
+}
+
+function CompactSelect({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  options: readonly string[];
+  onChange: (value: string) => void;
+}) {
+  const { tText } = useAdminT();
+  const tl = useThemeStudioLabel();
+  return (
+    <label className="grid min-w-0 gap-1.5 rounded-xl border border-border/80 bg-background/60 p-3">
+      <span className="text-xs font-semibold text-foreground">{tText(label)}</span>
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="h-10 min-w-0 rounded-lg border border-border bg-card px-3 text-sm text-foreground"
+      >
+        {options.map((option) => (
+          <option key={option} value={option}>{tl(enumValueLabels[option] || option)}</option>
+        ))}
+      </select>
+    </label>
   );
 }
 
@@ -247,6 +315,20 @@ export default function ThemeEditorPanel({
     if (isHolidaySkin) return tText("这套皮肤是节日自动皮肤，命中节日规则时前台会使用它。");
     return tText("这套皮肤目前只是皮肤库方案，保存后不会自动影响前台，除非设为日常皮肤或节日皮肤。");
   }, [isClientSkin, isHolidaySkin, tText]);
+
+  const updateTexture = useCallback(
+    <K extends keyof ThemeConfig["texture"]>(field: K, value: ThemeConfig["texture"][K]) => {
+      onConfigChange("texture", { ...themeConfig.texture, [field]: value });
+    },
+    [onConfigChange, themeConfig.texture],
+  );
+
+  const updateFestival = useCallback(
+    <K extends keyof ThemeConfig["festival"]>(field: K, value: ThemeConfig["festival"][K]) => {
+      onConfigChange("festival", { ...themeConfig.festival, [field]: value });
+    },
+    [onConfigChange, themeConfig.festival],
+  );
 
   return (
     <section ref={panelRef} className="min-w-0 flex-1 rounded-2xl border border-border bg-card p-4 shadow-sm">
@@ -409,8 +491,58 @@ export default function ThemeEditorPanel({
           </ThemeFieldGroup>
         ) : null}
 
+        {activeTab === "texture" ? (
+          <ThemeFieldGroup title="质感参数" hint="控制材质层、纹理噪点、图案透明度和商品图片调性。">
+            <CompactTextInput label="材质名称" value={themeConfig.texture.material} onChange={(value) => updateTexture("material", value)} />
+            <CompactSelect label="纹理强度" value={themeConfig.texture.intensity} options={["subtle", "medium"]} onChange={(value) => updateTexture("intensity", value as ThemeConfig["texture"]["intensity"])} />
+            <CompactTextInput label="表面质感" value={themeConfig.texture.surface} onChange={(value) => updateTexture("surface", value)} />
+            <CompactTextInput label="噪点类型" value={themeConfig.texture.grain} onChange={(value) => updateTexture("grain", value)} />
+            <CompactTextInput label="噪点透明度" type="number" min={0} max={0.08} step={0.001} value={themeConfig.texture.grainOpacity} onChange={(value) => updateTexture("grainOpacity", Number(value))} />
+            <CompactTextInput label="高光透明度" type="number" min={0} max={0.2} step={0.001} value={themeConfig.texture.highlightOpacity} onChange={(value) => updateTexture("highlightOpacity", Number(value))} />
+            <CompactTextInput label="金属/材质点缀" value={themeConfig.texture.metal} onChange={(value) => updateTexture("metal", value)} />
+            <CompactTextInput label="图案名称" value={themeConfig.texture.pattern} onChange={(value) => updateTexture("pattern", value)} />
+            <CompactTextInput label="图案透明度" type="number" min={0} max={0.12} step={0.001} value={themeConfig.texture.patternOpacity} onChange={(value) => updateTexture("patternOpacity", Number(value))} />
+            <CompactTextInput label="线条语言" value={themeConfig.texture.line} onChange={(value) => updateTexture("line", value)} />
+            <CompactTextInput label="投影语言" value={themeConfig.texture.shadow} onChange={(value) => updateTexture("shadow", value)} />
+            <CompactTextInput label="图片对比度" type="number" min={0.7} max={1.2} step={0.01} value={themeConfig.texture.imageContrast} onChange={(value) => updateTexture("imageContrast", Number(value))} />
+            <CompactTextInput label="图片饱和度" type="number" min={0.65} max={1.1} step={0.01} value={themeConfig.texture.imageSaturation} onChange={(value) => updateTexture("imageSaturation", Number(value))} />
+          </ThemeFieldGroup>
+        ) : null}
+
+        {activeTab === "festival" ? (
+          <ThemeFieldGroup title="节日参数" hint="只有发布状态的节日皮肤命中时间窗口时才会覆盖日常皮肤。">
+            <CompactSelect label="节日模式" value={themeConfig.festival.mode} options={["none", "springFestival", "midAutumn"]} onChange={(value) => updateFestival("mode", value as ThemeConfig["festival"]["mode"])} />
+            <CompactSelect label="启用方式" value={themeConfig.festival.activation} options={["manual", "manualOrLunarSchedule"]} onChange={(value) => updateFestival("activation", value as ThemeConfig["festival"]["activation"])} />
+            <CompactSelect label="日期模式" value={themeConfig.festival.dateMode} options={["solar", "lunar"]} onChange={(value) => updateFestival("dateMode", value as ThemeConfig["festival"]["dateMode"])} />
+            <CompactTextInput label="提前天数" type="number" min={0} max={60} step={1} value={themeConfig.festival.leadDays} onChange={(value) => updateFestival("leadDays", Number(value))} />
+            <CompactTextInput label="延后天数" type="number" min={0} max={45} step={1} value={themeConfig.festival.tailDays} onChange={(value) => updateFestival("tailDays", Number(value))} />
+            <CompactSelect label="装饰密度" value={themeConfig.festival.decorativeDensity} options={["quiet", "balanced", "rich"]} onChange={(value) => updateFestival("decorativeDensity", value as ThemeConfig["festival"]["decorativeDensity"])} />
+            <label className="flex min-w-0 items-center justify-between gap-3 rounded-xl border border-border/80 bg-background/60 p-3">
+              <span className="text-xs font-semibold text-foreground">{tText("显示倒计时")}</span>
+              <input
+                type="checkbox"
+                checked={themeConfig.festival.showCountdown}
+                onChange={(event) => updateFestival("showCountdown", event.target.checked)}
+              />
+            </label>
+            <CompactTextInput label="Fallback 皮肤 ID" value={themeConfig.festival.fallbackSkinId || ""} onChange={(value) => updateFestival("fallbackSkinId", value || null)} />
+          </ThemeFieldGroup>
+        ) : null}
+
+        {activeTab === "admin" ? (
+          <section className="rounded-2xl border border-border/80 bg-background/45 p-4 shadow-sm">
+            <AdminSectionTitle
+              title={tText("后台视觉策略")}
+              hint={tText("后台管理固定使用安全可读主题，不跟随前台商城皮肤。")}
+            />
+            <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs leading-5 text-emerald-800">
+              {tText("当前策略：fixed。此字段由系统强制保护，即使接口收到 follow_store 也会归一化为 fixed，避免后台按钮、表格和表单因前台皮肤变得难读。")}
+            </div>
+          </section>
+        ) : null}
+
         {activeTab === "advanced" ? (
-          <ThemeFieldGroup title="高级设置" hint="控制全局圆角、阴影、动效、密度、字体和后台跟随策略。">
+          <ThemeFieldGroup title="高级设置" hint="控制全局圆角、阴影、动效、密度和字体。后台主题策略固定在单独分组中展示。">
             <ThemeTextField
               field="radius"
               value={themeConfig.radius}
@@ -434,12 +566,6 @@ export default function ThemeEditorPanel({
               field="density"
               value={themeConfig.density}
               highlighted={highlightField === "density"}
-              onChange={onConfigChange}
-            />
-            <ThemeSelectField
-              field="adminThemeMode"
-              value={themeConfig.adminThemeMode}
-              highlighted={highlightField === "adminThemeMode"}
               onChange={onConfigChange}
             />
             <ThemeTextField

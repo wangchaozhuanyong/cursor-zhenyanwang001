@@ -11,10 +11,12 @@ import { observeHomeCardImpression } from "./homeCardImpressionObserver";
 import { THEME_PRODUCT_MEDIA_ASPECT_STYLE } from "@/constants/productMediaAspect";
 import {
   HOME_PRODUCT_BADGE_CLASS,
+  HOME_PRODUCT_ACTION_HINT_CLASS,
   HOME_PRODUCT_CARD_MEDIA,
   HOME_PRODUCT_CARD_SHELL,
   HOME_PRODUCT_IMAGE_IMG_CLASS,
   HOME_PRODUCT_INFO_CLASS,
+  HOME_PRODUCT_META_CLASS,
   HOME_PRODUCT_PRICE_AMOUNT_CLASS,
   HOME_PRODUCT_PRICE_CURRENCY_CLASS,
   HOME_PRODUCT_TITLE_CLASS,
@@ -54,6 +56,7 @@ function HomeGridProductCard({
   const imageFetchPriority = index === 0 ? "high" : undefined;
   const priceNum = Number(product.price || 0);
   const formatMoney = (v: number) => v.toFixed(2).replace(/\.00$/, "");
+  const metaLabel = product.category_name || (isServiceLike ? "服务优选" : "本地优选");
 
   useEffect(() => {
     if (!cardRef.current || !registerImpression) return;
@@ -130,6 +133,10 @@ function HomeGridProductCard({
             />
           </div>
         ) : null}
+        <div className={HOME_PRODUCT_META_CLASS}>
+          <span className="store-skin-product-card__meta-label min-w-0 truncate">{metaLabel}</span>
+          <span className={HOME_PRODUCT_ACTION_HINT_CLASS}>{soldOut ? "暂不可购" : "查看"}</span>
+        </div>
       </div>
     </Link>
   );

@@ -41,6 +41,11 @@ describe("publicTheme", () => {
   });
 
   it("maps existing runtime skins to public theme families", () => {
+    expect(resolvePublicThemeFromSkin({ id: "polar" } as never, null)).toBe("pearl-slate");
+    expect(resolvePublicThemeFromSkin({ id: "moss" } as never, null)).toBe("sage-stone");
+    expect(resolvePublicThemeFromSkin({ id: "iris" } as never, null)).toBe("ruby-cream");
+    expect(resolvePublicThemeFromSkin({ id: "newyear" } as never, null)).toBe("ruby-cream");
+    expect(resolvePublicThemeFromSkin({ id: "midautumn" } as never, null)).toBe("linen-walnut");
     expect(resolvePublicThemeFromSkin({ id: "premium_champagne_ivory" } as never, null)).toBe("ivory-gold");
     expect(resolvePublicThemeFromSkin({ id: "premium_sky_silk" } as never, null)).toBe("pearl-slate");
     expect(resolvePublicThemeFromSkin({ id: "premium_apricot_sand" } as never, null)).toBe("linen-walnut");

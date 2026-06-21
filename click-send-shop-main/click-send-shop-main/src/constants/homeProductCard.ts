@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 
 /** 首页横滑 / 网格商品卡统一外壳 */
 export const HOME_PRODUCT_CARD_SHELL =
-  "store-product-card store-art-product-card flex flex-col overflow-hidden rounded-[var(--store-card-radius)] border border-product-border bg-product-card transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5";
+  "store-product-card store-art-product-card store-skin-product-card flex flex-col overflow-hidden rounded-[var(--store-card-radius)] border border-product-border bg-product-card transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5";
 
 /** 首页新品横滑单卡宽度（约一屏 3 张） */
 export const HOME_NEW_ARRIVAL_CARD_WIDTH_CLASS =
@@ -11,7 +11,7 @@ export const HOME_NEW_ARRIVAL_CARD_WIDTH_CLASS =
 
 /** 图片区容器 */
 export const HOME_PRODUCT_CARD_MEDIA =
-  "store-art-product-media relative w-full shrink-0 overflow-hidden bg-product-image";
+  "store-art-product-media store-skin-product-card__media relative w-full shrink-0 overflow-hidden bg-product-image";
 
 export const HOME_PRODUCT_IMAGE_PRODUCT_CLASS = "w-full max-h-none";
 export const HOME_PRODUCT_IMAGE_SERVICE_CLASS = HOME_PRODUCT_IMAGE_PRODUCT_CLASS;
@@ -20,7 +20,7 @@ export const HOME_PRODUCT_IMAGE_IMG_CLASS = "h-full w-full object-cover";
 
 /** 图下信息区：与图片明确分界 */
 export const HOME_PRODUCT_INFO_CLASS =
-  "store-art-product-info min-w-0 border-t border-[var(--store-border)] px-2 pb-2 pt-2";
+  "store-art-product-info store-skin-product-card__info min-w-0 border-t border-[var(--store-border)] px-2 pb-2 pt-2";
 
 export const HOME_PRODUCT_TITLE_CLASS =
   "store-product-card-title line-clamp-2 min-h-[2.25rem] break-words text-[13.5px] font-medium leading-snug";
@@ -30,6 +30,10 @@ export const HOME_PRODUCT_BADGE_CLASS =
 
 export const HOME_PRODUCT_PRICE_AMOUNT_CLASS = "text-[13px] font-semibold leading-none";
 export const HOME_PRODUCT_PRICE_CURRENCY_CLASS = "store-price-currency mr-0.5 text-[10px] leading-none";
+export const HOME_PRODUCT_META_CLASS =
+  "store-skin-product-card__meta mt-1.5 flex min-w-0 items-center justify-between gap-1.5 text-[10.5px] leading-4 text-[var(--theme-text-muted)]";
+export const HOME_PRODUCT_ACTION_HINT_CLASS =
+  "store-skin-product-card__action-hint inline-flex shrink-0 items-center rounded-full border border-[color-mix(in_srgb,var(--theme-primary)_22%,var(--theme-border))] px-1.5 py-0.5 text-[10px] font-semibold leading-none text-[var(--theme-primary)]";
 
 export function isHomeServiceLikeProduct(product: Product) {
   return /服务|咨询|办理|申请|装修/.test(String(product.category_name || product.name || ""));

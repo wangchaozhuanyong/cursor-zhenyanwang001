@@ -1,3 +1,8 @@
+const POLAR_SKIN_ID = 'polar';
+const MOSS_SKIN_ID = 'moss';
+const IRIS_SKIN_ID = 'iris';
+const NEWYEAR_SKIN_ID = 'newyear';
+const MIDAUTUMN_SKIN_ID = 'midautumn';
 const PREMIUM_CHAMPAGNE_IVORY_SKIN_ID = 'premium_champagne_ivory';
 const PREMIUM_PEARL_BLUSH_SKIN_ID = 'premium_pearl_blush';
 const PREMIUM_PORCELAIN_JADE_SKIN_ID = 'premium_porcelain_jade';
@@ -10,8 +15,8 @@ const CLIENT_DEEP_ENTERPRISE_SKIN_ID = 'client_deep_enterprise';
 const FESTIVAL_SPRING_RUBY_GOLD_SKIN_ID = 'festival_spring_ruby_gold';
 const FESTIVAL_MOON_ORANGE_GOLD_SKIN_ID = 'festival_moon_orange_gold';
 
-const DEFAULT_SKIN_ID = PREMIUM_CHAMPAGNE_IVORY_SKIN_ID;
-const DEFAULT_HOLIDAY_SKIN_ID = PREMIUM_CHAMPAGNE_IVORY_SKIN_ID;
+const DEFAULT_SKIN_ID = POLAR_SKIN_ID;
+const DEFAULT_HOLIDAY_SKIN_ID = NEWYEAR_SKIN_ID;
 
 const RETIRED_SYSTEM_SKIN_IDS = new Set([
   PREMIUM_PEARL_BLUSH_SKIN_ID,
@@ -34,8 +39,8 @@ const RETIRED_SYSTEM_SKIN_IDS = new Set([
   'organic_sandstone',
 ]);
 
-const DAILY_COMMERCE_SKIN_ID = PREMIUM_CHAMPAGNE_IVORY_SKIN_ID;
-const FESTIVAL_SKIN_ID = PREMIUM_CHAMPAGNE_IVORY_SKIN_ID;
+const DAILY_COMMERCE_SKIN_ID = POLAR_SKIN_ID;
+const FESTIVAL_SKIN_ID = NEWYEAR_SKIN_ID;
 
 const STOREFRONT_THEME_DEFAULTS = {
   radius: '14px',
@@ -59,6 +64,304 @@ const STOREFRONT_THEME_DEFAULTS = {
   motionLevel: 'rich',
   density: 'comfortable',
   adminThemeMode: 'fixed',
+  texture: {
+    material: 'quietPaper',
+    intensity: 'subtle',
+    surface: 'matte',
+    grain: 'fineNoise',
+    grainOpacity: 0.012,
+    highlight: 'softEdge',
+    highlightOpacity: 0.04,
+    metal: 'none',
+    pattern: 'none',
+    patternOpacity: 0,
+    line: 'neutralHairline',
+    shadow: 'softContact',
+    temperature: 'neutral',
+    imageContrast: 0.9,
+    imageSaturation: 0.86,
+  },
+  festival: {
+    mode: 'none',
+    activation: 'manual',
+    dateMode: 'solar',
+    leadDays: 0,
+    tailDays: 0,
+    decorativeDensity: 'quiet',
+    showCountdown: false,
+    fallbackSkinId: null,
+  },
+};
+
+const POLAR_CONFIG = {
+  skinName: '银翼极昼·旗舰科技',
+  bgColor: '#ECF3F7',
+  surfaceColor: '#FBFDFF',
+  primaryColor: '#183B5B',
+  secondaryColor: '#DDEAF1',
+  accentColor: '#7895A8',
+  priceColor: '#CC4A35',
+  borderColor: '#D2E0E8',
+  textColor: '#16232E',
+  mutedTextColor: '#61717D',
+  successColor: '#2F745B',
+  warningColor: '#A66F22',
+  dangerColor: '#BC343B',
+  ...STOREFRONT_THEME_DEFAULTS,
+  radius: '18px',
+  density: 'compact',
+  motionLevel: 'soft',
+  shadowStyle: 'aerial',
+  buttonStyle: 'capsule',
+  navStyle: 'glassLine',
+  badgeStyle: 'technical',
+  priceStyle: 'tabularBold',
+  productCardVariant: 'spec',
+  cardStyle: 'glassBordered',
+  cardTextAlign: 'left',
+  imageRatio: '4 / 3',
+  imageFit: 'contain',
+  homeLayout: 'modularShowcase',
+  headerStyle: 'floatingGlass',
+  bannerStyle: 'panoramicLight',
+  couponStyle: 'precisionVoucher',
+  memberCardStyle: 'titaniumBlue',
+  categoryIconStyle: 'monoGlyph',
+  texture: {
+    material: 'titaniumMist',
+    intensity: 'subtle',
+    surface: 'satinGlass',
+    grain: 'microEtchedNoise',
+    grainOpacity: 0.018,
+    highlight: 'edgeSheen',
+    highlightOpacity: 0.1,
+    metal: 'brushedTitanium',
+    pattern: 'technicalGrid',
+    patternOpacity: 0.055,
+    line: 'coolHairlineInnerHighlight',
+    shadow: 'wideBlueAmbientShortContact',
+    temperature: 'coolNeutral',
+    imageContrast: 0.94,
+    imageSaturation: 0.88,
+  },
+};
+
+const MOSS_CONFIG = {
+  skinName: '雾苔栖居·自然生活',
+  bgColor: '#EEF1E8',
+  surfaceColor: '#FFFDF6',
+  primaryColor: '#405C43',
+  secondaryColor: '#E1E4D7',
+  accentColor: '#9A7A47',
+  priceColor: '#B8543C',
+  borderColor: '#D8D8C9',
+  textColor: '#20261D',
+  mutedTextColor: '#687060',
+  successColor: '#4E7658',
+  warningColor: '#A5752F',
+  dangerColor: '#A94436',
+  ...STOREFRONT_THEME_DEFAULTS,
+  radius: '6px',
+  density: 'comfortable',
+  motionLevel: 'soft',
+  shadowStyle: 'paper',
+  badgeStyle: 'botanical',
+  priceStyle: 'bold',
+  productCardVariant: 'editorial',
+  cardStyle: 'paperLayered',
+  imageRatio: '3 / 4',
+  imageFit: 'contain',
+  homeLayout: 'courtyardMasonry',
+  headerStyle: 'splitEditorial',
+  bannerStyle: 'naturalWindow',
+  couponStyle: 'perforatedTicket',
+  memberCardStyle: 'walnutCopper',
+  categoryIconStyle: 'botanicalLine',
+  texture: {
+    material: 'limewashLinen',
+    intensity: 'medium',
+    surface: 'chalkMatte',
+    grain: 'linenFiber',
+    grainOpacity: 0.026,
+    highlight: 'diffuseDaylight',
+    highlightOpacity: 0.055,
+    metal: 'agedCopper',
+    pattern: 'botanicalContour',
+    patternOpacity: 0.045,
+    line: 'warmStoneLine',
+    shadow: 'paperStackDirectional',
+    temperature: 'naturalWarm',
+    imageContrast: 0.9,
+    imageSaturation: 0.82,
+  },
+};
+
+const IRIS_CONFIG = {
+  skinName: '鸢尾镜廊·时装美妆',
+  bgColor: '#F4EFF7',
+  surfaceColor: '#FFFDFE',
+  primaryColor: '#5D4778',
+  secondaryColor: '#ECE4F3',
+  accentColor: '#B8879A',
+  priceColor: '#C24B63',
+  borderColor: '#E3D8EA',
+  textColor: '#241B2E',
+  mutedTextColor: '#75677E',
+  successColor: '#567A66',
+  warningColor: '#A87538',
+  dangerColor: '#B33D55',
+  ...STOREFRONT_THEME_DEFAULTS,
+  radius: '28px',
+  density: 'airy',
+  motionLevel: 'soft',
+  shadowStyle: 'velvet',
+  badgeStyle: 'jewel',
+  productCardVariant: 'lookbook',
+  cardStyle: 'framelessFloat',
+  cardTextAlign: 'center',
+  imageRatio: '4 / 5',
+  imageFit: 'contain',
+  homeLayout: 'runwayEditorial',
+  headerStyle: 'minimalCentered',
+  bannerStyle: 'archedMirror',
+  couponStyle: 'silkRibbon',
+  memberCardStyle: 'plumSilver',
+  categoryIconStyle: 'jewelOutline',
+  texture: {
+    material: 'nacreSilk',
+    intensity: 'subtle',
+    surface: 'pearlescentSatin',
+    grain: 'pearlPowder',
+    grainOpacity: 0.015,
+    highlight: 'iridescentVeil',
+    highlightOpacity: 0.085,
+    metal: 'frostedSilver',
+    pattern: 'orbitalRibbon',
+    patternOpacity: 0.05,
+    line: 'translucentLilacHairline',
+    shadow: 'velvetDiffuseNoBlackEdge',
+    temperature: 'softRoseNeutral',
+    imageContrast: 0.88,
+    imageSaturation: 0.86,
+  },
+};
+
+const NEWYEAR_CONFIG = {
+  skinName: '瑞锦新岁·春节臻礼',
+  bgColor: '#FFF3EA',
+  surfaceColor: '#FFFDF8',
+  primaryColor: '#B91F2C',
+  secondaryColor: '#F8DED5',
+  accentColor: '#C59A42',
+  priceColor: '#D12A2F',
+  borderColor: '#EBC4B8',
+  textColor: '#2B1512',
+  mutedTextColor: '#7C5D55',
+  successColor: '#347657',
+  warningColor: '#A97021',
+  dangerColor: '#BC2632',
+  ...STOREFRONT_THEME_DEFAULTS,
+  radius: '12px',
+  density: 'compact',
+  motionLevel: 'soft',
+  shadowStyle: 'lantern',
+  badgeStyle: 'festivalSeal',
+  productCardVariant: 'giftSet',
+  cardStyle: 'silkBordered',
+  imageRatio: '1 / 1',
+  imageFit: 'contain',
+  homeLayout: 'festivalScroll',
+  headerStyle: 'redLine',
+  bannerStyle: 'lightLacquer',
+  couponStyle: 'redPacket',
+  memberCardStyle: 'jadeGold',
+  categoryIconStyle: 'auspiciousSeal',
+  texture: {
+    material: 'silkBrocadeLacquer',
+    intensity: 'medium',
+    surface: 'warmSilkMatte',
+    grain: 'silkWarp',
+    grainOpacity: 0.022,
+    highlight: 'lacquerEdgeGlow',
+    highlightOpacity: 0.075,
+    metal: 'matteOldGold',
+    pattern: 'auspiciousCloudBrocade',
+    patternOpacity: 0.045,
+    line: 'goldThreadDoubleHairline',
+    shadow: 'warmLanternAmbient',
+    temperature: 'warmFestiveNeutral',
+    imageContrast: 0.93,
+    imageSaturation: 0.9,
+  },
+  festival: {
+    mode: 'springFestival',
+    activation: 'manualOrLunarSchedule',
+    dateMode: 'lunar',
+    leadDays: 35,
+    tailDays: 15,
+    decorativeDensity: 'balanced',
+    showCountdown: true,
+    fallbackSkinId: POLAR_SKIN_ID,
+  },
+};
+
+const MIDAUTUMN_CONFIG = {
+  skinName: '桂月云璧·中秋臻礼',
+  bgColor: '#F4F0E6',
+  surfaceColor: '#FFFDF7',
+  primaryColor: '#243C63',
+  secondaryColor: '#E8E1CF',
+  accentColor: '#B99952',
+  priceColor: '#B5533A',
+  borderColor: '#DCD3BF',
+  textColor: '#1D2635',
+  mutedTextColor: '#6B675C',
+  successColor: '#4C755B',
+  warningColor: '#A67827',
+  dangerColor: '#AD3E35',
+  ...STOREFRONT_THEME_DEFAULTS,
+  radius: '16px',
+  density: 'comfortable',
+  motionLevel: 'soft',
+  shadowStyle: 'moonlight',
+  badgeStyle: 'festivalSeal',
+  productCardVariant: 'pairedGift',
+  cardStyle: 'moonHaloBordered',
+  imageRatio: '4 / 3',
+  imageFit: 'contain',
+  homeLayout: 'lunarGarden',
+  headerStyle: 'quietLine',
+  bannerStyle: 'moonHalo',
+  couponStyle: 'moonTicket',
+  memberCardStyle: 'indigoGold',
+  categoryIconStyle: 'lunarSeal',
+  texture: {
+    material: 'moonGlazeRicePaper',
+    intensity: 'subtle',
+    surface: 'moonlitGlaze',
+    grain: 'ricePaperFiber',
+    grainOpacity: 0.021,
+    highlight: 'circularMoonHalo',
+    highlightOpacity: 0.068,
+    metal: 'matteOsmanthusGold',
+    pattern: 'lunarRippleCloud',
+    patternOpacity: 0.04,
+    line: 'indigoHairlineGoldPin',
+    shadow: 'coolMoonAmbientWarmContact',
+    temperature: 'moonlitNeutral',
+    imageContrast: 0.91,
+    imageSaturation: 0.84,
+  },
+  festival: {
+    mode: 'midAutumn',
+    activation: 'manualOrLunarSchedule',
+    dateMode: 'lunar',
+    leadDays: 28,
+    tailDays: 7,
+    decorativeDensity: 'quiet',
+    showCountdown: true,
+    fallbackSkinId: MOSS_SKIN_ID,
+  },
 };
 
 const PREMIUM_CHAMPAGNE_IVORY_CONFIG = {
@@ -442,11 +745,77 @@ const FESTIVAL_MOON_ORANGE_GOLD_SKIN = {
   config: FESTIVAL_MOON_ORANGE_GOLD_CONFIG,
 };
 
+const POLAR_SKIN = {
+  id: POLAR_SKIN_ID,
+  themeKey: POLAR_SKIN_ID,
+  name: '银翼极昼',
+  description: '旗舰科技质感。钛银雾面、冷蓝细线、玻璃描边和紧凑商品信息，适合长期默认商城与数码高客单商品。',
+  category: '日常商城',
+  sceneTag: 'mall',
+  type: 'evergreen',
+  status: 'published',
+  isDefault: true,
+  priority: 100,
+  config: POLAR_CONFIG,
+};
+
+const MOSS_SKIN = {
+  id: MOSS_SKIN_ID,
+  themeKey: MOSS_SKIN_ID,
+  name: '雾苔栖居',
+  description: '自然生活质感。灰绿苔色、亚麻纸感、植物线稿和舒适内容密度，适合家居、日用品与生活方式商品。',
+  category: '日常商城',
+  sceneTag: 'mall',
+  type: 'evergreen',
+  status: 'published',
+  priority: 80,
+  config: MOSS_CONFIG,
+};
+
+const IRIS_SKIN = {
+  id: IRIS_SKIN_ID,
+  themeKey: IRIS_SKIN_ID,
+  name: '鸢尾镜廊',
+  description: '时装美妆质感。珍珠丝缎、鸢尾紫、柔光大圆角和 lookbook 商品卡，适合美妆、服饰、礼品。',
+  category: '高端商城',
+  sceneTag: 'premium',
+  type: 'evergreen',
+  status: 'published',
+  priority: 70,
+  config: IRIS_CONFIG,
+};
+
+const NEWYEAR_SKIN = {
+  id: NEWYEAR_SKIN_ID,
+  themeKey: NEWYEAR_SKIN_ID,
+  name: '瑞锦新岁',
+  description: '春节臻礼节日皮肤。丝锦、温红、哑金和红包券形态，支持春节农历排期与倒计时。',
+  category: '节日活动',
+  sceneTag: 'holiday',
+  type: 'festival',
+  status: 'published',
+  priority: 200,
+  config: NEWYEAR_CONFIG,
+};
+
+const MIDAUTUMN_SKIN = {
+  id: MIDAUTUMN_SKIN_ID,
+  themeKey: MIDAUTUMN_SKIN_ID,
+  name: '桂月云璧',
+  description: '中秋臻礼节日皮肤。月釉米纸、靛蓝金线和月票券形态，支持中秋农历排期与安静倒计时。',
+  category: '节日活动',
+  sceneTag: 'holiday',
+  type: 'festival',
+  status: 'published',
+  priority: 180,
+  config: MIDAUTUMN_CONFIG,
+};
+
 const DEFAULT_LIFE_GREEN_CONFIG = PREMIUM_CHAMPAGNE_IVORY_CONFIG;
 const FESTIVAL_RUBY_GOLD_CONFIG = FESTIVAL_SPRING_RUBY_GOLD_CONFIG;
 const PREMIUM_IVORY_JADE_CONFIG = PREMIUM_CHAMPAGNE_IVORY_CONFIG;
-const DAILY_COMMERCE_SKIN = PREMIUM_CHAMPAGNE_IVORY_SKIN;
-const FESTIVAL_RUBY_GOLD_SKIN = FESTIVAL_SPRING_RUBY_GOLD_SKIN;
+const DAILY_COMMERCE_SKIN = POLAR_SKIN;
+const FESTIVAL_RUBY_GOLD_SKIN = NEWYEAR_SKIN;
 const PREMIUM_IVORY_JADE_SKIN = PREMIUM_CHAMPAGNE_IVORY_SKIN;
 
 const DEFAULT_THEME_HOLIDAY_RULES = [
@@ -474,7 +843,7 @@ const DEFAULT_THEME_HOLIDAY_RULES = [
   { id: 'my_merdeka', name: '马来西亚国庆档（8月31日公共假期）', enabled: true, start: '08-29', end: '09-01', skinId: FESTIVAL_SKIN_ID },
   { id: 'shopping_0909', name: '9.9 购物节', enabled: true, start: '09-01', end: '09-09', skinId: FESTIVAL_SKIN_ID },
   { id: 'my_malaysia_day', name: '马来西亚日', enabled: true, start: '09-16', end: '09-16', skinId: FESTIVAL_SKIN_ID },
-  { id: 'cn_mid_autumn_2026', name: '中秋节（中国公共假期 2026）', enabled: true, start: '09-25', end: '09-27', skinId: FESTIVAL_SKIN_ID },
+  { id: 'cn_mid_autumn_2026', name: '中秋节（中国公共假期 2026）', enabled: true, start: '09-25', end: '09-27', skinId: MIDAUTUMN_SKIN_ID },
   { id: 'cn_national_day_2026', name: '中国国庆黄金周（2026）', enabled: true, start: '10-01', end: '10-07', skinId: FESTIVAL_SKIN_ID },
   { id: 'shopping_1010', name: '10.10 购物节', enabled: true, start: '10-01', end: '10-10', skinId: FESTIVAL_SKIN_ID },
   { id: 'my_deepavali_2026', name: '屠妖节（马来西亚公共假期 2026）', enabled: true, start: '11-08', end: '11-09', skinId: FESTIVAL_SKIN_ID },
@@ -484,9 +853,13 @@ const DEFAULT_THEME_HOLIDAY_RULES = [
   { id: 'christmas_year_end', name: '圣诞 / 年末礼遇', enabled: true, start: '12-20', end: '12-27', skinId: FESTIVAL_SKIN_ID },
 ];
 
-const FALLBACK_THEME_SKIN = PREMIUM_CHAMPAGNE_IVORY_SKIN;
+const FALLBACK_THEME_SKIN = POLAR_SKIN;
 const THEME_PRESETS = [
-  PREMIUM_CHAMPAGNE_IVORY_SKIN,
+  POLAR_SKIN,
+  MOSS_SKIN,
+  IRIS_SKIN,
+  NEWYEAR_SKIN,
+  MIDAUTUMN_SKIN,
 ];
 
 module.exports = {
@@ -494,6 +867,11 @@ module.exports = {
   DEFAULT_HOLIDAY_SKIN_ID,
   DAILY_COMMERCE_SKIN_ID,
   FESTIVAL_SKIN_ID,
+  POLAR_SKIN_ID,
+  MOSS_SKIN_ID,
+  IRIS_SKIN_ID,
+  NEWYEAR_SKIN_ID,
+  MIDAUTUMN_SKIN_ID,
   PREMIUM_CHAMPAGNE_IVORY_SKIN_ID,
   PREMIUM_PEARL_BLUSH_SKIN_ID,
   PREMIUM_PORCELAIN_JADE_SKIN_ID,
@@ -522,9 +900,19 @@ module.exports = {
   CLIENT_DEEP_ENTERPRISE_CONFIG,
   FESTIVAL_SPRING_RUBY_GOLD_CONFIG,
   FESTIVAL_MOON_ORANGE_GOLD_CONFIG,
+  POLAR_CONFIG,
+  MOSS_CONFIG,
+  IRIS_CONFIG,
+  NEWYEAR_CONFIG,
+  MIDAUTUMN_CONFIG,
   DAILY_COMMERCE_SKIN,
   FESTIVAL_RUBY_GOLD_SKIN,
   PREMIUM_IVORY_JADE_SKIN,
+  POLAR_SKIN,
+  MOSS_SKIN,
+  IRIS_SKIN,
+  NEWYEAR_SKIN,
+  MIDAUTUMN_SKIN,
   PREMIUM_CHAMPAGNE_IVORY_SKIN,
   PREMIUM_PEARL_BLUSH_SKIN,
   PREMIUM_PORCELAIN_JADE_SKIN,

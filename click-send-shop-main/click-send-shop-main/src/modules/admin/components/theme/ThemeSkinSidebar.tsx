@@ -100,6 +100,7 @@ export default function ThemeSkinSidebar({
             const isActive = skin.id === activeSkinId;
             const isHoliday = skin.id === holidaySkinId;
             const category = getSkinCategory(skin);
+            const status = skin.status || "published";
             return (
               <article
                 key={skin.id}
@@ -125,6 +126,15 @@ export default function ThemeSkinSidebar({
                     {isActive ? <span className="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] text-emerald-700">客户端日常</span> : null}
                     {isHoliday ? <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] text-amber-700">节日自动</span> : null}
                     {isDefault && !isActive ? <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600">默认备选</span> : null}
+                    <span className={`rounded-full px-1.5 py-0.5 text-[10px] ${
+                      status === "published"
+                        ? "bg-emerald-50 text-emerald-700"
+                        : status === "disabled"
+                          ? "bg-slate-100 text-slate-600"
+                          : "bg-amber-50 text-amber-700"
+                    }`}>
+                      {status === "published" ? "已发布" : status === "disabled" ? "已禁用" : "草稿"}
+                    </span>
                     {selected ? (
                       <span className="rounded-full bg-[var(--theme-primary)]/15 px-1.5 py-0.5 text-[10px] text-[var(--theme-primary)]">编辑中</span>
                     ) : null}

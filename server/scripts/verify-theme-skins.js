@@ -2,13 +2,11 @@ require('dotenv').config();
 const { getThemeSkins } = require('../src/modules/theme/service/theme.service');
 
 const REQUIRED_SKIN_IDS = [
-  'premium_champagne_ivory',
-  'premium_pearl_blush',
-  'premium_porcelain_jade',
-  'premium_sky_silk',
-  'premium_apricot_sand',
-  'festival_spring_ruby_gold',
-  'festival_moon_orange_gold',
+  'polar',
+  'moss',
+  'iris',
+  'newyear',
+  'midautumn',
 ];
 const FORBIDDEN_SKIN_IDS = ['obsidian_black_gold', 'midnight_titanium'];
 
@@ -31,8 +29,8 @@ getThemeSkins()
     process.exit(
       missing.length === 0
         && forbidden.length === 0
-        && data.defaultSkinId === 'premium_champagne_ivory'
-        && data.holidaySkinId === 'festival_spring_ruby_gold'
+        && data.defaultSkinId === 'polar'
+        && data.holidaySkinId === 'newyear'
         ? 0
         : 1,
     );

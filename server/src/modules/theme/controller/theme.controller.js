@@ -12,3 +12,9 @@ exports.getSkins = asyncRoute(async (_req, res) => {
   res.set('Cache-Control', 'no-store, max-age=0, must-revalidate');
   res.success(data);
 });
+
+exports.getPreviewDraft = asyncRoute(async (req, res) => {
+  const data = await themeService.getThemePreviewDraft(req.params.draftToken);
+  res.set('Cache-Control', 'no-store, max-age=0, must-revalidate');
+  res.success(data);
+});

@@ -31,6 +31,11 @@ export const PUBLIC_THEME_DESCRIPTIONS: Record<PublicTheme, string> = {
 };
 
 const SKIN_PUBLIC_THEME_MAP: Record<string, PublicTheme> = {
+  polar: "pearl-slate",
+  moss: "sage-stone",
+  iris: "ruby-cream",
+  newyear: "ruby-cream",
+  midautumn: "linen-walnut",
   client_blue_portal: "pearl-slate",
   client_sky_tech: "pearl-slate",
   client_black_gold: "ivory-gold",

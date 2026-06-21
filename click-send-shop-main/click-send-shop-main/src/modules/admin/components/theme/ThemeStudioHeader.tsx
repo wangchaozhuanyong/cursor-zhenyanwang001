@@ -1,4 +1,4 @@
-import { CheckCircle2, Gift, LayoutDashboard, Maximize2, MonitorSmartphone, Store } from "lucide-react";
+import { Ban, CheckCircle2, Gift, LayoutDashboard, Maximize2, MonitorSmartphone, Store } from "lucide-react";
 import { useMemo } from "react";
 import { LoadingButton } from "@/modules/micro-interactions";
 import PermissionGate from "@/components/admin/PermissionGate";
@@ -12,6 +12,7 @@ export type ThemeStudioHeaderProps = {
   runtimeSkinName: string;
   isClientSkin: boolean;
   isHolidaySkin: boolean;
+  status: string;
   dirty: boolean;
   saving: boolean;
   saveDisabled?: boolean;
@@ -21,6 +22,7 @@ export type ThemeStudioHeaderProps = {
   onSave: () => void;
   onSetClientSkin: () => void;
   onSetHolidaySkin: () => void;
+  onDisableSkin: () => void;
 };
 
 export default function ThemeStudioHeader({
@@ -29,6 +31,7 @@ export default function ThemeStudioHeader({
   runtimeSkinName,
   isClientSkin,
   isHolidaySkin,
+  status,
   dirty,
   saving,
   saveDisabled,
@@ -38,6 +41,7 @@ export default function ThemeStudioHeader({
   onSave,
   onSetClientSkin,
   onSetHolidaySkin,
+  onDisableSkin,
 }: ThemeStudioHeaderProps) {
   const statusText = useMemo(() => {
     if (dirty) return "有未保存修改";
@@ -54,6 +58,15 @@ export default function ThemeStudioHeader({
             </span>
             {isClientSkin ? <StoreBadge type="success">客户端日常</StoreBadge> : null}
             {isHolidaySkin ? <StoreBadge type="warning">节日自动</StoreBadge> : null}
+            <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+              status === "published"
+                ? "bg-emerald-50 text-emerald-700"
+                : status === "disabled"
+                  ? "bg-slate-100 text-slate-600"
+                  : "bg-amber-50 text-amber-700"
+            }`}>
+              {status === "published" ? "已发布" : status === "disabled" ? "已禁用" : "草稿"}
+            </span>
             {dirty ? (
               <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${THEME_BADGE_WARNING}`}>{statusText}</span>
             ) : (
@@ -99,7 +112,7 @@ export default function ThemeStudioHeader({
               type="button"
               variant="secondary"
               state={saving ? "loading" : "normal"}
-              disabled={saveDisabled || isClientSkin}
+              disabled={saveDisabled || isClientSkin || status === "disabled"}
               onClick={onSetClientSkin}
               className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-border bg-background px-3 text-xs font-semibold hover:bg-secondary"
             >
@@ -110,7 +123,7 @@ export default function ThemeStudioHeader({
               type="button"
               variant="secondary"
               state={saving ? "loading" : "normal"}
-              disabled={saveDisabled || isHolidaySkin}
+              disabled={saveDisabled || isHolidaySkin || status === "disabled"}
               onClick={onSetHolidaySkin}
               className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-border bg-background px-3 text-xs font-semibold hover:bg-secondary"
             >
@@ -126,7 +139,18 @@ export default function ThemeStudioHeader({
               onClick={onSave}
               className="inline-flex h-9 rounded-xl bg-[var(--theme-primary)] px-4 text-sm font-semibold text-[var(--theme-primary-foreground)]"
             >
-              保存配置
+              保存草稿
+            </LoadingButton>
+            <LoadingButton
+              type="button"
+              variant="secondary"
+              state={saving ? "loading" : "normal"}
+              disabled={saveDisabled || status === "disabled" || isClientSkin}
+              onClick={onDisableSkin}
+              className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-border bg-background px-3 text-xs font-semibold text-muted-foreground hover:bg-secondary disabled:opacity-50"
+            >
+              <Ban size={14} />
+              禁用
             </LoadingButton>
           </PermissionGate>
         </div>

@@ -74,8 +74,11 @@ export default function HomeHeroV2({
   return (
     <section
       style={blackGoldHeroVars}
+      data-store-skin-showcase
+      data-hero-layout={themeConfig.homeLayout}
+      data-hero-banner-style={themeConfig.bannerStyle}
       className={cn(
-        "store-home-hero-v2 store-home-hero-v4 relative overflow-hidden",
+        "store-home-hero-v2 store-home-hero-v4 store-skin-hero relative overflow-hidden",
         isBlackGold
           ? "rounded-[1.35rem] bg-[linear-gradient(132deg,#0F0F0F_0%,#18140F_48%,#0A0A0A_100%)] shadow-[0_24px_70px_color-mix(in_srgb,var(--theme-primary)_18%,transparent)]"
           : clientStyle === "deep_enterprise"

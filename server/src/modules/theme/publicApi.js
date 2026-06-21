@@ -6,6 +6,12 @@ module.exports = {
   resolveRuntimeThemeSkinId: themeService.resolveRuntimeThemeSkinId,
   getActiveThemeConfig: themeService.getActiveThemeConfig,
   getThemeSkins: themeService.getThemeSkins,
+  getAdminThemeSkins: themeService.getAdminThemeSkins,
   updateThemeConfig: themeService.updateThemeConfig,
   updateThemeSkins: themeService.updateThemeSkins,
+  saveThemeSkinDraft: themeService.saveThemeSkinDraft,
+  createThemePreviewDraft: themeService.createThemePreviewDraft,
+  getThemePreviewDraft: themeService.getThemePreviewDraft,
+  publishThemeSkin: themeService.publishThemeSkin,
+  disableThemeSkin: themeService.disableThemeSkin,
 };

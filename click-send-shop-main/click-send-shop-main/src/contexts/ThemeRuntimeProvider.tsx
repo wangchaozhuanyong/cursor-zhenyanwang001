@@ -7,6 +7,7 @@ import {
 } from "@/constants/themePresets";
 import {
   THEME_PREVIEW_READY,
+  getThemePreviewParentOrigin,
   isThemePreviewApplyMessage,
   isThemePreviewFrame,
 } from "@/lib/themePreviewBridge";
@@ -16,7 +17,7 @@ import { normalizeMediaUrls } from "@/utils/mediaUrl";
 import { getClientDesignStyleBySkinId } from "@/utils/clientDesignStyle";
 import { generateThemePalette } from "@/utils/themeContrast";
 import { normalizeThemeConfig, normalizeThemeSkinsPayload, resolveRuntimeThemeSkinId } from "@/utils/themeConfig";
-import { readThemePreviewSkinId } from "@/utils/themePreviewParams";
+import { readThemePreviewDraftToken, readThemePreviewSkinId } from "@/utils/themePreviewParams";
 import type { ThemeConfig, ThemeSkin } from "@/types/theme";
 
 type ThemeMode = "light" | "dark";
@@ -49,8 +50,13 @@ function resolveThemeConfigForScope(config: ThemeConfig, inAdmin: boolean): Them
 function applyThemeDataAttributes(root: HTMLElement, config: ThemeConfig, skin?: ThemeSkin | null) {
   root.setAttribute("data-public-theme", resolvePublicThemeFromSkin(skin, config));
   root.setAttribute("data-admin-theme", config.adminThemeMode);
-  if (skin?.id) root.setAttribute("data-theme-skin-id", skin.id);
-  else root.removeAttribute("data-theme-skin-id");
+  if (skin?.id) {
+    root.setAttribute("data-theme-skin-id", skin.id);
+    root.setAttribute("data-theme", skin.id);
+  } else {
+    root.removeAttribute("data-theme-skin-id");
+    root.removeAttribute("data-theme");
+  }
   root.setAttribute("data-client-design-style", getClientDesignStyleBySkinId(skin?.id));
   if (skin?.category) root.setAttribute("data-theme-category", skin.category);
   else root.removeAttribute("data-theme-category");
@@ -67,14 +73,23 @@ function applyThemeDataAttributes(root: HTMLElement, config: ThemeConfig, skin?:
   root.setAttribute("data-theme-price-style", config.priceStyle);
   root.setAttribute("data-theme-shadow-style", config.shadowStyle);
   root.setAttribute("data-theme-home-layout", config.homeLayout);
+  root.setAttribute("data-home-layout", config.homeLayout);
   root.setAttribute("data-theme-header-style", config.headerStyle);
+  root.setAttribute("data-header-style", config.headerStyle);
   root.setAttribute("data-theme-banner-style", config.bannerStyle);
+  root.setAttribute("data-banner-style", config.bannerStyle);
   root.setAttribute("data-theme-coupon-style", config.couponStyle);
   root.setAttribute("data-theme-member-card-style", config.memberCardStyle);
   root.setAttribute("data-theme-category-icon-style", config.categoryIconStyle);
   root.setAttribute("data-theme-motion-level", config.motionLevel);
   root.setAttribute("data-theme-density", config.density);
   root.setAttribute("data-theme-admin-mode", config.adminThemeMode);
+  root.setAttribute("data-product-card", config.productCardVariant);
+  root.setAttribute("data-card-style", config.cardStyle);
+  root.setAttribute("data-texture", config.texture.material);
+  root.setAttribute("data-density", config.density);
+  root.setAttribute("data-motion", config.motionLevel);
+  root.setAttribute("data-festival-mode", config.festival.mode);
 }
 
 function chooseRuntimeSkin(normalized: ReturnType<typeof normalizeThemeSkinsPayload>) {
@@ -116,7 +131,7 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!previewFrame) return undefined;
-    const targetOrigin = window.location.origin;
+    const targetOrigin = getThemePreviewParentOrigin();
     const notifyReady = () => {
       window.parent?.postMessage({ type: THEME_PREVIEW_READY }, targetOrigin);
     };
@@ -167,6 +182,35 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
         holidayRules?: ReturnType<typeof normalizeThemeSkinsPayload>["holidayRules"];
         skins?: ThemeSkin[];
       };
+      const draftToken = readThemePreviewDraftToken();
+      if (draftToken) {
+        const draftResponse = await fetch(`${base}/theme/preview/${encodeURIComponent(draftToken)}?_=${Date.now()}`, {
+          cache: "no-store",
+          credentials: "same-origin",
+          headers: { Accept: "application/json" },
+        });
+        if (draftResponse.ok) {
+          const draftBody = (await draftResponse.json()) as {
+            code?: number;
+            data?: { themeKey?: string; name?: string; config?: ThemeConfig };
+          };
+          if ((draftBody.code ?? 0) === 0 && draftBody.data?.themeKey && draftBody.data.config) {
+            const draftSkin: ThemeSkin = {
+              id: draftBody.data.themeKey,
+              themeKey: draftBody.data.themeKey,
+              name: draftBody.data.name || "主题预览草稿",
+              category: "预览草稿",
+              sceneTag: "mall",
+              type: "evergreen",
+              status: "draft",
+              config: normalizeThemeConfig(draftBody.data.config),
+            };
+            raw.skins = [draftSkin, ...(raw.skins || []).filter((skin) => skin.id !== draftSkin.id)];
+            raw.activeSkinId = draftSkin.id;
+            raw.runtimeSkinId = draftSkin.id;
+          }
+        }
+      }
       const normalized = normalizeThemeSkinsPayload(raw);
       const chosen = chooseRuntimeSkin(normalized);
       const active = normalized.skins.find((skin) => skin.id === chosen) ?? normalized.skins[0];

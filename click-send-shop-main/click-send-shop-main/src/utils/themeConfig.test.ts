@@ -69,6 +69,62 @@ describe("themeConfig", () => {
     expect(palette["--store-panel-radius"]).toContain("10px");
   });
 
+  it("keeps new mall skin fields and mall CSS variables", () => {
+    const config = normalizeThemeConfig({
+      shadowStyle: "aerial",
+      buttonStyle: "capsule",
+      navStyle: "glassLine",
+      badgeStyle: "technical",
+      priceStyle: "tabularBold",
+      productCardVariant: "spec",
+      cardStyle: "glassBordered",
+      imageRatio: "4 / 3",
+      homeLayout: "modularShowcase",
+      headerStyle: "floatingGlass",
+      bannerStyle: "panoramicLight",
+      couponStyle: "precisionVoucher",
+      memberCardStyle: "titaniumBlue",
+      categoryIconStyle: "monoGlyph",
+      density: "airy",
+      adminThemeMode: "follow_store",
+      texture: {
+        material: "titaniumMist",
+        intensity: "subtle",
+        surface: "satinGlass",
+        grain: "microEtchedNoise",
+        grainOpacity: 0.018,
+        highlight: "edgeSheen",
+        highlightOpacity: 0.1,
+        metal: "brushedTitanium",
+        pattern: "technicalGrid",
+        patternOpacity: 0.055,
+        line: "coolHairlineInnerHighlight",
+        shadow: "wideBlueAmbientShortContact",
+        temperature: "coolNeutral",
+        imageContrast: 0.94,
+        imageSaturation: 0.88,
+      },
+      festival: {
+        mode: "none",
+        activation: "manual",
+        dateMode: "solar",
+        leadDays: 0,
+        tailDays: 0,
+        decorativeDensity: "quiet",
+        showCountdown: false,
+        fallbackSkinId: null,
+      },
+    });
+    const palette = generateThemePalette(config);
+
+    expect(config.adminThemeMode).toBe("fixed");
+    expect(config.homeLayout).toBe("modularShowcase");
+    expect(config.texture.material).toBe("titaniumMist");
+    expect(palette["--mall-bg"]).toBeTruthy();
+    expect(palette["--mall-grain-opacity"]).toBe("0.018");
+    expect(palette["--theme-image-filter"]).toContain("contrast(0.94)");
+  });
+
   it("keeps structural theme CSS wired to core storefront pages", () => {
     const css = readFileSync(join(process.cwd(), "src/styles/client-redesign.css"), "utf8");
 
@@ -87,6 +143,10 @@ describe("themeConfig", () => {
       "data-theme-banner-style",
       "data-theme-motion-level",
       "data-theme-density",
+      "data-home-layout",
+      "data-product-card",
+      "data-texture",
+      "var(--mall-surface)",
       ".store-home-v12-page",
       ".store-category-page",
       ".store-promotions-v12-card",

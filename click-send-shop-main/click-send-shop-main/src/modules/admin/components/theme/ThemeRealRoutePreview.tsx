@@ -12,11 +12,14 @@ import type { LucideIcon } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import {
+  THEME_PREVIEW_PARENT_ORIGIN_QUERY,
   THEME_PREVIEW_APPLY,
   THEME_PREVIEW_READY,
   buildThemePreviewUrl,
+  getStorefrontPreviewOrigin,
 } from "@/lib/themePreviewBridge";
 import { cn } from "@/lib/utils";
+import { createThemePreviewDraft } from "@/services/admin/themeService";
 import { fetchProducts } from "@/services/productService";
 import type { ThemeConfig } from "@/types/theme";
 import {
@@ -137,7 +140,11 @@ export default function ThemeRealRoutePreview({
   const [frameReady, setFrameReady] = useState(false);
   const [previewTimedOut, setPreviewTimedOut] = useState(false);
   const [lastAppliedAt, setLastAppliedAt] = useState<number | null>(null);
+  const [draftToken, setDraftToken] = useState<string | null>(null);
+  const [draftSaveState, setDraftSaveState] = useState<"idle" | "saving" | "ready" | "error">("idle");
   const [health, setHealth] = useState<HealthItem[]>(getPendingHealth);
+  const scene = PREVIEW_ROUTE_SCENES.find((item) => item.id === routeMode) ?? PREVIEW_ROUTE_SCENES[0];
+  const isStoreScene = scene.group === "store";
 
   useEffect(() => {
     let cancelled = false;
@@ -168,13 +175,44 @@ export default function ThemeRealRoutePreview({
   }, [routeMode]);
 
   const path = getScenePath(routeMode, productPath);
+  const previewOrigin = useMemo(
+    () => (isStoreScene ? getStorefrontPreviewOrigin() : window.location.origin),
+    [isStoreScene],
+  );
+  const isCrossOriginPreview = previewOrigin !== window.location.origin;
+  useEffect(() => {
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      setDraftSaveState("saving");
+      void createThemePreviewDraft(skinKey, { config })
+        .then((draft) => {
+          if (cancelled) return;
+          setDraftToken(draft.draftToken);
+          setDraftSaveState("ready");
+        })
+        .catch(() => {
+          if (cancelled) return;
+          setDraftSaveState("error");
+        });
+    }, 320);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [config, skinKey]);
+
   const src = useMemo(
     () => buildThemePreviewUrl(path, {
       previewScene: routeMode,
       previewDevice: device,
       previewReload: reloadKey,
+      draftToken: draftToken ?? undefined,
+      [THEME_PREVIEW_PARENT_ORIGIN_QUERY]: window.location.origin,
+    }, {
+      origin: previewOrigin,
+      absolute: isCrossOriginPreview,
     }),
-    [device, path, reloadKey, routeMode],
+    [device, draftToken, isCrossOriginPreview, path, previewOrigin, reloadKey, routeMode],
   );
 
   const postDraftTheme = useCallback(() => {
@@ -187,15 +225,24 @@ export default function ThemeRealRoutePreview({
         config,
         skinKey,
       },
-      window.location.origin,
+      previewOrigin,
     );
     lastAppliedAtRef.current = appliedAt;
     setLastAppliedAt(appliedAt);
-  }, [config, skinKey]);
+  }, [config, previewOrigin, skinKey]);
 
   const inspectFrame = useCallback(() => {
     const frame = iframeRef.current;
     if (!frame) return;
+    if (isCrossOriginPreview) {
+      setHealth([
+        { id: "load", label: "页面加载", status: frameReady ? "ok" : "pending", detail: "真实客户端域名预览" },
+        buildThemeHealth(lastAppliedAtRef.current, frameReady),
+        { id: "overflow", label: "横向溢出", status: "warn", detail: "跨域客户端页面无法读取 DOM" },
+        { id: "images", label: "图片状态", status: "warn", detail: "跨域客户端页面无法读取 DOM" },
+      ]);
+      return;
+    }
     try {
       const doc = frame.contentDocument;
       if (!doc?.documentElement) {
@@ -246,7 +293,7 @@ export default function ThemeRealRoutePreview({
         { id: "images", label: "图片状态", status: "warn", detail: "无法读取预览页" },
       ]);
     }
-  }, [frameReady]);
+  }, [frameReady, isCrossOriginPreview]);
 
   const scheduleInspection = useCallback(() => {
     if (inspectTimerRef.current) window.clearTimeout(inspectTimerRef.current);
@@ -258,7 +305,7 @@ export default function ThemeRealRoutePreview({
 
   useEffect(() => {
     const onMessage = (event: MessageEvent) => {
-      if (event.origin !== window.location.origin) return;
+      if (event.origin !== previewOrigin) return;
       if (!event.data || typeof event.data !== "object") return;
       if ((event.data as { type?: string }).type !== THEME_PREVIEW_READY) return;
       setFrameReady(true);
@@ -267,7 +314,7 @@ export default function ThemeRealRoutePreview({
     };
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [postDraftTheme, scheduleInspection]);
+  }, [postDraftTheme, previewOrigin, scheduleInspection]);
 
   useEffect(() => {
     postDraftTheme();
@@ -296,7 +343,6 @@ export default function ThemeRealRoutePreview({
   }, []);
 
   const width = DEVICE_WIDTH[device];
-  const scene = PREVIEW_ROUTE_SCENES.find((item) => item.id === routeMode) ?? PREVIEW_ROUTE_SCENES[0];
   const productHint =
     routeMode !== "product"
       ? null
@@ -334,6 +380,7 @@ export default function ThemeRealRoutePreview({
             <p className="truncate text-sm font-semibold text-foreground">{scene.label}</p>
             <p className="truncate text-[11px] text-muted-foreground">
               {productHint ?? (scene.group === "admin" ? "真实后台路由" : "真实前台路由")} · {formatAppliedTime(lastAppliedAt)}
+              {draftSaveState === "saving" ? " · 保存预览草稿中" : draftSaveState === "ready" ? " · 草稿 token 已就绪" : draftSaveState === "error" ? " · 草稿 token 保存失败，仍使用即时预览" : ""}
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-1">

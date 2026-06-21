@@ -13,8 +13,8 @@ import ThemeStudioHeader from "@/modules/admin/components/theme/ThemeStudioHeade
 import type { PreviewDevice, PreviewMode } from "@/modules/admin/components/theme/themeStudioConstants";
 import { AdminSideDrawer } from "@/modules/admin/components/AdminSideDrawer";
 import { notifyGlobalThemeUpdated } from "@/lib/themeRevision";
-import { fetchThemeSkins, saveSystemThemeSkins } from "@/services/admin/themeService";
-import type { ThemeConfig, ThemeHolidayRule, ThemeSkin } from "@/types/theme";
+import { disableThemeSkin, fetchThemeSkins, publishThemeSkin, saveThemeSkinDraft } from "@/services/admin/themeService";
+import type { ThemeConfig, ThemeHolidayRule, ThemeSkin, ThemeSkinsPayload } from "@/types/theme";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { normalizeThemeConfig, normalizeThemeSkinsPayload } from "@/utils/themeConfig";
 import { applyAutoColorAction, type AutoColorAction } from "@/utils/themeStudioAuto";
@@ -54,24 +54,6 @@ function applyThemePayload(
   setters.setThemeConfig(normalizeThemeConfig(current?.config));
 }
 
-function monthDayFromDate(date = new Date()) {
-  const month = `${date.getMonth() + 1}`.padStart(2, "0");
-  const day = `${date.getDate()}`.padStart(2, "0");
-  return `${month}-${day}`;
-}
-
-function isMonthDayInRange(value: string, start: string, end: string) {
-  if (start <= end) return value >= start && value <= end;
-  return value >= start || value <= end;
-}
-
-function getActiveHolidayRuleIds(rules: ThemeHolidayRule[], date = new Date()) {
-  const today = monthDayFromDate(date);
-  return rules
-    .filter((rule) => rule.enabled && isMonthDayInRange(today, rule.start, rule.end))
-    .map((rule) => rule.id);
-}
-
 export default function AdminThemeSettings() {
   const { locale } = useAdminTOptional();
   const isEn = locale === "en";
@@ -105,6 +87,7 @@ export default function AdminThemeSettings() {
   const runtimeSkinName = runtimeSkinId ? skins.find((skin) => skin.id === runtimeSkinId)?.name || runtimeSkinId : defaultSkinName;
   const isSelectedClientSkin = selectedSkinId === activeSkinId;
   const isSelectedHolidaySkin = selectedSkinId === holidaySkinId;
+  const selectedSkinStatus = selectedSkin?.status || "published";
   const categoryOptions = useMemo(() => {
     const values = new Set<string>();
     skins.forEach((skin) => {
@@ -117,9 +100,6 @@ export default function AdminThemeSettings() {
     () => holidayRules.filter((rule) => rule.enabled).length,
     [holidayRules],
   );
-  const activeHolidayRuleIds = useMemo(() => getActiveHolidayRuleIds(holidayRules), [holidayRules]);
-  const isHolidayRuleActiveNow = activeHolidayRuleIds.length > 0;
-
   const themeQuery = useQuery({
     queryKey: adminQueryKeys.themeSkins(),
     queryFn: fetchThemeSkins,
@@ -173,7 +153,7 @@ export default function AdminThemeSettings() {
   }, [dirty]);
 
   const applySavedPayload = (
-    saved: Awaited<ReturnType<typeof saveSystemThemeSkins>>,
+    saved: ThemeSkinsPayload,
     options?: { selectedSkinId?: string },
   ) => {
     const normalized = normalizeThemeSkinsPayload(saved);
@@ -184,42 +164,6 @@ export default function AdminThemeSettings() {
     notifyGlobalThemeUpdated();
     setDirty(false);
     markSaved();
-  };
-
-  const persist = async (
-    nextSkins: ThemeSkin[],
-    nextDefaultSkinId: string,
-    nextActiveSkinId: string,
-    message: string,
-    options?: { selectedSkinId?: string; nextHolidaySkinId?: string; nextHolidayRules?: ThemeHolidayRule[] },
-  ) => {
-    const nextHolidaySkinId = options?.nextHolidaySkinId ?? holidaySkinId;
-    const nextHolidayRules = options?.nextHolidayRules ?? holidayRules;
-    const normalized = normalizeThemeSkinsPayload({
-      defaultSkinId: nextDefaultSkinId,
-      activeSkinId: nextActiveSkinId,
-      holidaySkinId: nextHolidaySkinId,
-      holidayRules: nextHolidayRules,
-      skins: nextSkins,
-    });
-    setSaving(true);
-    try {
-      const saved = await saveSystemThemeSkins({
-        defaultSkinId: normalized.defaultSkinId,
-        activeSkinId: normalized.activeSkinId,
-        runtimeSkinId: normalized.runtimeSkinId,
-        holidaySkinId: normalized.holidaySkinId,
-        holidayRules: normalized.holidayRules,
-        skins: normalized.skins,
-      });
-      applySavedPayload(saved, { selectedSkinId: options?.selectedSkinId ?? selectedSkinId });
-      toast.success(message);
-    } catch (error) {
-      toast.error(toastErrorMessage(error, L("保存失败", "Save failed")));
-      throw error;
-    } finally {
-      setSaving(false);
-    }
   };
 
   const updateConfig = useCallback(
@@ -270,61 +214,71 @@ export default function AdminThemeSettings() {
     applySkinSwitch(id);
   };
 
-  const buildNextSkins = () => {
-    const name = selectedSkin?.name?.trim();
-    if (!name) return null;
-    return skins.map((s) => (s.id === selectedSkinId ? { ...s, config: themeConfig, name } : s));
-  };
-
   const onSaveSettings = async () => {
-    const nextSkins = buildNextSkins();
-    if (!nextSkins) return toast.error(L("皮肤名称不能为空", "Skin name cannot be empty"));
+    if (!selectedSkin?.name?.trim()) return toast.error(L("皮肤名称不能为空", "Skin name cannot be empty"));
+    setSaving(true);
     try {
-      await persist(nextSkins, defaultSkinId, activeSkinId, L("已保存皮肤配置", "Skin settings saved"), { selectedSkinId });
-    } catch {
-      // noop
+      const saved = await saveThemeSkinDraft(selectedSkinId, {
+        ...selectedSkin,
+        config: themeConfig,
+        status: "draft",
+      });
+      setSkins((prev) => prev.map((skin) => (skin.id === selectedSkinId ? { ...skin, ...saved } : skin)));
+      setThemeConfig(normalizeThemeConfig(saved.config));
+      setDirty(false);
+      markSaved();
+      queryClient.invalidateQueries({ queryKey: adminQueryKeys.themeSkins() });
+      toast.success(L("已保存为草稿，发布后才会覆盖线上皮肤", "Saved as draft; publish to go live"));
+    } catch (error) {
+      toast.error(toastErrorMessage(error, L("保存失败", "Save failed")));
+    } finally {
+      setSaving(false);
     }
   };
 
   const onSetClientSkin = async () => {
-    const nextSkins = buildNextSkins();
-    if (!nextSkins) return toast.error(L("皮肤名称不能为空", "Skin name cannot be empty"));
-    const nextHolidayRules = isHolidayRuleActiveNow
-      ? holidayRules.map((rule) => (activeHolidayRuleIds.includes(rule.id) ? { ...rule, skinId: selectedSkinId } : rule))
-      : holidayRules;
+    if (!selectedSkin?.name?.trim()) return toast.error(L("皮肤名称不能为空", "Skin name cannot be empty"));
+    setSaving(true);
     try {
-      await persist(
-        nextSkins,
-        selectedSkinId,
-        selectedSkinId,
-        isHolidayRuleActiveNow
-          ? L("已设为默认皮肤，并同步当前节日规则", "Set as default and synced current holiday rule")
-          : L("已设为客户端日常皮肤", "Set as storefront daily skin"),
-        {
-          selectedSkinId,
-          nextHolidaySkinId: isHolidayRuleActiveNow ? selectedSkinId : holidaySkinId,
-          nextHolidayRules,
-        },
-      );
-    } catch {
-      // noop
+      const saved = await publishThemeSkin(selectedSkinId, { config: themeConfig, setDefault: true });
+      applySavedPayload(saved, { selectedSkinId });
+      toast.success(L("已发布并设为默认商城皮肤", "Published and set as default storefront skin"));
+    } catch (error) {
+      toast.error(toastErrorMessage(error, L("发布失败", "Publish failed")));
+    } finally {
+      setSaving(false);
     }
   };
 
   const onSetHolidaySkin = async () => {
-    const nextSkins = buildNextSkins();
-    if (!nextSkins) return toast.error(L("皮肤名称不能为空", "Skin name cannot be empty"));
-    const nextHolidayRules = holidayRules.map((rule) => ({ ...rule, skinId: selectedSkinId }));
-    setHolidaySkinId(selectedSkinId);
-    setHolidayRules(nextHolidayRules);
+    if (!selectedSkin?.name?.trim()) return toast.error(L("皮肤名称不能为空", "Skin name cannot be empty"));
+    setSaving(true);
     try {
-      await persist(nextSkins, defaultSkinId, activeSkinId, L("已设为节日自动皮肤", "Set as holiday skin"), {
-        selectedSkinId,
-        nextHolidaySkinId: selectedSkinId,
-        nextHolidayRules,
-      });
-    } catch {
-      // noop
+      const saved = await publishThemeSkin(selectedSkinId, { config: { ...themeConfig, festival: { ...themeConfig.festival, mode: themeConfig.festival.mode === "none" ? "springFestival" : themeConfig.festival.mode } } });
+      const normalized = normalizeThemeSkinsPayload(saved);
+      const nextRules = holidayRules.map((rule) => ({ ...rule, skinId: selectedSkinId }));
+      applyThemePayload(normalized, { setSkins, setDefaultSkinId, setActiveSkinId, setRuntimeSkinId, setHolidaySkinId, setHolidayRules, setSelectedSkinId, setThemeConfig }, { selectedSkinId });
+      setHolidaySkinId(selectedSkinId);
+      setHolidayRules(nextRules);
+      toast.success(L("已发布为节日可用皮肤", "Published as a festival-ready skin"));
+    } catch (error) {
+      toast.error(toastErrorMessage(error, L("发布失败", "Publish failed")));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const onDisableSkin = async () => {
+    if (!selectedSkin) return;
+    setSaving(true);
+    try {
+      const saved = await disableThemeSkin(selectedSkin.id);
+      applySavedPayload(saved, { selectedSkinId: saved.activeSkinId || saved.defaultSkinId });
+      toast.success(L("已禁用该皮肤", "Skin disabled"));
+    } catch (error) {
+      toast.error(toastErrorMessage(error, L("禁用失败", "Disable failed")));
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -362,6 +316,7 @@ export default function AdminThemeSettings() {
             runtimeSkinName={runtimeSkinName}
             isClientSkin={isSelectedClientSkin}
             isHolidaySkin={isSelectedHolidaySkin}
+            status={selectedSkinStatus}
             dirty={dirty}
             saving={saving}
             saveDisabled={!selectedSkin?.name?.trim()}
@@ -371,6 +326,7 @@ export default function AdminThemeSettings() {
             onSave={() => void onSaveSettings()}
             onSetClientSkin={() => void onSetClientSkin()}
             onSetHolidaySkin={() => void onSetHolidaySkin()}
+            onDisableSkin={() => void onDisableSkin()}
           />
 
           <section className="mb-4 rounded-2xl border border-border bg-card p-4 shadow-sm">

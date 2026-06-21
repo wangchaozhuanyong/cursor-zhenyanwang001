@@ -83,7 +83,7 @@ export default function StoreDesktopHeader({ className }: { className?: string }
   return (
     <header
       className={cn(
-        "store-glass-surface sticky top-0 z-header hidden border-b backdrop-blur-xl xl:flex",
+        "store-desktop-header store-glass-surface sticky top-0 z-header hidden border-b backdrop-blur-xl xl:flex",
         surfaceClass,
         className,
       )}

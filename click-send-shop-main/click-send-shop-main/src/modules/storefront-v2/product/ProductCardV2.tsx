@@ -56,9 +56,10 @@ export default function ProductCardV2({
       <Link
         to={href}
         onClick={onClick}
+        data-product-card-variant={variant}
         className={cn(
           storefrontCardClassName(),
-          "store-product-card-v2 store-product-card-v2--list",
+          "store-product-card-v2 store-product-card-v2--list store-skin-product-card",
           "group grid min-w-0 grid-cols-[5.75rem_minmax(0,1fr)] items-stretch gap-3 p-2.5 hover:-translate-y-0.5 sm:grid-cols-[6rem_minmax(0,1fr)] sm:p-3",
           cardToneClassName,
           className,
@@ -66,7 +67,7 @@ export default function ProductCardV2({
         aria-label={`查看 ${vm.name}`}
       >
         <div
-          className={cn(imageClassName, "h-full min-h-[5.75rem] w-full self-stretch sm:min-h-24")}
+          className={cn(imageClassName, "store-skin-product-card__media h-full min-h-[5.75rem] w-full self-stretch sm:min-h-24")}
         >
           <ProductCoverImage
             url={vm.imageUrl}
@@ -80,7 +81,7 @@ export default function ProductCardV2({
           {vm.soldOut ? <SoldOutMask /> : null}
         </div>
 
-        <div className="flex min-h-[5.75rem] min-w-0 flex-col py-1 sm:min-h-24">
+        <div className="store-skin-product-card__info flex min-h-[5.75rem] min-w-0 flex-col py-1 sm:min-h-24">
           <h3 className={t.text.productTitle}>{vm.name}</h3>
           <BadgeRow badges={vm.badges} subtle />
           <DecisionMetaRow items={vm.decisionTexts} />
@@ -89,7 +90,7 @@ export default function ProductCardV2({
             <div className="mt-auto flex items-end justify-between gap-2 pt-2">
               <StorefrontPrice amount={vm.priceText} originalAmount={vm.originalPriceText} />
               <span className={cn(
-                "hidden h-7 shrink-0 items-center gap-1 rounded-full px-2.5 text-[11px] font-black text-[var(--theme-primary)] sm:inline-flex",
+                "store-skin-product-card__action-hint hidden h-7 shrink-0 items-center gap-1 rounded-full px-2.5 text-[11px] font-black text-[var(--theme-primary)] sm:inline-flex",
                 clientStyle === "black_gold" ? "bg-[color-mix(in_srgb,var(--theme-primary)_15%,var(--theme-surface))]" : "bg-[color-mix(in_srgb,var(--theme-primary)_8%,var(--theme-surface))]",
               )}>
                 查看
@@ -106,9 +107,10 @@ export default function ProductCardV2({
     <Link
       to={href}
       onClick={onClick}
+      data-product-card-variant={variant}
       className={cn(
         storefrontCardClassName(),
-        "store-product-card-v2",
+        "store-product-card-v2 store-skin-product-card",
         "group flex min-w-0 flex-col overflow-hidden p-1.5 hover:-translate-y-0.5",
         cardToneClassName,
         variant === "compact" && "max-w-[13rem]",
@@ -117,7 +119,7 @@ export default function ProductCardV2({
       aria-label={`查看 ${vm.name}`}
     >
       <div
-        className={cn(imageClassName, "w-full")}
+        className={cn(imageClassName, "store-skin-product-card__media w-full")}
         style={THEME_PRODUCT_MEDIA_ASPECT_STYLE}
       >
         <ProductCoverImage
@@ -141,14 +143,14 @@ export default function ProductCardV2({
         {vm.soldOut ? <SoldOutMask /> : null}
       </div>
 
-      <div className="flex min-h-[132px] flex-1 flex-col px-1.5 pb-2 pt-3 sm:px-2">
+      <div className="store-skin-product-card__info flex min-h-[132px] flex-1 flex-col px-1.5 pb-2 pt-3 sm:px-2">
         <h3 className={t.text.productTitle}>{vm.name}</h3>
         <DecisionMetaRow items={vm.decisionTexts} />
         <ActivityProgressBar percent={vm.activityProgressPercent} text={vm.activityProgressText} />
         {showPrice ? (
           <div className="mt-auto flex items-end justify-between gap-2 pt-3">
             <StorefrontPrice amount={vm.priceText} originalAmount={vm.originalPriceText} />
-            <span className={cn("store-product-card-v2__action", actionClassName)}>
+            <span className={cn("store-product-card-v2__action store-skin-product-card__action-hint", actionClassName)}>
               <ShoppingCart size={14} />
             </span>
           </div>

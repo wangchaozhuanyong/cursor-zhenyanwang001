@@ -19,6 +19,7 @@ import HomeTrustBar from "@/components/HomeTrustBar";
 import { useHomeBanners } from "@/hooks/useHomeBanners";
 import { useProductStore } from "@/stores/useProductStore";
 import HomeOpsBlocks from "./HomeOpsBlocks";
+import HomeSkinShowcase from "./HomeSkinShowcase";
 import LazyHomeSection from "./LazyHomeSection";
 import NewArrivalSection from "./NewArrivalOpsSection";
 import type { Product } from "@/types/product";
@@ -31,7 +32,6 @@ import { getHomeModuleCustomTitle, getHomeModuleTitle, isHomeModuleEnabled } fro
 import {
   HOME_GUEST_FOOTER_WRAP_CLASS,
   HOME_GUEST_MAIN_CLASS,
-  HOME_HERO_STACK_CLASS,
 } from "@/constants/homeLayout";
 import { STORE_COPY } from "@/constants/storeCopy";
 import { cn } from "@/lib/utils";
@@ -348,32 +348,27 @@ export default function GuestHome() {
         {(guestBannerEnabled ||
           isHomeModuleEnabled(homeModules, "trust_bar", "guest") ||
           showNavGrid) ? (
-          <div className={HOME_HERO_STACK_CLASS}>
-        {guestBannerEnabled ? (
-          <section>
-            <div className="store-home-desktop-hero-panel">
-              <div className="store-home-desktop-hero-media">
-                <BannerCarousel
-                  banners={banners}
-                  loading={bannersLoading}
-                  themeConfigOverride={themeConfig}
-                  autoRotateMs={homeModules.bannerAutoplaySeconds * 1000}
-                />
+          <HomeSkinShowcase
+            audience="guest"
+            title={slogan}
+            subtitle={description}
+            hero={guestBannerEnabled ? (
+              <div className="store-home-desktop-hero-panel">
+                <div className="store-home-desktop-hero-media">
+                  <BannerCarousel
+                    banners={banners}
+                    loading={bannersLoading}
+                    themeConfigOverride={themeConfig}
+                    autoRotateMs={homeModules.bannerAutoplaySeconds * 1000}
+                  />
+                </div>
               </div>
-            </div>
-          </section>
-        ) : null}
-        {isHomeModuleEnabled(homeModules, "trust_bar", "guest") ? (
-          <section>
-            <HomeTrustBar className="store-home-desktop-trust" />
-          </section>
-        ) : null}
-        {showNavGrid ? (
-          <section className="store-home-desktop-nav-section -mx-[var(--store-page-x)] md:mx-0">
-            <HomeOpsBlocks />
-          </section>
-        ) : null}
-          </div>
+            ) : undefined}
+            trust={isHomeModuleEnabled(homeModules, "trust_bar", "guest") ? (
+              <HomeTrustBar className="store-home-desktop-trust" />
+            ) : undefined}
+            nav={showNavGrid ? <HomeOpsBlocks /> : undefined}
+          />
         ) : null}
 
         {showGuestNewArrivals ? (

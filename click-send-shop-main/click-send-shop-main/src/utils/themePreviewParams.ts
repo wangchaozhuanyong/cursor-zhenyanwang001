@@ -1,4 +1,5 @@
 export const THEME_PREVIEW_PARAM_NAMES = ["skin", "client_skin", "theme_skin"] as const;
+export const THEME_PREVIEW_DRAFT_TOKEN_PARAM = "draftToken";
 
 export function readThemePreviewSkinId(search = typeof window !== "undefined" ? window.location.search : ""): string | null {
   if (!search) return null;
@@ -8,6 +9,12 @@ export function readThemePreviewSkinId(search = typeof window !== "undefined" ? 
     if (value) return value;
   }
   return null;
+}
+
+export function readThemePreviewDraftToken(search = typeof window !== "undefined" ? window.location.search : ""): string | null {
+  if (!search) return null;
+  const value = new URLSearchParams(search).get(THEME_PREVIEW_DRAFT_TOKEN_PARAM)?.trim();
+  return value || null;
 }
 
 export function appendThemePreviewParams(path: string, search = typeof window !== "undefined" ? window.location.search : "") {

@@ -188,6 +188,30 @@ function getFontFamily(fontFamily: string) {
 
 function getShadowVariables(style: string, isDark: boolean) {
   if (style === "none") return { "--theme-shadow": "none", "--theme-shadow-hover": "none" };
+  if (style === "aerial" || style === "moonlight") {
+    return {
+      "--theme-shadow": `0 18px 44px -30px ${isDark ? "rgba(8,14,24,0.82)" : "rgba(24,59,91,0.18)"}`,
+      "--theme-shadow-hover": `0 24px 56px -30px ${isDark ? "rgba(8,14,24,0.9)" : "rgba(24,59,91,0.25)"}`,
+    };
+  }
+  if (style === "paper") {
+    return {
+      "--theme-shadow": "0 1px 0 rgba(31,41,24,0.05), 0 14px 28px -26px rgba(42,52,30,0.24)",
+      "--theme-shadow-hover": "0 2px 0 rgba(31,41,24,0.06), 0 20px 36px -28px rgba(42,52,30,0.3)",
+    };
+  }
+  if (style === "velvet") {
+    return {
+      "--theme-shadow": "0 18px 46px -34px rgba(61,42,86,0.34)",
+      "--theme-shadow-hover": "0 24px 58px -34px rgba(61,42,86,0.42)",
+    };
+  }
+  if (style === "lantern") {
+    return {
+      "--theme-shadow": "0 18px 44px -30px rgba(174,31,38,0.28), 0 2px 10px -8px rgba(197,154,66,0.26)",
+      "--theme-shadow-hover": "0 24px 58px -32px rgba(174,31,38,0.36), 0 4px 14px -10px rgba(197,154,66,0.32)",
+    };
+  }
   if (style === "subtle") {
     return {
       "--theme-shadow": `0 4px 14px -8px ${isDark ? "rgba(0,0,0,0.72)" : "rgba(15,23,42,0.12)"}`,
@@ -224,6 +248,41 @@ function getCardShellVariables(
   themeShadowHover: string,
 ): Record<string, string> {
   switch (cardStyle) {
+    case "glassBordered":
+      return {
+        "--theme-card-shell-bg": `color-mix(in srgb, ${surfaceCss} 78%, transparent)`,
+        "--theme-card-shell-border": `1px solid color-mix(in srgb, ${borderCss} 82%, white)`,
+        "--theme-card-shell-shadow": themeShadow,
+        "--theme-card-shell-shadow-hover": themeShadowHover,
+      };
+    case "paperLayered":
+      return {
+        "--theme-card-shell-bg": surfaceCss,
+        "--theme-card-shell-border": `1px solid color-mix(in srgb, ${borderCss} 74%, #9a7a47)`,
+        "--theme-card-shell-shadow": "0 1px 0 rgba(0,0,0,0.04), 0 14px 26px -24px rgba(50,45,32,0.28)",
+        "--theme-card-shell-shadow-hover": "0 2px 0 rgba(0,0,0,0.05), 0 18px 32px -24px rgba(50,45,32,0.34)",
+      };
+    case "framelessFloat":
+      return {
+        "--theme-card-shell-bg": "transparent",
+        "--theme-card-shell-border": "none",
+        "--theme-card-shell-shadow": "none",
+        "--theme-card-shell-shadow-hover": "0 18px 36px -30px rgba(61,42,86,0.32)",
+      };
+    case "silkBordered":
+      return {
+        "--theme-card-shell-bg": surfaceCss,
+        "--theme-card-shell-border": `1px solid color-mix(in srgb, ${borderCss} 72%, #c59a42)`,
+        "--theme-card-shell-shadow": "0 18px 34px -28px rgba(185,31,44,0.24)",
+        "--theme-card-shell-shadow-hover": "0 22px 42px -28px rgba(185,31,44,0.32)",
+      };
+    case "moonHaloBordered":
+      return {
+        "--theme-card-shell-bg": surfaceCss,
+        "--theme-card-shell-border": `1px solid color-mix(in srgb, ${borderCss} 78%, #b99952)`,
+        "--theme-card-shell-shadow": "0 18px 40px -32px rgba(36,60,99,0.26)",
+        "--theme-card-shell-shadow-hover": "0 24px 48px -32px rgba(36,60,99,0.32)",
+      };
     case "seamless":
       return {
         "--theme-card-shell-bg": "transparent",
@@ -688,7 +747,7 @@ export function generateThemePalette(adminConfig: ThemeConfig) {
     "--theme-text-muted-on-surface": surfaceMutedText,
     "--theme-text-subtle": rgbToCss(mixColors(parseColor(text), bg, 0.78)),
     "--theme-radius": config.radius,
-    "--theme-button-radius": config.buttonStyle === "pill" ? "999px" : config.buttonStyle === "square" ? "8px" : config.radius,
+    "--theme-button-radius": config.buttonStyle === "pill" || config.buttonStyle === "capsule" ? "999px" : config.buttonStyle === "square" ? "8px" : config.radius,
     "--theme-card-radius": config.radius,
     "--radius": config.radius,
     "--theme-font": getFontFamily(config.fontFamily),
@@ -711,9 +770,36 @@ export function generateThemePalette(adminConfig: ThemeConfig) {
     "--theme-member-card-style": config.memberCardStyle || "light",
     "--theme-category-icon-style": config.categoryIconStyle || "circle",
     "--theme-admin-mode": config.adminThemeMode || "fixed",
-    "--theme-density-gap": config.density === "compact" ? "0.5rem" : "0.75rem",
-    "--theme-density-pad": config.density === "compact" ? "0.5rem" : "0.75rem",
-    "--theme-density-row": config.density === "compact" ? "2.25rem" : "2.75rem",
+    "--theme-texture-material": config.texture.material,
+    "--theme-texture-surface": config.texture.surface,
+    "--theme-texture-grain": config.texture.grain,
+    "--theme-texture-pattern": config.texture.pattern,
+    "--theme-texture-line": config.texture.line,
+    "--theme-texture-shadow": config.texture.shadow,
+    "--theme-texture-temperature": config.texture.temperature,
+    "--theme-grain-opacity": String(config.texture.grainOpacity),
+    "--theme-pattern-opacity": String(config.texture.patternOpacity),
+    "--theme-highlight-opacity": String(config.texture.highlightOpacity),
+    "--theme-image-filter": `contrast(${config.texture.imageContrast}) saturate(${config.texture.imageSaturation})`,
+    "--theme-density-gap": config.density === "compact" ? "0.5rem" : config.density === "airy" ? "1rem" : "0.75rem",
+    "--theme-density-pad": config.density === "compact" ? "0.5rem" : config.density === "airy" ? "1rem" : "0.75rem",
+    "--theme-density-row": config.density === "compact" ? "2.25rem" : config.density === "airy" ? "3rem" : "2.75rem",
+    "--mall-bg": bgCss,
+    "--mall-surface": surfaceCss,
+    "--mall-primary": primaryCss,
+    "--mall-secondary": secondaryCss,
+    "--mall-accent": accentCss,
+    "--mall-price": priceCss,
+    "--mall-border": borderCss,
+    "--mall-text": text,
+    "--mall-muted": mutedText,
+    "--mall-success": successCss,
+    "--mall-warning": warningCss,
+    "--mall-danger": dangerCss,
+    "--mall-radius": config.radius,
+    "--mall-grain-opacity": String(config.texture.grainOpacity),
+    "--mall-pattern-opacity": String(config.texture.patternOpacity),
+    "--mall-highlight-opacity": String(config.texture.highlightOpacity),
     ...getCardShellVariables(config.cardStyle, surfaceCss, borderCss, shadows["--theme-shadow"], shadows["--theme-shadow-hover"]),
     ...storefrontSurface,
     "--shadow-color": rgbToRgba(shadowTone, isDarkBg ? 0.7 : 0.26),

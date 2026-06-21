@@ -13,6 +13,7 @@ import BannerCarousel from "@/components/BannerCarousel";
 import HomeTrustBar from "@/components/HomeTrustBar";
 import { useHomeBanners } from "@/hooks/useHomeBanners";
 import HomeOpsBlocks from "./HomeOpsBlocks";
+import HomeSkinShowcase from "./HomeSkinShowcase";
 import LazyHomeSection from "./LazyHomeSection";
 import { AnimatedSection } from "@/modules/micro-interactions";
 import NewArrivalSection from "./NewArrivalOpsSection";
@@ -26,7 +27,7 @@ import { isLoggedIn } from "@/utils/token";
 import * as authService from "@/services/authService";
 import { useHomeModuleSettings } from "@/hooks/useHomeModuleSettings";
 import { getHomeModuleCustomTitle, getHomeModuleTitle, isHomeModuleEnabled } from "@/constants/homeModules";
-import { HOME_HERO_STACK_CLASS, HOME_PAGE_MAIN_CLASS } from "@/constants/homeLayout";
+import { HOME_PAGE_MAIN_CLASS } from "@/constants/homeLayout";
 import { STORE_COPY } from "@/constants/storeCopy";
 import SeoHead from "@/components/SeoHead";
 import { buildCanonical } from "@/utils/seo";
@@ -196,30 +197,33 @@ export default function MemberHome() {
         {(isHomeModuleEnabled(homeModules, "banner", "member") ||
           isHomeModuleEnabled(homeModules, "trust_bar", "member") ||
           isHomeModuleEnabled(homeModules, "nav_grid", "member")) ? (
-          <div className={HOME_HERO_STACK_CLASS}>
-        {isHomeModuleEnabled(homeModules, "banner", "member") ? (
-          <AnimatedSection>
-            <div className={isPremiumLayout || isMagazineLayout ? "overflow-hidden rounded-2xl border border-[var(--theme-border)] theme-shadow" : ""}>
-              <BannerCarousel
-                banners={banners}
-                loading={bannersLoading}
-                themeConfigOverride={themeConfig}
-                autoRotateMs={homeModules.bannerAutoplaySeconds * 1000}
-              />
-            </div>
-          </AnimatedSection>
-        ) : null}
-        {isHomeModuleEnabled(homeModules, "trust_bar", "member") ? (
-          <AnimatedSection delay={0.05}>
-            <HomeTrustBar />
-          </AnimatedSection>
-        ) : null}
-        {isHomeModuleEnabled(homeModules, "nav_grid", "member") ? (
-          <AnimatedSection delay={0.08} className="-mx-[var(--store-page-x)] md:mx-0">
-            <HomeOpsBlocks />
-          </AnimatedSection>
-        ) : null}
-          </div>
+          <HomeSkinShowcase
+            audience="member"
+            title={siteInfo.siteSlogan || `${siteName} 会员精选`}
+            subtitle={siteInfo.siteDescription || STORE_COPY.siteDescription}
+            hero={isHomeModuleEnabled(homeModules, "banner", "member") ? (
+              <AnimatedSection>
+                <div className={isPremiumLayout || isMagazineLayout ? "overflow-hidden rounded-2xl border border-[var(--theme-border)] theme-shadow" : ""}>
+                  <BannerCarousel
+                    banners={banners}
+                    loading={bannersLoading}
+                    themeConfigOverride={themeConfig}
+                    autoRotateMs={homeModules.bannerAutoplaySeconds * 1000}
+                  />
+                </div>
+              </AnimatedSection>
+            ) : undefined}
+            trust={isHomeModuleEnabled(homeModules, "trust_bar", "member") ? (
+              <AnimatedSection delay={0.05}>
+                <HomeTrustBar />
+              </AnimatedSection>
+            ) : undefined}
+            nav={isHomeModuleEnabled(homeModules, "nav_grid", "member") ? (
+              <AnimatedSection delay={0.08} className="-mx-[var(--store-page-x)] md:mx-0">
+                <HomeOpsBlocks />
+              </AnimatedSection>
+            ) : undefined}
+          />
         ) : null}
         {isHomeModuleEnabled(homeModules, "new_arrivals", "member") ? (
         <AnimatedSection delay={0.12}>

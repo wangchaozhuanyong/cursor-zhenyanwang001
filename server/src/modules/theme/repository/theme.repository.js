@@ -144,6 +144,7 @@ async function deleteExpiredPreviewDrafts(now) {
 }
 
 async function insertPreviewDraft(row) {
+  const createdBy = row.createdBy ? String(row.createdBy).slice(0, 36) : null;
   await db.query(
     `INSERT INTO theme_preview_drafts
        (draft_token, theme_key, config_json, created_by, expires_at)
@@ -152,7 +153,7 @@ async function insertPreviewDraft(row) {
        config_json = VALUES(config_json),
        expires_at = VALUES(expires_at),
        updated_at = CURRENT_TIMESTAMP`,
-    [row.draftToken, row.themeKey, row.configJson, row.createdBy || null, row.expiresAt],
+    [row.draftToken, row.themeKey, row.configJson, createdBy, row.expiresAt],
   );
 }
 

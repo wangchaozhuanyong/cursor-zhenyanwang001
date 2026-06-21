@@ -53,6 +53,41 @@ app.use((req, res, next) => {
 const publicUrl = (process.env.PUBLIC_APP_URL || '').trim();
 const useHttpsSite = publicUrl.startsWith('https://');
 
+function normalizeOrigin(value) {
+  if (!value) return null;
+  try {
+    const normalized = String(value).trim();
+    if (!normalized) return null;
+    return new URL(normalized).origin;
+  } catch {
+    return null;
+  }
+}
+
+function splitCsv(value) {
+  return String(value || '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function getPreviewFrameOrigins() {
+  return Array.from(new Set([
+    normalizeOrigin(process.env.PUBLIC_APP_URL),
+    normalizeOrigin(process.env.ADMIN_PUBLIC_URL),
+    normalizeOrigin(process.env.ADMIN_FRONTEND_URL),
+    ...splitCsv(process.env.ADMIN_ALLOWED_ORIGINS).map(normalizeOrigin),
+  ].filter(Boolean)));
+}
+
+function getAdminFrameAncestorOrigins() {
+  return Array.from(new Set([
+    normalizeOrigin(process.env.ADMIN_PUBLIC_URL),
+    normalizeOrigin(process.env.ADMIN_FRONTEND_URL),
+    ...splitCsv(process.env.ADMIN_ALLOWED_ORIGINS).map(normalizeOrigin),
+  ].filter(Boolean)));
+}
+
 function getStorageAllowedOrigins() {
   const origins = new Set();
   const driver = (process.env.STORAGE_DRIVER || '').trim().toLowerCase();
@@ -208,6 +243,8 @@ function isSensitiveFileProbe(req) {
 /** Extend Helmet CSP for configured image storage, analytics, and Stripe. */
 const helmetCspDefaults = helmet.contentSecurityPolicy.getDefaultDirectives();
 const storageAllowedOrigins = getStorageAllowedOrigins();
+const previewFrameOrigins = getPreviewFrameOrigins();
+const adminFrameAncestorOrigins = getAdminFrameAncestorOrigins();
 const cspDirectives = {
   ...helmetCspDefaults,
   'img-src': [
@@ -240,7 +277,8 @@ const cspDirectives = {
     // Meta Pixel 上报（部分浏览器走 fetch）
     'https://www.facebook.com',
   ],
-  'frame-src': ["'self'", 'https://js.stripe.com', 'https://hooks.stripe.com'],
+  'frame-src': ["'self'", ...previewFrameOrigins, 'https://js.stripe.com', 'https://hooks.stripe.com'],
+  'frame-ancestors': ["'self'", ...adminFrameAncestorOrigins],
 };
 if (!useHttpsSite) {
   cspDirectives['upgrade-insecure-requests'] = null;

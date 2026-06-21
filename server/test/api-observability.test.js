@@ -1,4 +1,7 @@
 require('./setupTestEnv').loadTestEnv();
+process.env.PUBLIC_APP_URL = 'https://damatong.net';
+process.env.ADMIN_PUBLIC_URL = 'https://console.damatong.net';
+process.env.ADMIN_ALLOWED_ORIGINS = 'https://console.damatong.net';
 const { test, describe } = require('node:test');
 const assert = require('node:assert/strict');
 const express = require('express');
@@ -117,6 +120,16 @@ describe('API observability guardrails', () => {
       .expect(404);
 
     assert.doesNotMatch(res.text, /JWT_SECRET|DB_PASSWORD|STRIPE_SECRET_KEY/i);
+  });
+
+  test('CSP allows admin console to embed storefront theme preview', async () => {
+    const res = await request(app)
+      .get('/api/health/live')
+      .expect(200);
+    const csp = res.headers['content-security-policy'] || '';
+
+    assert.match(csp, /frame-src[^;]*https:\/\/damatong\.net/);
+    assert.match(csp, /frame-ancestors[^;]*https:\/\/console\.damatong\.net/);
   });
 
   test('missing hashed frontend chunks are classified as cache inconsistency in Chinese logs', () => {

@@ -133,6 +133,9 @@ export default function ThemeRealRoutePreview({
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const inspectTimerRef = useRef<number | null>(null);
   const lastAppliedAtRef = useRef<number | null>(null);
+  const frameReadyRef = useRef(false);
+  const readyFrameOriginRef = useRef<string | null>(null);
+  const readyFrameSrcRef = useRef<string | null>(null);
   const routeMode = toRouteMode(mode);
   const [reloadKey, setReloadKey] = useState(0);
   const [productPath, setProductPath] = useState<string | null>(null);
@@ -218,18 +221,25 @@ export default function ThemeRealRoutePreview({
   const postDraftTheme = useCallback(() => {
     const target = iframeRef.current?.contentWindow;
     if (!target) return;
+    if (!frameReadyRef.current || readyFrameOriginRef.current !== previewOrigin || readyFrameSrcRef.current !== src) {
+      return;
+    }
     const appliedAt = Date.now();
-    target.postMessage(
-      {
-        type: THEME_PREVIEW_APPLY,
-        config,
-        skinKey,
-      },
-      previewOrigin,
-    );
+    try {
+      target.postMessage(
+        {
+          type: THEME_PREVIEW_APPLY,
+          config,
+          skinKey,
+        },
+        previewOrigin,
+      );
+    } catch {
+      return;
+    }
     lastAppliedAtRef.current = appliedAt;
     setLastAppliedAt(appliedAt);
-  }, [config, previewOrigin, skinKey]);
+  }, [config, previewOrigin, skinKey, src]);
 
   const inspectFrame = useCallback(() => {
     const frame = iframeRef.current;
@@ -305,16 +315,20 @@ export default function ThemeRealRoutePreview({
 
   useEffect(() => {
     const onMessage = (event: MessageEvent) => {
+      if (event.source !== iframeRef.current?.contentWindow) return;
       if (event.origin !== previewOrigin) return;
       if (!event.data || typeof event.data !== "object") return;
       if ((event.data as { type?: string }).type !== THEME_PREVIEW_READY) return;
+      frameReadyRef.current = true;
+      readyFrameOriginRef.current = event.origin;
+      readyFrameSrcRef.current = src;
       setFrameReady(true);
       postDraftTheme();
       scheduleInspection();
     };
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [postDraftTheme, previewOrigin, scheduleInspection]);
+  }, [postDraftTheme, previewOrigin, scheduleInspection, src]);
 
   useEffect(() => {
     postDraftTheme();
@@ -323,6 +337,9 @@ export default function ThemeRealRoutePreview({
 
   useEffect(() => {
     setFrameReady(false);
+    frameReadyRef.current = false;
+    readyFrameOriginRef.current = null;
+    readyFrameSrcRef.current = null;
     setPreviewTimedOut(false);
     lastAppliedAtRef.current = null;
     setLastAppliedAt(null);

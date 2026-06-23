@@ -208,7 +208,7 @@ export default function AdminHomeNavEditor({ onDirtyChange }: Props) {
         <Grid3X3 size={18} className="text-theme-price" />
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="font-semibold text-foreground"><Tx>金刚区导航</Tx></h2>
+            <h2 className="font-semibold text-foreground"><Tx>快捷入口</Tx></h2>
             <AdminFieldHint text={<Tx>配置图标、标题、跳转方式、排序和启用状态。</Tx>} />
           </div>
         </div>

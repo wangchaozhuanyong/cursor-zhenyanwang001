@@ -17,6 +17,8 @@ type HomePrimaryCampaignV2Props = {
   onCampaignClick?: (campaign: StorefrontCampaignVm, position: string) => void;
 };
 
+const CAMPAIGN_SKELETON_COUNT = 4;
+
 export default function HomePrimaryCampaignV2({
   campaigns,
   fallbackCampaigns = [],
@@ -58,11 +60,41 @@ export default function HomePrimaryCampaignV2({
 
   if (loading && !primary) {
     return (
-      <section className="min-w-0" aria-busy="true" aria-label="活动优惠加载中">
-        <div className="mb-3 h-6 w-28 animate-pulse rounded-full bg-[color-mix(in_srgb,var(--theme-primary)_10%,var(--theme-surface))]" />
-        <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, index) => (
-            <div key={index} className="h-24 animate-pulse rounded-[1rem] border border-[var(--theme-border)] bg-[var(--theme-surface)]" />
+      <section
+        className="store-home-v4-campaigns store-home-v4-campaigns--festive min-w-0"
+        aria-busy="true"
+        aria-label="活动优惠加载中"
+      >
+        <StorefrontTitleRow
+          title="今日优惠"
+          action={(
+            <UnifiedButton
+              type="button"
+              disabled
+              className="store-home-v12-shelf__action"
+              aria-label="活动优惠加载中"
+            >
+              <Gift size={14} aria-hidden />
+              <span>去领取</span>
+            </UnifiedButton>
+          )}
+        />
+        <div className="store-home-v4-campaign-grid grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: CAMPAIGN_SKELETON_COUNT }).map((_, index) => (
+            <div
+              key={index}
+              className="store-home-v4-campaign-card store-home-v4-campaign-card--loading flex min-h-[7.25rem] min-w-0 items-center gap-3 border bg-[var(--theme-surface)] p-3 text-left shadow-sm"
+              data-campaign-priority={index === 0 ? "primary" : "secondary"}
+              aria-hidden="true"
+            >
+              <span className="store-home-v4-campaign-icon skeleton-base skeleton-shimmer grid h-12 w-12 shrink-0 place-items-center rounded-[0.875rem]" />
+              <span className="min-w-0 flex-1 space-y-2">
+                <span className="skeleton-base skeleton-shimmer block h-4 w-24 rounded-full" />
+                <span className="skeleton-base skeleton-shimmer block h-5 w-4/5 max-w-full rounded-full" />
+                <span className="skeleton-base skeleton-shimmer block h-3 w-3/5 max-w-full rounded-full" />
+              </span>
+              <span className="store-home-v4-campaign-action skeleton-base skeleton-shimmer inline-flex h-8 w-20 shrink-0 rounded-full" />
+            </div>
           ))}
         </div>
       </section>

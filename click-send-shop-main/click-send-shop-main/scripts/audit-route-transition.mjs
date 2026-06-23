@@ -13,6 +13,7 @@ const MAX_PREHEATED_FALLBACK_MS = Number(process.env.ROUTE_AUDIT_MAX_FALLBACK_MS
 const SAMPLE_INTERVAL_MS = Number(process.env.ROUTE_AUDIT_SAMPLE_INTERVAL_MS || "40");
 const SAMPLE_WINDOW_MS = Number(process.env.ROUTE_AUDIT_SAMPLE_WINDOW_MS || "920");
 const NEW_ARRIVAL_CATEGORY_PATH = "/categories?is_new=1&home_new_arrivals_rule=1";
+const BLOCK_SERVICE_WORKERS = process.env.ROUTE_AUDIT_ALLOW_SERVICE_WORKER !== "1";
 
 const publicRoutes = ["/", "/categories", "/promotions", "/cart", "/profile", "/search", NEW_ARRIVAL_CATEGORY_PATH];
 const adminRoutes = ["/admin", "/admin/products", "/admin/orders", "/admin/settings/theme"];
@@ -427,6 +428,7 @@ async function auditPublicMobile(browser, baseUrl) {
     userAgent:
       "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1",
     ignoreHTTPSErrors: true,
+    serviceWorkers: BLOCK_SERVICE_WORKERS ? "block" : "allow",
   });
   await addLayoutShiftObserver(context);
   const page = await context.newPage();
@@ -446,6 +448,7 @@ async function auditPublicDesktop(browser, baseUrl) {
   const context = await browser.newContext({
     viewport: { width: 1366, height: 768 },
     ignoreHTTPSErrors: true,
+    serviceWorkers: BLOCK_SERVICE_WORKERS ? "block" : "allow",
   });
   await addLayoutShiftObserver(context);
   const page = await context.newPage();
@@ -479,6 +482,7 @@ async function auditAdmin(browser, launch, session) {
   const context = await browser.newContext({
     viewport: { width: 1440, height: 900 },
     ignoreHTTPSErrors: true,
+    serviceWorkers: BLOCK_SERVICE_WORKERS ? "block" : "allow",
   });
   await addLayoutShiftObserver(context);
   if (session) {
@@ -564,6 +568,7 @@ async function main() {
       maxLayoutShift: MAX_LAYOUT_SHIFT,
       maxPreheatedFallbackMs: MAX_PREHEATED_FALLBACK_MS,
     },
+    serviceWorkers: BLOCK_SERVICE_WORKERS ? "blocked" : "allowed",
     results,
     warnings,
     issues,

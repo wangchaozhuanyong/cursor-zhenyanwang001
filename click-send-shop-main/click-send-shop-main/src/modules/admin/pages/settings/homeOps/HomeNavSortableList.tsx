@@ -85,7 +85,7 @@ export default function HomeNavSortableList({
 
       {!loading && navItems.length === 0 && (
         <div className="py-8 text-center text-sm text-muted-foreground">
-          <Tx>暂无金刚区导航</Tx>
+          <Tx>暂无快捷入口</Tx>
         </div>
       )}
     </div>

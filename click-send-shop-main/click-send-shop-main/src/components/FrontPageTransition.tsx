@@ -14,7 +14,11 @@ export default function FrontPageTransition({ children }: { children: ReactNode 
   const disableTransform = shouldDisableStoreRouteTransform(pathname);
 
   return (
-    <AnimatedPage className={isTabRoute ? "store-tab-route-transition" : undefined} disableTransform={disableTransform}>
+    <AnimatedPage
+      className={isTabRoute ? "store-tab-route-transition" : undefined}
+      disableAnimation={isTabRoute}
+      disableTransform={disableTransform}
+    >
       {children}
     </AnimatedPage>
   );

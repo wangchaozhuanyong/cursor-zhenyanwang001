@@ -1,19 +1,14 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import {
-  BadgePercent,
-  ClipboardList,
-  Gift,
   PackageSearch,
   RefreshCw,
-  Sparkles,
-  Ticket,
-  Truck,
   Users,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import SeoHead from "@/components/SeoHead";
 import HomeTrustBar from "@/components/HomeTrustBar";
-import HomeOpsBlocks from "@/modules/public/pages/home/HomeOpsBlocks";
+import HomeNavIcon from "@/components/store/HomeNavIcon";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useHomeBanners } from "@/hooks/useHomeBanners";
@@ -40,7 +35,9 @@ import { NEW_ARRIVAL_CATEGORY_PATH } from "@/constants/newArrivalNavigation";
 import { getHomeModuleTitle, isHomeModuleEnabled } from "@/constants/homeModules";
 import { STORE_COPY } from "@/constants/storeCopy";
 import { usePublicLocale } from "@/i18n/publicLocale";
-import type { FooterNavItem } from "@/types/content";
+import type { FooterNavItem, HomeNavItem } from "@/types/content";
+import { filterVisibleHomeNavItems } from "@/utils/homeNavCapabilities";
+import { normalizeHomeNavText, openHomeNavItemTarget } from "@/utils/homeNavTarget";
 import { useClientDesignStyle } from "../design/useClientDesignStyle";
 import type { StorefrontCampaignVm } from "../campaign/campaignTypes";
 import {
@@ -66,7 +63,7 @@ export default function StoreHomeV2() {
   const { themeConfig } = useThemeRuntime();
   const { localizedPath } = usePublicLocale();
   const clientStyle = useClientDesignStyle();
-  const { settings: homeModules, ready: homeModulesReady } = useHomeModuleSettings();
+  const { settings: homeModules, navItems, ready: homeModulesReady } = useHomeModuleSettings();
   const { banners, loading: bannersLoading } = useHomeBanners();
 
   const hotProducts = useProductStore((state) => state.hotProducts);
@@ -273,11 +270,14 @@ export default function StoreHomeV2() {
           onNavigate={navigatePath}
         />
 
-        <HomeProcurementCommand
-          couponEnabled={siteCapabilities.couponEnabled}
-          pointsEnabled={siteCapabilities.pointsEnabled}
-          onNavigate={navigatePath}
-        />
+        {showNavGrid ? (
+          <HomeQuickEntryPanel
+            navItems={navItems}
+            ready={homeModulesReady}
+            capabilities={siteCapabilities}
+            onNavigate={navigatePath}
+          />
+        ) : null}
 
         <HomePrimaryCampaignV2
           campaigns={enabledCampaigns}
@@ -287,12 +287,6 @@ export default function StoreHomeV2() {
           onCampaignImpression={handleCampaignImpression}
           onCampaignClick={handleCampaignClick}
         />
-
-        {showNavGrid ? (
-          <div className="store-home-v4-nav-panel overflow-hidden">
-            <HomeOpsBlocks />
-          </div>
-        ) : null}
 
         {showTrustBar ? <HomeTrustBar className="store-home-trust-compact" /> : null}
 
@@ -401,75 +395,23 @@ export default function StoreHomeV2() {
   );
 }
 
-function HomeProcurementCommand({
-  couponEnabled,
-  pointsEnabled,
+function HomeQuickEntryPanel({
+  navItems,
+  ready,
+  capabilities,
   onNavigate,
 }: {
-  couponEnabled: boolean;
-  pointsEnabled: boolean;
+  navItems: HomeNavItem[];
+  ready: boolean;
+  capabilities: ReturnType<typeof useSiteCapabilities>;
   onNavigate: (path: string) => void;
 }) {
-  const benefitAction = couponEnabled
-    ? {
-        key: "coupons",
-        label: "优惠券",
-        icon: Ticket,
-        path: "/coupons",
-        tone: "wine",
-        enabled: true,
-      }
-    : {
-        key: "points",
-        label: "积分福利",
-        icon: BadgePercent,
-        path: "/points",
-        tone: "gold",
-        enabled: pointsEnabled,
-      };
-  const actions = [
-    {
-      key: "categories",
-      label: "分类",
-      icon: PackageSearch,
-      path: "/categories",
-      tone: "jade",
-      enabled: true,
-    },
-    {
-      key: "promotions",
-      label: "活动中心",
-      icon: Gift,
-      path: "/promotions",
-      tone: "wine",
-      enabled: true,
-    },
-    {
-      key: "new",
-      label: "新品上新",
-      icon: Sparkles,
-      path: NEW_ARRIVAL_CATEGORY_PATH,
-      tone: "gold",
-      enabled: true,
-    },
-    benefitAction,
-    {
-      key: "logistics",
-      label: "物流售后",
-      icon: Truck,
-      path: "/orders?tab=shipped",
-      tone: "slate",
-      enabled: true,
-    },
-    {
-      key: "orders",
-      label: "我的订单",
-      icon: ClipboardList,
-      path: "/orders",
-      tone: "slate",
-      enabled: true,
-    },
-  ].filter((item) => item.enabled);
+  const actions = useMemo(
+    () => filterVisibleHomeNavItems(Array.isArray(navItems) ? navItems : [], capabilities).slice(0, 15),
+    [capabilities, navItems],
+  );
+
+  if (ready && actions.length === 0) return null;
 
   return (
     <section className="store-home-command-panel" aria-label="快捷入口">
@@ -486,25 +428,34 @@ function HomeProcurementCommand({
         </UnifiedButton>
       </div>
       <div className="store-home-command-panel__actions">
-        {actions.map((action) => {
-          const Icon = action.icon;
-          return (
-            <UnifiedButton
-              key={action.key}
-              type="button"
-              onClick={() => onNavigate(action.path)}
-              className="store-home-command-card"
-              data-command-tone={action.tone}
-            >
-              <span className="store-home-command-card__icon">
-                <Icon size={18} aria-hidden />
-              </span>
-              <span className="store-home-command-card__copy">
-                <strong>{action.label}</strong>
-              </span>
-            </UnifiedButton>
-          );
-        })}
+        {!ready
+          ? Array.from({ length: 6 }).map((_, index) => (
+              <div key={index} className="store-home-command-card store-home-command-card--loading" aria-hidden>
+                <span className="store-home-command-card__icon skeleton-base skeleton-shimmer" />
+                <span className="store-home-command-card__copy">
+                  <span className="skeleton-base skeleton-shimmer h-3 w-14 rounded-full" />
+                </span>
+              </div>
+            ))
+          : actions.map((action) => (
+              <UnifiedButton
+                key={action.id}
+                type="button"
+                onClick={() => openHomeNavItemTarget(action, capabilities, onNavigate, toast.error)}
+                className="store-home-command-card"
+              >
+                <span className="store-home-command-card__icon">
+                  <HomeNavIcon
+                    value={action.icon_url}
+                    className="store-home-command-card__icon-media"
+                    imageClassName="store-home-command-card__icon-image"
+                  />
+                </span>
+                <span className="store-home-command-card__copy">
+                  <strong>{normalizeHomeNavText(action.title, "分类")}</strong>
+                </span>
+              </UnifiedButton>
+            ))}
       </div>
     </section>
   );

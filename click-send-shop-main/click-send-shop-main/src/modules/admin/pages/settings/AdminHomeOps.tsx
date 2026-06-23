@@ -18,7 +18,7 @@ type HomeOpsTab = "modules" | "display" | "nav" | "newArrival";
 const HOME_OPS_TABS: { id: HomeOpsTab; label: string; icon: React.ElementType; desc: string }[] = [
   { id: "modules", label: "模块开关", icon: ToggleLeft, desc: "管理首页模块的启用、禁用和顺序" },
   { id: "display", label: "展示设置", icon: LayoutGrid, desc: "设置首页展示规则与数量" },
-  { id: "nav", label: "金刚区导航", icon: Grid3X3, desc: "维护图标、标题、跳转方式和排序" },
+  { id: "nav", label: "快捷入口", icon: Grid3X3, desc: "维护图标、标题、跳转方式和排序" },
   { id: "newArrival", label: "新品主推设置", icon: Sparkles, desc: "配置新品专区的展示内容" },
 ];
 
@@ -44,7 +44,7 @@ export default function AdminHomeOps() {
   };
 
   return (
-    <AdminPageShell hint={<Tx>统一管理模块开关、展示设置、金刚区导航和新品主推设置。</Tx>}>
+    <AdminPageShell hint={<Tx>统一管理模块开关、展示设置、快捷入口和新品主推设置。</Tx>}>
       <div className="space-y-4">
         <nav
           className="flex flex-wrap gap-2 border-b border-border pb-3"

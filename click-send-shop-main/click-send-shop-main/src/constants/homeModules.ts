@@ -47,8 +47,8 @@ export const HOME_MODULE_DEFINITIONS: HomeModuleDefinition[] = [
   },
   {
     key: "nav_grid",
-    label: "金刚区导航",
-    description: "图标快捷入口（可在「金刚区导航」分类配置）",
+    label: "快捷入口",
+    description: "图标快捷入口（可在「快捷入口」分类配置）",
     audiences: ["member", "guest"],
     category: "common",
   },

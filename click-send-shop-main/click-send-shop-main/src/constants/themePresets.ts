@@ -399,6 +399,23 @@ export const PREMIUM_CHAMPAGNE_IVORY_CONFIG: ThemeConfig = {
   categoryIconStyle: "outline",
   motionLevel: "soft",
   density: "compact",
+  texture: {
+    material: "obsidianCinnabarIvory",
+    intensity: "subtle",
+    surface: "warmPorcelainMatte",
+    grain: "ivoryStoneDust",
+    grainOpacity: 0.016,
+    highlight: "amberEdgeGlow",
+    highlightOpacity: 0.07,
+    metal: "brushedAmberGold",
+    pattern: "quietObsidianLine",
+    patternOpacity: 0.038,
+    line: "cinnabarHairline",
+    shadow: "shortWarmContact",
+    temperature: "warmCommerceNeutral",
+    imageContrast: 0.92,
+    imageSaturation: 0.87,
+  },
 };
 
 export const PREMIUM_PEARL_BLUSH_CONFIG: ThemeConfig = {

@@ -18,7 +18,7 @@ export const HOME_GUEST_FOOTER_WRAP_CLASS = "-mx-[var(--store-page-x)] mt-3 md:m
 /** 首屏区（轮播 / 保障条 / 快捷导航）内部更紧凑 */
 export const HOME_HERO_STACK_CLASS = "store-home-hero-stack flex flex-col gap-2.5 sm:gap-3";
 
-/** 金刚区单格：上图下文，无圆形裁切 */
+/** 快捷入口单格：上图下文，无圆形裁切 */
 export const HOME_NAV_ITEM_CLASS =
   "store-nav-action flex w-full min-w-0 shrink-0 snap-start flex-col items-center justify-start gap-1.5 text-center transition-transform active:scale-[0.96]";
 

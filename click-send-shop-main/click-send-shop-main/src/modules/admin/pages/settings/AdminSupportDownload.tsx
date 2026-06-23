@@ -201,7 +201,7 @@ export default function AdminSupportDownload() {
   return (
     <PermissionGate permission="settings.manage">
       <AdminPageShell
-        hint="全站唯一 IM 客服配置：客服中心页、底部/顶栏客服、商品与订单「联系客服」、帮助中心联系区、页脚社交渠道、首页金刚区客服导航均读取本页。"
+        hint="全站唯一 IM 客服配置：客服中心页、底部/顶栏客服、商品与订单「联系客服」、帮助中心联系区、页脚社交渠道、首页快捷入口客服导航均读取本页。"
         toolbar={(
           <UnifiedButton type="button" onClick={save} disabled={saving} className="inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--theme-primary)] px-4 py-2.5 text-sm font-semibold text-[var(--theme-primary-foreground)] disabled:opacity-60">
             {saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />}

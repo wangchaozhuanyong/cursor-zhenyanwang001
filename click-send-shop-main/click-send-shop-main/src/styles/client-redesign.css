@@ -10899,6 +10899,20 @@ html[data-app-scope="store"] .store-home-v12-page[data-store-home-version="v2"] 
   padding: 0;
 }
 
+@media (min-width: 768px) {
+  .store-home-v4-campaigns--festive,
+  html[data-app-scope="store"] .sf-next-home-page .store-home-v4-campaigns--festive,
+  html[data-app-scope="store"] .store-home-v12-page[data-store-home-version="v2"] .store-home-v4-campaigns--festive {
+    min-height: 18rem;
+  }
+
+  .store-home-v4-campaigns--festive .store-home-v4-campaign-card,
+  .store-home-v4-campaigns--festive .store-home-v4-campaign-card[data-campaign-priority="primary"] {
+    min-height: 6.625rem !important;
+    padding-block: 10px;
+  }
+}
+
 html[data-app-scope="store"] .store-home-v12-page[data-store-home-version="v2"] .store-home-v4-campaigns--festive::after,
 html[data-app-scope="store"] .store-home-v12-page[data-store-home-version="v2"] .store-home-v4-campaigns--festive .storefront-title-row h2::before {
   content: none;

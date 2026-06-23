@@ -116,6 +116,7 @@ const ENABLE_LOCALIZED_ROUTES = process.env.SMOKE_LOCALES === "1";
 const SKIP_APP_ID_CHECK = process.env.SMOKE_SKIP_APP_ID_CHECK === "1";
 const WAIT_MS = Number(process.env.SMOKE_WAIT_MS || 800);
 const NAV_TIMEOUT_MS = Number(process.env.SMOKE_NAV_TIMEOUT_MS || 18000);
+const BLOCK_SERVICE_WORKERS = process.env.SMOKE_ALLOW_SERVICE_WORKER !== "1";
 
 const ROUTES = [
   ...DEFAULT_ROUTES,
@@ -322,14 +323,20 @@ async function main() {
 
   try {
     for (const viewport of VIEWPORTS) {
-      const page = await browser.newPage({
+      const context = await browser.newContext({
         ignoreHTTPSErrors: true,
         viewport: { width: viewport.width, height: viewport.height },
+        serviceWorkers: BLOCK_SERVICE_WORKERS ? "block" : "allow",
       });
-      for (const route of ROUTES) {
-        results.push(await inspectRoute(page, baseUrl, adminBaseUrl, route, viewport.label));
+      try {
+        const page = await context.newPage();
+        for (const route of ROUTES) {
+          results.push(await inspectRoute(page, baseUrl, adminBaseUrl, route, viewport.label));
+        }
+        await page.close();
+      } finally {
+        await context.close();
       }
-      await page.close();
     }
   } finally {
     await browser.close();
@@ -351,6 +358,7 @@ async function main() {
     requireApi: REQUIRE_API,
     checked: results.length,
     failed: failures.length,
+    serviceWorkers: BLOCK_SERVICE_WORKERS ? "blocked" : "allowed",
     routes: ROUTES.map((route) => route.path),
     viewports: VIEWPORTS.map((viewport) => viewport.label),
   };

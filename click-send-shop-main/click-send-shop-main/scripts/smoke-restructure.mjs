@@ -116,6 +116,8 @@ const ENABLE_LOCALIZED_ROUTES = process.env.SMOKE_LOCALES === "1";
 const SKIP_APP_ID_CHECK = process.env.SMOKE_SKIP_APP_ID_CHECK === "1";
 const WAIT_MS = Number(process.env.SMOKE_WAIT_MS || 800);
 const NAV_TIMEOUT_MS = Number(process.env.SMOKE_NAV_TIMEOUT_MS || 18000);
+const ROOT_TEXT_TIMEOUT_MS = Number(process.env.SMOKE_ROOT_TEXT_TIMEOUT_MS || 5000);
+const BASE_URL_TIMEOUT_MS = Number(process.env.SMOKE_BASE_URL_TIMEOUT_MS || 8000);
 const BLOCK_SERVICE_WORKERS = process.env.SMOKE_ALLOW_SERVICE_WORKER !== "1";
 
 const ROUTES = [
@@ -168,7 +170,7 @@ function isAdminRoute(route) {
 }
 
 async function assertAdminBaseUrl(adminBaseUrl) {
-  const adminResponse = await readHtml(`${adminBaseUrl}/admin/login`, 3000);
+  const adminResponse = await readHtml(`${adminBaseUrl}/admin/login`, BASE_URL_TIMEOUT_MS);
   const adminHtml = adminResponse.body;
   if (!adminResponse.ok || !adminHtml.includes("id=\"root\"")) {
     throw new Error(`ADMIN_BASE_URL does not look like an admin app: ${adminBaseUrl}`);
@@ -182,7 +184,7 @@ async function pickBaseUrls() {
   if (process.env.BASE_URL) {
     const baseUrl = normalizeBaseUrl(process.env.BASE_URL);
     const adminBaseUrl = process.env.ADMIN_BASE_URL ? normalizeBaseUrl(process.env.ADMIN_BASE_URL) : baseUrl;
-    const storeResponse = await readHtml(`${baseUrl}/`, 3000);
+    const storeResponse = await readHtml(`${baseUrl}/`, BASE_URL_TIMEOUT_MS);
     const storeHtml = storeResponse.body;
     if (!storeResponse.ok || !storeHtml.includes("id=\"root\"")) {
       throw new Error(`BASE_URL does not look like a storefront app: ${baseUrl}`);
@@ -255,6 +257,13 @@ async function inspectRoute(page, baseUrl, adminBaseUrl, route, viewportLabel) {
     const response = await page.goto(url, { waitUntil: "domcontentloaded", timeout: NAV_TIMEOUT_MS });
     responseStatus = response?.status() ?? -1;
     await page.waitForSelector("#root", { state: "attached", timeout: 8000 });
+    await page.waitForFunction(
+      (minRootChars) => ((document.querySelector("#root")?.textContent || "").replace(/\s+/g, " ").trim().length >= minRootChars),
+      route.minRootChars,
+      { timeout: ROOT_TEXT_TIMEOUT_MS },
+    ).catch(() => {
+      // The final assertion below reports blank or short-root states with route context.
+    });
     await page.waitForTimeout(WAIT_MS);
   } finally {
     page.off("console", onConsole);
@@ -329,11 +338,14 @@ async function main() {
         serviceWorkers: BLOCK_SERVICE_WORKERS ? "block" : "allow",
       });
       try {
-        const page = await context.newPage();
         for (const route of ROUTES) {
-          results.push(await inspectRoute(page, baseUrl, adminBaseUrl, route, viewport.label));
+          const page = await context.newPage();
+          try {
+            results.push(await inspectRoute(page, baseUrl, adminBaseUrl, route, viewport.label));
+          } finally {
+            await page.close();
+          }
         }
-        await page.close();
       } finally {
         await context.close();
       }
@@ -359,6 +371,9 @@ async function main() {
     checked: results.length,
     failed: failures.length,
     serviceWorkers: BLOCK_SERVICE_WORKERS ? "blocked" : "allowed",
+    routeIsolation: "new-page",
+    rootTextTimeoutMs: ROOT_TEXT_TIMEOUT_MS,
+    baseUrlTimeoutMs: BASE_URL_TIMEOUT_MS,
     routes: ROUTES.map((route) => route.path),
     viewports: VIEWPORTS.map((viewport) => viewport.label),
   };

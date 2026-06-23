@@ -11,7 +11,7 @@ import AccountProductCard from "./AccountProductCard";
 function product(partial: Partial<Product> = {}): Product {
   return {
     id: "p1",
-    name: "高级测试商品",
+    name: "高级精选商品",
     cover_image: "/x.jpg",
     images: [],
     price: 12,
@@ -78,7 +78,7 @@ describe("AccountProductCard", () => {
     }));
 
     const text = container?.textContent || "";
-    expect(text).toContain("高级测试商品");
+    expect(text).toContain("高级精选商品");
     expect(text).toContain("秒杀");
     expect(text).toContain("8");
     expect(text).toContain("RM 12");

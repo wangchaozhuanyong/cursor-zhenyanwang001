@@ -32,6 +32,7 @@ import { detectPwaPlatform, isStandaloneApp } from "@/utils/pwa";
 import { queryClient } from "@/lib/queryClient";
 import { buildSiteFaviconLinkTargets, rememberSiteFaviconUrl } from "@/utils/siteBrandAssets";
 import { POINTS_GIFT_REDEEM_CLIENT_ENABLED } from "@/constants/pointsClientFeatures";
+import { STOREFRONT_NEXT_SCOPE } from "@/modules/storefront-v2/design/storefrontDesignContract";
 import { scheduleIdleTask } from "@/utils/idleScheduler";
 import { isStoreTabPath } from "@/utils/storeBottomInset";
 import { NEW_ARRIVAL_CATEGORY_PATH } from "@/constants/newArrivalNavigation";
@@ -309,6 +310,7 @@ function AppScopeSync() {
 
     const syncScope = () => {
       root.setAttribute("data-app-scope", "store");
+      root.setAttribute("data-storefront-ui", STOREFRONT_NEXT_SCOPE);
       if (isStandaloneApp()) {
         root.setAttribute("data-pwa-standalone", "true");
         root.setAttribute("data-pwa-platform", detectPwaPlatform());
@@ -402,6 +404,7 @@ function TikTokStandaloneRoutes() {
 
   useLayoutEffect(() => {
     document.documentElement.setAttribute("data-app-scope", "store");
+    document.documentElement.setAttribute("data-storefront-ui", STOREFRONT_NEXT_SCOPE);
     window.dispatchEvent(new CustomEvent("app:scope-changed", { detail: { scope: "store" } }));
   }, []);
 
@@ -498,7 +501,7 @@ function renderStandalonePublicRoutes(capabilities: ReturnType<typeof useSiteCap
       <Route path={publicRoutePath("/login", localized)} element={<Login />} />
       <Route path={publicRoutePath("/register", localized)} element={<Login />} />
       <Route path={publicRoutePath("/forgot", localized)} element={<ForgotPassword />} />
-      <Route path={publicRoutePath("/forgot-password", localized)} element={<Navigate to={publicNavigatePath("/forgot", localized)} replace />} />
+      <Route path={publicRoutePath("/forgot-password", localized)} element={<ForgotPassword />} />
       <Route path={publicRoutePath("/login/bind-phone", localized)} element={<BindWechatPhone />} />
       <Route path={publicRoutePath("/help", localized)} element={<Help />} />
       <Route path={publicRoutePath("/about", localized)} element={<About />} />
@@ -509,7 +512,9 @@ function renderStandalonePublicRoutes(capabilities: ReturnType<typeof useSiteCap
       <Route
         path={publicRoutePath("/install", localized)}
         element={capabilities.customerServiceDownloadEnabled ? (
-          <Navigate to={publicNavigatePath("/support-download?tab=download", localized)} replace />
+          <CapabilityRoute enabled={capabilities.customerServiceDownloadEnabled}>
+            <SupportDownload installMode />
+          </CapabilityRoute>
         ) : (
           <Navigate to={publicNavigatePath("/", localized)} replace />
         )}

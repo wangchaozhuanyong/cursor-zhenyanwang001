@@ -52,6 +52,10 @@ function translateApiMessage(message: string): string {
   if (/^Authentication failed$/i.test(message)) return "手机号或密码不正确";
   if (/phone already registered/i.test(message)) return "该手机号已注册，请直接登录";
   if (/^Invalid input$/i.test(message)) return "填写信息不正确，请检查后重试";
+  if (/^address:\s*Invalid input$/i.test(message)) return "收货地址信息不完整，请检查后重试";
+  if (/^(name|contact_name|recipient):\s*Invalid input$/i.test(message)) return "收货人信息不完整，请检查后重试";
+  if (/^(phone|mobile):\s*Invalid input$/i.test(message)) return "手机号格式不正确";
+  if (/^[a-zA-Z0-9_.-]+:\s*Invalid input$/i.test(message)) return "填写信息不正确，请检查后重试";
   if (/invalid phone/i.test(message)) return "手机号格式不正确";
   if (/invalid invite/i.test(message)) return "邀请码不存在或不可用";
   if (/password/i.test(message) && /uppercase|lowercase|digit|number|least/i.test(message)) {

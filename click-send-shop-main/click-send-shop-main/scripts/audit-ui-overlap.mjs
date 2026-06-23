@@ -35,24 +35,39 @@ const PUBLIC_ROUTES = [
   { path: "/", name: "首页" },
   { path: "/categories", name: "分类" },
   { path: "/new-arrivals", name: "新品" },
+  { path: "/promotions", name: "活动列表" },
   { path: "/cart", name: "购物车" },
   { path: "/profile", name: "我的" },
   { path: "/coupons", name: "优惠券", needsAuth: true },
   { path: "/search", name: "搜索" },
   { path: "/login", name: "登录" },
+  { path: "/register", name: "注册" },
+  { path: "/forgot-password", name: "找回密码" },
+  { path: "/login/bind-phone", name: "绑定手机号" },
   { path: "/help", name: "帮助" },
   { path: "/about", name: "关于" },
+  { path: "/delivery", name: "配送说明" },
+  { path: "/feature-status", name: "功能状态" },
+  { path: "/feedback", name: "意见反馈" },
+  { path: "/support-download", name: "客服下载" },
+  { path: "/install", name: "安装应用" },
+  { path: "/content/contact-us", name: "CMS 内容页" },
+  { path: "/payment/result?order_no=SMOKE", name: "支付结果" },
+  { path: "/tiktok", name: "大马通独立页" },
   { path: "/favorites", name: "收藏" },
   { path: "/history", name: "浏览记录" },
   { path: "/orders", name: "订单列表", needsAuth: true },
   { path: "/settings", name: "设置", needsAuth: true },
   { path: "/member/benefits", name: "会员权益", needsAuth: true },
   { path: "/points", name: "积分", needsAuth: true },
+  { path: "/points/gifts", name: "积分礼品", needsAuth: true },
   { path: "/rewards", name: "返现", needsAuth: true },
+  { path: "/wallet", name: "钱包", needsAuth: true },
   { path: "/invite", name: "邀请", needsAuth: true },
   { path: "/address", name: "地址", needsAuth: true },
   { path: "/notifications", name: "通知", needsAuth: true },
   { path: "/returns", name: "售后", needsAuth: true },
+  { path: "/reviews/pending", name: "待评价", needsAuth: true },
   { path: "/checkout", name: "结算", needsAuth: true, needsCart: true },
 ];
 
@@ -186,11 +201,13 @@ async function seedCart(token) {
 async function loginFrontend(page, phone, password) {
   await page.goto(`${BASE}/login`, { waitUntil: "domcontentloaded" });
   await waitStable(page);
-  const phoneInput = page.getByPlaceholder("手机号");
+  const phoneInput = page.locator("#auth-phone");
   if ((await phoneInput.count()) === 0) return false;
   await phoneInput.fill(phone);
-  await page.getByPlaceholder("密码").fill(password);
-  const loginBtn = page.locator("button").filter({ hasText: /^登\s*录$/ });
+  const passwordInput = page.locator("#auth-password");
+  if ((await passwordInput.count()) === 0) return false;
+  await passwordInput.fill(password);
+  const loginBtn = page.locator("form .auth-login-submit, form button[type='submit']");
   if ((await loginBtn.count()) === 0) return false;
   await loginBtn.first().click();
   await page.waitForTimeout(FULL_AUDIT ? 2000 : 900);
@@ -440,6 +457,25 @@ async function tryProductDetail(page, metaBase) {
   return issues;
 }
 
+async function tryPromotionDetail(page, metaBase) {
+  const issues = [];
+  await page.goto(`${BASE}/promotions`, { waitUntil: "domcontentloaded", timeout: NAV_TIMEOUT_MS });
+  await waitStable(page);
+  const link = page.locator('a[href^="/promotions/"]').first();
+  if ((await link.count()) === 0) return issues;
+  const href = await link.getAttribute("href");
+  if (!href || href === "/promotions") return issues;
+
+  for (const scroll of SCROLL_MODES) {
+    await page.goto(`${BASE}${href}`, { waitUntil: "domcontentloaded", timeout: NAV_TIMEOUT_MS });
+    await waitStable(page);
+    await scrollPage(page, scroll.id);
+    const hit = await scanPage(page, { ...metaBase, route: "活动详情", path: href, scroll: scroll.label });
+    if (hit) issues.push(hit);
+  }
+  return issues;
+}
+
 async function tryCheckoutCouponSheet(page, metaBase) {
   const issues = [];
   await page.goto(`${BASE}/checkout`, { waitUntil: "domcontentloaded", timeout: NAV_TIMEOUT_MS });
@@ -570,6 +606,10 @@ async function main() {
       await page.goto(`${BASE}/`, { waitUntil: "domcontentloaded" });
       await waitStable(page);
       for (const hit of await tryProductDetail(page, { viewport: vp.label, couponStyle: style })) {
+        report.push(hit);
+      }
+
+      for (const hit of await tryPromotionDetail(page, { viewport: vp.label, couponStyle: style })) {
         report.push(hit);
       }
 

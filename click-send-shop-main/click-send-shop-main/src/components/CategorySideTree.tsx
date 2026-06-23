@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { resolveNavIconThumbUrl } from "@/utils/navIconThumbUrl";
 import StableImage from "@/components/ui/StableImage";
+import { storefrontCategoryName } from "@/utils/storefrontCopySanitizer";
 
 type CategorySideTreeProps = {
   categories: Category[];
@@ -122,7 +123,7 @@ export default function CategorySideTree({
                 >
                   <span className="truncate">
                     {renderCategoryMark(category)}
-                    {category.name}
+                    {storefrontCategoryName(category.name)}
                   </span>
                 </SideNavButton>
 
@@ -139,7 +140,7 @@ export default function CategorySideTree({
                         className="store-category-side-subbutton rounded-xl px-3 py-1.5"
                       >
                         {renderCategoryMark(child)}
-                        {child.name}
+                        {storefrontCategoryName(child.name)}
                       </SideNavButton>
                     ))}
                   </div>

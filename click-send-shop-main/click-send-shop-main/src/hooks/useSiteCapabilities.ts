@@ -7,8 +7,8 @@ let cachedRuntimeConfig: RuntimeConfig | null = null;
 let inflight: Promise<SiteCapabilities> | null = null;
 const subscribers = new Set<(capabilities: SiteCapabilities) => void>();
 
-/** 避免弱网/国产浏览器下 bootstrap 长时间挂起，导致全屏遮罩挡住所有点击 */
-const CAPABILITIES_READY_TIMEOUT_MS = 8_000;
+/** 弱网下先用保守默认能力渲染骨架/页面，避免 bootstrap 慢请求造成前台长时间空白 */
+const CAPABILITIES_READY_TIMEOUT_MS = 450;
 
 function normalize(value?: Partial<SiteCapabilities> | null): SiteCapabilities {
   return { ...DEFAULT_SITE_CAPABILITIES, ...(value ?? {}) };

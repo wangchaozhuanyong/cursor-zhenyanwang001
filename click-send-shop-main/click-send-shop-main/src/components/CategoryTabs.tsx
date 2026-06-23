@@ -1,5 +1,6 @@
 import CategoryKingkongRow, { type CategoryKingkongItem } from "@/components/CategoryKingkongRow";
 import { getCategoryNavIconValue } from "@/utils/categoryNavIcon";
+import { storefrontCategoryName } from "@/utils/storefrontCopySanitizer";
 
 interface CategoryTabsProps {
   categories: { id: string; name: string; icon?: string; icon_url?: string; level?: number }[];
@@ -18,8 +19,8 @@ export default function CategoryTabs({
 }: CategoryTabsProps) {
   const items: CategoryKingkongItem[] = categories.map((cat) => ({
     id: cat.id,
-    label: cat.name,
-    iconValue: getCategoryNavIconValue(cat, cat.id === "all" ? "📋" : "📂"),
+    label: storefrontCategoryName(cat.name),
+    iconValue: getCategoryNavIconValue(cat, cat.id === "all" ? "all" : "category"),
     active: activeId === cat.id,
     onClick: () => onChange(cat.id),
   }));

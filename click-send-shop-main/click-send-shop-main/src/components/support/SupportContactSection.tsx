@@ -23,7 +23,7 @@ function SupportChannelIcon({ type }: { type: SupportChannelType }) {
 }
 
 function channelButtonSpanClass(index: number, total: number): string {
-  if (total > 1 && total % 2 === 1 && index === total - 1) return "col-span-2";
+  if (total > 1 && total % 2 === 1 && index === total - 1) return "support-contact-v12__channel--wide";
   return "";
 }
 
@@ -73,29 +73,28 @@ export default function SupportContactSection({ className, hideDescription = fal
   if (!isAvailable) {
     return (
       <div className={rootClassName}>
-        <p className="text-sm text-muted-foreground">客服中心暂未开放，请稍后再试或通过站内电话/邮箱联系我们。</p>
+        <p className="support-contact-v12__empty">客服中心暂未开放，请稍后再试或通过站内电话/邮箱联系我们。</p>
       </div>
     );
   }
 
-  const channelGridCols = channels.length === 1 ? "grid-cols-1" : "grid-cols-2";
   const displayWorkingHours = compact && workingHours ? getCompactWorkingHours(workingHours) : workingHours;
 
   return (
     <div className={rootClassName}>
-      <div className="support-contact-v12__head flex items-center gap-2">
-        <Headphones size={18} className="support-contact-v12__head-icon shrink-0 text-theme-price" />
-        <h3 className="support-contact-v12__title text-sm font-semibold text-foreground">联系客服</h3>
+      <div className="support-contact-v12__head">
+        <Headphones size={18} className="support-contact-v12__head-icon" />
+        <h3 className="support-contact-v12__title">联系客服</h3>
       </div>
 
       {!hideDescription && description ? (
-        <p className="support-contact-v12__description mt-3 text-sm leading-relaxed text-muted-foreground">{description}</p>
+        <p className="support-contact-v12__description">{description}</p>
       ) : null}
 
       {displayWorkingHours ? (
-        <div className="support-contact-v12__hours mt-3 flex gap-2 rounded-lg bg-muted/50 px-3 py-2.5">
-          <Clock size={14} className="support-contact-v12__hours-icon mt-0.5 shrink-0 text-muted-foreground" />
-          <p className="support-contact-v12__hours-text text-xs leading-relaxed text-muted-foreground">
+        <div className="support-contact-v12__hours">
+          <Clock size={14} className="support-contact-v12__hours-icon" />
+          <p className="support-contact-v12__hours-text">
             <span>服务时间</span>
             <strong>{displayWorkingHours}</strong>
           </p>
@@ -103,23 +102,23 @@ export default function SupportContactSection({ className, hideDescription = fal
       ) : null}
 
       {channels.length > 0 ? (
-        <div className={`support-contact-v12__channels mt-4 grid ${channelGridCols} gap-2`}>
+        <div className="support-contact-v12__channels">
           {channels.map((channel, index) => (
             <UnifiedButton
               key={channel.id}
               type="button"
               onClick={() => { void handleChannelClick(channel.id); }}
-              className={`support-contact-v12__channel flex w-full min-h-11 items-center gap-2.5 rounded-xl border border-border bg-background px-3 py-2.5 text-left transition-colors active:bg-muted/40 ${channelButtonSpanClass(index, channels.length)}`}
+              className={`support-contact-v12__channel ${channelButtonSpanClass(index, channels.length)}`}
             >
-              <span className="support-contact-v12__channel-icon shrink-0">
+              <span className="support-contact-v12__channel-icon">
                 <SupportChannelIcon type={channel.type} />
               </span>
-              <span className="support-contact-v12__channel-copy min-w-0 flex-1">
-                <span className="support-contact-v12__channel-title block truncate text-xs font-medium text-foreground">
+              <span className="support-contact-v12__channel-copy">
+                <span className="support-contact-v12__channel-title">
                   {getChannelTitle(channel)}
                 </span>
                 {!compact ? (
-                  <span className="support-contact-v12__channel-hint mt-0.5 block text-[10px] text-muted-foreground">点击联系</span>
+                  <span className="support-contact-v12__channel-hint">点击联系</span>
                 ) : null}
               </span>
             </UnifiedButton>
@@ -129,13 +128,13 @@ export default function SupportContactSection({ className, hideDescription = fal
 
       <Link
         to={buildSupportPageUrl()}
-        className="support-contact-v12__link mt-4 flex w-full items-center justify-between gap-2 border-t border-border pt-4 text-sm font-medium text-theme-price"
+        className="support-contact-v12__link"
       >
-        <span className="support-contact-v12__link-copy inline-flex min-w-0 items-center gap-1.5">
-          <Headphones size={15} className="shrink-0" />
+        <span className="support-contact-v12__link-copy">
+          <Headphones size={15} />
           <span>前往客服中心</span>
         </span>
-        <ChevronRight size={16} className="shrink-0 text-muted-foreground" />
+        <ChevronRight size={16} />
       </Link>
     </div>
   );

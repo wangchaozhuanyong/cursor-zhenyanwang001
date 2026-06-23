@@ -1,5 +1,11 @@
 import { isProductNewArrival } from "@/utils/productNewArrival";
 import { formatProductSales, getProductSalesCount, productSalesLabel } from "@/utils/productSales";
+import {
+  isInternalStorefrontCopy,
+  storefrontDisplayText,
+  storefrontOptionalDisplayText,
+  storefrontProductNameFallback,
+} from "@/utils/storefrontCopySanitizer";
 import type { Product, ProductActiveActivity } from "@/types/product";
 
 export type ProductCardV2Badge = {
@@ -86,16 +92,17 @@ function buildVariantText(product: ProductPriceFields) {
 
 function buildActivityText(product: Product) {
   const promoLabel = String(product.activity_promo_label || "").trim();
-  if (promoLabel) return promoLabel.slice(0, 18);
+  if (promoLabel && !isInternalStorefrontCopy(promoLabel)) return promoLabel.slice(0, 18);
 
   const activity = product.active_activity;
   if (!activity) return undefined;
 
   const activityPromoLabel = String(activity.promo_label || "").trim();
-  if (activityPromoLabel) return activityPromoLabel.slice(0, 18);
+  if (activityPromoLabel && !isInternalStorefrontCopy(activityPromoLabel)) return activityPromoLabel.slice(0, 18);
 
-  if (activity.status !== "active" && activity.status_label) {
-    return String(activity.status_label).trim().slice(0, 18);
+  const statusLabel = storefrontOptionalDisplayText(activity.status_label);
+  if (activity.status !== "active" && statusLabel) {
+    return statusLabel.slice(0, 18);
   }
 
   if (activity.type === "flash_sale" || activity.type === "limited_time_discount") {
@@ -111,7 +118,7 @@ function buildActivityText(product: Product) {
   const percent = Number(activity.discount_percent || 0);
   if (threshold > 0 && percent > 0) return `满 RM ${money(threshold)} 享 ${money(percent)}%`;
 
-  return activity.title ? String(activity.title).trim().slice(0, 18) : undefined;
+  return storefrontOptionalDisplayText(activity.title)?.slice(0, 18);
 }
 
 function activityBadgeLabel(type: ProductActiveActivity["type"]) {
@@ -150,6 +157,10 @@ function buildActivityProgress(product: Product) {
 
 export function buildProductCardV2Model(product: Product): ProductCardV2Model {
   const pricedProduct = product as ProductPriceFields;
+  const displayName = storefrontDisplayText(
+    product.name,
+    storefrontProductNameFallback(product.active_activity?.type),
+  );
   const backendActivityPrice = firstPositiveNumber(
     product.active_activity?.activity_price,
     product.activity_price,
@@ -197,9 +208,9 @@ export function buildProductCardV2Model(product: Product): ProductCardV2Model {
 
   return {
     id: product.id,
-    name: product.name,
+    name: displayName,
     imageUrl: product.cover_image,
-    imageAlt: product.cover_image_alt || `${product.name} 商品图片`,
+    imageAlt: product.cover_image_alt || `${displayName} 商品图片`,
     price,
     priceText: hasRange ? `${money(price)}-${money(maxPrice)}` : money(price),
     originalPrice: showOriginal ? original : undefined,

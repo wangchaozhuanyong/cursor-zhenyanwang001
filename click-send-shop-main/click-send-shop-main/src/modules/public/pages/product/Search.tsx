@@ -20,14 +20,12 @@ import SeoHead from "@/components/SeoHead";
 import { buildCanonical } from "@/utils/seo";
 import { setSearchAttribution } from "@/services/analyticsService";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
-import { ClientButton, EmptyState as ClientEmptyState } from "@/components/client";
-import type { Product } from "@/types/product";
+import type { Product, ProductListParams } from "@/types/product";
 
 const HISTORY_KEY = "search_history";
 const MAX_HISTORY = 10;
 const MAX_HOT_TERMS = 10;
-const PRIORITY_HOT_TERMS = ["正品香烟", "工作签证", "商业装修", "正品槟榔"];
-const FALLBACK_HOT_TERMS = [...PRIORITY_HOT_TERMS, "礼盒", "会员价", "本周热销", "RM 99 以下", "东马可送", "积分兑换"];
+const FALLBACK_HOT_TERMS = ["新品", "热销", "优惠券", "礼盒"];
 
 function normalizeHotTerm(term: string): string {
   return term.trim().replace(/\s+/g, " ");
@@ -44,7 +42,6 @@ function buildHotTermLabels(terms: HotSearchTerm[]): string[] {
     labels.push(label);
   };
 
-  PRIORITY_HOT_TERMS.forEach(pushTerm);
   const rankedTerms = terms.length > 0 ? terms.map((term) => term.keyword) : FALLBACK_HOT_TERMS;
   rankedTerms.forEach(pushTerm);
   return labels.slice(0, MAX_HOT_TERMS);
@@ -86,8 +83,10 @@ export default function Search() {
   const [hotTerms, setHotTerms] = useState<HotSearchTerm[]>([]);
   const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
+  const [readySearchQueryKey, setReadySearchQueryKey] = useState("");
   const suggestDebounceRef = useRef<ReturnType<typeof setTimeout>>();
   const pendingTrackKeywordRef = useRef(initialKeyword);
+  const latestSearchQueryKeyRef = useRef("");
 
   const {
     products,
@@ -99,8 +98,28 @@ export default function Search() {
   } = useProductStore();
   const historyProducts = useHistoryStore((state) => state.history);
   const loadHistory = useHistoryStore((state) => state.loadHistory);
-  const showFullSkeleton = loading && products.length === 0;
-  const showSoftRefreshing = listRefreshing && products.length > 0;
+  const searchProductParams = useMemo<ProductListParams | null>(() => {
+    const keyword = submittedQuery.trim();
+    if (!keyword) return null;
+    return {
+      keyword,
+      page: 1,
+      pageSize: 50,
+    };
+  }, [submittedQuery]);
+
+  const searchQueryKey = useMemo(() => {
+    if (!searchProductParams) return "empty-search";
+    return JSON.stringify(
+      Object.entries(searchProductParams)
+        .filter(([, value]) => value !== undefined && value !== null && value !== "")
+        .sort(([a], [b]) => a.localeCompare(b)),
+    );
+  }, [searchProductParams]);
+  const searchQueryReady = !searchProductParams || readySearchQueryKey === searchQueryKey;
+  const visibleProducts = searchQueryReady ? products : [];
+  const showFullSkeleton = Boolean(searchProductParams) && (!searchQueryReady || (loading && visibleProducts.length === 0));
+  const showSoftRefreshing = searchQueryReady && listRefreshing && visibleProducts.length > 0;
 
   useEffect(() => {
     const keyword = searchParams.get("keyword")?.trim() || "";
@@ -141,22 +160,31 @@ export default function Search() {
   }, [query, submittedQuery]);
 
   useEffect(() => {
-    const keyword = submittedQuery.trim();
-    if (!keyword) return;
-    loadProducts({
-      keyword,
-      page: 1,
-      pageSize: 50,
+    if (!searchProductParams) return;
+
+    let cancelled = false;
+    const queryKey = searchQueryKey;
+    latestSearchQueryKeyRef.current = queryKey;
+    setReadySearchQueryKey("");
+
+    void loadProducts(searchProductParams).finally(() => {
+      if (!cancelled && latestSearchQueryKeyRef.current === queryKey) {
+        setReadySearchQueryKey(queryKey);
+      }
     });
-  }, [loadProducts, submittedQuery]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [loadProducts, searchProductParams, searchQueryKey]);
 
   useEffect(() => {
     const pendingKeyword = pendingTrackKeywordRef.current.trim();
     if (!pendingKeyword || pendingKeyword !== submittedQuery.trim()) return;
-    if (loading || listRefreshing) return;
+    if (!searchQueryReady || loading || listRefreshing) return;
     trackSearchKeyword(pendingKeyword, pagination.total).catch(() => {});
     pendingTrackKeywordRef.current = "";
-  }, [listRefreshing, loading, pagination.total, submittedQuery]);
+  }, [listRefreshing, loading, pagination.total, searchQueryReady, submittedQuery]);
 
   const addToHistory = useCallback((term: string) => {
     const trimmed = term.trim();
@@ -339,23 +367,25 @@ export default function Search() {
             ) : null}
 
             <SilkProductGrid
-              products={products}
+              products={visibleProducts}
               className={productGridClass}
               skeletonCount={6}
               siteContext={productCardSiteContext}
+              itemKeyPrefix={`search:${submittedQuery.trim()}`}
               showFullSkeleton={showFullSkeleton}
               showSoftRefreshing={showSoftRefreshing}
               emptyState={
-                <ClientEmptyState
-                  className="store-search-empty"
-                  title="没有找到相关商品"
-                  description="可以换个关键词，或清空搜索后查看热门搜索。"
-                  action={
-                    <ClientButton type="button" variant="secondary" size="sm" onClick={clearSearch}>
-                      清空搜索
-                    </ClientButton>
-                  }
-                />
+                <section className="store-account-v12-empty-panel store-search-empty">
+                  <span className="store-account-v12-empty-panel__icon" aria-hidden>
+                    <SearchIcon size={28} />
+                  </span>
+                  <h2>没有找到相关商品</h2>
+                  <p>可以换个关键词，或清空搜索后查看热门搜索。</p>
+                  <UnifiedButton type="button" onClick={clearSearch} className="store-account-v12-empty-panel__action">
+                    <X size={17} aria-hidden />
+                    清空搜索
+                  </UnifiedButton>
+                </section>
               }
             />
           </>

@@ -8,11 +8,6 @@ import * as rewardService from "@/services/rewardService";
 import { useLoyaltyVisibility } from "@/hooks/useLoyaltyVisibility";
 import type { RewardConfig, RewardTransaction, RewardTransactionCategory } from "@/types/reward";
 import {
-  THEME_ACCENT_HERO_ICON,
-  THEME_ACCENT_HERO_LABEL,
-  THEME_ACCENT_HERO_MUTED,
-  THEME_ACCENT_HERO_SHELL,
-  THEME_ACCENT_HERO_VALUE,
   THEME_BTN_PRICE,
   THEME_ROW_ICON_NEGATIVE,
   THEME_ROW_ICON_POSITIVE,
@@ -135,136 +130,56 @@ export default function Rewards() {
 
   return (
     <TooltipProvider>
-      <StoreAccountLayout title="返现记录" onBack={goBack} className="store-v12-page store-account-subpage-v12-page store-rewards-v12-page pb-8" mainClassName="sm:px-4 xl:py-6">
+      <StoreAccountLayout
+        title="返现记录"
+        onBack={goBack}
+        className="sf-next-page store-v12-page store-account-subpage-v12-page store-rewards-v12-page pb-8"
+        mainClassName="sf-next-account-main sm:px-4 xl:py-6"
+      >
       <motion.div
         initial={false}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.18, ease: "easeOut" }}
-        className={cn("relative overflow-hidden rounded-[28px] px-5 py-6 shadow-[0_18px_42px_-24px_rgba(238,54,26,0.72)] sm:px-7 sm:py-7", THEME_ACCENT_HERO_SHELL)}
-        style={{
-          background:
-            "linear-gradient(135deg, color-mix(in srgb, var(--theme-price) 92%, #ff6f48) 0%, color-mix(in srgb, var(--theme-danger) 78%, #ff512f) 58%, color-mix(in srgb, var(--theme-danger) 96%, #d92713) 100%)",
-        }}
+        className="sf-next-folio store-rewards-v12-folio"
       >
-        <div
-          className="pointer-events-none absolute -right-10 -top-10 h-44 w-44 rounded-full"
-          style={{ background: "color-mix(in srgb, var(--theme-coupon-accent-foreground) 13%, transparent)" }}
-        />
-        <div aria-hidden="true" className="pointer-events-none absolute -right-4 top-3 z-0 h-36 w-36 opacity-60 sm:right-6 sm:top-8 sm:h-40 sm:w-40 sm:opacity-95">
-          <div
-            className="absolute right-1 top-8 h-[92px] w-[72px] rotate-[13deg] rounded-[22px]"
-            style={{
-              background:
-                "linear-gradient(145deg, color-mix(in srgb, var(--theme-danger) 72%, #ff8d67) 0%, color-mix(in srgb, var(--theme-danger) 92%, #c91f14) 100%)",
-              boxShadow:
-                "inset 0 1px 0 color-mix(in srgb, var(--theme-coupon-accent-foreground) 22%, transparent), 0 16px 30px color-mix(in srgb, #7a110b 26%, transparent)",
-            }}
-          >
-            <div
-              className="absolute inset-x-3 top-4 h-7 rounded-full"
-              style={{ background: "color-mix(in srgb, var(--theme-coupon-accent-foreground) 12%, transparent)" }}
-            />
+        <div className="sf-next-folio__topline">
+          <div className="store-rewards-v12-folio__label">
+            <p className="sf-next-folio__eyebrow">{balanceLabel}</p>
+            <Tooltip open={usageHelpOpen} onOpenChange={setUsageHelpOpen}>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  aria-label="查看返现说明"
+                  onClick={() => setUsageHelpOpen((open) => !open)}
+                  className="sf-next-folio__help"
+                >
+                  <CircleHelp size={14} strokeWidth={2.4} aria-hidden="true" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" align="start" sideOffset={8} className="max-w-[15rem] whitespace-normal rounded-xl px-3 py-2 text-xs leading-relaxed shadow-xl">
+                {usageNotice}
+              </TooltipContent>
+            </Tooltip>
           </div>
-          <div
-            className="absolute right-8 top-4 h-[112px] w-[84px] rotate-[-9deg] overflow-hidden rounded-[22px]"
-            style={{
-              background:
-                "linear-gradient(150deg, color-mix(in srgb, var(--theme-price) 92%, #ff7c48) 0%, color-mix(in srgb, var(--theme-danger) 88%, #d62014) 68%, color-mix(in srgb, var(--theme-danger) 96%, #aa130c) 100%)",
-              boxShadow:
-                "inset 0 1px 0 color-mix(in srgb, var(--theme-coupon-accent-foreground) 28%, transparent), inset 0 -12px 24px color-mix(in srgb, #7a110b 18%, transparent), 0 18px 34px color-mix(in srgb, #7a110b 28%, transparent)",
-            }}
-          >
-            <div
-              className="absolute left-0 right-0 top-0 h-12"
-              style={{
-                background:
-                  "linear-gradient(180deg, color-mix(in srgb, var(--theme-coupon-accent-foreground) 20%, transparent) 0%, color-mix(in srgb, var(--theme-coupon-accent-foreground) 4%, transparent) 100%)",
-                clipPath: "polygon(0 0, 100% 0, 50% 100%)",
-              }}
-            />
-            <div
-              className="absolute left-1/2 top-[38px] flex h-10 w-10 -translate-x-1/2 items-center justify-center rounded-full text-[11px] font-extrabold"
-              style={{
-                color: "color-mix(in srgb, var(--theme-danger) 78%, #7d120b)",
-                background:
-                  "radial-gradient(circle at 35% 28%, color-mix(in srgb, var(--theme-coupon-accent-foreground) 82%, #ffd58f) 0%, color-mix(in srgb, var(--theme-warning) 92%, #ffbe4d) 64%, color-mix(in srgb, var(--theme-warning) 72%, #b85a11) 100%)",
-                boxShadow:
-                  "0 0 0 6px color-mix(in srgb, var(--theme-warning) 18%, transparent), inset 0 2px 4px color-mix(in srgb, var(--theme-coupon-accent-foreground) 42%, transparent)",
-              }}
-            >
-              RM
-            </div>
-            <div
-              className="absolute bottom-5 left-5 right-5 h-px"
-              style={{ background: "color-mix(in srgb, var(--theme-coupon-accent-foreground) 24%, transparent)" }}
-            />
-            <div
-              className="absolute -right-5 bottom-1 h-14 w-14 rounded-full"
-              style={{ background: "color-mix(in srgb, var(--theme-coupon-accent-foreground) 12%, transparent)" }}
-            />
-          </div>
-          <div
-            className="absolute right-[82px] top-[92px] h-8 w-8 rounded-full"
-            style={{
-              background:
-                "radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--theme-coupon-accent-foreground) 86%, #ffe0a3) 0%, color-mix(in srgb, var(--theme-warning) 92%, #f59f24) 66%, color-mix(in srgb, var(--theme-warning) 72%, #a94d0b) 100%)",
-              boxShadow: "0 8px 16px color-mix(in srgb, #7a110b 24%, transparent)",
-            }}
-          />
-          <div
-            className="absolute right-[30px] top-1 h-10 w-16 rounded-full blur-sm"
-            style={{ background: "color-mix(in srgb, var(--theme-coupon-accent-foreground) 20%, transparent)" }}
-          />
+          <span className="sf-next-folio__status">购物抵扣</span>
         </div>
-        <div className="relative z-10 flex items-start justify-between gap-4">
-          <div className="min-w-0 flex-1">
-            <div className="max-w-[calc(100%-5.75rem)] sm:max-w-[calc(100%-9rem)]">
-              <div className="flex min-w-0 items-center gap-2">
-                <p className={cn(THEME_ACCENT_HERO_LABEL, "min-w-0 truncate text-[15px] font-semibold normal-case tracking-normal sm:text-base")}>{balanceLabel}</p>
-                <Tooltip open={usageHelpOpen} onOpenChange={setUsageHelpOpen}>
-                  <TooltipTrigger asChild>
-                    <button
-                      type="button"
-                      aria-label="查看返现说明"
-                      onClick={() => setUsageHelpOpen((open) => !open)}
-                      className="flex !h-5 !min-h-0 !w-5 shrink-0 items-center justify-center rounded-full bg-transparent p-0 leading-none text-[color-mix(in_srgb,var(--theme-coupon-accent-foreground)_82%,transparent)] transition-colors hover:text-[var(--theme-coupon-accent-foreground)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--theme-coupon-accent-foreground)_58%,transparent)]"
-                    >
-                      <CircleHelp size={14} strokeWidth={2.4} aria-hidden="true" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" align="start" sideOffset={8} className="max-w-[15rem] whitespace-normal rounded-xl px-3 py-2 text-xs leading-relaxed shadow-xl">
-                    {usageNotice}
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-              <div className="mt-3 flex items-baseline gap-2">
-                <span className={cn("store-stat-value tabular-nums leading-none", THEME_ACCENT_HERO_VALUE, "text-[42px] sm:text-6xl")}>
-                  <span className="mr-2 text-[20px] font-extrabold leading-none sm:mr-3 sm:text-2xl">RM</span>
-                  {money(config?.balance ?? 0)}
+        <div className="sf-next-folio__value-row">
+          <span className="sf-next-folio__unit">RM</span>
+          <strong className="sf-next-folio__value">{money(config?.balance ?? 0)}</strong>
+        </div>
+        <div className="sf-next-folio__meta store-rewards-v12-folio__meta">
+          {summaryItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <span key={item.label} className="sf-next-folio__meta-item">
+                <span className="store-rewards-v12-folio__meta-label">
+                  <Icon size={14} aria-hidden />
+                  {item.label}
                 </span>
-              </div>
-            </div>
-            <div className="mt-8 grid grid-cols-3 overflow-hidden rounded-[22px] bg-[color-mix(in_srgb,var(--theme-coupon-accent-foreground)_12%,transparent)] px-1.5 py-3.5 backdrop-blur-sm sm:px-2 sm:py-4">
-              {summaryItems.map((item, index) => {
-                const Icon = item.icon;
-                return (
-                  <div
-                    key={item.label}
-                    className={cn(
-                      "flex min-w-0 flex-col items-center justify-center px-1.5 text-center sm:px-2",
-                      index > 0 ? "border-l border-[color-mix(in_srgb,var(--theme-coupon-accent-foreground)_34%,transparent)]" : "",
-                    )}
-                  >
-                    <div className="flex max-w-full items-center gap-1">
-                      <Icon size={16} className={cn("shrink-0", THEME_ACCENT_HERO_ICON)} />
-                      <p className={cn("min-w-0 truncate text-[11px] font-semibold sm:text-sm", THEME_ACCENT_HERO_MUTED)}>{item.label}</p>
-                    </div>
-                    <p className={cn("mt-2 text-[20px] font-extrabold leading-none tabular-nums sm:text-2xl", THEME_ACCENT_HERO_VALUE)}>{item.value}</p>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+                <strong className="sf-next-folio__meta-value">{item.value}</strong>
+              </span>
+            );
+          })}
         </div>
       </motion.div>
 

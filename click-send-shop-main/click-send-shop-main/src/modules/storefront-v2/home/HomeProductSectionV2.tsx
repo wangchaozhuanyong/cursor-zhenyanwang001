@@ -64,7 +64,6 @@ export default function HomeProductSectionV2({
                 product={product}
                 index={index}
                 showPrice={showPrice}
-                className="[content-visibility:auto] [contain-intrinsic-size:280px]"
               />
             ))}
       </div>

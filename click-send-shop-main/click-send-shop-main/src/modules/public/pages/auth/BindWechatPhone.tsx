@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { KeyRound } from "lucide-react";
+import { ArrowLeft, KeyRound, ShieldCheck } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuthStore } from "@/stores/useAuthStore";
 import * as authService from "@/services/authService";
@@ -28,13 +28,7 @@ export default function BindWechatPhone() {
   const [otpSending, setOtpSending] = useState(false);
   const [otpCooldown, setOtpCooldown] = useState(0);
   const [shakeKey, setShakeKey] = useState(0);
-
-  useEffect(() => {
-    if (!pendingToken) {
-      toast.error("绑定凭证无效，请重新使用微信登录");
-      navigate("/login", { replace: true });
-    }
-  }, [pendingToken, navigate]);
+  const credentialInvalid = !pendingToken;
 
   useEffect(() => {
     if (otpCooldown <= 0) return;
@@ -50,6 +44,10 @@ export default function BindWechatPhone() {
   };
 
   const handleSendOtp = async () => {
+    if (credentialInvalid) {
+      failValidation("绑定凭证无效，请重新使用微信登录");
+      return;
+    }
     const phoneError = validatePhoneForCountry(phone, countryCode);
     if (phoneError) {
       failValidation(phoneError);
@@ -72,7 +70,10 @@ export default function BindWechatPhone() {
   };
 
   const handleSubmit = async () => {
-    if (!pendingToken) return;
+    if (credentialInvalid) {
+      failValidation("绑定凭证无效，请重新使用微信登录");
+      return;
+    }
     const phoneError = validatePhoneForCountry(phone, countryCode);
     if (phoneError) {
       failValidation(phoneError);
@@ -98,58 +99,108 @@ export default function BindWechatPhone() {
   };
 
   return (
-    <main className="auth-page-shell flex min-h-screen flex-col bg-background px-5 py-8">
-      <div className="mx-auto w-full max-w-lg">
-        <h1 className="font-display text-2xl font-bold text-foreground">绑定手机号</h1>
-        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-          手机号用于订单通知、售后联系和账号安全。绑定后，你可以使用手机号或微信登录。
-        </p>
+    <div className="auth-page-shell sf-next-page store-v12-page auth-v12-page auth-next-page auth-bind-phone-page">
+      <main className="auth-page-main auth-v12-main auth-next-main">
+        <div className="auth-login-topbar">
+          <button type="button" onClick={() => navigate("/login", { replace: true })} aria-label="返回登录" className="auth-login-back-btn">
+            <ArrowLeft size={19} aria-hidden />
+          </button>
+          <section className="auth-login-heading shrink-0">
+            <h1 className="font-display text-xl font-bold text-foreground sm:text-[22px]">绑定手机号</h1>
+          </section>
+        </div>
 
-        <FormFieldShake shake={shakeKey} className="mt-8 space-y-3.5">
-          <CountryPhoneInput
-            countryCode={countryCode}
-            onCountryCodeChange={setCountryCode}
-            phone={phone}
-            onPhoneChange={setPhone}
-            phoneInputId="bind-wechat-phone"
-            phoneAutoComplete="tel"
-            autoDetectCountryCode
-          />
-
-          <div className="relative">
-            <KeyRound size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <input
-              type="text"
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              placeholder="6 位验证码"
-              value={otpCode}
-              maxLength={6}
-              aria-label="6 位验证码"
-              onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-              className={cn(INPUT_CLASS, "pl-12 pr-4 tracking-widest")}
-            />
+        <section className="auth-next-status" aria-label="绑定状态">
+          <span aria-hidden><ShieldCheck size={20} /></span>
+          <div>
+            <strong>{credentialInvalid ? "绑定凭证已失效" : "完成账号绑定"}</strong>
+            <p>{credentialInvalid ? "请重新使用微信登录后继续绑定手机号。" : "手机号用于订单通知、售后联系和账号安全。"}</p>
           </div>
+        </section>
 
-          <UnifiedButton
-            type="button"
-            onClick={handleSendOtp}
-            disabled={otpSending || otpCooldown > 0}
-            className="w-full rounded-2xl border border-[color-mix(in_srgb,var(--theme-primary)_40%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-primary)_10%,var(--theme-surface))] py-3 text-xs font-semibold text-[var(--theme-primary)] disabled:opacity-50"
-          >
-            {otpCooldown > 0 ? `${otpCooldown}s 后可重发` : otpSending ? "发送中…" : "获取验证码"}
-          </UnifiedButton>
+        {credentialInvalid ? (
+          <section className="auth-login-form-wrap auth-next-stack">
+            <div className="sf-next-form-sheet auth-next-sheet" role="alert">
+              <div className="auth-next-sheet-head">
+                <span aria-hidden><KeyRound size={18} /></span>
+                <div>
+                  <h3>需要重新授权</h3>
+                  <p>当前页面缺少有效的第三方绑定凭证，无法发送验证码或完成绑定。</p>
+                </div>
+              </div>
+              <UnifiedButton
+                type="button"
+                onClick={() => navigate("/login", { replace: true })}
+                className="sf-next-button sf-next-button--primary"
+              >
+                返回登录
+              </UnifiedButton>
+            </div>
+          </section>
+        ) : (
+          <FormFieldShake shake={shakeKey} className="auth-login-form-wrap auth-next-stack">
+            <section className="sf-next-form-sheet auth-next-sheet">
+              <div className="auth-next-sheet-head">
+                <span aria-hidden><KeyRound size={18} /></span>
+                <div>
+                  <h3>验证手机号</h3>
+                  <p>输入短信验证码后完成绑定并登录。</p>
+                </div>
+              </div>
 
-          <UnifiedButton
-            type="button"
-            onClick={handleSubmit}
-            disabled={authStore.loading}
-            className="w-full rounded-2xl btn-theme-price py-3.5 text-sm font-bold text-[var(--theme-price-foreground)] shadow-[0_18px_34px_-26px_var(--theme-price)] transition-all active:scale-[0.98] disabled:opacity-60"
-          >
-            {authStore.loading ? "处理中…" : "绑定并登录"}
-          </UnifiedButton>
-        </FormFieldShake>
-      </div>
-    </main>
+              <div className="sf-next-form-stack">
+                <CountryPhoneInput
+                  countryCode={countryCode}
+                  onCountryCodeChange={setCountryCode}
+                  phone={phone}
+                  onPhoneChange={setPhone}
+                  phoneInputId="bind-wechat-phone"
+                  phoneAutoComplete="tel"
+                  autoDetectCountryCode
+                />
+
+                <label className="sf-next-field">
+                  <span className="sf-next-field__label">验证码</span>
+                  <span className="auth-next-input-wrap">
+                    <KeyRound size={18} aria-hidden />
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      placeholder="6 位验证码"
+                      value={otpCode}
+                      maxLength={6}
+                      aria-label="6 位验证码"
+                      onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                      className={cn(INPUT_CLASS, "sf-next-field__control tracking-widest")}
+                    />
+                  </span>
+                </label>
+
+                <div className="auth-next-actions">
+                  <UnifiedButton
+                    type="button"
+                    onClick={handleSendOtp}
+                    disabled={otpSending || otpCooldown > 0}
+                    className="sf-next-button sf-next-button--secondary"
+                  >
+                    {otpCooldown > 0 ? `${otpCooldown}s 后可重发` : otpSending ? "发送中..." : "获取验证码"}
+                  </UnifiedButton>
+
+                  <UnifiedButton
+                    type="button"
+                    onClick={handleSubmit}
+                    disabled={authStore.loading}
+                    className="sf-next-button sf-next-button--primary"
+                  >
+                    {authStore.loading ? "处理中..." : "绑定并登录"}
+                  </UnifiedButton>
+                </div>
+              </div>
+            </section>
+          </FormFieldShake>
+        )}
+      </main>
+    </div>
   );
 }

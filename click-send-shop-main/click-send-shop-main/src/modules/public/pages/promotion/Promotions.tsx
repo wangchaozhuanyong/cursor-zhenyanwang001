@@ -23,6 +23,7 @@ import { buildCanonical } from "@/utils/seo";
 import { cn } from "@/lib/utils";
 import { usePublicLocale } from "@/i18n/publicLocale";
 import { useHorizontalActiveScroll } from "@/hooks/useHorizontalActiveScroll";
+import { isInternalStorefrontCopy, storefrontDisplayText } from "@/utils/storefrontCopySanitizer";
 import type { PromotionType, StorefrontPromotion } from "@/services/marketingService";
 
 type PromotionFilter = PromotionType | "";
@@ -71,8 +72,6 @@ const FILTERS: Array<{ type: PromotionFilter; icon: typeof Gift; fallbackLabel: 
   { type: "member_price", icon: Gem, fallbackLabel: "会员价" },
 ];
 
-const PROMOTION_TEST_COPY_RE = /测试|test|demo|样例|副标题|互斥|规则判断/i;
-
 function typeTone(type: PromotionType) {
   if (type === "flash_sale" || type === "limited_time_discount") {
     return "border-rose-100 bg-rose-50 text-rose-700";
@@ -119,10 +118,6 @@ function runtimeStatusHint(promotion: StorefrontPromotion, t: (key: string) => s
   return promotion.countdown_seconds > 0 ? `剩余 ${formatDuration(promotion.countdown_seconds)}` : t("promotion.endingSoon");
 }
 
-function formatCount(value: number) {
-  return Math.max(0, Number(value) || 0).toLocaleString("zh-CN");
-}
-
 function formatRM(value: unknown) {
   const amount = Number(value);
   if (!Number.isFinite(amount) || amount <= 0) return "";
@@ -135,13 +130,11 @@ function formatRM(value: unknown) {
 function isDisplayablePromoLabel(value: string | null | undefined) {
   const label = value?.trim() || "";
   return Boolean(label)
-    && !PROMOTION_TEST_COPY_RE.test(label)
+    && !isInternalStorefrontCopy(label)
     && !["秒杀", "优惠券", "满减", "满折", "活动"].includes(label);
 }
 
 function displayPromotionTitle(promotion: StorefrontPromotion, promotionTypeLabel: (type: string) => string) {
-  const title = promotion.title?.trim();
-  if (title && !PROMOTION_TEST_COPY_RE.test(title)) return title;
   const fallbackByType: Record<PromotionType, string> = {
     campaign: "精选主题活动",
     coupon: "领券优惠专区",
@@ -153,12 +146,10 @@ function displayPromotionTitle(promotion: StorefrontPromotion, promotionTypeLabe
     checkin_reward: "签到福利专区",
     points_reward: "积分奖励专区",
   };
-  return fallbackByType[promotion.type] || `${promotionTypeLabel(promotion.type)}专区`;
+  return storefrontDisplayText(promotion.title, fallbackByType[promotion.type] || `${promotionTypeLabel(promotion.type)}专区`);
 }
 
 function displayPromotionSubtitle(promotion: StorefrontPromotion) {
-  const subtitle = promotion.subtitle?.trim() || promotion.description?.trim() || "";
-  if (subtitle && !PROMOTION_TEST_COPY_RE.test(subtitle)) return subtitle;
   const fallbackByType: Record<PromotionType, string> = {
     campaign: "精选活动限时开放",
     coupon: "领券后下单更划算",
@@ -170,7 +161,10 @@ function displayPromotionSubtitle(promotion: StorefrontPromotion) {
     checkin_reward: "每日签到领取福利",
     points_reward: "下单可获得积分奖励",
   };
-  return fallbackByType[promotion.type] || "精选优惠活动";
+  return storefrontDisplayText(
+    promotion.subtitle?.trim() || promotion.description?.trim(),
+    fallbackByType[promotion.type] || "精选优惠活动",
+  );
 }
 
 function promotionBenefitLabel(promotion: StorefrontPromotion) {
@@ -393,33 +387,9 @@ export default function Promotions() {
     return FILTERABLE_PROMOTION_TYPES.includes(raw as PromotionType) ? raw as PromotionType : "";
   }, [searchParams]);
   const initialCache = useMemo(() => readPromotionListCache(selectedType), [selectedType]);
-  const initialSummaryCache = useMemo(() => readPromotionListCache(""), []);
   const [list, setList] = useState<StorefrontPromotion[]>(() => initialCache?.list || []);
-  const [summaryList, setSummaryList] = useState<StorefrontPromotion[]>(() => initialSummaryCache?.list || (!selectedType && initialCache?.list) || []);
   const [loading, setLoading] = useState(() => !initialCache);
-  const [summaryLoading, setSummaryLoading] = useState(() => Boolean(selectedType && !initialSummaryCache));
   const [error, setError] = useState("");
-
-  const loadSummary = useCallback(async () => {
-    const cached = readPromotionListCache("");
-    if (cached) {
-      setSummaryList(cached.list);
-      setSummaryLoading(false);
-      return;
-    }
-
-    setSummaryLoading(true);
-    try {
-      const promotionResult = await marketingService.fetchPromotions({ pageSize: 60, type: "" });
-      const nextList = promotionResult.list || [];
-      writePromotionListCache("", nextList);
-      setSummaryList(nextList);
-    } catch {
-      setSummaryList((current) => current);
-    } finally {
-      setSummaryLoading(false);
-    }
-  }, []);
 
   const load = useCallback(async () => {
     const cached = readPromotionListCache(selectedType);
@@ -435,9 +405,6 @@ export default function Promotions() {
       const nextList = promotionResult.list || [];
       writePromotionListCache(selectedType, nextList);
       setList(nextList);
-      if (!selectedType) {
-        setSummaryList(nextList);
-      }
     } catch {
       setList((current) => current.length > 0 ? current : []);
       setError(t("promotion.errorFallback"));
@@ -450,21 +417,6 @@ export default function Promotions() {
     void load();
   }, [load]);
 
-  useEffect(() => {
-    if (selectedType) {
-      void loadSummary();
-    }
-  }, [loadSummary, selectedType]);
-
-  const summary = useMemo(() => {
-    const summarySource = summaryList.length > 0 ? summaryList : selectedType ? [] : list;
-    return {
-      active: summarySource.filter((item) => item.runtime_status === "active").length,
-      coupon: summarySource.filter((item) => item.type === "coupon").length,
-      flash: summarySource.filter((item) => item.type === "flash_sale" || item.type === "limited_time_discount").length,
-    };
-  }, [list, selectedType, summaryList]);
-  const summaryPending = summaryLoading && selectedType && summaryList.length === 0;
   const activeFilterKey = filterScrollKey(selectedType);
   const { containerRef: filtersRef, setItemRef: setFilterRef, scrollToKey: scrollFilterToKey } =
     useHorizontalActiveScroll<HTMLElement, HTMLAnchorElement>(activeFilterKey, FILTERS.length);
@@ -486,26 +438,9 @@ export default function Promotions() {
       />
 
       <main className="mx-auto w-full max-w-6xl px-[var(--store-page-x)] pb-6 pt-3 md:px-6 md:py-8 lg:px-8">
-        <section className="store-promotions-v12-hero overflow-hidden rounded-[1.35rem] border border-[color-mix(in_srgb,var(--theme-price)_20%,var(--theme-border))] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--theme-price)_14%,var(--theme-surface))_0%,var(--theme-surface)_58%,color-mix(in_srgb,var(--theme-primary)_8%,var(--theme-bg))_100%)] p-4 shadow-[0_18px_50px_color-mix(in_srgb,var(--theme-price)_10%,transparent)] sm:p-6">
-          <div className="store-promotions-v12-hero__stats" aria-label="活动统计">
-            <div>
-              <strong>{summaryPending ? "..." : formatCount(summary.active)}</strong>
-              <span>{t("promotion.active")}</span>
-            </div>
-            <div>
-              <strong>{summaryPending ? "..." : formatCount(summary.flash)}</strong>
-              <span>{t("promotion.timed")}</span>
-            </div>
-            <div>
-              <strong>{summaryPending ? "..." : formatCount(summary.coupon)}</strong>
-              <span>可领券</span>
-            </div>
-          </div>
-        </section>
-
         <nav
           ref={filtersRef}
-          className="store-promotions-v12-filters no-scrollbar mt-4 flex gap-2 overflow-x-auto overflow-y-hidden scroll-smooth pb-1 [-webkit-overflow-scrolling:touch] sm:grid sm:grid-cols-5 sm:overflow-visible sm:pb-0 lg:grid-cols-10"
+          className="store-promotions-v12-filters no-scrollbar flex gap-2 overflow-x-auto overflow-y-hidden scroll-smooth pb-1 [-webkit-overflow-scrolling:touch] sm:grid sm:grid-cols-5 sm:overflow-visible sm:pb-0 lg:grid-cols-10"
           aria-label={t("promotion.quickNav")}
         >
           {FILTERS.map((filter) => {

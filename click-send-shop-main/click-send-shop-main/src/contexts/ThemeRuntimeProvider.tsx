@@ -23,6 +23,31 @@ import type { ThemeConfig, ThemeSkin } from "@/types/theme";
 type ThemeMode = "light" | "dark";
 
 const SKINS_CACHE_KEY = "theme_cached_skins";
+const STOREFRONT_NEXT_THEME_OVERRIDES: Record<string, string> = {
+  "--theme-bg": "#f4f5f2",
+  "--theme-surface": "#fefefc",
+  "--theme-border": "#dde1dc",
+  "--theme-text": "#171918",
+  "--theme-text-muted": "#646a65",
+  "--theme-text-on-surface": "#171918",
+  "--theme-text-muted-on-surface": "#646a65",
+  "--theme-primary": "#245b49",
+  "--theme-primary-hover": "#1e4d3e",
+  "--theme-primary-foreground": "#ffffff",
+  "--theme-price": "#a44335",
+  "--theme-price-foreground": "#ffffff",
+  "--theme-success": "#2b6b50",
+  "--theme-success-foreground": "#ffffff",
+  "--theme-warning": "#96641a",
+  "--theme-danger": "#a73d34",
+  "--theme-radius": "1rem",
+  "--theme-card-radius": "1.125rem",
+  "--theme-button-radius": "0.625rem",
+  "--theme-shadow": "0 1px 2px rgb(20 24 21 / 5%)",
+  "--theme-shadow-hover": "0 6px 18px rgb(20 24 21 / 7%)",
+  "--theme-shadow-control": "0 1px 2px rgb(20 24 21 / 5%)",
+  "--theme-focus-ring": "0 0 0 3px rgb(36 91 73 / 18%)",
+};
 
 type ThemeContextValue = {
   theme: ThemeMode;
@@ -40,6 +65,16 @@ const ThemeRuntimeContext = createContext<ThemeContextValue | null>(null);
 
 function isAdminScope() {
   return typeof window !== "undefined" && window.location.pathname.startsWith("/admin");
+}
+
+function isStorefrontNextScope(root: HTMLElement, inAdmin: boolean) {
+  if (inAdmin) return false;
+  return root.getAttribute("data-storefront-ui") === "next" || root.getAttribute("data-app-scope") === "store";
+}
+
+function applyStorefrontNextThemeOverrides(root: HTMLElement, inAdmin: boolean) {
+  if (!isStorefrontNextScope(root, inAdmin)) return;
+  Object.entries(STOREFRONT_NEXT_THEME_OVERRIDES).forEach(([key, value]) => root.style.setProperty(key, value));
 }
 
 function resolveThemeConfigForScope(config: ThemeConfig, inAdmin: boolean): ThemeConfig {
@@ -299,7 +334,8 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
 
     const palette = generateThemePalette(appliedConfig);
     Object.entries(palette).forEach(([key, value]) => root.style.setProperty(key, value));
-  }, [appliedConfig, appliedSkin, themeReady, themeSynced]);
+    applyStorefrontNextThemeOverrides(root, inAdminScope);
+  }, [appliedConfig, appliedSkin, inAdminScope, themeReady, themeSynced]);
 
   useLayoutEffect(() => {
     const syncScope = () => {
@@ -308,6 +344,7 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
       const palette = generateThemePalette(scoped);
       Object.entries(palette).forEach(([key, value]) => root.style.setProperty(key, value));
       applyThemeDataAttributes(root, scoped, appliedSkin);
+      applyStorefrontNextThemeOverrides(root, isAdminScope());
     };
     syncScope();
     window.addEventListener("app:scope-changed", syncScope);

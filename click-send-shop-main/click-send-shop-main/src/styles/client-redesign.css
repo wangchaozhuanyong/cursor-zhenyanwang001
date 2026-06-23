@@ -3373,10 +3373,27 @@ html[data-app-scope="store"] .store-help-v12-contact .support-contact-v12__link 
 }
 
 html[data-app-scope="store"] .store-help-v12-contact .support-contact-v12__link-copy {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
   justify-content: center;
+  gap: 6px;
+}
+
+html[data-app-scope="store"] .store-help-v12-contact .support-contact-v12__link-copy span {
+  display: inline-block;
+  min-width: 0;
+  color: currentColor;
+  font-size: 0.84rem;
+  font-weight: 860;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 html[data-app-scope="store"] .store-help-v12-contact .support-contact-v12__link svg {
+  flex: 0 0 auto;
   color: currentColor;
 }
 
@@ -4316,6 +4333,74 @@ html[data-app-scope="store"] .store-return-detail-v12-summary {
   background: color-mix(in srgb, var(--client-surface) 95%, transparent);
   padding: 12px;
   box-shadow: var(--client-v12-card-shadow);
+}
+
+html[data-app-scope="store"] .store-order-detail-v12-summary {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+}
+
+html[data-app-scope="store"] .store-order-detail-v12-fact {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: 38px minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--client-canvas) 70%, #ffffff);
+  padding: 12px;
+}
+
+html[data-app-scope="store"] .store-order-detail-v12-fact__icon {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--theme-primary) 10%, #ffffff);
+  color: var(--theme-primary);
+}
+
+html[data-app-scope="store"] .store-order-detail-v12-fact__copy {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+html[data-app-scope="store"] .store-order-detail-v12-fact__copy span {
+  color: var(--client-muted);
+  font-size: 11px;
+  font-weight: 760;
+  line-height: 1.35;
+}
+
+html[data-app-scope="store"] .store-order-detail-v12-fact__copy strong {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--theme-text);
+  font-size: 14px;
+  font-weight: 840;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-app-scope="store"] .store-order-detail-v12-fact__copy small {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--client-muted);
+  font-size: 11px;
+  line-height: 1.35;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+@media (min-width: 640px) {
+  html[data-app-scope="store"] .store-order-detail-v12-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 html[data-app-scope="store"] .store-order-detail-v12-section-head {
@@ -7051,9 +7136,9 @@ html[data-app-scope="store"] .store-filter-summary {
 
   html[data-app-scope="store"] .store-category-mobile-tabs-shell .store-category-switcher.store-category-rail--plain .store-category-tile,
   html[data-app-scope="store"] .store-category-mobile-tabs-shell .store-category-switcher.store-category-rail--plain .store-category-tile-skeleton {
-    width: clamp(3.48rem, 13.9vw, 3.92rem) !important;
-    height: 3.9rem !important;
-    min-height: 3.9rem !important;
+    width: clamp(4.25rem, 18vw, 4.75rem) !important;
+    height: 4.45rem !important;
+    min-height: 4.45rem !important;
     border: 1px solid transparent !important;
     border-radius: 12px !important;
     background: transparent !important;
@@ -7107,13 +7192,19 @@ html[data-app-scope="store"] .store-filter-summary {
   }
 
   html[data-app-scope="store"] .store-category-mobile-tabs-shell .store-category-switcher.store-category-rail--plain .store-category-tile-label {
-    min-height: 0.9rem;
+    display: -webkit-box;
+    min-height: 1.58rem;
+    overflow: hidden;
     padding-inline: 0;
     padding-bottom: 0;
     color: currentColor !important;
     font-size: 0.68rem;
     font-weight: 760;
     line-height: 1.16;
+    text-overflow: ellipsis;
+    white-space: normal;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
   }
 
   html[data-app-scope="store"] .store-category-mobile-tabs-shell .store-category-switcher.store-category-rail--plain .store-category-tile.is-active .store-category-tile-label::after {

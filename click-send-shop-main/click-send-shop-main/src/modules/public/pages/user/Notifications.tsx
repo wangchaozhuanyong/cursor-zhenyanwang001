@@ -12,6 +12,7 @@ import {
   Truck,
   RotateCcw,
   ShieldCheck,
+  RefreshCw,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useGoBack } from "@/hooks/useGoBack";
@@ -32,7 +33,6 @@ import {
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 import { AppModal } from "@/modules/micro-interactions";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
-import { ClientButton, EmptyState as ClientEmptyState } from "@/components/client";
 import { useHorizontalActiveScroll } from "@/hooks/useHorizontalActiveScroll";
 
 const typeConfig: Record<NotificationType, { icon: typeof Bell; color: string }> = {
@@ -111,13 +111,16 @@ export default function Notifications() {
       <StoreAccountLayout
         title="消息通知"
         onBack={goBack}
-        className="store-v12-page store-account-subpage-v12-page store-notifications-v12-page"
-        mainClassName="sm:px-4 xl:py-6"
+        className="sf-next-page store-v12-page store-account-subpage-v12-page store-notifications-v12-page"
+        mainClassName="sf-next-account-main sm:px-4 xl:py-6"
       >
-        <div className="flex min-h-[220px] flex-col items-center justify-center rounded-2xl border border-border bg-card px-4 py-10 text-center text-muted-foreground">
-          <Loader2 size={28} className="animate-spin text-theme-price" aria-label="加载中" />
-          <p className="mt-3 text-sm">消息通知加载中...</p>
-        </div>
+        <section className="store-account-v12-empty-panel store-account-v12-status-panel" aria-live="polite">
+          <span className="store-account-v12-empty-panel__icon" aria-hidden>
+            <Loader2 size={28} className="animate-spin" />
+          </span>
+          <h2>正在加载消息</h2>
+          <p>正在同步订单、优惠和系统通知。</p>
+        </section>
       </StoreAccountLayout>
     );
   }
@@ -127,19 +130,20 @@ export default function Notifications() {
       <StoreAccountLayout
         title="消息通知"
         onBack={goBack}
-        className="store-v12-page store-account-subpage-v12-page store-notifications-v12-page"
-        mainClassName="sm:px-4 xl:py-6"
+        className="sf-next-page store-v12-page store-account-subpage-v12-page store-notifications-v12-page"
+        mainClassName="sf-next-account-main sm:px-4 xl:py-6"
       >
-        <ClientEmptyState
-          title="消息加载失败"
-          description={error}
-          icon={<Bell size={30} />}
-          action={
-            <ClientButton type="button" onClick={() => loadNotifications()}>
-              重试
-            </ClientButton>
-          }
-        />
+        <section className="store-account-v12-empty-panel store-account-v12-status-panel" role="alert">
+          <span className="store-account-v12-empty-panel__icon" aria-hidden>
+            <Bell size={28} />
+          </span>
+          <h2>消息加载失败</h2>
+          <p>{error}</p>
+          <UnifiedButton type="button" onClick={() => loadNotifications()} className="store-account-v12-empty-panel__action">
+            <RefreshCw size={17} aria-hidden />
+            重试
+          </UnifiedButton>
+        </section>
       </StoreAccountLayout>
     );
   }
@@ -167,49 +171,17 @@ export default function Notifications() {
             </UnifiedButton>
           ) : undefined
         }
-        className="store-v12-page store-account-subpage-v12-page store-notifications-v12-page"
-        mainClassName="sm:px-4 xl:py-6"
+        className="sf-next-page store-v12-page store-account-subpage-v12-page store-notifications-v12-page"
+        mainClassName="sf-next-account-main sm:px-4 xl:py-6"
       >
-        <section className="store-account-v12-hero store-notifications-v12-hero">
-          <span className="store-v12-eyebrow"><Bell size={14} aria-hidden /> 消息中心</span>
-          <h2>订单、优惠、售后提醒集中处理</h2>
-          <div className="store-v12-status-strip">
-            <span>{notifications.length} 条消息</span>
-            <span>{unreadCount} 条未读</span>
-            <span>{filterCounts.order} 条订单相关</span>
-          </div>
-        </section>
-
-        {notifications.length > 0 ? (
-          <section className="store-account-v12-summary store-orders-v12-stat-grid">
-            <div className="store-orders-v12-stat">
-              <span className="store-orders-v12-stat__icon"><Bell size={17} aria-hidden /></span>
-              <strong>{notifications.length}</strong>
-              <span>全部消息</span>
-            </div>
-            <div className="store-orders-v12-stat">
-              <span className="store-orders-v12-stat__icon"><Megaphone size={17} aria-hidden /></span>
-              <strong>{filterCounts.promotion}</strong>
-              <span>优惠提醒</span>
-            </div>
-            <div className="store-orders-v12-stat">
-              <span className="store-orders-v12-stat__icon"><Package size={17} aria-hidden /></span>
-              <strong>{filterCounts.order}</strong>
-              <span>订单提醒</span>
-            </div>
-            <div className="store-orders-v12-stat">
-              <span className="store-orders-v12-stat__icon"><ShieldCheck size={17} aria-hidden /></span>
-              <strong>{filterCounts.system}</strong>
-              <span>系统消息</span>
-            </div>
-          </section>
-        ) : null}
-
         {!loading && notifications.length === 0 && (
-          <ClientEmptyState
-            title="暂无消息通知"
-            icon={<Bell size={30} />}
-          />
+          <section className="store-account-v12-empty-panel store-account-v12-status-panel">
+            <span className="store-account-v12-empty-panel__icon" aria-hidden>
+              <Bell size={28} />
+            </span>
+            <h2>暂无消息通知</h2>
+            <p>订单、物流、优惠和系统消息会出现在这里。</p>
+          </section>
         )}
         {notifications.length > 0 ? (
           <div ref={filtersRef} className="store-notifications-v12-filters no-scrollbar">
@@ -238,10 +210,13 @@ export default function Notifications() {
           </div>
         ) : null}
         {notifications.length > 0 && filteredNotifications.length === 0 ? (
-          <ClientEmptyState
-            title="当前分类暂无消息"
-            icon={<Bell size={30} />}
-          />
+          <section className="store-account-v12-empty-panel store-account-v12-status-panel">
+            <span className="store-account-v12-empty-panel__icon" aria-hidden>
+              <Bell size={28} />
+            </span>
+            <h2>当前分类暂无消息</h2>
+            <p>切换到其他分类，或稍后再查看新的提醒。</p>
+          </section>
         ) : null}
         <div className="store-notifications-v12-list">
           <AnimatePresence>

@@ -1,7 +1,7 @@
-/** 分类金刚区图标：优先后台 icon_url（透明 PNG），其次 emoji icon */
+/** 分类金刚区图标：优先后台 icon_url，其次后台 token；兜底交给前台渲染为稳定线性图标。 */
 export function getCategoryNavIconValue(
   category: { icon_url?: string; icon?: string },
-  fallback = "📂",
+  fallback = "category",
 ): string {
   const url = (category.icon_url || "").trim();
   if (url) return url;

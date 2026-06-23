@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ChevronDown, ChevronUp, Headphones, Search } from "lucide-react";
+import { ChevronDown, ChevronUp, Search } from "lucide-react";
 import SupportContactSection from "@/components/support/SupportContactSection";
 import { DEFAULT_FAQS, DEFAULT_FAQ_CATEGORIES } from "@/constants/help";
 import SeoHead from "@/components/SeoHead";
@@ -89,8 +89,8 @@ export default function Help() {
       title="帮助中心"
       onBack={goBack}
       backFallback="/profile"
-      contentClassName="md:max-w-3xl xl:max-w-4xl"
-      className="store-v12-page store-help-v12-page"
+      contentClassName="sf-next-account-main md:max-w-3xl xl:max-w-4xl"
+      className="sf-next-page store-v12-page store-help-v12-page"
     >
       <SeoHead
         title={`帮助中心｜${siteName}`}
@@ -100,42 +100,17 @@ export default function Help() {
         jsonLd={[{ id: "faq-help", data: faqJsonLd }]}
       />
 
-      <div className="mx-auto w-full max-w-lg md:max-w-none">
-        <section className="store-help-v12-summary mb-3 overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 shadow-[var(--theme-shadow)] md:p-5">
-          <div className="store-help-v12-summary__head flex items-start gap-3">
-            <span className="store-help-v12-summary__icon grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[color-mix(in_srgb,var(--theme-primary)_12%,var(--theme-surface))] text-[var(--theme-primary)]">
-              <Headphones size={22} aria-hidden />
-            </span>
-            <div className="min-w-0">
-              <p className="store-help-v12-summary__title text-base font-semibold text-[var(--theme-text)]">常见问题快速查</p>
-            </div>
-          </div>
-          <div className="store-help-v12-summary__stats mt-4 grid grid-cols-3 gap-2">
-            <div className="rounded-xl bg-[var(--theme-bg)] px-3 py-2">
-              <p className="text-[11px] text-[var(--theme-muted)]">分类</p>
-              <p className="mt-1 text-lg font-black text-[var(--theme-text)]">{faqCategories.length}</p>
-            </div>
-            <div className="rounded-xl bg-[var(--theme-bg)] px-3 py-2">
-              <p className="text-[11px] text-[var(--theme-muted)]">结果</p>
-              <p className="mt-1 text-lg font-black text-[var(--theme-text)]">{filtered.length}</p>
-            </div>
-            <div className="rounded-xl bg-[var(--theme-bg)] px-3 py-2">
-              <p className="text-[11px] text-[var(--theme-muted)]">客服</p>
-              <p className="mt-1 text-lg font-black text-[var(--theme-text)]">已接入</p>
-            </div>
-          </div>
-        </section>
-
-        <div className="relative">
-          <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+      <div className="store-help-v12-stack">
+        <div className="store-help-v12-search">
+          <Search size={15} aria-hidden />
           <input
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
             placeholder="搜索常见问题..."
-            className="h-12 w-full rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] pl-10 pr-3 text-sm font-medium text-[var(--theme-text)] shadow-[var(--theme-shadow)] outline-none focus:border-[color-mix(in_srgb,var(--theme-primary)_46%,var(--theme-border))]"
+            className="store-help-v12-search__input"
           />
         </div>
-        <div ref={categoryRailRef} className="no-scrollbar mt-3 flex gap-2 overflow-x-auto scroll-smooth [-webkit-overflow-scrolling:touch] md:flex-wrap md:overflow-visible">
+        <div ref={categoryRailRef} className="store-help-v12-category-rail no-scrollbar">
           <UnifiedButton
             ref={(el) => setCategoryRef("all", el)}
             type="button"
@@ -143,7 +118,7 @@ export default function Help() {
               scrollCategoryToKey("all");
               setActiveCategory(null);
             }}
-            className={`inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-4 text-xs font-semibold ${!activeCategory ? "btn-theme-price" : "border border-[var(--theme-border)] bg-[var(--theme-surface)] text-[var(--theme-text-muted)]"}`}
+            className={`store-help-v12-category ${!activeCategory ? "is-active" : ""}`}
           >
             <span>全部</span>
             <span>{faqs.length}</span>
@@ -160,7 +135,7 @@ export default function Help() {
                   scrollCategoryToKey(nextCategory || "all");
                   setActiveCategory(nextCategory);
                 }}
-                className={`inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-4 text-xs font-semibold ${active ? "btn-theme-price" : "border border-[var(--theme-border)] bg-[var(--theme-surface)] text-[var(--theme-text-muted)]"}`}
+                className={`store-help-v12-category ${active ? "is-active" : ""}`}
               >
                 <span>{category}</span>
                 <span>{count}</span>
@@ -168,27 +143,27 @@ export default function Help() {
             );
           })}
         </div>
-        <div className="mt-4 space-y-3">
+        <div className="store-help-v12-list">
           {filtered.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-8 text-center shadow-[var(--theme-shadow)]">
+            <div className="store-help-v12-empty">
               <p className="text-sm font-semibold text-[var(--theme-text)]">没有找到匹配的问题</p>
               <p className="mt-1 text-xs leading-5 text-[var(--theme-muted)]">换个关键词，或直接联系官方客服。</p>
             </div>
           ) : null}
           {filtered.map((faq) => (
-            <div key={faq.id} className="overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] shadow-[var(--theme-shadow)]">
-              <UnifiedButton type="button" onClick={() => setOpenId(openId === faq.id ? null : faq.id)} className="flex w-full items-center justify-between px-4 py-3.5 text-left">
-                <span className="pr-2 text-sm font-semibold text-[var(--theme-text)]">{faq.question}</span>
-                {openId === faq.id ? <ChevronUp size={16} className="text-theme-price" /> : <ChevronDown size={16} className="text-muted-foreground" />}
+            <div key={faq.id} className="store-help-v12-faq">
+              <UnifiedButton type="button" onClick={() => setOpenId(openId === faq.id ? null : faq.id)} className="store-help-v12-faq__trigger">
+                <span>{faq.question}</span>
+                {openId === faq.id ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
               </UnifiedButton>
-              {openId === faq.id ? <div className="border-t border-[var(--theme-border)] px-4 py-3 text-sm leading-relaxed text-[var(--theme-muted)]">{faq.answer}</div> : null}
+              {openId === faq.id ? <div className="store-help-v12-faq__answer">{faq.answer}</div> : null}
             </div>
           ))}
         </div>
         <SupportContactSection
           hideDescription
           variant="compact"
-          className="store-help-v12-contact mt-6 rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 shadow-[var(--theme-shadow)]"
+          className="store-help-v12-contact"
         />
       </div>
     </StoreStandardPageShell>

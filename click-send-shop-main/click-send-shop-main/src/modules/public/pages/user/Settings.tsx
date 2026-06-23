@@ -28,15 +28,15 @@ import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import StableImage from "@/components/ui/StableImage";
 import { usePublicLocale } from "@/i18n/publicLocale";
 
-const CARD =
-  "rounded-[1.25rem] border border-[color-mix(in_srgb,var(--theme-border)_72%,transparent)] bg-[var(--theme-surface)] p-4 shadow-[var(--theme-shadow)]";
-const SECTION_TITLE = "px-1 text-[13px] font-semibold text-[var(--theme-text)]";
-const SOFT_INPUT =
-  "h-12 w-full rounded-[14px] border border-transparent bg-[var(--theme-bg)] px-4 text-sm font-medium text-[var(--theme-text)] outline-none transition-[border-color,box-shadow] placeholder:text-[var(--theme-muted)] focus:border-[color-mix(in_srgb,var(--theme-primary)_40%,var(--theme-border))] focus:shadow-[var(--theme-focus-ring)] disabled:opacity-70";
+const CARD = "store-settings-v12-card";
+const SECTION_TITLE = "store-settings-v12-section-title";
+const SOFT_INPUT = "store-settings-v12-input";
+const FIELD_LABEL = "store-settings-v12-field-label";
+const DIVIDER = "store-settings-v12-divider";
 
 function SectionBlock({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="space-y-2">
+    <section className="store-settings-v12-section">
       <h2 className={SECTION_TITLE}>{title}</h2>
       <div className={CARD}>{children}</div>
     </section>
@@ -45,7 +45,7 @@ function SectionBlock({ title, children }: { title: string; children: ReactNode 
 
 function IconBubble({ children }: { children: ReactNode }) {
   return (
-    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-primary)_8%,var(--theme-surface))] text-[var(--theme-primary)]">
+    <span className="store-settings-v12-icon">
       {children}
     </span>
   );
@@ -211,8 +211,8 @@ export default function Settings() {
     <StoreAccountLayout
       title="账户设置"
       onBack={goBack}
-      className="store-v12-page store-account-subpage-v12-page store-settings-v12-page text-[var(--theme-text)]"
-      mainClassName="pb-28 pt-3 sm:py-5 md:pb-12"
+      className="sf-next-page store-v12-page store-account-subpage-v12-page store-settings-v12-page text-[var(--theme-text)]"
+      mainClassName="sf-next-account-main pb-28 pt-3 sm:py-5 md:pb-12"
     >
       <div className="space-y-4 sm:space-y-5">
         <section className="store-account-v12-hero store-settings-v12-hero">
@@ -263,33 +263,33 @@ export default function Settings() {
               <UserRound size={20} />
             </IconBubble>
             <label className="min-w-0 flex-1">
-              <span className="block text-sm font-semibold text-[var(--theme-text)]">昵称</span>
+              <span className={FIELD_LABEL}>昵称</span>
               <input
                 value={nickname}
                 onChange={(e) => setNickname(e.target.value)}
-                className={`mt-2 ${SOFT_INPUT}`}
+                className={SOFT_INPUT}
                 aria-label="昵称"
               />
             </label>
           </div>
 
-          <div className="border-t border-[color-mix(in_srgb,var(--theme-border)_68%,transparent)] pt-4">
+          <div className={DIVIDER}>
             <div className="flex gap-3">
               <IconBubble>
                 <CalendarDays size={20} />
               </IconBubble>
               <div className="min-w-0 flex-1">
-                <span className="block text-sm font-semibold text-[var(--theme-text)]">生日</span>
+                <span className={FIELD_LABEL}>生日</span>
                 <SegmentedDateInput
                   value={birthday}
                   readOnly={birthdayReadOnly}
                   onChange={setBirthday}
-                  controlClassName="mt-2 h-12 rounded-[14px] border-0 bg-[var(--theme-bg)] px-4 text-[var(--theme-text)] ring-0 focus-within:shadow-[var(--theme-focus-ring)]"
+                  controlClassName="store-settings-v12-date-input"
                 />
                 {birthdayReadOnly ? (
-                  <p className="mt-2 text-xs leading-5 text-[var(--theme-muted)]">生日已保存，如需修改请联系客服</p>
+                  <p className="store-settings-v12-field-hint">生日已保存，如需修改请联系客服</p>
                 ) : birthday ? (
-                  <p className="mt-2 text-xs leading-5 text-[var(--theme-muted)]">生日保存后不可自行修改</p>
+                  <p className="store-settings-v12-field-hint">生日保存后不可自行修改</p>
                 ) : null}
               </div>
             </div>
@@ -304,7 +304,7 @@ export default function Settings() {
               <Phone size={20} />
             </IconBubble>
             <div className="min-w-0 flex-1">
-              <span className="block text-sm font-semibold text-[var(--theme-text)]">手机号</span>
+              <span className={FIELD_LABEL}>手机号</span>
               <CountryPhoneInput
                 countryCode={accountPhone.countryCode}
                 onCountryCodeChange={() => {}}
@@ -313,35 +313,35 @@ export default function Settings() {
                 readOnly
                 variant="joined"
                 showErrorText={false}
-                className="mt-2"
+                className="store-settings-v12-phone-input"
               />
             </div>
           </div>
 
-          <div className="border-t border-[color-mix(in_srgb,var(--theme-border)_68%,transparent)] pt-4">
+          <div className={DIVIDER}>
             <div className="flex gap-3">
               <IconBubble>
                 <WeChatIcon size={20} />
               </IconBubble>
               <label className="min-w-0 flex-1">
-                <span className="block text-sm font-semibold text-[var(--theme-text)]">联系微信号</span>
+                <span className={FIELD_LABEL}>联系微信号</span>
                 <input
                   value={wechat}
                   onChange={(e) => setWechat(e.target.value)}
-                  className={`mt-2 ${SOFT_INPUT}`}
+                  className={SOFT_INPUT}
                   aria-label="联系微信号"
                 />
               </label>
             </div>
           </div>
 
-          <div className="border-t border-[color-mix(in_srgb,var(--theme-border)_68%,transparent)] pt-4">
+          <div className={DIVIDER}>
             <div className="flex gap-3">
               <IconBubble>
                 <MessageCircle size={20} />
               </IconBubble>
               <div className="min-w-0 flex-1">
-                <span className="block text-sm font-semibold text-[var(--theme-text)]">WhatsApp</span>
+                <span className={FIELD_LABEL}>WhatsApp</span>
                 <CountryPhoneInput
                   countryCode={whatsappCountryCode}
                   onCountryCodeChange={(value) => {
@@ -356,14 +356,14 @@ export default function Settings() {
                   errorText={fieldErrors.whatsapp}
                   phonePlaceholder="WhatsApp 号码"
                   variant="joined"
-                  className="mt-2"
+                  className="store-settings-v12-phone-input"
                   autoDetectCountryCode
                 />
               </div>
             </div>
           </div>
 
-          <p className="rounded-[14px] bg-[color-mix(in_srgb,var(--theme-primary)_5%,var(--theme-bg))] px-3 py-2 text-xs leading-5 text-[var(--theme-muted)]">
+          <p className="store-settings-v12-help-note">
             手机号用于登录，如需修改请联系客服。
           </p>
         </div>
@@ -406,7 +406,7 @@ export default function Settings() {
                 type="button"
                 onClick={handleUnbindWechat}
                 disabled={wechatActionLoading}
-                className="h-11 w-full rounded-[14px] border border-[color-mix(in_srgb,var(--theme-danger)_28%,transparent)] bg-[color-mix(in_srgb,var(--theme-danger)_5%,var(--theme-surface))] text-sm font-semibold text-[var(--theme-danger)] disabled:opacity-60"
+                className="store-settings-v12-oauth-button store-settings-v12-oauth-button--danger"
               >
                 {wechatActionLoading ? "处理中..." : "解绑微信"}
               </UnifiedButton>
@@ -415,14 +415,14 @@ export default function Settings() {
                 type="button"
                 onClick={handleBindWechat}
                 disabled={wechatActionLoading}
-                className="flex h-11 w-full items-center justify-center gap-2 rounded-[14px] bg-[color-mix(in_srgb,#075E54_92%,var(--theme-primary))] text-sm font-semibold text-white disabled:opacity-60"
+                className="store-settings-v12-oauth-button store-settings-v12-oauth-button--wechat"
               >
                 <WeChatIcon size={20} />
                 {wechatActionLoading ? "跳转中..." : "绑定微信"}
               </UnifiedButton>
             )}
           </div>
-          <p className="mt-2 text-xs leading-5 text-[var(--theme-muted)]">
+          <p className="store-settings-v12-field-hint">
             解绑前请确保已绑定手机号或设置密码，否则可能无法登录。
           </p>
         </SectionBlock>
@@ -431,12 +431,12 @@ export default function Settings() {
       <SettingsSecuritySection />
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-[color-mix(in_srgb,var(--theme-border)_60%,transparent)] bg-[color-mix(in_srgb,var(--theme-surface)_92%,transparent)] px-[var(--store-page-x)] pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3 backdrop-blur-xl md:static md:border-0 md:bg-transparent md:p-0 md:backdrop-blur-0">
-        <div className="mx-auto w-full max-w-lg md:max-w-none">
+      <div className="store-settings-v12-save-bar">
+        <div className="store-settings-v12-save-bar__inner">
           <UnifiedButton
             onClick={handleSave}
             disabled={profileSaving}
-            className="h-12 w-full rounded-[16px] bg-[var(--theme-primary)] text-sm font-semibold text-[var(--theme-primary-foreground)] shadow-[0_12px_26px_-18px_var(--theme-primary)] disabled:opacity-60"
+            className="store-settings-v12-save-button"
           >
             {profileSaving ? "保存中..." : "保存修改"}
           </UnifiedButton>

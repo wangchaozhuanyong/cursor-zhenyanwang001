@@ -23,33 +23,33 @@ export default function ContactUsContent({ intro }: { intro?: string }) {
   ].filter(Boolean) as Row[];
 
   return (
-    <div className="space-y-4">
-      {intro ? <p className="text-sm text-muted-foreground">{intro}</p> : null}
-      <div className="rounded-2xl border border-border bg-card p-4">
-        <h2 className="mb-3 text-sm font-semibold">联系方式</h2>
-        <ul className="space-y-3">
+    <div className="store-contact-v12-stack">
+      {intro ? <p className="store-contact-v12-intro">{intro}</p> : null}
+      <div className="store-contact-v12-panel">
+        <h2>联系方式</h2>
+        <ul>
           {rows.map((row) => {
             const content = (
               <>
-                <row.icon size={18} className="mt-0.5 shrink-0 text-[var(--theme-price)]" />
-                <span className="text-sm">{row.label}</span>
+                <row.icon size={18} aria-hidden />
+                <span>{row.label}</span>
               </>
             );
             return (
               <li key={row.label}>
                 {row.href ? (
-                  <a href={row.href} className="flex items-start gap-3 rounded-lg outline-none hover:text-[var(--theme-price)] focus-visible:ring-2 focus-visible:ring-[var(--theme-primary)]">
+                  <a href={row.href}>
                     {content}
                   </a>
                 ) : (
-                  <span className="flex items-start gap-3">{content}</span>
+                  <span>{content}</span>
                 )}
               </li>
             );
           })}
         </ul>
       </div>
-      <SupportContactSection className="rounded-2xl border border-border bg-card p-4" />
+      <SupportContactSection className="store-contact-v12-support" />
     </div>
   );
 }

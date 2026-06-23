@@ -22,7 +22,6 @@ import {
   shouldShowReturnInFilter,
 } from "./returnProgress";
 import ProductCoverImage from "@/components/ProductCoverImage";
-import { ClientButton, EmptyState as ClientEmptyState } from "@/components/client";
 import { usePublicLocale, type PublicLocale } from "@/i18n/publicLocale";
 import { useHorizontalActiveScroll } from "@/hooks/useHorizontalActiveScroll";
 
@@ -146,7 +145,12 @@ export default function Returns() {
   };
 
   return (
-    <StoreAccountLayout title={copy.title} onBack={goBack} className="store-v12-page store-returns-v12-page" mainClassName="sm:px-4 xl:py-6">
+    <StoreAccountLayout
+      title={copy.title}
+      onBack={goBack}
+      className="sf-next-page store-v12-page store-returns-v12-page"
+      mainClassName="sf-next-account-main sm:px-4 xl:py-6"
+    >
       <main className="mx-auto w-full max-w-3xl space-y-4 text-sm">
         <section className="store-returns-v12-hero relative overflow-hidden rounded-[28px] border border-[color-mix(in_srgb,var(--theme-primary)_14%,var(--theme-border))] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--theme-primary)_10%,var(--theme-surface))_0%,var(--theme-surface)_56%,color-mix(in_srgb,var(--theme-primary)_7%,var(--theme-surface))_100%)] p-5 shadow-[0_18px_45px_rgba(15,23,42,0.08)] sm:p-6">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_82%_36%,color-mix(in_srgb,var(--theme-primary)_18%,transparent),transparent_34%),radial-gradient(circle_at_18%_16%,rgba(255,255,255,0.9),transparent_34%)]" aria-hidden />
@@ -233,18 +237,27 @@ export default function Returns() {
           </div>
         </section>
 
-        {loading ? <p className="rounded-xl border border-border bg-card p-4 text-center text-muted-foreground">{copy.loading}</p> : null}
+        {loading ? (
+          <section className="store-account-v12-empty-panel store-returns-v12-state" aria-live="polite">
+            <span className="store-account-v12-empty-panel__icon" aria-hidden>
+              <RefreshCw size={28} className="animate-spin" />
+            </span>
+            <h2>{copy.loading}</h2>
+            <p>正在同步退款、退货、换货和维修记录。</p>
+          </section>
+        ) : null}
         {!loading && filteredList.length === 0 ? (
-          <ClientEmptyState
-            title={copy.emptyTitle}
-            description={copy.emptyDescription}
-            icon={<FileText size={30} strokeWidth={1.8} />}
-            action={
-              <ClientButton type="button" variant="secondary" onClick={() => setApplyOpen(true)}>
-                {copy.apply}
-              </ClientButton>
-            }
-          />
+          <section className="store-account-v12-empty-panel store-returns-v12-state">
+            <span className="store-account-v12-empty-panel__icon" aria-hidden>
+              <FileText size={28} strokeWidth={1.8} />
+            </span>
+            <h2>{copy.emptyTitle}</h2>
+            <p>{copy.emptyDescription}</p>
+            <UnifiedButton type="button" onClick={() => setApplyOpen(true)} className="store-account-v12-empty-panel__action">
+              <Plus size={17} aria-hidden />
+              {copy.apply}
+            </UnifiedButton>
+          </section>
         ) : null}
 
         <section className="space-y-3">

@@ -23,17 +23,17 @@ export default function TrustInfo({ className = "", variant = "row" }: Props) {
     {
       icon: ShieldCheck,
       title: "支付安全",
-      desc: site.paymentNotice || "Stripe 安全支付，全程 SSL 加密",
+      desc: site.paymentNotice || "支付方式以结算页配置为准",
     },
     {
       icon: Truck,
-      title: "极速发货",
-      desc: site.shippingNotice || "16:00 前付款当日发货，2-5 天送达",
+      title: "配送方式",
+      desc: site.shippingNotice || "运费和时效在结算页确认",
     },
     {
       icon: RefreshCcw,
-      title: "售后无忧",
-      desc: site.supportText || "7 天无理由退换，售后政策以页面说明为准",
+      title: "售后支持",
+      desc: site.supportText || "售后规则以订单和页面说明为准",
     },
   ];
 

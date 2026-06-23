@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { RefreshCw, SearchX, ShoppingBag } from "lucide-react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
@@ -19,7 +20,6 @@ import ReturnApplySheet from "./ReturnApplySheet";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import StoreSearchField from "@/components/store/StoreSearchField";
 import ProductCoverImage from "@/components/ProductCoverImage";
-import { ClientButton, EmptyState as ClientEmptyState } from "@/components/client";
 import { usePublicLocale } from "@/i18n/publicLocale";
 import { formatDateTime } from "@/utils/formatDateTime";
 import { useHorizontalActiveScroll } from "@/hooks/useHorizontalActiveScroll";
@@ -193,24 +193,6 @@ export default function Orders() {
     [orders, tab],
   );
   const currentSummary = summary || summaryFromOrders(orders);
-  const orderStats = useMemo(() => [
-    {
-      label: "全部订单",
-      value: currentSummary.total,
-    },
-    {
-      label: "待处理",
-      value: (currentSummary.pending_payment || 0) + (currentSummary.paid || currentSummary.pending_ship || 0) + (currentSummary.shipped || currentSummary.pending_receive || 0),
-    },
-    {
-      label: "售后中",
-      value: currentSummary.after_sale || 0,
-    },
-    {
-      label: "已完成",
-      value: currentSummary.completed || 0,
-    },
-  ], [currentSummary]);
   const hasMoreOrders = pagination.page < pagination.totalPages;
   const showOrderPagingFooter = displayOrders.length > 0 && pagination.total > pagination.pageSize;
 
@@ -292,17 +274,6 @@ export default function Orders() {
       mainClassName="sm:p-0 xl:py-6"
       rightSlot={renderOrderSearchField("store-order-header-search-field w-[9.5rem] max-w-[44vw] flex-none sm:w-44 xl:hidden")}
     >
-        <section className="store-orders-v12-hero">
-          <div className="store-orders-v12-stat-grid" aria-label="订单统计">
-            {orderStats.map((item) => (
-              <div key={item.label} className="store-orders-v12-stat">
-                <strong>{item.value}</strong>
-                <span>{item.label}</span>
-              </div>
-            ))}
-          </div>
-        </section>
-
         <div className="store-glass-surface sticky top-0 z-10 -mx-[var(--store-page-x)] mb-3 border-b py-2 backdrop-blur-xl sm:-mx-4 md:top-[var(--store-tablet-sticky-top)] md:mx-0 md:rounded-xl md:border md:px-3 xl:top-[var(--store-desktop-sticky-top)]">
           <div className="flex flex-col gap-2 md:gap-3 xl:flex-row xl:items-center">
             <div className="relative min-w-0 overflow-hidden md:flex-1 md:overflow-visible">
@@ -342,40 +313,45 @@ export default function Orders() {
 
         {loading ? <p className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 text-center text-sm text-muted-foreground">{copy.loading}</p> : null}
         {error ? (
-          <ClientEmptyState
-            title={copy.loadFailed}
-            description={error}
-            action={
-              <ClientButton type="button" onClick={() => void loadCurrentOrders({ force: true })}>
-                {copy.retry}
-              </ClientButton>
-            }
-          />
+          <section className="store-account-v12-empty-panel store-orders-v12-state" role="alert">
+            <span className="store-account-v12-empty-panel__icon" aria-hidden>
+              <RefreshCw size={28} />
+            </span>
+            <h2>{copy.loadFailed}</h2>
+            <p>{error}</p>
+            <UnifiedButton type="button" onClick={() => void loadCurrentOrders({ force: true })} className="store-account-v12-empty-panel__action">
+              <RefreshCw size={17} aria-hidden />
+              {copy.retry}
+            </UnifiedButton>
+          </section>
         ) : null}
 
-        {!loading && displayOrders.length === 0 ? (
-          <ClientEmptyState
-            title={emptyOrderText}
-            description={keyword ? copy.emptyKeywordDescription : copy.emptyDescription}
-            action={
-              keyword ? (
-                <ClientButton
+        {!loading && !error && displayOrders.length === 0 ? (
+          <section className="store-account-v12-empty-panel store-orders-v12-state">
+            <span className="store-account-v12-empty-panel__icon" aria-hidden>
+              {keyword ? <SearchX size={28} /> : <ShoppingBag size={28} />}
+            </span>
+            <h2>{emptyOrderText}</h2>
+            <p>{keyword ? copy.emptyKeywordDescription : copy.emptyDescription}</p>
+            {keyword ? (
+                <UnifiedButton
                   type="button"
-                  variant="secondary"
                   onClick={() => {
                     setSearchText("");
                     updateKeywordParam("");
                   }}
+                  className="store-account-v12-empty-panel__action"
                 >
+                  <SearchX size={17} aria-hidden />
                   {copy.clearSearch}
-                </ClientButton>
+                </UnifiedButton>
               ) : (
-                <ClientButton type="button" variant="secondary" onClick={() => navigate(localizedPath("/categories"))}>
+                <UnifiedButton type="button" onClick={() => navigate(localizedPath("/categories"))} className="store-account-v12-empty-panel__action">
+                  <ShoppingBag size={17} aria-hidden />
                   {copy.browse}
-                </ClientButton>
-              )
-            }
-          />
+                </UnifiedButton>
+              )}
+          </section>
         ) : null}
 
         <div className="space-y-3">

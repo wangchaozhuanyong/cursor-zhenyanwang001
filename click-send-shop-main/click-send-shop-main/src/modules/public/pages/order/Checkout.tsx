@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import AppRouteFallback from "@/components/AppRouteFallback";
 import NotificationIconButton from "@/components/NotificationIconButton";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { usePreferBottomSheet } from "@/modules/micro-interactions";
@@ -84,6 +85,10 @@ export default function Checkout() {
       : pricingBlocked
         ? checkout.orderPreviewError || "正在更新订单金额"
       : undefined;
+
+  if (checkout.cartHydrating) {
+    return <AppRouteFallback />;
+  }
 
   if (checkout.isEmpty) {
     return null;

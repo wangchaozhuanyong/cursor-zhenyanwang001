@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { BadgePercent, Check, Copy, Download, Gift, Landmark, Share2, ShoppingBag, Ticket, Users } from "lucide-react";
+import { Copy, Download, Gift, QrCode, Share2, Users } from "lucide-react";
 import { formatDateTime } from "@/utils/formatDateTime";
 import { useGoBack } from "@/hooks/useGoBack";
 import { useNavigate } from "react-router-dom";
@@ -12,14 +12,11 @@ import type { InviteStats, InviteRecord } from "@/types/invite";
 import { copyToClipboard } from "@/utils/clipboard";
 import { runGuardedDownload } from "@/utils/downloadConfirm";
 import { triggerBrowserFileDownload } from "@/utils/fileDownload";
-import { motion } from "framer-motion";
-import { useMotionConfig } from "@/modules/micro-interactions";
 import { useLoyaltyVisibility } from "@/hooks/useLoyaltyVisibility";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
-import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import SharePassCard from "@/modules/storefront-v2/design/components/SharePassCard";
 import logoIconUrl from "@/assets/logo-icon.png";
 
-const INVITE_HERO_IMAGE = "/assets/home-banners/invite-hero-premium-bg.webp";
 const POSTER_WIDTH = 1080;
 const POSTER_HEIGHT = 1440;
 
@@ -372,13 +369,13 @@ async function createPosterCanvas({
 }
 
 export default function Invite() {
-  const { enabled: motionEnabled } = useMotionConfig();
   const navigate = useNavigate();
   const goBack = useGoBack();
   const { inviteCode, parentInviteCode, loadProfile } = useUserStore();
   const [stats, setStats] = useState<InviteStats | null>(null);
   const [records, setRecords] = useState<InviteRecord[]>([]);
-  const [selectedTemplateId, setSelectedTemplateId] = useState<PosterTemplateId>("shopping");
+  const [copyState, setCopyState] = useState<"idle" | "loading" | "copied">("idle");
+  const copyResetTimerRef = useRef<number | null>(null);
   const { config: loyaltyConfig, loading: loyaltyLoading } = useLoyaltyVisibility();
 
   useEffect(() => {
@@ -393,11 +390,35 @@ export default function Invite() {
     ]).catch(() => toast.error("加载失败"));
   }, [loadProfile, loyaltyConfig, loyaltyLoading, navigate]);
 
+  useEffect(() => {
+    return () => {
+      if (copyResetTimerRef.current) window.clearTimeout(copyResetTimerRef.current);
+    };
+  }, []);
+
   const inviteLink = `${window.location.origin}/login?ref=${encodeURIComponent(inviteCode || "")}`;
   const inviteCodeLabel = inviteCode || "加载中";
-  const previewInviteCode = inviteCode || "0CDB54";
   const qrRef = useRef<HTMLCanvasElement>(null);
-  const selectedTemplate = useMemo(() => getPosterTemplate(selectedTemplateId), [selectedTemplateId]);
+  const selectedTemplate = useMemo(() => getPosterTemplate("shopping"), []);
+  const inviteSerial = inviteCode ? `NO. ${inviteCode.slice(-4).toUpperCase().padStart(4, "0")}` : undefined;
+
+  const copyInviteCode = async () => {
+    if (!inviteCode) {
+      toast.error("邀请码加载中，请稍后");
+      return;
+    }
+    setCopyState("loading");
+    const copied = await copyToClipboard(inviteCode);
+    if (copied) {
+      setCopyState("copied");
+      toast.success("邀请码已复制", toastPresetQuickSuccess);
+      if (copyResetTimerRef.current) window.clearTimeout(copyResetTimerRef.current);
+      copyResetTimerRef.current = window.setTimeout(() => setCopyState("idle"), 1600);
+    } else {
+      setCopyState("idle");
+      toast.error("复制失败，请手动复制");
+    }
+  };
 
   const copyLink = async () => {
     if (!inviteCode) {
@@ -429,6 +450,11 @@ export default function Invite() {
     copyLink();
   };
 
+  const showQrCode = () => {
+    document.querySelector(".sf-next-share-pass__qr")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    toast.success("二维码已在上方展示", toastPresetQuickSuccess);
+  };
+
   const downloadPoster = useCallback(() => {
     if (!inviteCode) {
       toast.error("邀请码加载中，请稍后");
@@ -457,195 +483,73 @@ export default function Invite() {
   }, [inviteCode, selectedTemplate]);
 
   return (
-    <StoreAccountLayout title="邀请中心" onBack={goBack} className="store-v12-page store-account-subpage-v12-page store-invite-v12-page" mainClassName="sm:px-4 xl:py-6">
-      <main className="mx-auto w-full space-y-0 md:max-w-5xl xl:max-w-4xl">
+    <StoreAccountLayout
+      title="邀请好友"
+      onBack={goBack}
+      className="sf-next-page sf-next-invite-page-shell"
+      mainClassName="sf-next-account-main"
+      rightSlot={(
+        <button type="button" className="sf-next-header-icon" aria-label="分享邀请" onClick={handleShare}>
+          <Share2 size={18} aria-hidden="true" />
+        </button>
+      )}
+    >
+      <main className="sf-next-container sf-next-invite-page">
         <div className="pointer-events-none fixed -left-[9999px] -top-[9999px]" aria-hidden>
           <QRCodeCanvas ref={qrRef} value={inviteLink} size={520} level="H" marginSize={2} fgColor="#12231f" bgColor="#ffffff" />
         </div>
 
-        <section
-          className="relative overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-5 shadow-[var(--theme-shadow)] sm:px-6 sm:py-6"
-          style={{
-            backgroundImage: `linear-gradient(112deg, color-mix(in srgb, var(--theme-surface) 98%, transparent) 0%, color-mix(in srgb, var(--theme-surface) 92%, transparent) 52%, color-mix(in srgb, var(--theme-bg) 34%, transparent) 100%), radial-gradient(circle at 86% 14%, color-mix(in srgb, var(--theme-price) 14%, transparent), transparent 34%), url("${INVITE_HERO_IMAGE}")`,
-            backgroundPosition: "center right",
-            backgroundSize: "cover",
-          }}
-        >
-          <div className="relative grid gap-4 text-center">
-            <div className="mx-auto w-full max-w-2xl min-w-0">
-              <h2 className="mx-auto max-w-2xl text-center text-[26px] font-black leading-tight text-[var(--theme-text-on-surface)] sm:text-4xl">
-                把采购体验分享给朋友
-              </h2>
-              <div className="mx-auto mt-4 max-w-xl rounded-2xl border border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-surface)_82%,transparent)] p-3 text-center backdrop-blur">
-                <p className="text-xs font-semibold text-[var(--theme-text-muted-on-surface)]">我的邀请码</p>
-                <div className="mt-2 flex flex-col items-center gap-3">
-                  <p className="max-w-full truncate text-center font-mono text-2xl font-black text-[var(--theme-price)]">{inviteCodeLabel}</p>
-                  <div className="grid w-full max-w-[328px] grid-cols-2 gap-2 sm:max-w-sm">
-                    <UnifiedButton
-                      type="button"
-                      onClick={copyLink}
-                      className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl bg-[var(--theme-primary)] px-4 text-sm font-bold text-[var(--theme-primary-foreground)]"
-                    >
-                      <Copy size={15} aria-hidden />
-                      复制链接
-                    </UnifiedButton>
-                    <UnifiedButton
-                      type="button"
-                      onClick={handleShare}
-                      className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl bg-[var(--theme-price)] px-4 text-sm font-bold text-[var(--theme-price-foreground)]"
-                    >
-                      <Share2 size={15} aria-hidden />
-                      分享邀请
-                    </UnifiedButton>
-                  </div>
-                </div>
-              </div>
-            </div>
+        <SharePassCard
+          inviteCode={inviteCodeLabel}
+          serial={inviteSerial}
+          copyState={copyState}
+          disabled={!inviteCode}
+          onCopyInviteCode={copyInviteCode}
+          qrCode={inviteCode ? (
+            <QRCodeCanvas value={inviteLink} size={132} level="H" marginSize={1} fgColor="#20231f" bgColor="#ffffff" />
+          ) : (
+            <span className="sf-next-qr-waiting">等待邀请码</span>
+          )}
+        />
+
+        <section className="sf-next-section">
+          <h2 className="sf-next-block-title">分享方式</h2>
+          <div className="sf-next-share-methods">
+            <InviteShareTile icon={<Copy size={24} aria-hidden="true" />} label="复制链接" onClick={copyLink} disabled={!inviteCode} />
+            <InviteShareTile icon={<QrCode size={24} aria-hidden="true" />} label="二维码" onClick={showQrCode} disabled={!inviteCode} />
+            <InviteShareTile icon={<Download size={24} aria-hidden="true" />} label="生成海报" onClick={downloadPoster} disabled={!inviteCode} />
           </div>
         </section>
 
-        <div className="mt-3 grid grid-cols-3 gap-2 sm:gap-3">
-          <Stat
-            icon={<Users size={15} aria-hidden />}
-            title="邀请人数"
-            value={String(stats?.totalInvited ?? stats?.directCount ?? 0)}
-            caption="累计"
-          />
-          <Stat
-            icon={<Ticket size={15} aria-hidden />}
-            title="分享消费"
-            value={`RM ${Number(stats?.totalOrderAmount ?? 0).toFixed(2)}`}
-            caption="成交"
-          />
-          <Stat
-            icon={<Gift size={15} aria-hidden />}
-            title="返现奖励"
-            value={`RM ${Number(stats?.totalReward ?? 0).toFixed(2)}`}
-            caption="奖励"
-          />
-        </div>
-
-        <section className="mt-5 rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 shadow-[var(--theme-shadow)]">
-          <div className="relative flex items-center justify-center">
-            <div className="min-w-0 text-center">
-              <h3 className="text-center text-lg font-black text-[var(--theme-text-on-surface)]">选择分享海报</h3>
+        {stats ? (
+          <section className="sf-next-section">
+            <h2 className="sf-next-block-title">邀请进度</h2>
+            <div className="sf-next-invite-progress">
+              <InviteProgressValue value={String(stats.totalInvited ?? stats.directCount ?? 0)} label="已邀请" />
+              <InviteProgressValue value={String(records.filter((record) => record.status === "ordered").length)} label="已完成" />
+              <InviteProgressValue value={`RM ${Number(stats.totalReward ?? 0).toFixed(0)}`} label="已获得" />
             </div>
-            <span className="absolute right-0 hidden shrink-0 rounded-full bg-[color-mix(in_srgb,var(--theme-primary)_10%,var(--theme-surface))] px-3 py-1.5 text-xs font-bold text-[var(--theme-primary)] sm:inline-flex">
-              3 款模板
-            </span>
-          </div>
-
-          <div className="no-scrollbar -mx-4 mt-4 flex gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-3 sm:px-0">
-            {POSTER_TEMPLATES.map((template) => {
-              const active = template.id === selectedTemplateId;
-              return (
-                <UnifiedButton
-                  key={template.id}
-                  type="button"
-                  aria-pressed={active}
-                  onClick={() => setSelectedTemplateId(template.id)}
-                  className={`min-w-[10.6rem] rounded-2xl border p-2 text-left transition active:scale-[0.99] sm:min-w-0 ${
-                    active
-                      ? "border-[color-mix(in_srgb,var(--theme-primary)_48%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-primary)_8%,var(--theme-surface))] shadow-[0_16px_34px_-30px_color-mix(in_srgb,var(--theme-primary)_50%,transparent)]"
-                      : "border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-bg)_36%,var(--theme-surface))]"
-                  }`}
-                >
-                  <PosterPreview template={template} inviteLink={inviteLink} inviteCode={previewInviteCode} compact />
-                  <div className="mt-2 flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="truncate text-xs font-black text-[var(--theme-text-on-surface)]">{template.shortName}</p>
-                      <p className="mt-0.5 line-clamp-2 text-[10px] leading-4 text-[var(--theme-text-muted-on-surface)]">{template.usage}</p>
-                    </div>
-                    {active ? (
-                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]">
-                        <Check size={12} aria-hidden />
-                      </span>
-                    ) : null}
-                  </div>
-                </UnifiedButton>
-              );
-            })}
-          </div>
-
-          <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_16rem] lg:items-start">
-            <motion.div
-              key={selectedTemplate.id}
-              initial={motionEnabled ? { opacity: 0, y: 12 } : false}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.24 }}
-              className="mx-auto w-full max-w-[25rem] lg:max-w-none"
-            >
-              <PosterPreview template={selectedTemplate} inviteLink={inviteLink} inviteCode={previewInviteCode} />
-            </motion.div>
-
-            <div className="rounded-2xl border border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-bg)_42%,var(--theme-surface))] p-4">
-              <div className="grid gap-2 text-xs font-semibold text-[var(--theme-text-on-surface)]">
-                <PosterPoint icon={<ShoppingBag size={14} aria-hidden />} label={selectedTemplate.title} />
-                <PosterPoint icon={<BadgePercent size={14} aria-hidden />} label={selectedTemplate.subtitle} />
-                <PosterPoint icon={<Landmark size={14} aria-hidden />} label={`邀请码：${previewInviteCode}`} />
-              </div>
-              <div className="mt-4 grid gap-2">
-                <UnifiedButton
-                  type="button"
-                  onClick={downloadPoster}
-                  className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl bg-[var(--theme-primary)] px-4 text-sm font-black text-[var(--theme-primary-foreground)]"
-                >
-                  <Download size={16} aria-hidden />
-                  下载当前海报
-                </UnifiedButton>
-                <UnifiedButton
-                  type="button"
-                  onClick={copyLink}
-                  className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 text-sm font-bold text-[var(--theme-text-on-surface)]"
-                >
-                  <Copy size={15} aria-hidden />
-                  复制邀请链接
-                </UnifiedButton>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {parentInviteCode ? (
-          <section className="mt-5 flex items-center justify-between gap-3 rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 text-sm shadow-[var(--theme-shadow)]">
-            <div className="min-w-0">
-              <p className="text-xs font-semibold text-[var(--theme-text-muted-on-surface)]">绑定关系</p>
-              <p className="mt-1 truncate font-semibold text-[var(--theme-text-on-surface)]">上级邀请码：{parentInviteCode}</p>
-            </div>
-            <Gift size={20} className="shrink-0 text-[var(--theme-price)]" aria-hidden />
           </section>
         ) : null}
 
-        <section className="mt-6 rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 shadow-[var(--theme-shadow)]">
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <h3 className="flex min-w-0 items-center gap-2 text-sm font-black text-[var(--theme-text-on-surface)]">
-              <Users size={16} className="text-[var(--theme-price)]" aria-hidden />
-              <span>分享用户</span>
-            </h3>
-            <span className="shrink-0 rounded-full bg-[color-mix(in_srgb,var(--theme-primary)_10%,var(--theme-surface))] px-2 py-1 text-[11px] font-semibold text-[var(--theme-primary)]">
-              {records.length} 人
-            </span>
-          </div>
-          {records.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-bg)_60%,var(--theme-surface))] p-8 text-center text-sm text-[var(--theme-text-muted-on-surface)]">
-              暂无分享用户，选择海报或复制链接后开始邀请。
+        {parentInviteCode ? (
+          <section className="sf-next-bound-invite">
+            <div className="min-w-0">
+              <p>绑定关系</p>
+              <strong>上级邀请码：{parentInviteCode}</strong>
             </div>
+            <Gift size={20} aria-hidden="true" />
+          </section>
+        ) : null}
+
+        <section className="sf-next-section">
+          <h2 className="sf-next-block-title">邀请记录</h2>
+          {records.length === 0 ? (
+            <InviteEmptyState />
           ) : (
-            <div className="space-y-2">
+            <div className="sf-next-invite-records">
               {records.map((record) => (
-                <div key={record.id} className="flex items-center gap-3 rounded-xl border border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-bg)_44%,var(--theme-surface))] px-[var(--store-card-x)] py-[var(--store-card-y)] sm:p-4">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-price)_12%,var(--theme-surface))] text-sm font-black text-[var(--theme-price)]">
-                    {(record.invitee_nickname || "用户").charAt(0)}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-bold text-[var(--theme-text-on-surface)]">{record.invitee_nickname || "用户"}</p>
-                    <p className="text-[11px] text-[var(--theme-text-muted-on-surface)]">{formatDateTime(record.created_at)}</p>
-                  </div>
-                  <div className="shrink-0 text-right">
-                    <p className="text-xs font-bold text-[var(--theme-primary)]">{record.status === "ordered" ? "已消费" : "已注册"}</p>
-                    <p className="mt-1 text-[11px] text-[var(--theme-text-muted-on-surface)]">RM {Number(record.reward_amount ?? 0).toFixed(2)}</p>
-                  </div>
-                </div>
+                <InviteRecordRow key={record.id} record={record} />
               ))}
             </div>
           )}
@@ -655,115 +559,55 @@ export default function Invite() {
   );
 }
 
-function PosterPreview({
-  template,
-  inviteLink,
-  inviteCode,
-  compact = false,
+function InviteShareTile({
+  icon,
+  label,
+  onClick,
+  disabled,
 }: {
-  template: PosterTemplate;
-  inviteLink: string;
-  inviteCode: string;
-  compact?: boolean;
+  icon: ReactNode;
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
 }) {
-  const qrSize = compact ? 42 : 132;
-  const logoSize = compact ? 18 : 34;
-  const palette = template.palette;
-
   return (
-    <div
-      className={`relative aspect-[3/4] w-full overflow-hidden border text-left ${compact ? "rounded-xl p-2" : "rounded-[1.35rem] p-5 shadow-[0_22px_52px_-38px_rgba(15,23,42,0.42)] sm:p-6"}`}
-      style={{
-        borderColor: palette.border,
-        background:
-          template.layout === "reward"
-            ? `linear-gradient(160deg, ${palette.bg}, ${palette.surface} 52%, ${palette.soft})`
-            : `linear-gradient(160deg, rgba(255,255,255,0.92), rgba(255,255,255,0.62)), url("${template.image}") center / cover`,
-        color: palette.ink,
-      }}
-    >
-      {template.layout === "reward" ? (
-        <div className="absolute right-3 top-5 h-7 w-[46%] -rotate-6 rounded-full opacity-70" style={{ background: palette.secondary }} aria-hidden />
-      ) : null}
-      {template.layout === "life" ? (
-        <div className="absolute inset-x-0 bottom-0 h-[44%]" style={{ background: "linear-gradient(180deg, transparent, rgba(11,75,65,0.82))" }} aria-hidden />
-      ) : null}
+    <button type="button" className="sf-next-share-method" disabled={disabled} onClick={onClick}>
+      <span className="sf-next-share-method__icon">{icon}</span>
+      <span>{label}</span>
+    </button>
+  );
+}
 
-      <div className="relative z-10 flex items-center gap-2">
-        <span className="flex shrink-0 items-center justify-center rounded-full bg-white/90" style={{ width: logoSize + 8, height: logoSize + 8 }}>
-          <img src={logoIconUrl} alt="" className="object-contain" style={{ width: logoSize, height: logoSize }} />
-        </span>
-        <span className={`${compact ? "text-[10px]" : "text-sm"} font-black`}>大马通</span>
+function InviteProgressValue({ value, label }: { value: string; label: string }) {
+  return (
+    <div className="sf-next-invite-progress__item">
+      <strong>{value}</strong>
+      <span>{label}</span>
+    </div>
+  );
+}
+
+function InviteRecordRow({ record }: { record: InviteRecord }) {
+  const nickname = record.invitee_nickname || "好友";
+  const statusText = record.status === "ordered" ? "已完成条件" : "已注册";
+  return (
+    <article className="sf-next-invite-record">
+      <div className="sf-next-invite-record__avatar" aria-hidden="true">{nickname.charAt(0)}</div>
+      <div className="sf-next-invite-record__body">
+        <h3>{nickname}</h3>
+        <p>{formatDateTime(record.created_at)}</p>
+        <span>{statusText}</span>
       </div>
-
-      {template.layout === "shopping" ? (
-        <>
-          <div className={`relative z-10 ${compact ? "mt-3" : "mt-8"}`}>
-            <p className={`${compact ? "text-[9px]" : "text-xs"} font-black`} style={{ color: palette.primary }}>精选好物采购</p>
-            <p className={`${compact ? "mt-1 text-[15px] leading-tight" : "mt-2 text-[2rem] leading-tight sm:text-[2.35rem]"} font-black`}>{template.title}</p>
-            <p className={`${compact ? "mt-1 line-clamp-2 text-[8px] leading-3" : "mt-3 text-sm leading-6"} max-w-[82%]`} style={{ color: palette.muted }}>{template.subtitle}</p>
-          </div>
-          <div className={`absolute left-1/2 z-10 -translate-x-1/2 rounded-2xl bg-white text-center ${compact ? "bottom-2 p-2" : "bottom-5 p-4"}`}>
-            <QRCodeCanvas value={inviteLink} size={qrSize} level="H" marginSize={1} fgColor="#12231f" bgColor="#ffffff" />
-            <p className={`${compact ? "mt-1 text-[7px]" : "mt-2 text-xs"} font-black`} style={{ color: palette.primary }}>邀请码：{inviteCode}</p>
-          </div>
-        </>
-      ) : null}
-
-      {template.layout === "reward" ? (
-        <>
-          <div className={`relative z-10 ${compact ? "mt-3" : "mt-8"}`}>
-            <span className={`${compact ? "px-2 py-1 text-[8px]" : "px-3 py-1.5 text-xs"} rounded-full font-black text-white`} style={{ background: palette.primary }}>
-              会员返利福利
-            </span>
-            <p className={`${compact ? "mt-3 text-[15px] leading-tight" : "mt-5 text-[2rem] leading-tight sm:text-[2.35rem]"} font-black`}>{template.title}</p>
-            <p className={`${compact ? "mt-1 line-clamp-2 text-[8px] leading-3" : "mt-3 text-sm leading-6"} max-w-[92%]`} style={{ color: palette.muted }}>{template.subtitle}</p>
-          </div>
-          <div className={`absolute inset-x-3 z-10 grid grid-cols-[auto_minmax(0,1fr)] items-center rounded-2xl bg-white/90 ${compact ? "bottom-3 gap-2 p-2" : "bottom-6 gap-4 p-4"}`}>
-            <QRCodeCanvas value={inviteLink} size={qrSize} level="H" marginSize={1} fgColor="#2d1a12" bgColor="#ffffff" />
-            <div className="min-w-0">
-              <p className={`${compact ? "text-[8px]" : "text-xs"} font-black`} style={{ color: palette.primary }}>邀请码：{inviteCode}</p>
-              <p className={`${compact ? "mt-1 text-[7px] leading-3" : "mt-2 text-xs leading-5"}`} style={{ color: palette.muted }}>扫码注册，自动绑定邀请关系</p>
-            </div>
-          </div>
-        </>
-      ) : null}
-
-      {template.layout === "life" ? (
-        <>
-          <div className={`relative z-10 ${compact ? "mt-3" : "mt-8"}`}>
-            <p className={`${compact ? "text-[9px]" : "text-xs"} font-black`} style={{ color: palette.primary }}>马来西亚生活服务</p>
-            <p className={`${compact ? "mt-2 text-[14px] leading-tight" : "mt-4 text-[1.85rem] leading-tight sm:text-[2.2rem]"} font-black`}>{template.title}</p>
-            <p className={`${compact ? "mt-1 text-[8px] leading-3" : "mt-3 text-sm leading-6"} max-w-[78%]`} style={{ color: palette.muted }}>{template.subtitle}</p>
-          </div>
-          <div className={`absolute z-10 rounded-2xl bg-white/92 ${compact ? "bottom-2 right-2 p-2" : "bottom-5 right-5 p-4"}`}>
-            <QRCodeCanvas value={inviteLink} size={qrSize} level="H" marginSize={1} fgColor="#143d34" bgColor="#ffffff" />
-            <p className={`${compact ? "mt-1 text-[7px]" : "mt-2 text-xs"} text-center font-black`} style={{ color: palette.primary }}>{inviteCode}</p>
-          </div>
-        </>
-      ) : null}
-    </div>
+      <strong>+ RM {Number(record.reward_amount ?? 0).toFixed(0)}</strong>
+    </article>
   );
 }
 
-function PosterPoint({ icon, label }: { icon: ReactNode; label: string }) {
+function InviteEmptyState() {
   return (
-    <div className="flex min-w-0 items-center gap-2 rounded-xl bg-[var(--theme-surface)] px-3 py-2">
-      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--theme-primary)_10%,var(--theme-surface))] text-[var(--theme-primary)]">{icon}</span>
-      <span className="min-w-0 truncate">{label}</span>
-    </div>
-  );
-}
-
-function Stat({ icon, title, value, caption }: { icon: ReactNode; title: string; value: string; caption: string }) {
-  return (
-    <div className="flex min-w-0 flex-col items-center justify-center rounded-xl border border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-surface)_84%,transparent)] p-2.5 text-center shadow-[0_12px_28px_-28px_color-mix(in_srgb,var(--theme-text)_38%,transparent)]">
-      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--theme-price)_10%,var(--theme-surface))] text-[var(--theme-price)]">
-        {icon}
-      </span>
-      <p className="mt-1.5 max-w-full truncate text-[10px] font-semibold text-[var(--theme-text-muted-on-surface)]">{title}</p>
-      <p className="mt-1 max-w-full truncate text-center text-sm font-black tabular-nums text-[var(--theme-text-on-surface)]">{value}</p>
-      <p className="mt-0.5 max-w-full truncate text-center text-[10px] text-[var(--theme-text-muted-on-surface)]">{caption}</p>
+    <div className="sf-next-invite-empty">
+      <Users size={20} aria-hidden="true" />
+      <p>暂无邀请记录</p>
     </div>
   );
 }

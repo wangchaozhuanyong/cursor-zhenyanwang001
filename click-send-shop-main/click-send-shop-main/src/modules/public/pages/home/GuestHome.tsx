@@ -303,7 +303,10 @@ export default function GuestHome() {
   const canonical = buildCanonical("/");
   const seoImage = siteInfo.ogImageUrl || logoSrc || "/og-default.png";
   return (
-    <div className="store-page-shell store-bottom-safe store-home-desktop-shell bg-[var(--theme-bg)] text-[var(--theme-text)]" data-theme-home-layout={themeConfig.homeLayout}>
+    <div
+      className="store-page-shell store-bottom-safe store-home-desktop-shell store-skin-home-page bg-[var(--theme-bg)] text-[var(--theme-text)]"
+      data-theme-home-layout={themeConfig.homeLayout}
+    >
       <SeoHead
         title={seoTitle}
         description={seoDescription}
@@ -330,6 +333,7 @@ export default function GuestHome() {
       <main
         className={cn(
           HOME_GUEST_MAIN_CLASS,
+          "store-skin-home-main",
           isMagazineLayout && "bg-[color-mix(in_srgb,var(--theme-bg)_88%,black)]",
         )}
       >
@@ -416,7 +420,7 @@ export default function GuestHome() {
 
         {isHomeModuleEnabled(homeModules, "guest_recommend", "guest") ? (
         <AnimatedSection delay={0.12}>
-        <section className="store-home-featured-section">
+        <section className="store-home-featured-section store-skin-product-section">
           <div className="store-home-section-heading">
             <div>
               <h2 className="store-section-title flex items-center gap-2 tracking-widest text-[var(--theme-text)]">

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { ArrowLeft, Clock3, Copy, PlusSquare } from "lucide-react";
-import { useSearchParams } from "react-router-dom";
+import { ArrowLeft, ArrowRight, Clock3, Copy, PlusSquare } from "lucide-react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import SeoHead from "@/components/SeoHead";
 import StorePageHeader from "@/components/store/StorePageHeader";
 import WeChatIcon from "@/components/icons/WeChatIcon";
@@ -31,6 +31,9 @@ import { useHorizontalActiveScroll } from "@/hooks/useHorizontalActiveScroll";
 import { useGoBack } from "@/hooks/useGoBack";
 
 type SupportDownloadView = SupportChannelType | "download";
+type SupportDownloadProps = {
+  installMode?: boolean;
+};
 
 const CHANNEL_ORDER: SupportChannelType[] = ["wechat", "whatsapp", "telegram"];
 
@@ -48,21 +51,6 @@ function resolveQueryView(value: string | null): SupportDownloadView | null {
   if (value === "download") return "download";
   if (value === "wechat" || value === "whatsapp" || value === "telegram") return value;
   return null;
-}
-
-function getDefaultView(
-  queryTab: string | null,
-  availableViews: SupportDownloadView[],
-  legacyDefault: "support" | "download",
-): SupportDownloadView | null {
-  const requested = resolveQueryView(queryTab);
-  if (requested && availableViews.includes(requested)) return requested;
-  if (queryTab === "support" || legacyDefault === "support") {
-    const firstChannel = availableViews.find((view) => view !== "download");
-    if (firstChannel) return firstChannel;
-  }
-  if (legacyDefault === "download" && availableViews.includes("download")) return "download";
-  return availableViews[0] || null;
 }
 
 function firstChannelByType(channels: SupportDownloadChannel[], type: SupportChannelType) {
@@ -87,10 +75,11 @@ function getSupportTabLabel(view: SupportDownloadView) {
   return "添加桌面";
 }
 
-export default function SupportDownload() {
+export default function SupportDownload({ installMode = false }: SupportDownloadProps) {
   const siteInfo = useSiteInfo();
   const siteInfoLoaded = useSiteInfoLoaded();
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const config = useMemo(
     () => parseSupportDownloadConfig(siteInfo.supportDownloadConfig),
     [siteInfo.supportDownloadConfig],
@@ -112,7 +101,7 @@ export default function SupportDownload() {
 
   const pwa = usePwaInstallPrompt(handleInstalled);
   const installShownTrackedRef = useRef(false);
-  const queryTab = searchParams.get("tab");
+  const queryTab = installMode ? "download" : searchParams.get("tab");
 
   useEffect(() => {
     if (installShownTrackedRef.current) return;
@@ -154,14 +143,20 @@ export default function SupportDownload() {
   const waitingForConfiguredView = !siteInfoLoaded && Boolean((requestedView && requestedView !== "download") || queryChannelId);
 
   const activeView = useMemo(() => {
+    if (installMode && availableViews.includes("download")) return "download";
     if (waitingForConfiguredView) return requestedView;
     if (pinnedChannel && availableViews.includes(pinnedChannel.type)) {
       return pinnedChannel.type;
     }
-    return getDefaultView(queryTab, availableViews, config.defaultTab);
-  }, [availableViews, config.defaultTab, pinnedChannel, queryTab, requestedView, waitingForConfiguredView]);
+    if (requestedView && availableViews.includes(requestedView)) return requestedView;
+    if (!installMode) {
+      return availableViews.find((view) => view !== "download") || null;
+    }
+    return availableViews.includes("download") ? "download" : null;
+  }, [availableViews, installMode, pinnedChannel, requestedView, waitingForConfiguredView]);
 
   useEffect(() => {
+    if (installMode) return;
     if (waitingForConfiguredView) return;
     if (!activeView) return;
     const next = new URLSearchParams(searchParams);
@@ -181,7 +176,7 @@ export default function SupportDownload() {
       changed = true;
     }
     if (changed) setSearchParams(next, { replace: true });
-  }, [activeView, pinnedChannel, queryChannelId, queryTab, searchParams, setSearchParams, waitingForConfiguredView]);
+  }, [activeView, installMode, pinnedChannel, queryChannelId, queryTab, searchParams, setSearchParams, waitingForConfiguredView]);
 
   const setActiveView = (view: SupportDownloadView) => {
     const next = new URLSearchParams(searchParams);
@@ -203,9 +198,19 @@ export default function SupportDownload() {
     return platforms;
   }, [platforms, recommendedPlatform]);
   const pageTitle = config.title?.trim() || "";
-  const displayTitle = pageTitle || STORE_COPY.supportCenterTitle;
+  const displayTitle = installMode ? "安装应用" : pageTitle || STORE_COPY.supportCenterTitle;
   const workingHours = config.support.workingHours?.trim() || "客服时间以后台配置为准";
-  const installPageUrl = useMemo(() => buildCanonical("/support-download", "tab=download"), []);
+  const installStatusText = useMemo(() => {
+    if (pwa.installed) return "已从桌面应用打开";
+    if (browserEnv.isInAppBrowser) return "请用手机浏览器打开后添加";
+    if (browserEnv.isIOS) return browserEnv.isSafari ? "Safari 可添加到主屏幕" : "iPhone 建议使用 Safari";
+    if (browserEnv.isAndroid) return pwa.canInstall ? "当前浏览器支持一键添加" : "可通过浏览器菜单添加";
+    return "复制链接后在手机浏览器打开";
+  }, [browserEnv.isAndroid, browserEnv.isIOS, browserEnv.isInAppBrowser, browserEnv.isSafari, pwa.canInstall, pwa.installed]);
+  const overviewText = installMode ? installStatusText : workingHours;
+  const installPageUrl = useMemo(() => buildCanonical(installMode ? "/install" : "/support-download", installMode ? undefined : "tab=download"), [installMode]);
+  const showSupportTabs = !installMode && !waitingForConfiguredView && availableViews.length > 0 && (channels.length > 0 || activeView === "download");
+  const showInstallEntry = !installMode && canShowInstallView && activeView !== "download";
   const handleBack = useGoBack("/");
   const mobileHeader = (
     <StorePageHeader
@@ -218,7 +223,7 @@ export default function SupportDownload() {
           type="button"
           onClick={handleBack}
           aria-label="返回上一页"
-          className="-ml-3 flex h-11 w-11 shrink-0 items-center justify-center rounded-full p-0 text-[var(--theme-text)] transition hover:bg-[color-mix(in_srgb,var(--theme-primary)_10%,var(--theme-surface))] active:scale-95"
+          className="support-download-back-button"
         >
           <ArrowLeft size={20} strokeWidth={2.25} aria-hidden="true" />
         </UnifiedButton>
@@ -230,7 +235,7 @@ export default function SupportDownload() {
 
   if (!config.enabled) {
     return (
-      <div className="store-page-shell store-bottom-safe store-v12-page support-download-page support-download-v12-page support-download-page--empty text-sm text-[var(--theme-text)]">
+      <div className={`store-page-shell store-bottom-safe sf-next-page store-v12-page support-download-page support-download-v12-page${installMode ? " support-install-mode" : ""} support-download-page--empty`}>
         {mobileHeader}
         <main className="support-download-shell">
           <div className="support-empty-panel">客服中心暂未开放。</div>
@@ -240,28 +245,28 @@ export default function SupportDownload() {
   }
 
   return (
-    <div className="store-page-shell store-bottom-safe store-v12-page support-download-page support-download-v12-page text-[var(--theme-text)]">
+    <div className={`store-page-shell store-bottom-safe sf-next-page store-v12-page support-download-page support-download-v12-page${installMode ? " support-install-mode" : ""}`}>
       <SeoHead
-        title={pageTitle ? `${pageTitle} - ${siteInfo.siteName || STORE_COPY.brandName}` : siteInfo.siteName || STORE_COPY.brandName}
+        title={installMode ? `安装应用 - ${siteInfo.siteName || STORE_COPY.brandName}` : pageTitle ? `${pageTitle} - ${siteInfo.siteName || STORE_COPY.brandName}` : siteInfo.siteName || STORE_COPY.brandName}
         description={config.subtitle}
-        canonical={buildCanonical("/support-download")}
+        canonical={buildCanonical(installMode ? "/install" : "/support-download")}
         robots="index,follow"
       />
       {mobileHeader}
 
       <main className="support-download-shell">
-        <section className="support-download-overview" aria-label="客服服务概览">
+        <section className="support-download-overview" aria-label={installMode ? "安装状态概览" : "客服服务概览"}>
           <article className="support-download-overview-card support-download-overview-card--value-only">
             <span className="support-download-overview-icon" aria-hidden="true">
-              <Clock3 size={18} />
+              {installMode ? <PlusSquare size={18} /> : <Clock3 size={18} />}
             </span>
             <div>
-              <strong>{workingHours}</strong>
+              <strong>{overviewText}</strong>
             </div>
           </article>
         </section>
 
-        {!waitingForConfiguredView && availableViews.length > 0 ? (
+        {showSupportTabs ? (
           <nav
             ref={tabsRef}
             className="support-download-tabs no-scrollbar"
@@ -305,7 +310,7 @@ export default function SupportDownload() {
             <div className="support-install-stack">
               {browserEnv.isInAppBrowser ? (
                 <div className="support-notice-panel">
-                  <p className="font-semibold">当前是在 App 内打开，可能无法直接添加到桌面。</p>
+                  <p className="support-notice-panel__title">当前是在 App 内打开，可能无法直接添加到桌面。</p>
                   <p>请点击右上角“...”并选择在浏览器中打开，然后继续操作。</p>
                   <UnifiedButton type="button" onClick={() => { void copyCurrentLink(installPageUrl); }} className="support-outline-action">
                     <Copy size={15} aria-hidden="true" />
@@ -340,12 +345,31 @@ export default function SupportDownload() {
 
           {!activeView && !queryChannelId ? (
             <section className="support-empty-panel">
-              <strong>客服渠道暂未显示</strong>
+              <strong>当前没有可用客服渠道</strong>
               <span>
-                {canShowInstallView
-                  ? "请稍后再试，客服渠道和添加桌面说明暂未开放。"
-                  : "请稍后再试，客服渠道暂未开放。"}
+                后台配置客服二维码或账号后会显示在这里。你也可以先进入帮助中心查看常见问题。
               </span>
+              <div className="support-empty-actions">
+                <UnifiedButton type="button" onClick={() => navigate("/help")} className="support-outline-action">
+                  返回帮助中心
+                </UnifiedButton>
+              </div>
+            </section>
+          ) : null}
+
+          {showInstallEntry ? (
+            <section className="support-install-entry" aria-label="安装入口">
+              <span className="support-install-entry__icon" aria-hidden="true">
+                <PlusSquare size={18} />
+              </span>
+              <div>
+                <strong>添加到手机桌面</strong>
+                <span>像 App 一样快速打开商城，不影响当前客服渠道配置。</span>
+              </div>
+              <UnifiedButton type="button" onClick={() => setActiveView("download")} className="support-install-entry__button">
+                <span>查看方法</span>
+                <ArrowRight size={16} aria-hidden="true" />
+              </UnifiedButton>
             </section>
           ) : null}
         </div>

@@ -163,10 +163,6 @@ export function ProfileHeroCard({
               <span>{memberLevelName}</span>
             </UnifiedButton>
           </div>
-          <p className="profile-vip-subtitle">
-            <span aria-hidden="true" />
-            尊享会员服务
-          </p>
         </div>
 
         <div className="profile-vip-message">
@@ -249,7 +245,9 @@ export function ProfileGuestCard({
     <section className="store-profile-vip-card profile-guest-card client-profile-hero-card client-profile-guest-card">
       <span className="profile-vip-watermark" aria-hidden="true" />
       <div className="profile-vip-header">
-        <span className="profile-guest-avatar" aria-hidden="true">?</span>
+        <span className="profile-guest-avatar" aria-hidden="true">
+          <User size={22} strokeWidth={2.1} />
+        </span>
         <div className="profile-vip-copy">
           <p className="profile-vip-name profile-guest-title">未登录</p>
         </div>

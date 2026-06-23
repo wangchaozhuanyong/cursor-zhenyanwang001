@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import type { MemberBenefitsOverview, MemberBenefit } from "@/services/memberBenefitsService";
 import type { MemberLevel } from "@/types/user";
+import { storefrontOptionalDisplayText } from "@/utils/storefrontCopySanitizer";
 
 export type BenefitHighlightTile = {
   label: string;
@@ -34,12 +35,12 @@ export function buildBenefitSummaryFromBenefits(
   level?: MemberLevel | null,
 ): string {
   const descriptions = benefits
-    .map((b) => b.description?.trim())
+    .map((b) => storefrontOptionalDisplayText(b.description))
     .filter((desc): desc is string => Boolean(desc) && !isGarbledBenefitText(desc));
   if (descriptions.length) return descriptions.join(" · ");
 
   const names = benefits
-    .map((b) => b.name?.trim())
+    .map((b) => storefrontOptionalDisplayText(b.name))
     .filter((name): name is string => Boolean(name) && !isGarbledBenefitText(name));
   if (names.length) return names.join(" · ");
 
@@ -63,7 +64,7 @@ export function buildBenefitSummaryFromLevel(level?: MemberLevel | null): string
   }
 
   if (level.free_shipping_enabled) parts.push("符合条件订单享受免邮配送");
-  if (!parts.length) parts.push(level.description?.trim() || "享受平台基础会员服务与活动权益");
+  if (!parts.length) parts.push(storefrontOptionalDisplayText(level.description) || "享受平台基础会员服务与活动权益");
   return parts.join(" · ");
 }
 

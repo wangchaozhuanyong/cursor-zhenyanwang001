@@ -1,4 +1,5 @@
 import { ApiError } from "@/types/common";
+import { isInternalStorefrontCopy } from "@/utils/storefrontCopySanitizer";
 
 /** 网关/网络类错误（502/503/504/0） */
 export function isTransientStorefrontError(error: unknown): boolean {
@@ -41,7 +42,14 @@ export function storefrontDisplayErrorMessage(message: string, fallback = "内�
   if (/Cannot\s+(GET|POST|PUT|PATCH|DELETE)\s+\/?api\/marketing|\/marketing\/promotions/i.test(raw)) {
     return "优惠活动暂时没有加载成功";
   }
-  if (/Cannot\s+(GET|POST|PUT|PATCH|DELETE)\s+\/?api\/|\/api\/|Unexpected token|<!doctype html>|TypeError:|404 Not Found/i.test(raw)) {
+  if (/^address:\s*Invalid input$/i.test(raw)) return "收货地址信息不完整，请检查后重试";
+  if (/^(name|contact_name|recipient):\s*Invalid input$/i.test(raw)) return "收货人信息不完整，请检查后重试";
+  if (/^(phone|mobile):\s*Invalid input$/i.test(raw)) return "手机号格式不正确";
+  if (/^[a-zA-Z0-9_.-]+:\s*Invalid input$/i.test(raw)) return "填写信息不正确，请检查后重试";
+  if (
+    /Cannot\s+(GET|POST|PUT|PATCH|DELETE)\s+\/?api\/|\/api\/|Unexpected token|<!doctype html>|TypeError:|404 Not Found|Failed to fetch/i.test(raw)
+    || isInternalStorefrontCopy(raw)
+  ) {
     return fallback;
   }
   return raw;

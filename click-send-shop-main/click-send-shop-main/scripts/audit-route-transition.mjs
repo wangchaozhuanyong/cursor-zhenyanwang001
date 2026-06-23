@@ -28,6 +28,15 @@ function addWarning(area, message, extra = {}) {
   warnings.push({ area, message, ...extra });
 }
 
+function isStoreBottomNavHiddenPath(pathname) {
+  return (
+    pathname === "/search" ||
+    pathname.startsWith("/checkout") ||
+    pathname.startsWith("/product/") ||
+    pathname.startsWith("/promotions/")
+  );
+}
+
 async function pickBaseUrl() {
   if (BASE) return BASE;
   for (const candidate of [
@@ -247,6 +256,7 @@ async function readFrameState(page) {
     }
 
     return {
+      pathname: window.location.pathname,
       fallbackVisible: visible(fallback),
       fallbackKind: fallback?.getAttribute("data-route-fallback") || "",
       bodyTextLength: document.body.innerText.replace(/\s+/g, " ").trim().length,
@@ -367,7 +377,7 @@ function analyzeSamples(area, samples, options) {
       return !sample.adminShellVisible || !sample.adminChromeVisible;
     }
     if (options.viewport === "mobile") {
-      return !sample.storeShellVisible || !sample.storeBottomNavVisible;
+      return !sample.storeShellVisible || (!isStoreBottomNavHiddenPath(sample.pathname || "") && !sample.storeBottomNavVisible);
     }
     return !sample.storeShellVisible || !sample.storeHeaderVisible;
   });

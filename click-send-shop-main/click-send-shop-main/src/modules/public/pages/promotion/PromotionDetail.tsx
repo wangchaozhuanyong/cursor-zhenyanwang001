@@ -3,12 +3,10 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
   BadgePercent,
-  CalendarDays,
   CheckCircle2,
-  Clock3,
   Loader2,
-  PackageSearch,
   RefreshCw,
+  Share2,
   ShieldCheck,
   ShoppingBag,
   TicketPercent,
@@ -21,6 +19,11 @@ import { useCouponAction } from "@/features/coupon/useCouponAction";
 import { usePublicLocale } from "@/i18n/publicLocale";
 import type { CouponClaimStatus } from "@/types/coupon";
 import { buildCanonical } from "@/utils/seo";
+import { storefrontDisplayText, storefrontOptionalDisplayText } from "@/utils/storefrontCopySanitizer";
+import ValueVaultCoupon, {
+  type ValueVaultKind,
+  type ValueVaultStatus,
+} from "@/modules/storefront-v2/design/components/ValueVaultCoupon";
 
 const PROMOTIONS_BASE_PATH = "/promotions";
 
@@ -217,10 +220,41 @@ function policyEntries(
   return entries;
 }
 
-function formatCouponValue(coupon: StorefrontPromotionCoupon, t: (key: string) => string) {
-  if (coupon.type === "percentage") return `${toNumber(coupon.value)}%`;
-  if (coupon.type === "shipping") return t("promotion.freeShipping");
-  return money(coupon.value);
+function formatCompactNumber(value: unknown) {
+  return toNumber(value).toFixed(2).replace(/\.?0+$/, "");
+}
+
+function formatShortDate(value?: string | null) {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return new Intl.DateTimeFormat("zh-CN", {
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date).replace(/\//g, ".");
+}
+
+function formatShortRange(start?: string | null, end?: string | null) {
+  return `${formatShortDate(start)} - ${formatShortDate(end)}`;
+}
+
+function couponVaultKind(type: string): ValueVaultKind {
+  if (type === "percentage") return "percentage";
+  if (type === "shipping") return "shipping";
+  return "fixed";
+}
+
+function couponVaultValue(coupon: StorefrontPromotionCoupon) {
+  if (coupon.type === "shipping") return undefined;
+  return formatCompactNumber(coupon.value);
+}
+
+function couponVaultStatus(claimStatus: CouponClaimStatus): ValueVaultStatus {
+  if (claimStatus === "claimable" || claimStatus === "login_required") return "claimable";
+  if (claimStatus === "already_claimed") return "claimed";
+  if (claimStatus === "ended") return "expired";
+  if (claimStatus === "disabled") return "invalid";
+  return "locked";
 }
 
 function couponClaimStatusAfterSuccess(status: CouponClaimStatus = "already_claimed") {
@@ -287,6 +321,49 @@ export default function PromotionDetail() {
       ? formatDuration(countdownSeconds)
       : t("promotion.endingSoon");
   const itemCount = promotion?.items?.length || 0;
+  const summaryItems = useMemo(() => {
+    if (!promotion) return [];
+    return [
+      {
+        id: "time",
+        label: t("promotion.time"),
+        value: formatShortRange(promotion.start_at, promotion.end_at),
+      },
+      {
+        id: "countdown",
+        label: t("promotion.countdown"),
+        value: countdownLabel,
+      },
+      {
+        id: "stackable",
+        label: t("promotion.stackable"),
+        value: promotion.stackable ? t("promotion.stackableYes") : t("promotion.stackableNo"),
+      },
+      {
+        id: "scope",
+        label: t("promotion.applyScope"),
+        value: itemCount > 0 ? `${itemCount} 件商品` : promotion.scope_type || "all",
+      },
+    ];
+  }, [countdownLabel, itemCount, promotion, t]);
+  const displayRules = useMemo(() => {
+    const seen = new Set<string>();
+    return [...rules, ...policies]
+      .filter((entry) => {
+        const id = `${entry.key}:${entry.value}`;
+        if (seen.has(id)) return false;
+        seen.add(id);
+        return true;
+      })
+      .slice(0, 6);
+  }, [policies, rules]);
+  const displayPromotionTitle = promotion
+    ? storefrontDisplayText(promotion.title, `${promotionTypeLabel(promotion.type)}活动`)
+    : "";
+  const displayPromotionDescription = promotion
+    ? storefrontDisplayText(promotion.description || promotion.subtitle, t("promotion.detailFallback"))
+    : "";
+  const displayPromoLabel = promotion ? storefrontOptionalDisplayText(promotion.promo_label) : undefined;
 
   const handleClaimCoupon = async (coupon: StorefrontPromotionCoupon) => {
     setClaimingId(coupon.id);
@@ -310,18 +387,40 @@ export default function PromotionDetail() {
     }
   };
 
+  const handleShare = async () => {
+    if (!promotion) return;
+    const shareUrl = window.location.href;
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: displayPromotionTitle,
+          text: displayPromotionDescription || displayPromotionTitle,
+          url: shareUrl,
+        });
+        return;
+      }
+      await navigator.clipboard?.writeText(shareUrl);
+    } catch {
+      // Sharing is a progressive enhancement; the page remains usable if it is cancelled.
+    }
+  };
+
   if (loading) {
     return (
-      <main className="store-page-shell store-v12-page store-promotion-detail-v12-page flex min-h-[60vh] items-center justify-center text-[var(--theme-text-muted)]">
-        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-        {t("promotion.loading")}
+      <main className="store-page-shell sf-next-page store-v12-page store-promotion-detail-v12-page">
+        <div className="store-promotion-detail-v12-loading" role="status" aria-label={t("promotion.loading")}>
+          <span className="sf-next-skeleton store-promotion-detail-v12-loading__hero" />
+          <span className="sf-next-skeleton store-promotion-detail-v12-loading__line" />
+          <span className="sf-next-skeleton store-promotion-detail-v12-loading__line is-short" />
+          <Loader2 aria-hidden="true" className="store-promotion-detail-v12-loading__spinner" />
+        </div>
       </main>
     );
   }
 
   if (error || !promotion) {
     return (
-      <main className="store-page-shell store-v12-page store-promotion-detail-v12-page mx-auto max-w-4xl px-4 py-8">
+      <main className="store-page-shell sf-next-page store-v12-page store-promotion-detail-v12-page">
         <PromotionDetailStatePanel
           title={t("promotion.detailUnavailable")}
           description={error || t("promotion.emptyDescription")}
@@ -340,137 +439,96 @@ export default function PromotionDetail() {
   return (
     <>
     <SeoHead
-      title={promotion.title}
-      description={promotion.description || promotion.subtitle || t("promotion.detailFallback")}
+      title={displayPromotionTitle}
+      description={displayPromotionDescription || t("promotion.detailFallback")}
       canonical={buildCanonical(`${PROMOTIONS_BASE_PATH}/${promotion.slug || slug}`)}
       robots="index,follow"
     />
-    <main className="store-page-shell store-v12-page store-promotion-detail-v12-page mx-auto max-w-6xl px-[var(--store-page-x)] pb-6 pt-[var(--store-page-y)] md:px-6 md:pb-8 md:pt-6 lg:px-8">
-      <button
-        type="button"
-        className="store-promotion-detail-v12-back mb-2 inline-flex h-9 items-center gap-1.5 rounded-full px-1 text-sm font-semibold text-[var(--theme-text-muted)] transition-colors hover:text-[var(--theme-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--theme-primary)_24%,transparent)] md:mb-3"
-        onClick={() => navigate(-1)}
-      >
-        <ArrowLeft size={16} />
-        {t("common.back")}
-      </button>
+    <main className="store-page-shell sf-next-page store-v12-page store-promotion-detail-v12-page">
+      <div className="store-promotion-detail-v12-topbar">
+        <button
+          type="button"
+          className="store-promotion-detail-v12-icon-button"
+          aria-label={t("common.back")}
+          onClick={() => navigate(-1)}
+        >
+          <ArrowLeft size={22} />
+        </button>
+        <h1>活动详情</h1>
+        <button
+          type="button"
+          className="store-promotion-detail-v12-icon-button"
+          aria-label="分享活动"
+          onClick={() => void handleShare()}
+        >
+          <Share2 size={22} />
+        </button>
+      </div>
 
       <section className="store-promotion-detail-v12-hero">
         {promotion.cover_image ? (
           <div className="store-promotion-detail-v12-hero__media">
-            <img src={promotion.cover_image} alt={promotion.title} />
+            <img src={promotion.cover_image} alt={displayPromotionTitle} />
           </div>
-        ) : null}
-        <div className="store-promotion-detail-v12-hero__body">
-          <div className="store-promotion-detail-v12-hero__copy">
-            <div className="store-promotion-detail-v12-hero__badges">
-              <span>{promotionTypeLabel(promotion.type)}</span>
-              <b>{statusLabel}</b>
-              {promotion.promo_label ? <em>{promotion.promo_label}</em> : null}
-            </div>
-            <h1>{promotion.title}</h1>
-            <p>{promotion.description || promotion.subtitle || t("promotion.detailFallback")}</p>
+        ) : (
+          <div className="store-promotion-detail-v12-hero__media store-promotion-detail-v12-hero__media--placeholder" aria-hidden="true">
+            <span />
+            <i />
+            <b />
           </div>
-
-          <div className="store-promotion-detail-v12-hero__stats">
-            <div>
-              <CalendarDays size={18} aria-hidden />
-              <span>{t("promotion.time")}</span>
-              <strong>{formatDate(promotion.start_at)} - {formatDate(promotion.end_at)}</strong>
-            </div>
-            <div>
-              <Clock3 size={18} aria-hidden />
-              <span>{t("promotion.countdown")}</span>
-              <strong>{countdownLabel}</strong>
-            </div>
-            <div>
-              <BadgePercent size={18} aria-hidden />
-              <span>{t("promotion.stackable")}</span>
-              <strong>{promotion.stackable ? t("promotion.stackableYes") : t("promotion.stackableNo")}</strong>
-            </div>
-            <div>
-              <PackageSearch size={18} aria-hidden />
-              <span>{t("promotion.applyScope")}</span>
-              <strong>{promotion.scope_type || "all"} · {itemCount} 件商品</strong>
-            </div>
-          </div>
-        </div>
+        )}
       </section>
 
-      {policies.length ? (
-        <section className="mt-6 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 store-promotion-detail-v12-rules">
-          <h2 className="text-lg font-semibold text-[var(--theme-text)]">{t("promotion.policyEntries")}</h2>
-          <dl className="mt-4 grid gap-3 md:grid-cols-3">
-            {policies.map((policy) => (
-              <div className="rounded-lg bg-[var(--theme-muted)] p-3" key={policy.key}>
-                <dt className="text-xs uppercase text-[var(--theme-text-muted)]">{policy.key}</dt>
-                <dd className="mt-1 break-words text-sm text-[var(--theme-text)]">{policy.value}</dd>
-              </div>
-            ))}
-          </dl>
-        </section>
-      ) : null}
+      <section className="store-promotion-detail-v12-intro">
+        <div className="store-promotion-detail-v12-hero__badges">
+          <span>{promotionTypeLabel(promotion.type)}</span>
+          <b>{statusLabel}</b>
+          {displayPromoLabel ? <em>{displayPromoLabel}</em> : null}
+        </div>
+        <h2>{displayPromotionTitle}</h2>
+        <p>{displayPromotionDescription || t("promotion.detailFallback")}</p>
+      </section>
 
-      {rules.length ? (
-        <section className="mt-6 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5">
-          <h2 className="text-lg font-semibold text-[var(--theme-text)]">{t("promotion.ruleEntries")}</h2>
-          <dl className="mt-4 grid gap-3 md:grid-cols-2">
-            {rules.map((rule) => (
-              <div className="rounded-lg bg-[var(--theme-muted)] p-3" key={rule.key}>
-                <dt className="text-xs uppercase text-[var(--theme-text-muted)]">{rule.key}</dt>
-                <dd className="mt-1 break-words text-sm text-[var(--theme-text)]">{rule.value}</dd>
-              </div>
-            ))}
-          </dl>
-        </section>
-      ) : null}
+      <section className="store-promotion-detail-v12-summary" aria-label="活动摘要">
+        {summaryItems.map((item) => (
+          <div key={item.id}>
+            <span>{item.label}</span>
+            <strong>{item.value}</strong>
+          </div>
+        ))}
+      </section>
 
       {coupons.length ? (
-        <section className="mt-6 rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <section className="store-promotion-detail-v12-benefits">
+          <div className="store-promotion-detail-v12-section-head">
             <div>
-              <h2 className="text-lg font-semibold text-[var(--theme-text)]">{t("promotion.couponRewards")}</h2>
-              <p className="mt-1 text-sm text-[var(--theme-text-muted)]">{t("promotion.couponRewardsHint")}</p>
+              <h2>{t("promotion.couponRewards")}</h2>
+              <p>{t("promotion.couponRewardsHint")}</p>
             </div>
-            <Link className="store-v12-compact-cta inline-flex items-center gap-2 rounded-full border border-[var(--theme-border)] px-4 py-2 text-sm font-medium text-[var(--theme-text)]" to={localizedPath("/coupons")}>
+            <Link className="store-promotion-detail-v12-section-link" to={localizedPath("/coupons")}>
               <TicketPercent size={16} />
               {t("promotion.goCoupons")}
             </Link>
           </div>
 
-          <div className="mt-4 grid gap-3 md:grid-cols-2">
+          <div className="store-promotion-detail-v12-benefits__list">
             {coupons.map((coupon) => {
               const actionState = getActionState(coupon);
-              const remaining = coupon.total_quantity && coupon.total_quantity > 0
-                ? Math.max(0, coupon.total_quantity - Number(coupon.claimed_count || 0))
-                : null;
               return (
-                <article className="rounded-lg border border-[var(--theme-border)] bg-[var(--theme-muted)] p-4" key={coupon.id}>
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="text-xs font-semibold uppercase text-[var(--theme-primary)]">{coupon.display_badge || t("promotion.couponBadge")}</p>
-                      <h3 className="mt-1 line-clamp-2 text-base font-semibold text-[var(--theme-text)]">{coupon.title}</h3>
-                      {coupon.description ? <p className="mt-1 line-clamp-2 text-sm text-[var(--theme-text-muted)]">{coupon.description}</p> : null}
-                    </div>
-                    <strong className="shrink-0 text-lg text-[var(--theme-price)]">{formatCouponValue(coupon, t)}</strong>
-                  </div>
-                  <div className="mt-3 grid gap-2 text-xs text-[var(--theme-text-muted)] sm:grid-cols-2">
-                    <span>{t("promotion.minSpend")} {money(coupon.min_amount)}</span>
-                    <span>{t("promotion.validUntil")} {formatDate(coupon.end_date)}</span>
-                    {remaining !== null ? <span>{t("promotion.remainingCoupons")} {remaining}</span> : null}
-                    {coupon.category_names?.length ? <span className="truncate">{t("promotion.scopeCategories")} {coupon.category_names.join(", ")}</span> : null}
-                  </div>
-                  {actionState.reason ? <p className="mt-3 text-xs text-[var(--theme-text-muted)]">{actionState.reason}</p> : null}
-                  <UnifiedButton
-                    type="button"
-                    disabled={actionState.disabled || claimingId === coupon.id}
-                    onClick={() => void handleClaimCoupon(coupon)}
-                    className="store-v12-compact-cta mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full px-4 py-2"
-                  >
-                    {claimingId === coupon.id ? <Loader2 size={16} className="animate-spin" /> : <TicketPercent size={16} />}
-                    {claimingId === coupon.id ? t("promotion.claimingCoupon") : actionState.actionLabel}
-                  </UnifiedButton>
-                </article>
+                <ValueVaultCoupon
+                  key={coupon.id}
+                  kind={couponVaultKind(coupon.type)}
+                  status={couponVaultStatus(actionState.claimStatus)}
+                  title={coupon.title}
+                  value={couponVaultValue(coupon)}
+                  meta={`${t("promotion.minSpend")} ${money(coupon.min_amount)}`}
+                  validText={`${formatDate(coupon.start_date)} - ${formatDate(coupon.end_date)}`}
+                  unavailableReason={actionState.reason}
+                  actionLabel={claimingId === coupon.id ? t("promotion.claimingCoupon") : actionState.actionLabel}
+                  loading={claimingId === coupon.id}
+                  disabled={actionState.disabled || claimingId === coupon.id}
+                  onAction={() => void handleClaimCoupon(coupon)}
+                />
               );
             })}
           </div>
@@ -478,18 +536,23 @@ export default function PromotionDetail() {
       ) : null}
 
       {promotion.items?.length ? (
-        <section className="store-promotion-detail-v12-products mt-6">
-          <h2 className="text-lg font-semibold text-[var(--theme-text)]">{t("promotion.items")}</h2>
-          <div className="store-promotion-detail-v12-products__list mt-4 grid gap-3">
+        <section className="store-promotion-detail-v12-products">
+          <div className="store-promotion-detail-v12-section-head">
+            <div>
+              <h2>{t("promotion.items")}</h2>
+              <p>{itemCount} 件商品</p>
+            </div>
+          </div>
+          <div className="store-promotion-detail-v12-products__list">
             {promotion.items.map((item) => (
-              <Link className="store-promotion-detail-v12-product-row rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 shadow-sm" key={item.product_id} to={localizedPath(`/product/${item.product_id}`)}>
+              <Link className="store-promotion-detail-v12-product-row" key={item.product_id} to={localizedPath(`/product/${item.product_id}`)}>
                 {item.cover_image ? (
                   <div className="store-promotion-detail-v12-product-row__media">
-                    <img className="h-full w-full object-cover" src={item.cover_image} alt={item.product_name} />
+                    <img className="h-full w-full object-cover" src={item.cover_image} alt={storefrontDisplayText(item.product_name, "活动商品")} />
                   </div>
                 ) : null}
                 <div className="store-promotion-detail-v12-product-row__content">
-                  <h3 className="line-clamp-2 text-sm font-semibold text-[var(--theme-text)]">{item.product_name}</h3>
+                  <h3 className="line-clamp-2 text-sm font-semibold text-[var(--theme-text)]">{storefrontDisplayText(item.product_name, "活动商品")}</h3>
                   <div className="store-promotion-detail-v12-product-row__price">
                     {item.activity_price > 0 ? <strong className="text-[var(--theme-price)]">{money(item.activity_price)}</strong> : null}
                     {item.product_price > item.activity_price && item.activity_price > 0 ? (
@@ -518,6 +581,23 @@ export default function PromotionDetail() {
               </Link>
             ))}
           </div>
+        </section>
+      ) : null}
+
+      {displayRules.length ? (
+        <section className="store-promotion-detail-v12-rules">
+          <h2>{t("promotion.ruleEntries")}</h2>
+          <ol>
+            {displayRules.map((rule, index) => (
+              <li key={`${rule.key}-${index}`}>
+                <span>{String(index + 1).padStart(2, "0")}</span>
+                <div>
+                  <strong>{rule.key}</strong>
+                  <p>{rule.value}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
         </section>
       ) : null}
     </main>

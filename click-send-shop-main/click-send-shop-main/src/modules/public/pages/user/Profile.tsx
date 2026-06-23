@@ -361,9 +361,9 @@ export default function Profile() {
   };
 
   const trustItems = useMemo<ProfileTrustItem[]>(() => [
-    { title: "正品保障", desc: "100% 正品保证", icon: ShieldCheck },
-    { title: "本地配送", desc: "快速送达", icon: Truck },
-    { title: "安全支付", desc: "资金安全支付", icon: Wallet },
+    { title: "正品保障", desc: "平台规则保障", icon: ShieldCheck },
+    { title: "本地配送", desc: "运费结算确认", icon: Truck },
+    { title: "安全支付", desc: "订单金额复核", icon: Wallet },
   ], []);
 
   return (

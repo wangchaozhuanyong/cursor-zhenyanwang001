@@ -113,7 +113,7 @@ export default function InstallPlatformCard({ platform, browser, pwa, recommende
 
       {showAndroidFallback && browser.isInAppBrowser ? (
         <div className="support-notice-panel">
-          <p className="font-semibold">当前是在 App 内打开，通常不会弹出安装确认框。</p>
+          <p className="support-notice-panel__title">当前是在 App 内打开，通常不会弹出安装确认框。</p>
           <p>{getPreferredAndroidBrowserText()}</p>
           <UnifiedButton type="button" onClick={() => { void copySiteLink(installUrl, "链接已复制，请用手机浏览器打开"); }} className="support-outline-action">
             <Copy size={15} aria-hidden="true" />
@@ -124,7 +124,7 @@ export default function InstallPlatformCard({ platform, browser, pwa, recommende
 
       {showAndroidFallback && !browser.isInAppBrowser ? (
         <div className="support-notice-panel">
-          <p className="font-semibold">当前浏览器没有提供一键安装确认框。</p>
+          <p className="support-notice-panel__title">当前浏览器没有提供一键安装确认框。</p>
           <p>请点浏览器右上角菜单，选择“添加到桌面 / 添加到主屏幕 / 发送到桌面”。</p>
           <p>{getPreferredAndroidBrowserText()}</p>
         </div>
@@ -132,7 +132,7 @@ export default function InstallPlatformCard({ platform, browser, pwa, recommende
 
       {showIosSafariHint ? (
         <div className="support-notice-panel">
-          <p className="font-semibold">苹果手机需要用 Safari 添加到主屏幕。</p>
+          <p className="support-notice-panel__title">苹果手机需要用 Safari 添加到主屏幕。</p>
           <p>请先复制链接，用 Safari 打开后再按下面 {instructions.length} 步操作。</p>
           <UnifiedButton type="button" onClick={() => { void copySiteLink(installUrl, "链接已复制，请用 Safari 打开"); }} className="support-outline-action">
             <Copy size={15} aria-hidden="true" />
@@ -147,7 +147,7 @@ export default function InstallPlatformCard({ platform, browser, pwa, recommende
             <CheckCircle2 size={22} />
           </span>
           <div>
-            <p className="font-semibold">已从桌面 App 打开</p>
+            <p className="support-installed-panel__title">已从桌面 App 打开</p>
             <p>以后可以直接从 iPhone 主屏幕图标进入。</p>
           </div>
         </div>

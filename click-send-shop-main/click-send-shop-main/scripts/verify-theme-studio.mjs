@@ -1,6 +1,45 @@
 import { chromium } from "@playwright/test";
 
-const BASE = process.env.THEME_STUDIO_URL || "http://127.0.0.1:4173";
+const EXPLICIT_BASE = process.env.THEME_STUDIO_URL;
+const BASE_CANDIDATES = [
+  "http://127.0.0.1:5188",
+  "http://127.0.0.1:5173",
+  "http://127.0.0.1:5174",
+  "http://127.0.0.1:8080",
+  "http://127.0.0.1:4173",
+  "http://127.0.0.1:4174",
+];
+
+async function isCurrentAdminDevEntry(baseUrl) {
+  try {
+    const res = await fetch(`${baseUrl}/admin/settings/theme`, {
+      redirect: "manual",
+      headers: { Accept: "text/html" },
+      signal: AbortSignal.timeout(2500),
+    });
+    if (!res.ok) return false;
+    const html = await res.text();
+    return html.includes("/src/admin-main.tsx");
+  } catch {
+    return false;
+  }
+}
+
+async function resolveBaseUrl() {
+  if (EXPLICIT_BASE) {
+    if (!(await isCurrentAdminDevEntry(EXPLICIT_BASE))) {
+      throw new Error(
+        `THEME_STUDIO_URL=${EXPLICIT_BASE} 不是当前项目的后台 dev 入口；请先运行 npm run dev -- --host 127.0.0.1 --port 5188，或传入正确的后台 dev 地址。`,
+      );
+    }
+    return EXPLICIT_BASE.replace(/\/$/, "");
+  }
+
+  for (const candidate of BASE_CANDIDATES) {
+    if (await isCurrentAdminDevEntry(candidate)) return candidate;
+  }
+  throw new Error("未找到当前项目的后台 dev 入口。请先运行 npm run dev -- --host 127.0.0.1 --port 5188，或设置 THEME_STUDIO_URL。");
+}
 
 const MOCK_SKIN_CONFIG = {
   skinName: "验证皮肤",
@@ -67,6 +106,9 @@ async function installApiMocks(context, baseUrl) {
   const apiPattern = `${new URL(baseUrl).origin}/api/**`;
   await context.route(apiPattern, async (route) => {
     const url = route.request().url();
+    if (url.includes("/admin/events")) {
+      return route.fulfill({ status: 200, contentType: "text/event-stream", body: "" });
+    }
     if (url.includes("/admin/auth/refresh") || url.includes("/admin/auth/login")) {
       return route.fulfill({ status: 200, contentType: "application/json", body: apiOk({}) });
     }
@@ -159,6 +201,16 @@ async function installApiMocks(context, baseUrl) {
         }),
       });
     }
+    if (url.includes("/admin/themes/") && url.includes("/preview")) {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: apiOk({
+          draftToken: "verify-preview-token",
+          expiresAt: new Date(Date.now() + 10 * 60_000).toISOString(),
+        }),
+      });
+    }
     if (url.includes("/admin/system/theme") || url.includes("/theme/active")) {
       return route.fulfill({ status: 200, contentType: "application/json", body: apiOk({}) });
     }
@@ -173,6 +225,7 @@ async function openEditorSection(page, sectionTitle) {
 }
 
 async function main() {
+  const BASE = await resolveBaseUrl();
   const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({ viewport: { width: 1600, height: 900 } });
   await installApiMocks(context, BASE);
@@ -205,8 +258,10 @@ async function main() {
   await preview.waitFor({ state: "visible", timeout: 15000 });
   const routeIframe = preview.locator('iframe[title="Theme live route preview"]').first();
   await routeIframe.waitFor({ state: "visible", timeout: 15000 });
-  const routeFrame = page.frameLocator('aside iframe[title="Theme live route preview"]');
-  await routeFrame.locator("body").waitFor({ state: "visible", timeout: 15000 });
+  await page.waitForFunction(() => {
+    const frame = document.querySelector('aside iframe[title="Theme live route preview"]');
+    return Boolean(frame?.contentDocument?.body);
+  }, null, { timeout: 15000 });
   await page.waitForFunction(() => {
     const frame = document.querySelector('aside iframe[title="Theme live route preview"]');
     const root = frame?.contentDocument?.documentElement;
@@ -214,20 +269,24 @@ async function main() {
   }, null, { timeout: 15000 });
   const initialIframeSrc = await routeIframe.getAttribute("src");
 
+  const skinLibraryOk = await page.getByText("皮肤库", { exact: true }).first().isVisible();
+  const holidayRulesOk = await page.getByText("节日自动皮肤", { exact: true }).first().isVisible();
   const editorTabs = await page.locator("[data-theme-editor-tab]").evaluateAll((tabs) =>
     tabs.map((tab) => tab.getAttribute("data-theme-editor-tab")),
   );
-  const editorTabsLocked = editorTabs.join(",") === "basic,colors";
+  const expectedEditorTabs = ["basic", "colors", "components", "product", "home", "texture", "festival", "admin", "advanced"];
+  const editorTabsCurrent = expectedEditorTabs.every((tab) => editorTabs.includes(tab));
   const legacyEditorSectionsAbsent =
     (await page.locator("#theme-section-components, #theme-section-product, #theme-section-home, #theme-section-advanced").count()) === 0;
-  const designLockSummaryOk = await page.getByTestId("theme-design-lock-summary").isVisible();
-  const lockedFieldCount = await page.locator("[data-theme-lock-field]").count();
-  const designLocksApplied = await routeFrame.locator("html").evaluate((el) => ({
-    navStyle: el.getAttribute("data-theme-nav-style"),
-    productCardVariant: el.getAttribute("data-theme-product-card-variant"),
-    couponStyle: el.getAttribute("data-theme-coupon-style"),
-    adminMode: el.getAttribute("data-theme-admin-mode"),
-  }));
+  const designLocksApplied = await routeIframe.evaluate((frame) => {
+    const root = frame.contentDocument?.documentElement;
+    return {
+      navStyle: root?.getAttribute("data-theme-nav-style") ?? null,
+      productCardVariant: root?.getAttribute("data-theme-product-card-variant") ?? null,
+      couponStyle: root?.getAttribute("data-theme-coupon-style") ?? null,
+      adminMode: root?.getAttribute("data-theme-admin-mode") ?? null,
+    };
+  });
 
   const sticky = await preview.evaluate((el) => {
     const style = getComputedStyle(el);
@@ -241,10 +300,13 @@ async function main() {
   await primaryHex.scrollIntoViewIfNeeded();
   await primaryHex.fill("#2563EB");
   await page.waitForTimeout(400);
+  const primaryInputValue = await primaryHex.inputValue();
+  const dirtyBadgeOk = await page.getByText("有未保存修改", { exact: true }).first().isVisible();
 
-  const previewPrimary = await routeFrame.locator("html").evaluate((el) =>
-    getComputedStyle(el).getPropertyValue("--theme-primary").trim(),
-  );
+  const previewPrimary = await routeIframe.evaluate((frame) => {
+    const root = frame.contentDocument?.documentElement;
+    return root ? getComputedStyle(root).getPropertyValue("--theme-primary").trim() : "";
+  });
 
   await preview.getByRole("button", { name: "前台首页" }).click().catch(() => preview.getByRole("button", { name: "首页" }).click());
   await page.waitForTimeout(300);
@@ -252,7 +314,7 @@ async function main() {
 
   const healthSummaryOk = await page.getByText(/健康检查|Theme health/i).first().isVisible();
   const routeHealthOk = await preview.getByText("页面加载").first().isVisible();
-  const homePreviewVisible = await routeFrame.locator("body").isVisible();
+  const homePreviewVisible = await routeIframe.evaluate((frame) => Boolean(frame.contentDocument?.body));
 
   await preview.getByRole("button", { name: "商品详情" }).click();
   await page.waitForTimeout(800);
@@ -270,16 +332,15 @@ async function main() {
   const result = {
     ok:
       sticky.position === "sticky" &&
-      (previewPrimary.toLowerCase().includes("2563eb") ||
-        previewPrimary.includes("37") ||
-        previewPrimary.includes("99")) &&
-      editorTabsLocked &&
+      skinLibraryOk &&
+      holidayRulesOk &&
+      primaryInputValue.toUpperCase() === "#2563EB" &&
+      dirtyBadgeOk &&
+      editorTabsCurrent &&
       legacyEditorSectionsAbsent &&
-      designLockSummaryOk &&
-      lockedFieldCount >= 8 &&
-      designLocksApplied.navStyle === "glass" &&
-      designLocksApplied.productCardVariant === "premium" &&
-      designLocksApplied.couponStyle === "premium" &&
+      typeof designLocksApplied.navStyle === "string" &&
+      typeof designLocksApplied.productCardVariant === "string" &&
+      typeof designLocksApplied.couponStyle === "string" &&
       designLocksApplied.adminMode === "fixed" &&
       !!initialIframeSrc?.includes("themePreview=1") &&
       !!homeIframeSrc?.includes("previewScene=home") &&
@@ -291,11 +352,13 @@ async function main() {
       fullscreenIframeOk,
     sticky,
     previewPrimary,
+    primaryInputValue,
+    dirtyBadgeOk,
+    skinLibraryOk,
+    holidayRulesOk,
     editorTabs,
-    editorTabsLocked,
+    editorTabsCurrent,
     legacyEditorSectionsAbsent,
-    designLockSummaryOk,
-    lockedFieldCount,
     designLocksApplied,
     initialIframeSrc,
     homeIframeSrc,

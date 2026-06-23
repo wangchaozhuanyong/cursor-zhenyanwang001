@@ -12,6 +12,13 @@ describe("shouldHideBottomNav", () => {
     expect(shouldHideBottomNav("/en/search")).toBe(true);
   });
 
+  it("hides on detail pages while keeping promotion list navigation", () => {
+    expect(shouldHideBottomNav("/product/demo-product")).toBe(true);
+    expect(shouldHideBottomNav("/promotions/demo-campaign")).toBe(true);
+    expect(shouldHideBottomNav("/en/promotions/demo-campaign")).toBe(true);
+    expect(shouldHideBottomNav("/promotions")).toBe(false);
+  });
+
   it("shows on other paths", () => {
     expect(shouldHideBottomNav("/")).toBe(false);
     expect(shouldHideBottomNav("/cart")).toBe(false);

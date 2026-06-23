@@ -1,11 +1,10 @@
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
-import { ArrowLeft, Home, SearchX } from "lucide-react";
+import { ArrowLeft, Home, RotateCw, SearchX } from "lucide-react";
 import { motion } from "framer-motion";
 import { trackEvent } from "@/services/analyticsService";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { useStableBack } from "@/hooks/useStableBack";
-import { ClientButton } from "@/components/client";
 
 export default function NotFound() {
   const navigate = useNavigate();
@@ -16,7 +15,7 @@ export default function NotFound() {
   }, []);
 
   return (
-    <div className="store-page-shell store-bottom-safe flex min-h-screen items-center justify-center bg-[var(--theme-bg)] px-4 py-12 text-[var(--theme-text)]">
+    <div className="store-page-shell store-bottom-safe sf-next-page store-v12-page flex min-h-screen items-center justify-center bg-[var(--theme-bg)] px-4 py-12 text-[var(--theme-text)]">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -36,14 +35,14 @@ export default function NotFound() {
           >
             <ArrowLeft size={16} aria-hidden /> 返回上一页
           </UnifiedButton>
-          <ClientButton
+          <UnifiedButton
             type="button"
-            variant="secondary"
-            className="min-h-11 rounded-full"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-5 text-sm font-semibold text-[var(--theme-text)] transition hover:bg-[var(--theme-bg)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-primary)] focus-visible:ring-offset-2"
             onClick={() => window.location.reload()}
           >
+            <RotateCw size={16} aria-hidden />
             重新加载
-          </ClientButton>
+          </UnifiedButton>
           <UnifiedButton
             type="button"
             onClick={() => navigate("/", { replace: true })}

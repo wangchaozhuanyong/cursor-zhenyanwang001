@@ -1,20 +1,49 @@
 html[data-app-scope="store"] .support-download-page {
   --support-tab-count: 1;
-  --support-ink: var(--theme-text-on-surface, var(--theme-text));
-  --support-muted: var(--theme-text-muted-on-surface, var(--theme-text-muted));
-  --support-soft: var(--theme-bg);
-  --support-surface: var(--theme-surface);
-  --support-line: var(--theme-border);
-  --support-line-strong: color-mix(in srgb, var(--theme-primary) 24%, var(--theme-border));
-  --support-accent: var(--theme-primary);
-  --support-accent-dark: var(--theme-primary-hover, var(--theme-primary));
-  --support-accent-soft: color-mix(in srgb, var(--theme-primary) 12%, var(--theme-surface));
-  --support-accent-foreground: var(--theme-primary-foreground);
-  --support-shadow: var(--store-card-shadow, var(--theme-shadow));
+  --support-ink: var(--sf-ink, var(--theme-text-on-surface, var(--theme-text)));
+  --support-muted: var(--sf-ink-secondary, var(--theme-text-muted-on-surface, var(--theme-text-muted)));
+  --support-soft: var(--sf-surface-muted, var(--theme-bg));
+  --support-surface: var(--sf-surface, var(--theme-surface));
+  --support-line: var(--sf-line, var(--theme-border));
+  --support-line-strong: var(--sf-line-strong, color-mix(in srgb, var(--theme-primary) 24%, var(--theme-border)));
+  --support-accent: var(--sf-accent, var(--theme-primary));
+  --support-accent-dark: var(--sf-graphite, var(--theme-primary-hover, var(--theme-primary)));
+  --support-accent-soft: var(--sf-accent-soft, color-mix(in srgb, var(--theme-primary) 12%, var(--theme-surface)));
+  --support-accent-foreground: var(--sf-on-accent, var(--theme-primary-foreground));
+  --support-card-radius: var(--sf-radius-lg, 1.125rem);
+  --support-control-radius: var(--sf-radius-sm, 0.625rem);
+  --support-shadow: none;
   min-height: 100svh;
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-surface) 86%, var(--theme-bg)) 0%, var(--theme-bg) 52%, color-mix(in srgb, var(--theme-primary) 5%, var(--theme-bg)) 100%);
+  background: var(--sf-canvas, var(--theme-bg));
   color: var(--support-ink);
+}
+
+html[data-app-scope="store"] .support-download-back-button {
+  display: inline-flex;
+  width: 2.75rem;
+  min-width: 2.75rem;
+  height: 2.75rem;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: var(--support-control-radius);
+  background: transparent;
+  color: var(--support-ink);
+  padding: 0;
+  transition: background 160ms ease, transform 160ms ease;
+}
+
+html[data-app-scope="store"] .support-download-back-button:hover {
+  background: var(--support-accent-soft);
+}
+
+html[data-app-scope="store"] .support-download-back-button:active {
+  transform: scale(0.98);
+}
+
+html[data-app-scope="store"] .support-download-back-button svg {
+  flex: 0 0 auto;
 }
 
 html[data-app-scope="store"] .support-download-shell {
@@ -106,8 +135,8 @@ html[data-app-scope="store"] .support-download-overview-card {
   align-items: center;
   gap: 0.72rem;
   border: 1px solid var(--support-line);
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--support-surface) 94%, transparent);
+  border-radius: var(--support-card-radius);
+  background: var(--support-surface);
   padding: 0.82rem 0.9rem;
   box-shadow: var(--support-shadow);
 }
@@ -118,9 +147,9 @@ html[data-app-scope="store"] .support-download-overview-icon {
   height: 2.35rem;
   align-items: center;
   justify-content: center;
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--theme-primary) 10%, var(--support-surface));
-  color: var(--theme-primary);
+  border-radius: var(--support-control-radius);
+  background: var(--support-accent-soft);
+  color: var(--support-accent);
 }
 
 html[data-app-scope="store"] .support-download-overview-card div {
@@ -159,8 +188,8 @@ html[data-app-scope="store"] .support-download-tabs {
   margin-top: 1.15rem;
   padding: 0.35rem;
   border: 1px solid var(--support-line);
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--support-surface) 92%, transparent);
+  border-radius: var(--support-card-radius);
+  background: var(--support-surface);
   box-shadow: var(--support-shadow);
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
@@ -174,7 +203,7 @@ html[data-app-scope="store"] .support-download-tab {
   justify-content: center;
   gap: 0.45rem;
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--support-control-radius);
   background: transparent;
   padding: 0 0.55rem;
   color: var(--support-muted);
@@ -229,38 +258,38 @@ html[data-app-scope="store"] .support-channel-card,
 html[data-app-scope="store"] .support-install-card,
 html[data-app-scope="store"] .support-empty-panel {
   border: 1px solid var(--support-line);
-  border-radius: 8px;
+  border-radius: var(--support-card-radius);
   background: var(--support-surface);
   box-shadow: var(--support-shadow);
 }
 
 html[data-app-scope="store"] .support-channel-card {
-  --support-accent: var(--theme-primary);
-  --support-accent-dark: var(--theme-primary-hover, var(--theme-primary));
-  --support-accent-soft: color-mix(in srgb, var(--theme-primary) 12%, var(--theme-surface));
-  --support-accent-foreground: var(--theme-primary-foreground);
+  --support-accent: var(--sf-accent, var(--theme-primary));
+  --support-accent-dark: var(--sf-graphite, var(--theme-primary-hover, var(--theme-primary)));
+  --support-accent-soft: var(--sf-accent-soft, color-mix(in srgb, var(--theme-primary) 12%, var(--theme-surface)));
+  --support-accent-foreground: var(--sf-on-accent, var(--theme-primary-foreground));
   padding: 1rem;
   text-align: center;
 }
 
 html[data-app-scope="store"] .support-channel-card--wechat {
-  --support-accent: #07c160;
-  --support-accent-dark: #047857;
-  --support-accent-soft: #ecfdf5;
+  --support-accent: var(--sf-accent, #245b49);
+  --support-accent-dark: var(--sf-graphite, #20231f);
+  --support-accent-soft: var(--sf-accent-soft, #dce9e2);
   --support-accent-foreground: #ffffff;
 }
 
 html[data-app-scope="store"] .support-channel-card--whatsapp {
-  --support-accent: #128c7e;
-  --support-accent-dark: #075e54;
-  --support-accent-soft: #e8f8f5;
+  --support-accent: var(--sf-accent, #245b49);
+  --support-accent-dark: var(--sf-graphite, #20231f);
+  --support-accent-soft: var(--sf-accent-soft, #dce9e2);
   --support-accent-foreground: #ffffff;
 }
 
 html[data-app-scope="store"] .support-channel-card--telegram {
-  --support-accent: #229ed9;
-  --support-accent-dark: #0369a1;
-  --support-accent-soft: #eef8ff;
+  --support-accent: var(--sf-accent, #245b49);
+  --support-accent-dark: var(--sf-graphite, #20231f);
+  --support-accent-soft: var(--sf-accent-soft, #dce9e2);
   --support-accent-foreground: #ffffff;
 }
 
@@ -295,7 +324,7 @@ html[data-app-scope="store"] .support-channel-icon {
   align-items: center;
   justify-content: center;
   border: 1px solid color-mix(in srgb, var(--support-accent) 30%, var(--support-surface));
-  border-radius: 8px;
+  border-radius: var(--support-control-radius);
   background: var(--support-accent-soft);
   color: var(--support-accent-dark);
 }
@@ -375,7 +404,7 @@ html[data-app-scope="store"] .support-outline-action {
   justify-content: center;
   gap: 0.42rem;
   border: 1px solid var(--support-line-strong);
-  border-radius: 8px;
+  border-radius: var(--support-control-radius);
   background: var(--support-surface);
   color: var(--support-ink);
   font-size: 0.88rem;
@@ -409,9 +438,9 @@ html[data-app-scope="store"] .support-qr-media {
   justify-content: center;
   overflow: hidden;
   border: 1px solid var(--support-line-strong);
-  border-radius: 8px;
+  border-radius: var(--support-card-radius);
   background: var(--support-surface);
-  box-shadow: var(--store-soft-shadow, var(--theme-shadow));
+  box-shadow: none;
 }
 
 html[data-app-scope="store"] .support-qr-image {
@@ -469,7 +498,7 @@ html[data-app-scope="store"] .support-primary-action {
   align-items: center;
   justify-content: center;
   gap: 0.55rem;
-  border-radius: 8px;
+  border-radius: var(--support-control-radius);
   padding: 0 1rem;
   font-size: 0.96rem;
   font-weight: 850;
@@ -481,7 +510,7 @@ html[data-app-scope="store"] .support-primary-action {
   border: 1px solid var(--support-accent-dark);
   background: var(--support-accent-dark);
   color: var(--support-accent-foreground);
-  box-shadow: 0 16px 34px -26px var(--support-accent-dark);
+  box-shadow: none;
 }
 
 html[data-app-scope="store"] .support-download-qr-button {
@@ -522,7 +551,7 @@ html[data-app-scope="store"] .support-empty-panel span {
 html[data-app-scope="store"] .support-notice-panel {
   width: 100%;
   border: 1px solid var(--support-line);
-  border-radius: 8px;
+  border-radius: var(--support-card-radius);
   background: var(--support-surface);
   color: var(--support-muted);
 }
@@ -538,6 +567,11 @@ html[data-app-scope="store"] .support-notice-panel {
 
 html[data-app-scope="store"] .support-notice-panel p {
   margin: 0;
+}
+
+html[data-app-scope="store"] .support-notice-panel__title {
+  color: var(--support-ink);
+  font-weight: 800;
 }
 
 html[data-app-scope="store"] .support-notice-panel .support-outline-action {
@@ -564,9 +598,9 @@ html[data-app-scope="store"] .support-install-icon {
   align-items: center;
   justify-content: center;
   border: 1px solid color-mix(in srgb, var(--theme-primary) 24%, var(--theme-border));
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--theme-primary) 10%, var(--theme-surface));
-  color: var(--theme-primary);
+  border-radius: var(--support-control-radius);
+  background: var(--support-accent-soft);
+  color: var(--support-accent);
 }
 
 html[data-app-scope="store"] .support-install-title-row {
@@ -585,10 +619,10 @@ html[data-app-scope="store"] .support-install-title-row h2 {
 }
 
 html[data-app-scope="store"] .support-install-title-row span {
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--theme-primary) 12%, var(--theme-surface));
+  border-radius: var(--support-control-radius);
+  background: var(--support-accent-soft);
   padding: 0.18rem 0.48rem;
-  color: var(--theme-primary);
+  color: var(--support-accent);
   font-size: 0.68rem;
   font-weight: 850;
 }
@@ -605,11 +639,11 @@ html[data-app-scope="store"] .support-inline-hint {
   align-items: center;
   gap: 0.42rem;
   margin: 1rem 0 0;
-  border: 1px solid color-mix(in srgb, var(--theme-primary) 24%, var(--theme-border));
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--theme-primary) 10%, var(--theme-surface));
+  border: 1px solid var(--support-line-strong);
+  border-radius: var(--support-control-radius);
+  background: var(--support-accent-soft);
   padding: 0.62rem 0.75rem;
-  color: var(--theme-primary);
+  color: var(--support-accent);
   font-size: 0.82rem;
   line-height: 1.45;
 }
@@ -621,7 +655,7 @@ html[data-app-scope="store"] .support-installed-panel {
   gap: 0.8rem;
   margin-top: 1rem;
   border: 1px solid color-mix(in srgb, var(--theme-success) 34%, var(--theme-border));
-  border-radius: 8px;
+  border-radius: var(--support-card-radius);
   background: color-mix(in srgb, var(--theme-success) 10%, var(--theme-surface));
   padding: 0.9rem 1rem;
   color: var(--theme-success);
@@ -634,7 +668,7 @@ html[data-app-scope="store"] .support-installed-icon {
   flex: 0 0 auto;
   align-items: center;
   justify-content: center;
-  border-radius: 8px;
+  border-radius: var(--support-control-radius);
   background: color-mix(in srgb, var(--theme-success) 12%, var(--theme-surface));
 }
 
@@ -647,6 +681,10 @@ html[data-app-scope="store"] .support-installed-panel p {
 html[data-app-scope="store"] .support-installed-panel p:first-child {
   color: color-mix(in srgb, var(--theme-success) 78%, var(--theme-text-on-surface));
   font-size: 1rem;
+}
+
+html[data-app-scope="store"] .support-installed-panel__title {
+  font-weight: 800;
 }
 
 html[data-app-scope="store"] .support-ios-guide {
@@ -675,7 +713,7 @@ html[data-app-scope="store"] .support-ios-step-card {
   min-height: 4.65rem;
   align-items: center;
   border: 1px solid var(--support-line);
-  border-radius: 8px;
+  border-radius: var(--support-card-radius);
   background: var(--support-surface);
   padding: 0.82rem 2.15rem 0.82rem 0.82rem;
 }
@@ -695,9 +733,9 @@ html[data-app-scope="store"] .support-ios-step-icon {
   height: 2.42rem;
   align-items: center;
   justify-content: center;
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--theme-primary) 10%, var(--theme-surface));
-  color: var(--theme-primary);
+  border-radius: var(--support-control-radius);
+  background: var(--support-accent-soft);
+  color: var(--support-accent);
 }
 
 html[data-app-scope="store"] .support-ios-step-card p {

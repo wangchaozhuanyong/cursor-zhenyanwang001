@@ -4,7 +4,6 @@ import { AlertTriangle, ClipboardList, Copy, ExternalLink, MapPin, PackageCheck,
 import { toast } from "sonner";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
-import { ClientButton, EmptyState as ClientEmptyState } from "@/components/client";
 import * as orderService from "@/services/orderService";
 import type { Order } from "@/types/order";
 import { ApiError } from "@/types/common";
@@ -14,6 +13,8 @@ import { copyToClipboard } from "@/utils/clipboard";
 import { safeOpenExternal } from "@/utils/safeOpen";
 import { getOrderLogisticsSnapshot } from "@/utils/orderLogistics";
 import { getBuyerOrderStatusTextLocalized, getOrderCopy } from "./orderPageLocale";
+import RouteStatePanel from "@/modules/storefront-v2/design/components/RouteStatePanel";
+import StatusTimeline, { type StatusTimelineItem } from "@/modules/storefront-v2/design/components/StatusTimeline";
 
 const LOGISTICS_PAGE_COPY: Record<PublicLocale, {
   title: string;
@@ -141,6 +142,13 @@ export default function OrderLogistics() {
   );
 
   const pageBackFallback = id ? localizedPath(`/orders/${id}`) : localizedPath("/orders");
+  const timelineItems: StatusTimelineItem[] = timeline.slice(0, 18).map((item, index) => ({
+    id: item.id || `${item.tracking_no}-${item.event_time}-${index}`,
+    title: item.title || item.status_label || item.status || copy.timeline,
+    description: item.description || item.location || item.status_label || "",
+    time: item.event_time ? formatDateTime(item.event_time) : "",
+    state: index === 0 ? "current" : "complete",
+  }));
 
   return (
     <StoreAccountLayout
@@ -151,19 +159,24 @@ export default function OrderLogistics() {
       mainClassName="store-logistics-v12-main"
     >
       {loading ? (
-        <div className="store-logistics-v12-card p-6 text-center text-sm text-[var(--theme-text-muted)]">
-          {copy.loading}
-        </div>
+        <section className="store-logistics-v12-card store-logistics-v12-loading" aria-busy="true" aria-label={copy.loading}>
+          <div className="sf-next-skeleton store-logistics-v12-loading__hero" />
+          <div className="sf-next-skeleton store-logistics-v12-loading__line" />
+          <div className="sf-next-skeleton store-logistics-v12-loading__line is-short" />
+        </section>
       ) : null}
 
       {!loading && error ? (
-        <ClientEmptyState
+        <RouteStatePanel
+          icon={<AlertTriangle size={28} aria-hidden />}
           title={copy.loadFailed}
           description={error}
-          action={
-            <ClientButton type="button" onClick={() => void load()}>
+          tone="error"
+          primaryAction={
+            <button type="button" className="sf-next-button sf-next-button--primary" onClick={() => void load()}>
+              <RefreshCw size={16} aria-hidden />
               {copy.retry}
-            </ClientButton>
+            </button>
           }
         />
       ) : null}
@@ -245,27 +258,10 @@ export default function OrderLogistics() {
             </div>
 
             {hasLogistics && timeline.length ? (
-              <ol className="store-logistics-v12-timeline">
-                {timeline.slice(0, 18).map((item, index) => (
-                  <li key={item.id || `${item.tracking_no}-${item.event_time}-${index}`} className="store-logistics-v12-timeline__item">
-                    <span className="store-logistics-v12-timeline__dot" aria-hidden />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <strong className={item.severity === "error" || item.severity === "warning" ? "text-[var(--theme-danger)]" : "text-[var(--theme-text)]"}>
-                          {item.title || item.status_label || item.status || copy.timeline}
-                        </strong>
-                        <span className="text-xs text-[var(--theme-text-muted)]">
-                          {item.event_time ? formatDateTime(item.event_time) : ""}
-                        </span>
-                      </div>
-                      <p>{item.description || item.location || item.status_label || ""}</p>
-                      {item.location ? <small>{item.location}</small> : null}
-                    </div>
-                  </li>
-                ))}
-              </ol>
+              <StatusTimeline items={timelineItems} className="store-logistics-v12-next-timeline" />
             ) : (
-              <ClientEmptyState
+              <RouteStatePanel
+                icon={<Truck size={28} aria-hidden />}
                 title={hasLogistics ? copy.noTimeline : copy.noLogisticsTitle}
                 description={hasLogistics ? copy.noTimeline : copy.noLogisticsDesc}
               />

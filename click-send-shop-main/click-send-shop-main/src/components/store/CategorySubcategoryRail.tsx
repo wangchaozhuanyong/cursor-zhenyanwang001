@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import type { Category } from "@/types/category";
 import { useHorizontalActiveScroll } from "@/hooks/useHorizontalActiveScroll";
+import { storefrontCategoryName } from "@/utils/storefrontCopySanitizer";
 
 const TAB_INDICATOR_SPRING = { type: "spring" as const, stiffness: 380, damping: 32 };
 
@@ -73,7 +74,7 @@ export default function CategorySubcategoryRail({
           className="store-category-subtab px-3"
           btnRef={(el) => setItemRef(child.id, el)}
         >
-          {child.name}
+          {storefrontCategoryName(child.name)}
         </CategoryTabButton>
       ))}
     </div>

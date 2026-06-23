@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import type { ClientDesignStyle } from "@/utils/clientDesignStyle";
 import type { Category } from "@/types/category";
 import { NEW_ARRIVAL_CATEGORY_PATH } from "@/constants/newArrivalNavigation";
+import { storefrontCategoryName } from "@/utils/storefrontCopySanitizer";
 import { useClientDesignStyle } from "../design/useClientDesignStyle";
 
 type HomeCategoryRailV2Props = {
@@ -57,7 +58,7 @@ export default function HomeCategoryRailV2({ categories, onNavigate }: HomeCateg
         {visibleCategories.map((category) => (
           <CategoryButton
             key={category.id}
-            label={category.name}
+            label={storefrontCategoryName(category.name)}
             image={category.icon_url || category.icon}
             onClick={() => onNavigate(`/categories?cat=${encodeURIComponent(category.id)}`)}
             clientStyle={clientStyle}

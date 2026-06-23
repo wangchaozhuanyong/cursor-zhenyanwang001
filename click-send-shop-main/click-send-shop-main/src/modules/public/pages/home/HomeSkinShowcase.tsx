@@ -45,6 +45,14 @@ function resolveSkinCopy(skinId: string) {
   return skinCopy[skinId] ?? skinCopy.polar;
 }
 
+type ShowcaseNavPlacement = "afterBody" | "beforeBody" | "insideRail";
+
+function resolveShowcaseNavPlacement(homeLayout: string): ShowcaseNavPlacement {
+  if (homeLayout === "runwayEditorial") return "beforeBody";
+  if (homeLayout === "courtyardMasonry") return "insideRail";
+  return "afterBody";
+}
+
 export default function HomeSkinShowcase({
   audience,
   title,
@@ -56,15 +64,37 @@ export default function HomeSkinShowcase({
 }: HomeSkinShowcaseProps) {
   const { skinId, themeConfig } = useThemeRuntime();
   const copy = resolveSkinCopy(skinId);
+  const homeLayout = themeConfig.homeLayout ?? "classic";
+  const navPlacement = resolveShowcaseNavPlacement(homeLayout);
 
   if (!hero && !trust && !nav) return null;
+
+  const navBlock = nav ? (
+    <div className="store-skin-showcase__nav" data-showcase-nav-placement={navPlacement}>
+      {nav}
+    </div>
+  ) : null;
+  const heroBlock = hero ? <div className="store-skin-showcase__hero">{hero}</div> : null;
+  const railHasContent = Boolean(trust || (navBlock && navPlacement === "insideRail"));
+  const railBlock = railHasContent ? (
+    <aside className="store-skin-showcase__rail" aria-label={copy.sideTitle}>
+      <div className="store-skin-showcase__note">
+        <span>{copy.sideTitle}</span>
+        <p>{copy.sideNote}</p>
+      </div>
+      {trust ? <div className="store-skin-showcase__trust">{trust}</div> : null}
+      {navPlacement === "insideRail" ? navBlock : null}
+    </aside>
+  ) : null;
 
   return (
     <section
       className={cn("store-skin-showcase", className)}
       data-store-skin-showcase
       data-audience={audience}
-      data-showcase-layout={themeConfig.homeLayout}
+      data-showcase-layout={homeLayout}
+      data-showcase-nav-placement={navPlacement}
+      data-showcase-has-rail={railHasContent ? "true" : "false"}
       aria-label="商城首页精选区域"
     >
       <span className="store-skin-showcase__texture" aria-hidden />
@@ -83,20 +113,14 @@ export default function HomeSkinShowcase({
         </span>
       </div>
 
+      {navPlacement === "beforeBody" ? navBlock : null}
+
       <div className="store-skin-showcase__body">
-        {hero ? <div className="store-skin-showcase__hero">{hero}</div> : null}
-        {(trust || nav) ? (
-          <aside className="store-skin-showcase__rail" aria-label={copy.sideTitle}>
-            <div className="store-skin-showcase__note">
-              <span>{copy.sideTitle}</span>
-              <p>{copy.sideNote}</p>
-            </div>
-            {trust ? <div className="store-skin-showcase__trust">{trust}</div> : null}
-          </aside>
-        ) : null}
+        {heroBlock}
+        {railBlock}
       </div>
 
-      {nav ? <div className="store-skin-showcase__nav">{nav}</div> : null}
+      {navPlacement === "afterBody" ? navBlock : null}
     </section>
   );
 }

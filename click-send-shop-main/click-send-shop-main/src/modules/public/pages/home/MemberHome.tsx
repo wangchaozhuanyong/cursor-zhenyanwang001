@@ -175,7 +175,10 @@ export default function MemberHome() {
   }, [recBatches.length]);
 
   return (
-    <div className={`store-page-shell store-bottom-safe text-[var(--theme-text)] ${isMagazineLayout ? "bg-[color-mix(in_srgb,var(--theme-bg)_90%,black)]" : "bg-[var(--theme-bg)]"}`} data-theme-home-layout={themeConfig.homeLayout}>
+    <div
+      className={`store-page-shell store-bottom-safe store-skin-home-page text-[var(--theme-text)] ${isMagazineLayout ? "bg-[color-mix(in_srgb,var(--theme-bg)_90%,black)]" : "bg-[var(--theme-bg)]"}`}
+      data-theme-home-layout={themeConfig.homeLayout}
+    >
       <SeoHead
         title={seoTitle}
         description={seoDescription}
@@ -193,7 +196,7 @@ export default function MemberHome() {
         ]}
       />
       <StoreTabHeader searchMode="navigate" showSiteNameMobile className="store-home-topbar" />
-      <main className={`${HOME_PAGE_MAIN_CLASS} store-home-main-member`}>
+      <main className={`${HOME_PAGE_MAIN_CLASS} store-home-main-member store-skin-home-main`}>
         {(isHomeModuleEnabled(homeModules, "banner", "member") ||
           isHomeModuleEnabled(homeModules, "trust_bar", "member") ||
           isHomeModuleEnabled(homeModules, "nav_grid", "member")) ? (
@@ -275,7 +278,7 @@ export default function MemberHome() {
         ) : null}
         {isHomeModuleEnabled(homeModules, "recommend", "member") ? (
         <AnimatedSection delay={0.16}>
-        <section>
+        <section className="store-skin-product-section">
           <div className="mb-3 flex items-center justify-between md:mb-4">
             <div>
               <h2 className="flex items-center gap-2 store-section-title tracking-widest text-[var(--theme-text-on-surface)]">

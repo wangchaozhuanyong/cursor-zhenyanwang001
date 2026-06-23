@@ -38,7 +38,7 @@ describe("profile quick links", () => {
   });
 
   it("shows the install shortcut only on mobile when the download capability is enabled", () => {
-    expect(buildInstallShortcutItem(true, true)?.path).toBe("/support-download?tab=download");
+    expect(buildInstallShortcutItem(true, true)?.path).toBe("/install");
     expect(buildInstallShortcutItem(true, false)).toBeNull();
     expect(buildInstallShortcutItem(false, true)).toBeNull();
   });

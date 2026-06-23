@@ -1,5 +1,6 @@
 import { Clock3, ShieldCheck } from "lucide-react";
 import StorefrontBadge from "../components/StorefrontBadge";
+import { storefrontDisplayText, storefrontOptionalDisplayText } from "@/utils/storefrontCopySanitizer";
 import type { ProductActiveActivity } from "@/types/product";
 
 type ProductActivityPanelProps = {
@@ -15,9 +16,18 @@ export default function ProductActivityPanel({ activity, className = "" }: Produ
     ? "秒杀"
     : activity.type === "limited_time_discount"
       ? "限时折扣"
+        : activity.type === "member_price"
+          ? "会员专享"
+          : "满减";
+  const fallbackTitle = activity.type === "flash_sale"
+    ? "限时秒杀活动"
+    : activity.type === "limited_time_discount"
+      ? "限时折扣活动"
       : activity.type === "member_price"
-        ? "会员专享"
-        : "满减";
+        ? "会员专享优惠"
+        : "下单享活动优惠";
+  const displayTitle = storefrontDisplayText(activity.title, fallbackTitle);
+  const displayDescription = storefrontOptionalDisplayText(activity.description);
   const remaining = Math.max(0, Number(activity.remaining_stock ?? 0));
   const soldCount = Math.max(0, Number(activity.sold_count ?? 0));
   const stockTotal = Math.max(0, Number(activity.activity_stock ?? 0) || remaining + soldCount);
@@ -30,15 +40,16 @@ export default function ProductActivityPanel({ activity, className = "" }: Produ
       ? Math.max(0, Math.min(100, Math.round((soldCount / stockTotal) * 100)))
       : null;
   const normalizedStatus = String(activity.status || "").toLowerCase();
-  const normalizedStatusLabel = String(activity.status_label || "").toLowerCase();
+  const displayStatusLabel = storefrontOptionalDisplayText(activity.status_label);
+  const normalizedStatusLabel = String(displayStatusLabel || "").toLowerCase();
   const statusText = normalizedStatus === "scheduled"
     ? "未开始"
     : normalizedStatus === "ended"
       ? "已结束"
       : normalizedStatus === "paused"
         ? "已暂停"
-        : activity.status_label && !["active", "scheduled", "ended", "paused"].includes(normalizedStatusLabel)
-          ? activity.status_label
+        : displayStatusLabel && !["active", "scheduled", "ended", "paused"].includes(normalizedStatusLabel)
+          ? displayStatusLabel
           : "进行中";
 
   return (
@@ -51,10 +62,10 @@ export default function ProductActivityPanel({ activity, className = "" }: Produ
           <div className="flex flex-wrap items-center gap-2">
             <StorefrontBadge tone="sale">{badgeLabel}</StorefrontBadge>
             <span className="store-product-v12-activity-status">{statusText}</span>
-            <p className="min-w-0 text-sm font-bold leading-5 text-[var(--theme-text)]">{activity.title}</p>
+            <p className="min-w-0 text-sm font-bold leading-5 text-[var(--theme-text)]">{displayTitle}</p>
           </div>
-          {activity.description ? (
-            <p className="mt-1 text-xs leading-5 text-[var(--theme-text-muted)]">{activity.description}</p>
+          {displayDescription ? (
+            <p className="mt-1 text-xs leading-5 text-[var(--theme-text-muted)]">{displayDescription}</p>
           ) : null}
         </div>
         <div className="shrink-0 text-right text-xs font-semibold text-[var(--theme-price)]">

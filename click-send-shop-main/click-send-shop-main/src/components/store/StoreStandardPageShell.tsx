@@ -43,7 +43,7 @@ export default function StoreStandardPageShell({
   const handleBack = onBack ?? defaultBack;
 
   return (
-    <div className={cn("store-page-shell store-bottom-safe min-h-screen bg-background text-foreground", className)}>
+    <div className={cn("store-page-shell store-standard-page-shell store-bottom-safe min-h-screen bg-background text-foreground", className)}>
       {mobileHeader ? (
         <div className="md:hidden">
           <PageHeader className={STORE_MOBILE_PAGE_HEADER_CLASS} title={title} onBack={handleBack} rightSlot={rightSlot} />
@@ -52,8 +52,8 @@ export default function StoreStandardPageShell({
       <StoreTabletBar className="store-fixed-header" />
       <StoreDesktopHeader className="store-fixed-header" />
 
-      <main className={cn("mx-auto w-full max-w-lg px-[var(--store-page-x)] py-[var(--store-page-y)] sm:px-4 md:max-w-5xl md:px-6 md:py-5 xl:max-w-7xl xl:px-8 xl:pb-12 xl:pt-6", contentClassName)}>
-        <div className="mb-5 hidden items-start justify-between gap-4 md:flex">
+      <main className={cn("store-standard-page-shell__main mx-auto w-full max-w-lg px-[var(--store-page-x)] py-[var(--store-page-y)] sm:px-4 md:max-w-5xl md:px-6 md:py-5 xl:max-w-7xl xl:px-8 xl:pb-12 xl:pt-6", contentClassName)}>
+        <div className="store-standard-page-shell__desktop-head mb-5 hidden items-start justify-between gap-4 md:flex">
           <div className="min-w-0">
             <UnifiedButton
               type="button"

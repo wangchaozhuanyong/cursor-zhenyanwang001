@@ -1,17 +1,14 @@
-import { useState, type CSSProperties, type FormEvent, type MouseEvent } from "react";
+import { useState, type FormEvent, type MouseEvent } from "react";
 import { ChevronDown, Search, UserRound } from "lucide-react";
 import BannerCarousel from "@/components/BannerCarousel";
 import NotificationIconButton from "@/components/NotificationIconButton";
 import StoreBrandLogo from "@/components/store/StoreBrandLogo";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
-import { cn } from "@/lib/utils";
-import { isDarkClientDesignStyle, type ClientDesignStyle } from "@/utils/clientDesignStyle";
 import type { Banner } from "@/types/banner";
 import type { ThemeConfig } from "@/types/theme";
 import { STORE_COPY } from "@/constants/storeCopy";
 import { usePublicLocale } from "@/i18n/publicLocale";
 import { useNotificationStore } from "@/stores/useNotificationStore";
-import { useClientDesignStyle } from "../design/useClientDesignStyle";
 
 type HomeHeroV2Props = {
   siteName: string;
@@ -41,7 +38,6 @@ export default function HomeHeroV2({
   const hasBanner = bannerEnabled && (bannersLoading || banners.length > 0);
   const [keyword, setKeyword] = useState("");
   const [activeHeroBanner, setActiveHeroBanner] = useState<Banner | null>(null);
-  const clientStyle = useClientDesignStyle();
   const { locale, localizedPath, t } = usePublicLocale();
   const displaySlogan = locale !== "zh" && containsCjk(slogan) ? t("hero.siteSlogan") : slogan;
   const displayDescription = locale !== "zh" && containsCjk(description) ? t("hero.siteDescription") : description;
@@ -49,16 +45,7 @@ export default function HomeHeroV2({
   const activeBannerDescription = activeHeroBanner?.description?.trim() || "";
   const heroTitle = hasBanner && activeBannerTitle ? activeBannerTitle : displaySlogan;
   const heroDescription = hasBanner && activeBannerDescription ? activeBannerDescription : displayDescription;
-  const isBlackGold = clientStyle === "black_gold";
-  const blackGoldHeroVars: CSSProperties | undefined = isBlackGold
-    ? {
-        "--theme-text": "#F7F3E8",
-        "--theme-text-muted": "#C9C2B2",
-        "--theme-surface": "#171717",
-        "--theme-bg": "#0A0A0A",
-        "--theme-border": "#3B3428",
-      } as CSSProperties
-    : undefined;
+  const compactHeroDescription = normalizeHeroDescription(heroDescription, heroTitle, displayDescription);
 
   const openSearchPage = (value = keyword) => {
     const trimmed = value.trim();
@@ -73,28 +60,50 @@ export default function HomeHeroV2({
 
   return (
     <section
-      style={blackGoldHeroVars}
       data-store-skin-showcase
       data-hero-layout={themeConfig.homeLayout}
       data-hero-banner-style={themeConfig.bannerStyle}
-      className={cn(
-        "store-home-hero-v2 store-home-hero-v4 store-skin-hero relative overflow-hidden",
-        isBlackGold
-          ? "rounded-[1.35rem] bg-[linear-gradient(132deg,#0F0F0F_0%,#18140F_48%,#0A0A0A_100%)] shadow-[0_24px_70px_color-mix(in_srgb,var(--theme-primary)_18%,transparent)]"
-          : clientStyle === "deep_enterprise"
-            ? "rounded-[1rem] bg-[linear-gradient(135deg,#FFFFFF_0%,color-mix(in_srgb,var(--theme-primary)_7%,var(--theme-surface))_52%,#F2F6FC_100%)] shadow-[0_16px_46px_rgba(15,23,42,0.09)]"
-            : clientStyle === "blue_portal"
-              ? "rounded-[1.25rem] bg-[linear-gradient(145deg,#FFFFFF_0%,color-mix(in_srgb,var(--theme-primary)_8%,var(--theme-surface))_52%,#FFFFFF_100%)] shadow-[0_18px_54px_rgba(37,99,235,0.10)]"
-              : "rounded-[1.75rem] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--theme-primary)_10%,var(--theme-surface))_0%,var(--theme-surface)_48%,color-mix(in_srgb,var(--theme-primary)_6%,var(--theme-bg))_100%)] shadow-[0_18px_56px_color-mix(in_srgb,var(--theme-primary)_12%,transparent)]",
-      )}
+      className="sf-next-home-hero"
     >
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,color-mix(in_srgb,var(--theme-primary)_32%,transparent),transparent)]" aria-hidden />
       <HeroChrome
         siteName={siteName}
         logoSrc={logoSrc}
         onNavigate={onNavigate}
       />
-      <div className="store-home-v4-hero-media relative min-w-0 overflow-hidden">
+
+      <form
+        onSubmit={submitSearch}
+        className="sf-next-home-hero__search"
+        onClick={stopPropagation}
+        aria-label={t("hero.searchAria")}
+      >
+        <button
+          type="button"
+          className="sf-next-home-hero__search-scope"
+          onClick={() => onNavigate(localizedPath("/search"))}
+        >
+          {t("common.searchScopeAll")}
+          <ChevronDown size={14} aria-hidden />
+        </button>
+        <Search size={18} className="sf-next-home-hero__search-icon" aria-hidden />
+        <label className="sr-only" htmlFor="home-v4-search">{t("hero.searchLabel")}</label>
+        <input
+          id="home-v4-search"
+          type="search"
+          value={keyword}
+          onChange={(event) => setKeyword(event.target.value)}
+          placeholder={t("hero.searchPlaceholder")}
+          className="sf-next-home-hero__search-input"
+        />
+        <UnifiedButton
+          type="submit"
+          className="sf-next-home-hero__search-submit"
+        >
+          {t("common.searchSubmit")}
+        </UnifiedButton>
+      </form>
+
+      <div className="sf-next-home-hero__visual">
         {hasBanner ? (
           <BannerCarousel
             banners={banners}
@@ -109,57 +118,15 @@ export default function HomeHeroV2({
           <HeroFallbackVisual
             siteName={siteName}
             logoSrc={logoSrc}
-            clientStyle={clientStyle}
             slogan={displaySlogan}
             description={displayDescription}
           />
         )}
       </div>
 
-      <div className="store-home-v4-copy">
-        <div className="store-home-v4-title-wrap">
-          {!hasBanner ? <span className="store-home-v4-kicker">{t("hero.bannerKicker")}</span> : null}
-          <div className="store-home-v4-copy-main">
-            <div className="store-home-v4-copy-text">
-              <h2 className="store-home-v4-title">{heroTitle}</h2>
-              <p className="store-home-v4-desc">{heroDescription}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="store-home-v4-search-workbench">
-        <form
-          onSubmit={submitSearch}
-          className="store-home-v4-search-dock"
-          onClick={stopPropagation}
-          aria-label={t("hero.searchAria")}
-        >
-          <button
-            type="button"
-            className="store-home-v4-search-scope"
-            onClick={() => onNavigate(localizedPath("/search"))}
-          >
-            {t("common.searchScopeAll")}
-            <ChevronDown size={14} aria-hidden />
-          </button>
-          <Search size={19} className="store-home-v4-search-icon" aria-hidden />
-          <label className="sr-only" htmlFor="home-v4-search">{t("hero.searchLabel")}</label>
-          <input
-            id="home-v4-search"
-            type="search"
-            value={keyword}
-            onChange={(event) => setKeyword(event.target.value)}
-            placeholder={t("hero.searchPlaceholder")}
-            className="store-home-v4-search-input"
-          />
-          <UnifiedButton
-            type="submit"
-            className="store-home-v4-search-submit"
-          >
-            {t("common.searchSubmit")}
-          </UnifiedButton>
-        </form>
+      <div className="sf-next-home-hero__copy">
+        <h2>{heroTitle}</h2>
+        {compactHeroDescription ? <p>{compactHeroDescription}</p> : null}
       </div>
     </section>
   );
@@ -171,6 +138,19 @@ function stopPropagation(event: MouseEvent<HTMLElement>) {
 
 function containsCjk(value: string) {
   return /[\u3400-\u9fff]/.test(value);
+}
+
+function normalizeHeroDescription(description: string, title: string, fallbackDescription: string) {
+  const cleaned = description
+    .replace(/\s+/g, " ")
+    .trim();
+  const cleanedTitle = title.replace(/\s+/g, " ").trim();
+  const cleanedFallback = fallbackDescription.replace(/\s+/g, " ").trim();
+  if (!cleaned) return "";
+  if (cleaned === cleanedTitle) return "";
+  if (cleanedTitle && cleaned.includes(cleanedTitle) && cleaned.length <= cleanedTitle.length + 8) return "";
+  if (cleanedFallback && cleaned === cleanedFallback && cleaned.length > 56) return "";
+  return cleaned;
 }
 
 function HeroChrome({
@@ -186,11 +166,11 @@ function HeroChrome({
   const unreadCount = useNotificationStore((s) => s.unreadCount);
   const brandName = siteName || STORE_COPY.brandName;
   return (
-    <div className="store-home-v4-chrome pointer-events-auto flex items-center gap-3 rounded-[1.15rem] border px-3 py-2 text-white backdrop-blur-xl">
+    <div className="sf-next-home-hero__chrome">
       <UnifiedButton
         type="button"
         onClick={() => onNavigate(localizedPath("/"))}
-        className="store-home-v4-brand flex min-w-0 shrink-0 items-center gap-2 border-0 bg-transparent p-0 text-white"
+        className="sf-next-home-hero__brand"
         aria-label={`${brandName} ${t("common.home")}`}
       >
         <StoreBrandLogo
@@ -199,14 +179,14 @@ function HeroChrome({
           fallbackText={brandName.trim().slice(0, 1)}
           width={34}
           height={34}
-          className="store-home-v4-brand-logo"
+          className="sf-next-home-hero__brand-logo"
         />
-        <span className="store-home-v4-brand-copy min-w-0">
-          <span className="store-home-v4-brand-name truncate">{brandName}</span>
-          <span className="store-home-v4-brand-meta hidden truncate sm:block">{STORE_COPY.siteSlogan}</span>
+        <span className="sf-next-home-hero__brand-copy">
+          <span className="sf-next-home-hero__brand-name">{brandName}</span>
+          <span className="sf-next-home-hero__brand-meta">{STORE_COPY.siteSlogan}</span>
         </span>
       </UnifiedButton>
-      <nav className="store-home-v4-links hidden min-w-0 flex-1 items-center justify-center gap-5 text-xs font-black xl:flex" aria-label={t("hero.quickNav")}>
+      <nav className="sf-next-home-hero__links" aria-label={t("hero.quickNav")}>
         <UnifiedButton type="button" onClick={() => onNavigate(localizedPath("/"))}>{t("common.home")}</UnifiedButton>
         <UnifiedButton type="button" onClick={() => onNavigate(localizedPath("/categories"))}>{t("common.categories")}</UnifiedButton>
         <UnifiedButton type="button" onClick={() => onNavigate(localizedPath("/categories?sort=sales_desc"))}>{t("common.flashSale")}</UnifiedButton>
@@ -214,15 +194,15 @@ function HeroChrome({
         <UnifiedButton type="button" onClick={() => onNavigate(localizedPath("/cart"))}>{t("common.cart")}</UnifiedButton>
         <UnifiedButton type="button" onClick={() => onNavigate(localizedPath("/profile"))}>{t("common.member")}</UnifiedButton>
       </nav>
-      <div className="store-home-v4-actions ml-auto flex shrink-0 items-center gap-1.5">
+      <div className="sf-next-home-hero__actions">
         <NotificationIconButton
           unreadCount={unreadCount}
           onClick={() => onNavigate(localizedPath("/notifications"))}
-          className="store-home-v4-action-button"
+          className="sf-next-home-hero__action"
         />
         <UnifiedButton
           type="button"
-          className="store-home-v4-action-button store-home-v4-icon-button"
+          className="sf-next-home-hero__action"
           onClick={() => onNavigate(localizedPath("/profile"))}
           aria-label={t("common.myAccount")}
         >
@@ -238,26 +218,14 @@ function HeroFallbackVisual({
   slogan,
   description,
   logoSrc,
-  clientStyle,
 }: {
   siteName: string;
   slogan: string;
   description: string;
   logoSrc?: string;
-  clientStyle: ClientDesignStyle;
 }) {
-  const darkStyle = isDarkClientDesignStyle(clientStyle);
   return (
-    <div
-      className={cn(
-        "store-home-v4-fallback relative min-h-[23rem] overflow-hidden md:min-h-[24rem]",
-        darkStyle
-          ? "bg-[linear-gradient(145deg,#19140D_0%,#111_54%,#070707_100%)]"
-          : clientStyle === "deep_enterprise"
-            ? "bg-[linear-gradient(145deg,#FFFFFF_0%,#EEF4FF_54%,#FFFFFF_100%)]"
-            : "bg-[linear-gradient(145deg,color-mix(in_srgb,var(--theme-primary)_18%,white)_0%,color-mix(in_srgb,var(--theme-primary)_7%,var(--theme-surface))_52%,var(--theme-surface)_100%)]",
-      )}
-    >
+    <div className="sf-next-home-hero__fallback">
       <picture className="absolute inset-0">
         <source media="(max-width: 767px)" srcSet="/assets/home-banners/home-hero-01-platform-bg-mobile.webp" />
         <img

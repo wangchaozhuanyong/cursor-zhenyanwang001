@@ -1,0 +1,731 @@
+/*
+ * SILENT COMMERCE /member/benefits visual layer.
+ * Scope deliberately excludes admin pages and legacy account pages.
+ */
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits {
+  --sc-benefits-canvas: var(--sf-canvas, var(--theme-bg));
+  --sc-benefits-surface: var(--sf-surface, var(--theme-surface));
+  --sc-benefits-soft: var(--sf-surface-muted, var(--theme-bg));
+  --sc-benefits-text: var(--sf-ink, var(--theme-text));
+  --sc-benefits-muted: var(--sf-ink-secondary, var(--theme-text-muted));
+  --sc-benefits-quiet: var(--sf-ink-quiet, var(--theme-text-muted));
+  --sc-benefits-line: var(--sf-line, var(--theme-border));
+  --sc-benefits-line-strong: var(--sf-line-strong, var(--theme-border));
+  --sc-benefits-accent: var(--sf-accent, var(--theme-primary));
+  --sc-benefits-accent-soft: var(--sf-accent-soft, var(--theme-bg));
+  --sc-benefits-on-accent: var(--sf-on-accent, var(--theme-primary-foreground));
+  --sc-benefits-graphite: var(--sf-graphite, var(--theme-text));
+  --sc-benefits-card-ink: var(--sc-benefits-on-accent);
+  --sc-benefits-card-muted: color-mix(in srgb, var(--sc-benefits-card-ink) 70%, transparent);
+  --sc-benefits-card-quiet: color-mix(in srgb, var(--sc-benefits-card-ink) 58%, transparent);
+  --sc-benefits-card-line: color-mix(in srgb, var(--sc-benefits-card-ink) 10%, transparent);
+  --sc-benefits-card-line-soft: color-mix(in srgb, var(--sc-benefits-card-ink) 5%, transparent);
+  --sc-benefits-danger: var(--sf-danger, var(--theme-price));
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  color: var(--sc-benefits-text);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__folio {
+  position: relative;
+  min-height: 12.8125rem;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--sc-benefits-card-ink) 8%, transparent);
+  border-radius: var(--sf-radius-xl, 1.375rem);
+  background: var(--sc-benefits-graphite);
+  color: var(--sc-benefits-card-ink);
+  padding: 1.1875rem 1.25rem 1.0625rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__folio::before {
+  position: absolute;
+  inset: 1rem 1.25rem auto;
+  height: 1px;
+  background: var(--sc-benefits-card-line-soft);
+  box-shadow:
+    0 2.6875rem 0 var(--sc-benefits-card-line-soft),
+    0 8.4375rem 0 color-mix(in srgb, var(--sc-benefits-card-ink) 11%, transparent);
+  content: "";
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__folio::after {
+  position: absolute;
+  top: 1.1875rem;
+  right: 1.1875rem;
+  width: 3.875rem;
+  height: 3.875rem;
+  border: 1px solid color-mix(in srgb, var(--sc-benefits-card-ink) 9%, transparent);
+  border-radius: 50%;
+  box-shadow: -1.125rem 1.375rem 0 -0.5625rem color-mix(in srgb, var(--sc-benefits-card-ink) 4%, transparent);
+  content: "";
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__folio-top,
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__progress-heading,
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__stats {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__folio-kicker {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--sc-benefits-card-muted);
+  font-size: 0.6875rem;
+  font-weight: 750;
+  line-height: 1rem;
+  letter-spacing: 0.09em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__level-chip {
+  display: inline-flex;
+  min-height: 1.5625rem;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.3125rem;
+  border: 1px solid color-mix(in srgb, var(--sc-benefits-card-ink) 13%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--sc-benefits-card-ink) 4%, transparent);
+  color: color-mix(in srgb, var(--sc-benefits-card-ink) 84%, transparent);
+  padding-inline: 0.5625rem;
+  font-size: 0.625rem;
+  font-weight: 650;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__level-name {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  overflow: hidden;
+  margin: 1.25rem 0 0;
+  color: var(--sc-benefits-card-ink);
+  font-size: 1.6875rem;
+  font-weight: 720;
+  line-height: 2rem;
+  letter-spacing: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__progress-heading {
+  align-items: baseline;
+  margin-top: 0.875rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__progress-heading span {
+  color: var(--sc-benefits-card-quiet);
+  font-size: 0.6875rem;
+  line-height: 1rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__progress-heading strong {
+  flex: 0 0 auto;
+  font-size: 0.75rem;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.125rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__progress-track {
+  position: relative;
+  z-index: 1;
+  height: 0.3125rem;
+  overflow: hidden;
+  margin-top: 0.4375rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--sc-benefits-card-ink) 13%, transparent);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__progress-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: color-mix(in srgb, var(--sc-benefits-accent) 22%, var(--sc-benefits-card-ink));
+  transition: width 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__progress-description {
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+  margin: 0.5rem 0 0;
+  color: var(--sc-benefits-card-muted);
+  font-size: 0.65625rem;
+  line-height: 0.9375rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__progress-description b {
+  color: var(--sc-benefits-card-ink);
+  font-weight: 720;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 0.9375rem;
+  border-top: 1px solid color-mix(in srgb, var(--sc-benefits-card-ink) 12%, transparent);
+  padding-top: 0.8125rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__stat {
+  min-width: 0;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__stat + .sc-benefits__stat {
+  border-left: 1px solid var(--sc-benefits-card-line);
+  padding-left: 1.125rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__stat strong,
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__stat span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__stat strong {
+  color: var(--sc-benefits-card-ink);
+  font-size: 1rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.25rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__stat span {
+  margin-top: 0.125rem;
+  color: var(--sc-benefits-card-quiet);
+  font-size: 0.625rem;
+  line-height: 0.9375rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__section {
+  margin-top: 1.125rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__section-heading {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.625rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__section-heading h2 {
+  margin: 0;
+  color: var(--sc-benefits-text);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.375rem;
+  letter-spacing: 0;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__section-heading span {
+  flex: 0 0 auto;
+  color: var(--sc-benefits-quiet);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1rem;
+  white-space: nowrap;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__benefit-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid var(--sc-benefits-line);
+  border-radius: var(--sf-radius-md, 1rem);
+  background: var(--sc-benefits-surface);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__benefit-item {
+  display: grid;
+  min-width: 0;
+  min-height: 3.875rem;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.625rem 0.75rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__benefit-item:nth-child(2n) {
+  border-left: 1px solid var(--sc-benefits-line);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__benefit-item:nth-child(n + 3) {
+  border-top: 1px solid var(--sc-benefits-line);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__benefit-icon {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border-radius: 0.625rem;
+  background: var(--sc-benefits-accent-soft);
+  color: var(--sc-benefits-accent);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__benefit-icon svg {
+  width: 1.0625rem;
+  height: 1.0625rem;
+  stroke-width: 1.8;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__benefit-copy {
+  min-width: 0;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__benefit-copy strong,
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__benefit-copy span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__benefit-copy strong {
+  color: var(--sc-benefits-text);
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.0625rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__benefit-copy span {
+  margin-top: 0.125rem;
+  color: var(--sc-benefits-quiet);
+  font-size: 0.625rem;
+  line-height: 0.875rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__level-sheet,
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__claim-row,
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__empty-benefits {
+  border: 1px solid var(--sc-benefits-line);
+  background: var(--sc-benefits-surface);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__level-sheet {
+  border-radius: var(--sf-radius-md, 1rem);
+  padding: 0.75rem 0.8125rem 0.6875rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__level-track {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  align-items: start;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__level-track::before {
+  position: absolute;
+  top: 0.5rem;
+  right: 12.5%;
+  left: 12.5%;
+  height: 1px;
+  background: var(--sc-benefits-line-strong);
+  content: "";
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__level-node {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  text-align: center;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__level-dot {
+  display: block;
+  width: 1.0625rem;
+  height: 1.0625rem;
+  margin-inline: auto;
+  border: 0.25rem solid var(--sc-benefits-surface);
+  border-radius: 50%;
+  background: var(--sc-benefits-line-strong);
+  box-shadow: 0 0 0 1px var(--sc-benefits-line-strong);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"]
+  .sc-benefits__level-node[data-state="current"]
+  .sc-benefits__level-dot {
+  background: var(--sc-benefits-accent);
+  box-shadow: 0 0 0 1px var(--sc-benefits-accent);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"]
+  .sc-benefits__level-node[data-state="next"]
+  .sc-benefits__level-dot {
+  background: var(--sc-benefits-surface);
+  box-shadow: 0 0 0 2px var(--sc-benefits-accent);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__level-node strong {
+  display: block;
+  overflow: hidden;
+  margin-top: 0.4375rem;
+  color: var(--sc-benefits-quiet);
+  font-size: 0.625rem;
+  font-weight: 650;
+  line-height: 0.875rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"]
+  .sc-benefits__level-node:is([data-state="current"], [data-state="next"])
+  strong {
+  color: var(--sc-benefits-text);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__upgrade-rule {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.625rem;
+  border-top: 1px solid var(--sc-benefits-line);
+  padding-top: 0.5625rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__upgrade-rule span {
+  flex: 0 0 auto;
+  color: var(--sc-benefits-quiet);
+  font-size: 0.625rem;
+  line-height: 0.875rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__upgrade-rule strong {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--sc-benefits-muted);
+  font-size: 0.65625rem;
+  font-weight: 650;
+  line-height: 0.9375rem;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__claim-list {
+  display: grid;
+  gap: 0.5rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__claim-row {
+  display: grid;
+  min-height: 3.625rem;
+  min-width: 0;
+  grid-template-columns: 2.25rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.625rem;
+  border-radius: 0.9375rem;
+  padding: 0.5625rem 0.75rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__claim-icon {
+  display: grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  place-items: center;
+  border-radius: 0.6875rem;
+  background: var(--sc-benefits-soft);
+  color: var(--sc-benefits-muted);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__claim-icon svg {
+  width: 1.125rem;
+  height: 1.125rem;
+  stroke-width: 1.8;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__claim-copy {
+  min-width: 0;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__claim-copy strong,
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__claim-copy span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__claim-copy strong {
+  color: var(--sc-benefits-text);
+  font-size: 0.75rem;
+  font-weight: 650;
+  line-height: 1.0625rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__claim-copy span {
+  margin-top: 0.125rem;
+  color: var(--sc-benefits-quiet);
+  font-size: 0.625rem;
+  line-height: 0.875rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__claim-count {
+  color: var(--sc-benefits-quiet);
+  font-size: 0.6875rem;
+  font-weight: 700;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__claim-button {
+  min-width: 4.25rem;
+  min-height: 2.25rem;
+  border: 0;
+  border-radius: var(--sf-radius-sm, 0.625rem);
+  background: var(--sc-benefits-accent);
+  color: var(--sc-benefits-on-accent);
+  padding-inline: 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__claim-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__note {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  gap: 0.4375rem;
+  margin: 0.6875rem 0.125rem 0;
+  color: var(--sc-benefits-quiet);
+  font-size: 0.625rem;
+  line-height: 0.9375rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__note svg {
+  width: 0.8125rem;
+  height: 0.8125rem;
+  flex: 0 0 0.8125rem;
+  margin-top: 0.0625rem;
+  stroke-width: 1.7;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__note span {
+  min-width: 0;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__empty-benefits {
+  display: flex;
+  min-height: 7.8125rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6875rem;
+  border-radius: var(--sf-radius-md, 1rem);
+  color: var(--sc-benefits-muted);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__empty-benefits > svg {
+  width: 1.375rem;
+  height: 1.375rem;
+  color: var(--sc-benefits-quiet);
+  stroke-width: 1.7;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__empty-benefits strong,
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__empty-benefits span {
+  display: block;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__empty-benefits strong {
+  color: var(--sc-benefits-text);
+  font-size: 0.75rem;
+  line-height: 1.0625rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__empty-benefits span {
+  margin-top: 0.125rem;
+  color: var(--sc-benefits-quiet);
+  font-size: 0.625rem;
+  line-height: 0.875rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__message {
+  display: flex;
+  min-height: 15.5rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--sc-benefits-line);
+  border-radius: var(--sf-radius-xl, 1.375rem);
+  background: var(--sc-benefits-surface);
+  padding: 1.625rem;
+  text-align: center;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__message-icon {
+  display: grid;
+  width: 3.625rem;
+  height: 3.625rem;
+  place-items: center;
+  border-radius: 1.125rem;
+  background: var(--sc-benefits-graphite);
+  color: var(--sc-benefits-card-ink);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__message-icon[data-kind="error"] {
+  background: color-mix(in srgb, var(--sc-benefits-danger) 10%, var(--sc-benefits-surface));
+  color: var(--sc-benefits-danger);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__message-icon svg {
+  width: 1.625rem;
+  height: 1.625rem;
+  stroke-width: 1.7;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__message h2 {
+  margin: 1.125rem 0 0;
+  color: var(--sc-benefits-text);
+  font-size: 1.125rem;
+  font-weight: 720;
+  line-height: 1.5rem;
+  letter-spacing: 0;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__message p {
+  max-width: 17rem;
+  margin: 0.4375rem 0 0;
+  color: var(--sc-benefits-muted);
+  font-size: 0.75rem;
+  line-height: 1.125rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__message-button {
+  display: inline-flex;
+  min-width: 9.375rem;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+  border: 0;
+  border-radius: var(--sf-radius-sm, 0.75rem);
+  background: var(--sc-benefits-accent);
+  color: var(--sc-benefits-on-accent);
+  padding-inline: 1rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__message-button:disabled {
+  opacity: 0.58;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__retry-icon {
+  width: 1rem;
+  height: 1rem;
+  animation: sc-benefits-spin 800ms linear infinite;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__loading {
+  display: grid;
+  gap: 1.125rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__skeleton {
+  border-radius: 0.625rem;
+  background: var(--sc-benefits-soft);
+  animation: sc-benefits-pulse 1.35s ease-in-out infinite;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__skeleton--folio {
+  height: 12.8125rem;
+  border-radius: var(--sf-radius-xl, 1.375rem);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__skeleton--title {
+  width: 5.375rem;
+  height: 1.375rem;
+  margin-bottom: -0.5rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__skeleton--grid {
+  height: 7.8125rem;
+  border-radius: var(--sf-radius-md, 1rem);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__skeleton--levels {
+  height: 5.875rem;
+  border-radius: var(--sf-radius-md, 1rem);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__skeleton--claim {
+  height: 3.625rem;
+  border-radius: 0.9375rem;
+}
+
+@keyframes sc-benefits-pulse {
+  0%,
+  100% {
+    opacity: 0.66;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes sc-benefits-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (min-width: 768px) {
+  html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__benefit-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__benefit-item:nth-child(n) {
+    border-top: 0;
+    border-left: 1px solid var(--sc-benefits-line);
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__benefit-item:first-child {
+    border-left: 0;
+  }
+}
+
+@media (max-width: 390px) {
+  html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__folio {
+    padding-inline: 1rem;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__benefit-item {
+    grid-template-columns: 1.875rem minmax(0, 1fr);
+    gap: 0.5rem;
+    padding-inline: 0.625rem;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__upgrade-rule {
+    align-items: flex-start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__progress-track span,
+  html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__skeleton,
+  html[data-app-scope="store"][data-storefront-ui="next"] .sc-benefits__retry-icon {
+    transition: none;
+    animation: none;
+  }
+}

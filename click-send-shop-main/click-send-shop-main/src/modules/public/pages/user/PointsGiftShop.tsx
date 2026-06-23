@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
-import { Gift, Loader2 } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { CheckCircle2, Gift, Loader2, PackageCheck, SlidersHorizontal, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useUserStore } from "@/stores/useUserStore";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
@@ -14,11 +14,6 @@ import { BottomSheetConfirm } from "@/modules/micro-interactions";
 import { formatAddressForDisplay } from "@/services/addressService";
 import { giftRedeemBlockReason, giftRedeemCashHint } from "@/utils/pointsGiftRedeem";
 import { cn } from "@/lib/utils";
-import {
-  THEME_ACCENT_HERO_LABEL,
-  THEME_ACCENT_HERO_SHELL,
-  THEME_ACCENT_HERO_VALUE,
-} from "@/utils/themeVisuals";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import RatioImage from "@/components/client/RatioImage";
 import { THEME_PRODUCT_MEDIA_ASPECT_STYLE, THEME_PRODUCT_MEDIA_RATIO } from "@/constants/productMediaAspect";
@@ -41,45 +36,43 @@ function GiftCard({
   const disabled = redeeming || Boolean(blockReason);
 
   return (
-    <article className="flex gap-3 rounded-2xl border border-border bg-card p-4">
-      {gift.image ? (
-        <RatioImage
-          src={gift.image}
-          alt=""
-          ratio={THEME_PRODUCT_MEDIA_RATIO}
-          rounded="md"
-          className="w-12 shrink-0 self-start"
-          imgClassName="object-cover"
-          loading="lazy"
-        />
-      ) : (
-        <div
-          className="flex w-12 shrink-0 self-start items-center justify-center rounded-lg bg-secondary"
-          style={THEME_PRODUCT_MEDIA_ASPECT_STYLE}
-        >
-          <Gift size={24} className="text-muted-foreground" aria-hidden />
-        </div>
-      )}
-      <div className="flex min-w-0 flex-1 flex-col justify-between gap-2">
-        <div className="min-w-0 space-y-1">
-          <p className="break-words font-medium leading-snug text-foreground">{gift.title}</p>
-          <p className="text-sm font-semibold text-[var(--theme-price)]">{gift.required_points} 积分</p>
-          {gift.cash_amount > 0 ? (
-            <p className="text-xs text-muted-foreground">+ RM {gift.cash_amount}</p>
-          ) : null}
-          {gift.remaining_stock != null ? (
-            <p className="text-xs text-muted-foreground">剩余 {gift.remaining_stock}</p>
-          ) : null}
-          {gift.limit_per_user > 0 ? (
-            <p className="text-xs text-muted-foreground">每人限兑 {gift.limit_per_user} 件</p>
-          ) : null}
-          {cashHint ? <p className="text-xs leading-4 text-muted-foreground">{cashHint}</p> : null}
+    <article className="store-points-gifts-v12-card">
+      <div className="store-points-gifts-v12-card__media">
+        {gift.image ? (
+          <RatioImage
+            src={gift.image}
+            alt=""
+            ratio={THEME_PRODUCT_MEDIA_RATIO}
+            rounded="md"
+            className="h-full w-full"
+            imgClassName="object-cover"
+            loading="lazy"
+          />
+        ) : (
+          <div className="store-points-gifts-v12-card__placeholder" style={THEME_PRODUCT_MEDIA_ASPECT_STYLE}>
+            <Gift size={24} aria-hidden />
+          </div>
+        )}
+      </div>
+      <div className="store-points-gifts-v12-card__body">
+        <div className="min-w-0">
+          <p className="store-points-gifts-v12-card__title">{gift.title}</p>
+          <div className="store-points-gifts-v12-card__price">
+            <strong>{gift.required_points}</strong>
+            <span>积分</span>
+          </div>
+          <div className="store-points-gifts-v12-card__meta">
+            {gift.cash_amount > 0 ? <span>+ RM {gift.cash_amount}</span> : <span>纯积分</span>}
+            {gift.remaining_stock != null ? <span>剩余 {gift.remaining_stock}</span> : <span>不限库存</span>}
+            {gift.limit_per_user > 0 ? <span>限兑 {gift.limit_per_user}</span> : null}
+          </div>
+          {cashHint ? <p className="store-points-gifts-v12-card__hint">{cashHint}</p> : null}
         </div>
         <UnifiedButton
           type="button"
           disabled={disabled}
           onClick={() => onRedeem(gift)}
-          className="self-start rounded-full btn-theme-price px-4 py-1.5 text-xs font-semibold text-[var(--theme-price-foreground)] disabled:cursor-not-allowed disabled:opacity-50"
+          className="store-points-gifts-v12-card__button"
         >
           {redeeming ? "兑换中…" : blockReason || "立即兑换"}
         </UnifiedButton>
@@ -98,6 +91,7 @@ export default function PointsGiftShop() {
   const [bootstrapReady, setBootstrapReady] = useState(false);
   const [redeemingId, setRedeemingId] = useState<string | null>(null);
   const [redeemConfirmGift, setRedeemConfirmGift] = useState<PointsGiftCatalogItem | null>(null);
+  const [filter, setFilter] = useState<"all" | "redeemable" | "cash" | "stock">("all");
   const { payPendingOrder } = usePayPendingOrder();
 
   useEffect(() => {
@@ -197,34 +191,102 @@ export default function PointsGiftShop() {
   };
 
   const onlinePaymentEnabled = loyaltyConfig?.checkout.onlinePaymentEnabled ?? capabilities.onlinePaymentEnabled;
+  const redeemableCount = useMemo(
+    () => gifts.filter((gift) => !giftRedeemBlockReason(gift, pointsBalance)).length,
+    [gifts, pointsBalance],
+  );
+  const stockCount = useMemo(
+    () => gifts.filter((gift) => gift.remaining_stock == null || gift.remaining_stock > 0).length,
+    [gifts],
+  );
+  const cashCount = useMemo(() => gifts.filter((gift) => gift.cash_amount > 0).length, [gifts]);
+  const filteredGifts = useMemo(() => {
+    if (filter === "redeemable") return gifts.filter((gift) => !giftRedeemBlockReason(gift, pointsBalance));
+    if (filter === "cash") return gifts.filter((gift) => gift.cash_amount > 0);
+    if (filter === "stock") return gifts.filter((gift) => gift.remaining_stock == null || gift.remaining_stock > 0);
+    return gifts;
+  }, [filter, gifts, pointsBalance]);
+  const filters = [
+    { key: "all" as const, label: "全部", count: gifts.length },
+    { key: "redeemable" as const, label: "可兑换", count: redeemableCount },
+    { key: "cash" as const, label: "含补差", count: cashCount },
+    { key: "stock" as const, label: "有库存", count: stockCount },
+  ];
 
   return (
-    <StoreAccountLayout title="积分兑换" backFallback="/points" mainClassName="sm:py-6 xl:py-6">
-      <div className="flex flex-col gap-6">
-        <section className={cn("rounded-2xl px-5 py-5 text-center sm:px-8", THEME_ACCENT_HERO_SHELL)}>
-          <p className={cn(THEME_ACCENT_HERO_LABEL, "normal-case tracking-normal")}>可用积分</p>
-          <p className={cn("store-stat-value mt-1 text-3xl sm:text-4xl", THEME_ACCENT_HERO_VALUE)}>{pointsBalance}</p>
-          <p className="mt-2 text-xs leading-5 text-[var(--theme-muted)]">
-            兑换将使用默认收货地址；纯积分礼品兑换后立即生效，含现金补差需完成支付。
-          </p>
+    <StoreAccountLayout
+      title="积分兑换"
+      backFallback="/points"
+      className="sf-next-page store-v12-page store-account-subpage-v12-page store-points-gifts-v12-page"
+      mainClassName="sf-next-account-main sm:py-6 xl:py-6"
+    >
+      <div className="store-points-gifts-v12-stack">
+        <section className="sf-next-folio store-points-gifts-v12-folio">
+          <div className="sf-next-folio__topline">
+            <p className="sf-next-folio__eyebrow">可用积分</p>
+            <span className="sf-next-folio__status">{redeemableCount} 可兑换</span>
+          </div>
+          <div className="sf-next-folio__value-row">
+            <strong className="sf-next-folio__value store-points-gifts-v12-balance">{pointsBalance}</strong>
+            <span className="sf-next-folio__unit">PTS</span>
+          </div>
+          <div className="sf-next-folio__meta store-points-gifts-v12-folio__stats">
+            <span className="sf-next-folio__meta-item">
+              <strong className="sf-next-folio__meta-value">{gifts.length}</strong>
+              <small className="sf-next-folio__meta-label">礼品</small>
+            </span>
+            <span className="sf-next-folio__meta-item">
+              <strong className="sf-next-folio__meta-value">{redeemableCount}</strong>
+              <small className="sf-next-folio__meta-label">可兑换</small>
+            </span>
+            <span className="sf-next-folio__meta-item">
+              <strong className="sf-next-folio__meta-value">{cashCount}</strong>
+              <small className="sf-next-folio__meta-label">含补差</small>
+            </span>
+          </div>
         </section>
 
-        <section className="min-w-0" aria-labelledby="points-gifts-heading">
-          <h2 id="points-gifts-heading" className="mb-3 text-sm font-semibold text-foreground">
-            可兑换礼品
-          </h2>
+        <section className="store-points-gifts-v12-filter" aria-label="积分礼品筛选">
+          <div className="store-points-gifts-v12-filter__title">
+            <SlidersHorizontal size={16} aria-hidden />
+            <span>筛选礼品</span>
+          </div>
+          <div className="store-points-gifts-v12-filter__chips">
+            {filters.map((item) => (
+              <UnifiedButton
+                key={item.key}
+                type="button"
+                className={cn("store-points-gifts-v12-filter__chip", filter === item.key && "is-active")}
+                aria-pressed={filter === item.key}
+                onClick={() => setFilter(item.key)}
+              >
+                {item.label}
+                <span>{item.count}</span>
+              </UnifiedButton>
+            ))}
+          </div>
+        </section>
+
+        <section className="store-points-gifts-v12-catalog" aria-labelledby="points-gifts-heading">
+          <div className="store-points-gifts-v12-section-head">
+            <div>
+              <p>礼品中心</p>
+              <h2 id="points-gifts-heading">积分礼品</h2>
+            </div>
+            <span>{filteredGifts.length}</span>
+          </div>
 
           {loading ? (
-            <div className="flex justify-center rounded-xl border border-border bg-card py-16">
+            <div className="store-points-gifts-v12-state">
               <Loader2 className="animate-spin text-muted-foreground" aria-label="加载中" />
             </div>
-          ) : gifts.length === 0 ? (
-            <div className="rounded-xl border border-border bg-card py-16 text-center text-sm text-muted-foreground">
+          ) : filteredGifts.length === 0 ? (
+            <div className="store-points-gifts-v12-state">
               暂无可兑换礼品
             </div>
           ) : (
-            <div className="space-y-3">
-              {gifts.map((gift) => (
+            <div className="store-points-gifts-v12-grid">
+              {filteredGifts.map((gift) => (
                 <GiftCard
                   key={gift.id}
                   gift={gift}
@@ -236,6 +298,21 @@ export default function PointsGiftShop() {
               ))}
             </div>
           )}
+        </section>
+
+        <section className="store-points-gifts-v12-rules">
+          <div>
+            <span><CheckCircle2 size={16} aria-hidden /></span>
+            <p>兑换将使用默认收货地址，缺少地址时会先跳转到地址管理。</p>
+          </div>
+          <div>
+            <span><PackageCheck size={16} aria-hidden /></span>
+            <p>纯积分礼品兑换后生成订单；含现金补差的礼品需继续完成支付。</p>
+          </div>
+          <div>
+            <span><Sparkles size={16} aria-hidden /></span>
+            <p>库存、限兑和积分不足状态以后台接口返回为准。</p>
+          </div>
         </section>
       </div>
 

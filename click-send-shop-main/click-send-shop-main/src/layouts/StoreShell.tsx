@@ -21,14 +21,14 @@ export default function StoreShell({ children }: StoreShellProps) {
   const fixedHeaderClassName = "store-fixed-header";
 
   return (
-    <div className="store-shell relative min-h-[100dvh]">
+    <div className="store-shell relative min-h-[100dvh] min-w-0 overflow-x-clip">
       {!hideChrome && isDesktop ? (
         <StoreDesktopHeader className={fixedHeaderClassName} />
       ) : null}
       {!hideChrome && isTab && isTablet ? (
         <StoreTabletBar className={fixedHeaderClassName} />
       ) : null}
-      <div>{children}</div>
+      <div className="store-shell__body min-w-0">{children}</div>
     </div>
   );
 }

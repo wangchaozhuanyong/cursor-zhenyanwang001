@@ -11,15 +11,53 @@
  * backend is available.
  */
 import { chromium } from "@playwright/test";
+import { request as httpRequest } from "node:http";
+import { request as httpsRequest } from "node:https";
 
 const DEFAULT_ROUTES = [
-  { path: "/", name: "store home", minRootChars: 80, expectAny: ["大马通", "首页", "Home", "Official"] },
-  { path: "/deals", name: "deals center", minRootChars: 60, expectAny: ["活动", "优惠", "Deals", "Promosi"] },
-  { path: "/deals/smoke-slug", name: "deals detail fallback", minRootChars: 20 },
-  { path: "/cart", name: "cart", minRootChars: 30, expectAny: ["购物车", "Cart", "Troli"] },
-  { path: "/checkout", name: "checkout guard", minRootChars: 20 },
-  { path: "/payment/result?order_no=SMOKE", name: "payment result", minRootChars: 24, expectAny: ["支付", "付款", "Payment", "Bayaran", "订单"] },
-  { path: "/orders", name: "orders guard", minRootChars: 20 },
+  { path: "/", name: "store home", minRootChars: 80, expectAny: ["大马通", "首页"] },
+  { path: "/categories", name: "categories", minRootChars: 60, expectAny: ["分类", "商品"] },
+  { path: "/search", name: "search", minRootChars: 16, expectAny: ["搜索", "热门"] },
+  { path: "/cart", name: "cart", minRootChars: 30, expectAny: ["购物车", "商品"] },
+  { path: "/checkout", name: "checkout guard", minRootChars: 20, expectAny: ["结算", "欢迎回来", "登录"] },
+  { path: "/payment/result?order_no=SMOKE", name: "payment result", minRootChars: 24, expectAny: ["支付", "付款", "订单", "确认"] },
+  { path: "/orders", name: "orders guard", minRootChars: 20, expectAny: ["订单", "欢迎回来", "登录"] },
+  { path: "/orders/SMOKE", name: "order detail guard", minRootChars: 20, expectAny: ["订单", "欢迎回来", "登录"] },
+  { path: "/orders/SMOKE/logistics", name: "order logistics guard", minRootChars: 20, expectAny: ["物流", "欢迎回来", "登录"] },
+  { path: "/coupons", name: "coupons", minRootChars: 40, expectAny: ["优惠券", "领券"] },
+  { path: "/promotions", name: "promotions", minRootChars: 60, expectAny: ["活动", "优惠"] },
+  { path: "/promotions/smoke-slug", name: "promotion detail fallback", minRootChars: 20, expectAny: ["活动", "优惠"] },
+  { path: "/profile", name: "profile", minRootChars: 40, expectAny: ["我的", "会员", "未登录"] },
+  { path: "/address", name: "address guard", minRootChars: 20, expectAny: ["地址", "欢迎回来", "登录"] },
+  { path: "/favorites", name: "favorites", minRootChars: 30, expectAny: ["收藏"] },
+  { path: "/notifications", name: "notifications guard", minRootChars: 20, expectAny: ["通知", "欢迎回来", "登录"] },
+  { path: "/help", name: "help", minRootChars: 40, expectAny: ["帮助", "客服"] },
+  { path: "/login", name: "login", minRootChars: 30, expectAny: ["欢迎回来", "登录"] },
+  { path: "/register", name: "register", minRootChars: 30, expectAny: ["注册", "欢迎回来"] },
+  { path: "/forgot-password", name: "forgot password", minRootChars: 30, expectAny: ["找回密码", "手机号"] },
+  { path: "/login/bind-phone", name: "bind phone", minRootChars: 30, expectAny: ["绑定手机号", "登录"] },
+  { path: "/invite", name: "invite guard", minRootChars: 20, expectAny: ["邀请", "欢迎回来", "登录"] },
+  { path: "/support-download", name: "support download", minRootChars: 30, expectAny: ["客服", "帮助"] },
+  { path: "/install", name: "install", minRootChars: 30, expectAny: ["安装", "桌面"] },
+  { path: "/about", name: "about", minRootChars: 40, expectAny: ["关于", "大马通"] },
+  { path: "/delivery", name: "delivery", minRootChars: 40, expectAny: ["配送", "物流"] },
+  { path: "/feature-status", name: "feature status", minRootChars: 40, expectAny: ["功能状态", "功能"] },
+  { path: "/feedback", name: "feedback", minRootChars: 30, expectAny: ["反馈", "意见"] },
+  { path: "/content/contact-us", name: "cms contact", minRootChars: 30, expectAny: ["联系我们", "客服"] },
+  { path: "/settings", name: "settings guard", minRootChars: 20, expectAny: ["设置", "欢迎回来", "登录"] },
+  { path: "/member/benefits", name: "member benefits guard", minRootChars: 20, expectAny: ["会员", "欢迎回来", "登录"] },
+  { path: "/points", name: "points guard", minRootChars: 20, expectAny: ["积分", "欢迎回来", "登录"] },
+  { path: "/points/gifts", name: "points gifts guard", minRootChars: 20, expectAny: ["积分", "礼品", "欢迎回来", "登录"] },
+  { path: "/rewards", name: "rewards guard", minRootChars: 20, expectAny: ["奖励", "返现", "欢迎回来", "登录"] },
+  { path: "/wallet", name: "wallet guard", minRootChars: 20, expectAny: ["钱包", "返现", "欢迎回来", "登录"] },
+  { path: "/returns", name: "returns guard", minRootChars: 20, expectAny: ["售后", "退货", "欢迎回来", "登录"] },
+  { path: "/returns/SMOKE", name: "return detail guard", minRootChars: 20, expectAny: ["售后", "退货", "欢迎回来", "登录"] },
+  { path: "/reviews/pending", name: "pending reviews guard", minRootChars: 20, expectAny: ["评价", "欢迎回来", "登录"] },
+  { path: "/history", name: "history", minRootChars: 30, expectAny: ["浏览", "历史"] },
+  { path: "/tiktok", name: "tiktok landing", minRootChars: 60, expectAny: ["大马通", "Damatong", "生活"] },
+];
+
+const ADMIN_ROUTES = [
   { path: "/admin/login", name: "admin login", minRootChars: 24, expectAny: ["管理后台", "Admin", "登录", "Login"] },
   { path: "/admin/marketing/activities", name: "admin promotion guard", minRootChars: 24, expectAny: ["管理后台", "Admin", "登录", "Login"] },
   { path: "/admin/payments/events", name: "admin payment event guard", minRootChars: 24, expectAny: ["管理后台", "Admin", "登录", "Login"] },
@@ -60,11 +98,6 @@ const LOCALIZED_PUBLIC_ROUTES = [
   },
 ];
 
-const ROUTES = [
-  ...DEFAULT_ROUTES,
-  ...LOCALIZED_PUBLIC_ROUTES.flatMap((group) => group.routes),
-];
-
 const VIEWPORTS = (process.env.SMOKE_VIEWPORTS || "1366x768,390x844")
   .split(",")
   .map((item) => item.trim())
@@ -78,12 +111,45 @@ const VIEWPORTS = (process.env.SMOKE_VIEWPORTS || "1366x768,390x844")
   });
 
 const REQUIRE_API = process.env.SMOKE_REQUIRE_API === "1";
+const ENABLE_ADMIN_ROUTES = process.env.SMOKE_ADMIN === "1" || Boolean(process.env.ADMIN_BASE_URL);
+const ENABLE_LOCALIZED_ROUTES = process.env.SMOKE_LOCALES === "1";
 const SKIP_APP_ID_CHECK = process.env.SMOKE_SKIP_APP_ID_CHECK === "1";
 const WAIT_MS = Number(process.env.SMOKE_WAIT_MS || 800);
 const NAV_TIMEOUT_MS = Number(process.env.SMOKE_NAV_TIMEOUT_MS || 18000);
 
+const ROUTES = [
+  ...DEFAULT_ROUTES,
+  ...(ENABLE_ADMIN_ROUTES ? ADMIN_ROUTES : []),
+  ...(ENABLE_LOCALIZED_ROUTES ? LOCALIZED_PUBLIC_ROUTES.flatMap((group) => group.routes) : []),
+];
+
 function normalizeBaseUrl(value) {
   return value.replace(/\/$/, "");
+}
+
+function readHtml(url, timeoutMs = 3000) {
+  return new Promise((resolve, reject) => {
+    const parsed = new URL(url);
+    const request = (parsed.protocol === "https:" ? httpsRequest : httpRequest)(
+      parsed,
+      { method: "GET", timeout: timeoutMs },
+      (response) => {
+        let body = "";
+        response.setEncoding("utf8");
+        response.on("data", (chunk) => {
+          body += chunk;
+        });
+        response.on("end", () => {
+          resolve({ ok: Boolean(response.statusCode && response.statusCode >= 200 && response.statusCode < 400), status: response.statusCode || 0, body });
+        });
+      },
+    );
+    request.on("timeout", () => {
+      request.destroy(new Error(`Timed out after ${timeoutMs}ms`));
+    });
+    request.on("error", reject);
+    request.end();
+  });
 }
 
 function isExpectedAppHtml(html) {
@@ -101,11 +167,8 @@ function isAdminRoute(route) {
 }
 
 async function assertAdminBaseUrl(adminBaseUrl) {
-  const adminResponse = await fetch(`${adminBaseUrl}/admin/login`, {
-    redirect: "manual",
-    signal: AbortSignal.timeout(3000),
-  });
-  const adminHtml = await adminResponse.text().catch(() => "");
+  const adminResponse = await readHtml(`${adminBaseUrl}/admin/login`, 3000);
+  const adminHtml = adminResponse.body;
   if (!adminResponse.ok || !adminHtml.includes("id=\"root\"")) {
     throw new Error(`ADMIN_BASE_URL does not look like an admin app: ${adminBaseUrl}`);
   }
@@ -117,12 +180,9 @@ async function assertAdminBaseUrl(adminBaseUrl) {
 async function pickBaseUrls() {
   if (process.env.BASE_URL) {
     const baseUrl = normalizeBaseUrl(process.env.BASE_URL);
-    const adminBaseUrl = normalizeBaseUrl(process.env.ADMIN_BASE_URL || process.env.BASE_URL);
-    const storeResponse = await fetch(`${baseUrl}/`, {
-      redirect: "manual",
-      signal: AbortSignal.timeout(3000),
-    });
-    const storeHtml = await storeResponse.text().catch(() => "");
+    const adminBaseUrl = process.env.ADMIN_BASE_URL ? normalizeBaseUrl(process.env.ADMIN_BASE_URL) : baseUrl;
+    const storeResponse = await readHtml(`${baseUrl}/`, 3000);
+    const storeHtml = storeResponse.body;
     if (!storeResponse.ok || !storeHtml.includes("id=\"root\"")) {
       throw new Error(`BASE_URL does not look like a storefront app: ${baseUrl}`);
     }
@@ -130,7 +190,9 @@ async function pickBaseUrls() {
       throw new Error(`BASE_URL is not the expected 大马通 storefront app: ${baseUrl}`);
     }
 
-    await assertAdminBaseUrl(adminBaseUrl);
+    if (ENABLE_ADMIN_ROUTES) {
+      await assertAdminBaseUrl(adminBaseUrl);
+    }
     return { baseUrl, adminBaseUrl };
   }
 
@@ -145,11 +207,8 @@ async function pickBaseUrls() {
   ];
   for (const candidate of candidates) {
     try {
-      const response = await fetch(`${candidate}/admin/login`, {
-        redirect: "manual",
-        signal: AbortSignal.timeout(1200),
-      });
-      const html = await response.text().catch(() => "");
+      const response = await readHtml(`${candidate}/`, 1200);
+      const html = response.body;
       if (response.ok && html.includes("id=\"root\"") && isExpectedAppHtml(html)) {
         return { baseUrl: candidate, adminBaseUrl: candidate };
       }

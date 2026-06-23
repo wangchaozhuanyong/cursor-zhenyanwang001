@@ -1,13 +1,12 @@
-import React, { lazy, Suspense, useEffect } from "react";
+import React, { Suspense, useEffect } from "react";
 import { Outlet, useLocation } from "react-router-dom";
+import BottomNav from "@/components/BottomNav";
 import { DelayedRouteFallback } from "@/components/AppRouteFallback";
 import FrontPageTransition from "@/components/FrontPageTransition";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import StoreShell from "@/layouts/StoreShell";
 import { isStoreTabPath } from "@/utils/storeBottomInset";
 import { stripPublicLocaleFromPathname } from "@/i18n/publicLocale";
-
-const BottomNav = lazy(() => import("@/components/BottomNav"));
 
 /**
  * 前台带底栏布局。全站页脚仅由未登录首页 V2 内置的 GuestMobileFooter 提供；
@@ -31,20 +30,16 @@ const FrontLayout = React.forwardRef<HTMLDivElement>((_, ref) => {
   }, [location.pathname]);
 
   return (
-    <div ref={ref} className="relative overflow-x-clip">
+    <div ref={ref} className="store-front-layout relative min-w-0 overflow-x-clip">
       <StoreShell>
-        <div className="relative isolate w-full">
+        <div className="store-front-layout__content relative isolate w-full min-w-0">
           <FrontPageTransition>
             <Suspense fallback={<DelayedRouteFallback fallback={null} delayMs={260} />}>
               <Outlet />
             </Suspense>
           </FrontPageTransition>
         </div>
-        {isMobile ? (
-          <Suspense fallback={null}>
-            <BottomNav />
-          </Suspense>
-        ) : null}
+        {isMobile ? <BottomNav /> : null}
       </StoreShell>
     </div>
   );

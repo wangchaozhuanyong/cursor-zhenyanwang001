@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef, type FormEvent } from "react";
 import { useSearchParams } from "react-router-dom";
-import { LayoutGrid, Search, ShieldCheck, SlidersHorizontal, X } from "lucide-react";
+import { LayoutGrid, Search, SlidersHorizontal, X } from "lucide-react";
 import { useProductStore } from "@/stores/useProductStore";
 import { STORE_COPY } from "@/constants/storeCopy";
 import { cn } from "@/lib/utils";
@@ -10,7 +10,7 @@ import CategoryKingkongRow, { type CategoryKingkongItem } from "@/components/Cat
 import CategorySubcategoryRail from "@/components/store/CategorySubcategoryRail";
 import { getCategoryNavIconValue } from "@/utils/categoryNavIcon";
 import * as productService from "@/services/productService";
-import type { ProductSortType, ProductTag } from "@/types/product";
+import type { ProductListParams, ProductSortType, ProductTag } from "@/types/product";
 import type { Category } from "@/types/category";
 import { findCategoryById, findRootCategoryIdForActive, isCategoryOrDescendantActive } from "@/utils/categoryTree";
 import { trackEvent } from "@/services/analyticsService";
@@ -29,7 +29,6 @@ import { useSiteInfo } from "@/hooks/useSiteInfo";
 import StorefrontLoadErrorPanel from "@/components/store/StorefrontLoadErrorPanel";
 import SilkProductGrid from "@/components/motion/SilkProductGrid";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
-import { ClientButton, EmptyState as ClientEmptyState } from "@/components/client";
 import { hasMorePaginatedItems } from "@/lib/pagination";
 import { useSmartMobileChrome } from "@/hooks/useSmartMobileChrome";
 import {
@@ -37,6 +36,7 @@ import {
   NEW_ARRIVAL_CATEGORY_LABEL,
   isNewArrivalCategoryParams,
 } from "@/constants/newArrivalNavigation";
+import { storefrontCategoryName } from "@/utils/storefrontCopySanitizer";
 
 export default function Categories() {
   const { themeConfig } = useThemeRuntime();
@@ -71,6 +71,8 @@ export default function Categories() {
   const [isNew, setIsNew] = useState(initialIsNew);
   const [isHot, setIsHot] = useState(searchParams.get("is_hot") === "1");
   const [isRecommended, setIsRecommended] = useState(searchParams.get("is_recommended") === "1");
+  const [readyProductQueryKey, setReadyProductQueryKey] = useState("");
+  const latestProductQueryKeyRef = useRef("");
   const products = useProductStore((s) => s.products);
   const pagination = useProductStore((s) => s.pagination);
   const categories = useProductStore((s) => s.categories);
@@ -139,11 +141,11 @@ export default function Categories() {
     syncQuery();
   }, [syncQuery]);
 
-  useEffect(() => {
+  const productListParams = useMemo<ProductListParams | null>(() => {
     const min = minPrice ? Number(minPrice) : undefined;
     const max = maxPrice ? Number(maxPrice) : undefined;
-    if (min !== undefined && max !== undefined && min > max) return;
-    void loadProducts({
+    if (min !== undefined && max !== undefined && min > max) return null;
+    return {
       category_id: activeCat === "all" ? undefined : activeCat,
       tag_id: activeTagId || undefined,
       keyword: submittedQuery || undefined,
@@ -159,8 +161,36 @@ export default function Categories() {
       include_descendants: true,
       page: 1,
       pageSize: 24,
+    };
+  }, [activeCat, activeTagId, inStock, isHot, isNew, isRecommended, maxPrice, minPrice, siteInfo.newArrivalOnlyInStock, sort, submittedQuery]);
+
+  const productQueryKey = useMemo(() => {
+    if (!productListParams) return "invalid-price-range";
+    return JSON.stringify(
+      Object.entries(productListParams)
+        .filter(([, value]) => value !== undefined && value !== null && value !== "")
+        .sort(([a], [b]) => a.localeCompare(b)),
+    );
+  }, [productListParams]);
+
+  useEffect(() => {
+    if (!productListParams) return;
+
+    let cancelled = false;
+    const queryKey = productQueryKey;
+    latestProductQueryKeyRef.current = queryKey;
+    setReadyProductQueryKey("");
+
+    void loadProducts(productListParams).finally(() => {
+      if (!cancelled && latestProductQueryKeyRef.current === queryKey) {
+        setReadyProductQueryKey(queryKey);
+      }
     });
-  }, [activeCat, activeTagId, inStock, isHot, isNew, isRecommended, loadProducts, maxPrice, minPrice, siteInfo.newArrivalOnlyInStock, sort, submittedQuery]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [loadProducts, productListParams, productQueryKey]);
 
   const handleSelectChild = useCallback((childId: string) => {
     void trackEvent({ event_type: "category_click", module: "categories", category_id: childId });
@@ -232,8 +262,8 @@ export default function Categories() {
     : activeCat === "all"
       ? "all"
       : findRootCategoryIdForActive(categories, activeCat) ?? activeCat;
-  const systemAllIconValue = siteInfo.categorySystemAllIconUrl?.trim() || "📋";
-  const systemNewIconValue = siteInfo.categorySystemNewIconUrl?.trim() || "🆕";
+  const systemAllIconValue = siteInfo.categorySystemAllIconUrl?.trim() || "all";
+  const systemNewIconValue = siteInfo.categorySystemNewIconUrl?.trim() || "new";
 
   const rootKingkongItems = useMemo((): CategoryKingkongItem[] => {
     const row: RootRowItem[] = [{ kind: "all" }, { kind: "new" }, ...categories.map((node) => ({ kind: "root" as const, node }))];
@@ -259,7 +289,7 @@ export default function Categories() {
       const { node } = item;
       return {
         id: node.id,
-        label: node.name,
+        label: storefrontCategoryName(node.name),
         iconValue: getCategoryNavIconValue(node),
         active: !isNew && isCategoryOrDescendantActive(node, activeCat),
         onClick: () => handleRootCategoryClick(node),
@@ -279,14 +309,6 @@ export default function Categories() {
     return c;
   }, [activeTagId, inStock, isHot, isNew, isRecommended, maxPrice, minPrice]);
 
-  const filterSummary = [
-    activeTagId ? "标签" : "",
-    minPrice || maxPrice ? `价格 ${minPrice || "0"}-${maxPrice || "∞"}` : "",
-    inStock ? "有库存" : "",
-    isNew ? "新品" : "",
-    isHot ? "热销" : "",
-    isRecommended ? "推荐" : "",
-  ].filter(Boolean).join(" · ");
   const hasComplexParams = Boolean(
     searchParams.get("keyword")
     || searchParams.get("sort")
@@ -300,13 +322,10 @@ export default function Categories() {
     || searchParams.get("page"),
   );
   const activeCategory = useMemo(() => (activeCat === "all" || isNew ? null : findCategoryById(categories, activeCat)), [activeCat, categories, isNew]);
-  const activeCategoryName = activeCategory?.name || "";
+  const activeCategoryName = activeCategory ? storefrontCategoryName(activeCategory.name) : "";
   const categoryDescription = activeCategory?.description?.trim() || "";
   const siteName = (siteInfo.siteName || STORE_COPY.brandName).trim();
   const pageHeading = isNew ? NEW_ARRIVAL_CATEGORY_LABEL : activeCategoryName || "分类";
-  const categoryDescriptionText = categoryDescription || (isNew
-    ? `查看${siteName}最近上架的商品和服务。`
-    : "用关键词、分类和筛选条件快速找到合适商品。");
   const title = isNew
     ? `新品上市｜${siteName}`
     : activeCategory?.seo_title?.trim() || (activeCategoryName ? `${activeCategoryName}｜${siteName}` : `分类｜${siteName}`);
@@ -319,24 +338,17 @@ export default function Categories() {
   const canonical = isNew
     ? buildCanonical("/categories", NEW_ARRIVAL_CATEGORY_CANONICAL_SEARCH, { keepParams: ["is_new"] })
     : activeCategoryName ? buildCanonical("/categories", `cat=${activeCat}`, { keepParams: ["cat"] }) : buildCanonical("/categories");
-  const showFullSkeleton = loading && products.length === 0;
-  const showSoftRefreshing = listRefreshing && products.length > 0;
+  const productQueryReady = readyProductQueryKey === productQueryKey;
+  const visibleProducts = productQueryReady ? products : [];
+  const showFullSkeleton = Boolean(productListParams) && (!productQueryReady || (loading && visibleProducts.length === 0));
+  const showSoftRefreshing = productQueryReady && listRefreshing && visibleProducts.length > 0;
   const hasMoreProducts = hasMorePaginatedItems({
-    loadedCount: products.length,
+    loadedCount: visibleProducts.length,
     total: pagination.total,
     page: pagination.page,
     totalPages: pagination.totalPages,
   });
   const activeSearchFilterCount = activeFilterCount + (submittedQuery ? 1 : 0);
-  const searchHeroStatus = submittedQuery
-    ? `搜索「${submittedQuery}」`
-    : filterSummary
-      ? `当前筛选：${filterSummary}`
-      : loading && products.length === 0
-        ? "正在加载商品"
-        : pagination.total > 0
-          ? `${pagination.total} 款可浏览`
-          : "支持关键词、分类、标签与库存组合筛选";
   const categorySearchQuickActions = useMemo(
     () => [
       {
@@ -368,7 +380,7 @@ export default function Categories() {
   );
 
   useEffect(() => {
-    if (!hasMoreProducts || loading || listRefreshing) return;
+    if (!productQueryReady || !hasMoreProducts || loading || listRefreshing) return;
 
     const node = loadMoreRef.current;
     if (!node) return;
@@ -391,7 +403,7 @@ export default function Categories() {
     return () => {
       observer.disconnect();
     };
-  }, [hasMoreProducts, listRefreshing, loadMoreProducts, loading]);
+  }, [hasMoreProducts, listRefreshing, loadMoreProducts, loading, productQueryReady]);
 
   const filterDrawer = (
     <ProductFilterDrawer
@@ -422,7 +434,7 @@ export default function Categories() {
         </div>
         <div>
           <p className="mb-1 text-xs font-semibold text-[var(--theme-text)]">商品标签</p>
-          {quickTags.length > 0 ? <div className="flex flex-wrap gap-2">{quickTags.map((tag) => { const active = activeTagId === tag.id; return <UnifiedButton key={tag.id} type="button" onClick={() => setActiveTagId(active ? "" : tag.id)} className={`rounded-full border px-3 py-1.5 text-xs ${active ? "ring-2 ring-[var(--theme-price)]/30" : ""}`} style={{ backgroundColor: active ? tag.bg_color || "color-mix(in_srgb,var(--theme-price)_14%,var(--theme-surface))" : "var(--theme-surface)", borderColor: tag.bg_color || "var(--theme-border)", color: active ? tag.text_color || "var(--theme-price)" : "var(--theme-text)" }}>{tag.name}</UnifiedButton>; })}</div> : <p className="text-xs text-[color-mix(in_srgb,var(--theme-text-on-surface)_70%,var(--theme-text-muted))]">暂无可用标签</p>}
+          {quickTags.length > 0 ? <div className="flex flex-wrap gap-2">{quickTags.map((tag) => { const active = activeTagId === tag.id; return <UnifiedButton key={tag.id} type="button" onClick={() => setActiveTagId(active ? "" : tag.id)} className={`rounded-full border px-3 py-1.5 text-xs ${active ? "ring-2 ring-[var(--theme-price)]/30" : ""}`} style={{ backgroundColor: active ? tag.bg_color || "color-mix(in_srgb,var(--theme-price)_14%,var(--theme-surface))" : "var(--theme-surface)", borderColor: tag.bg_color || "var(--theme-border)", color: active ? tag.text_color || "var(--theme-price)" : "var(--theme-text)" }}>{storefrontCategoryName(tag.name)}</UnifiedButton>; })}</div> : <p className="text-xs text-[color-mix(in_srgb,var(--theme-text-on-surface)_70%,var(--theme-text-muted))]">暂无可用标签</p>}
         </div>
       </div>
     </ProductFilterDrawer>
@@ -496,9 +508,7 @@ export default function Categories() {
       activeCat={activeCat}
       activeCategoryName={activeCategoryName}
       pageHeading={pageHeading}
-      productTotal={pagination.total || products.length}
       activeFilterCount={activeSearchFilterCount}
-      loading={loading && products.length === 0}
       quickActions={categorySearchQuickActions}
       onSelectAll={handleSelectAll}
       onSelectNewArrivals={handleSelectNewArrivals}
@@ -542,8 +552,6 @@ export default function Categories() {
         <CategorySearchHero
           variant="mobile"
           pageHeading={pageHeading}
-          description={categoryDescriptionText}
-          statusText={searchHeroStatus}
           query={query}
           placeholder={STORE_COPY.searchPlaceholder}
           quickActions={categorySearchQuickActions}
@@ -575,8 +583,6 @@ export default function Categories() {
                 <CategorySearchHero
                   variant="desktop"
                   pageHeading={pageHeading}
-                  description={categoryDescriptionText}
-                  statusText={searchHeroStatus}
                   query={query}
                   placeholder={STORE_COPY.searchPlaceholder}
                   quickActions={categorySearchQuickActions}
@@ -592,18 +598,7 @@ export default function Categories() {
 
               {desktopFilterBar}
 
-              <div
-                className={cn(
-                  "store-filter-summary mb-3 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-xs text-[color-mix(in_srgb,var(--theme-text-on-surface)_70%,var(--theme-text-muted))]",
-                  "min-h-[2.25rem]",
-                  !filterSummary && "hidden md:block md:invisible",
-                )}
-                aria-hidden={!filterSummary}
-              >
-                当前筛选：{filterSummary || "无筛选"}
-              </div>
-
-              {error && products.length === 0 ? (
+              {error && visibleProducts.length === 0 ? (
                 <div className="mb-3">
                   <StorefrontLoadErrorPanel
                     message={error}
@@ -616,45 +611,51 @@ export default function Categories() {
                   />
                 </div>
               ) : null}
-              {error && products.length > 0 ? (
+              {error && visibleProducts.length > 0 ? (
                 <p className={`mb-3 px-3 py-2 text-center text-xs ${THEME_ALERT_ERROR_SOFT}`}>
                   商品列表暂时无法刷新，以下为缓存数据
                 </p>
               ) : null}
 
               <SilkProductGrid
-                products={products}
+                products={visibleProducts}
                 className={productGridClass}
                 shellClassName="md:min-h-[28rem]"
                 displayMode={isListView ? "list" : "theme"}
                 skeletonCount={8}
                 siteContext={productCardSiteContext}
+                itemKeyPrefix={`category:${isNew ? "new" : activeCat}:${viewMode}`}
                 showFullSkeleton={showFullSkeleton}
                 showSoftRefreshing={showSoftRefreshing}
                 emptyState={
                   !error ? (
-                    <ClientEmptyState
-                      className={cn(emptyColSpan, "store-listing-empty")}
-                      title={
-                        activeFilterCount > 0 || submittedQuery
+                    <section className={cn(emptyColSpan, "store-account-v12-empty-panel store-listing-empty")}>
+                      <span className="store-account-v12-empty-panel__icon" aria-hidden>
+                        <Search size={28} />
+                      </span>
+                      <h2>
+                        {activeFilterCount > 0 || submittedQuery
                           ? "当前筛选条件无结果"
                           : activeCat !== "all"
                             ? "当前分类暂无商品"
-                            : "暂无商品上架"
-                      }
-                      description={(activeFilterCount > 0 || submittedQuery) ? "可以清空筛选后重新浏览全部商品。" : "商品上架后会自动显示在这里。"}
-                      action={
-                        (activeFilterCount > 0 || submittedQuery) ? (
-                          <ClientButton type="button" variant="secondary" size="sm" onClick={clearFilters}>
-                            清空筛选
-                          </ClientButton>
-                        ) : null
-                      }
-                    />
+                            : "暂无商品上架"}
+                      </h2>
+                      <p>
+                        {(activeFilterCount > 0 || submittedQuery)
+                          ? "可以清空筛选后重新浏览全部商品。"
+                          : "商品上架后会自动显示在这里。"}
+                      </p>
+                      {(activeFilterCount > 0 || submittedQuery) ? (
+                        <UnifiedButton type="button" onClick={clearFilters} className="store-account-v12-empty-panel__action">
+                          <X size={17} aria-hidden />
+                          清空筛选
+                        </UnifiedButton>
+                      ) : null}
+                    </section>
                   ) : null
                 }
               />
-              {products.length > 0 ? (
+              {visibleProducts.length > 0 ? (
                 <div ref={loadMoreRef} className="py-8 text-center text-xs text-[var(--theme-text-muted)]" aria-live="polite">
                   {listRefreshing && hasMoreProducts ? (
                     "正在加载更多..."
@@ -667,9 +668,9 @@ export default function Categories() {
                       继续滑动加载更多
                     </UnifiedButton>
                   ) : pagination.total > 0 ? (
-                    `已加载全部 ${products.length}/${pagination.total} 款`
+                    `已加载全部 ${visibleProducts.length}/${pagination.total} 款`
                   ) : null}
-                  {error && products.length > 0 && hasMoreProducts ? (
+                  {error && visibleProducts.length > 0 && hasMoreProducts ? (
                     <div className="mt-3">
                       <UnifiedButton
                         type="button"
@@ -695,9 +696,7 @@ function CategoryDesktopWorkbench({
   activeCat,
   activeCategoryName,
   pageHeading,
-  productTotal,
   activeFilterCount,
-  loading,
   quickActions,
   onSelectAll,
   onSelectNewArrivals,
@@ -708,9 +707,7 @@ function CategoryDesktopWorkbench({
   activeCat: string;
   activeCategoryName: string;
   pageHeading: string;
-  productTotal: number;
   activeFilterCount: number;
-  loading: boolean;
   quickActions: CategorySearchQuickAction[];
   onSelectAll: () => void;
   onSelectNewArrivals: () => void;
@@ -729,18 +726,6 @@ function CategoryDesktopWorkbench({
             分类
           </span>
           <h2>{pageHeading}</h2>
-          <p>选择分类和筛选后查看对应商品。</p>
-        </div>
-
-        <div className="store-category-v12-sidebar__stats">
-          <div>
-            <b>{loading ? "..." : Math.max(0, productTotal)}</b>
-            <span>商品结果</span>
-          </div>
-          <div>
-            <b>{Math.max(0, activeFilterCount)}</b>
-            <span>当前筛选</span>
-          </div>
         </div>
 
         <div className="store-category-v12-sidebar__section">
@@ -803,7 +788,7 @@ function CategoryDesktopWorkbench({
                 className={cn("store-category-v12-sidebar__row", activeCat === category.id && "is-active")}
                 onClick={() => onSelectCategory(category)}
               >
-                <span>{category.name}</span>
+                <span>{storefrontCategoryName(category.name)}</span>
                 <b>{category.children?.length ? `${category.children.length} 子类` : "分类"}</b>
               </UnifiedButton>
             ))}
@@ -813,10 +798,6 @@ function CategoryDesktopWorkbench({
           </div>
         </div>
 
-        <div className="store-category-v12-sidebar__guard">
-          <ShieldCheck size={17} aria-hidden />
-          <p>活动价、库存和优惠会在结算页确认。</p>
-        </div>
       </div>
     </aside>
   );
@@ -832,8 +813,6 @@ type CategorySearchQuickAction = {
 function CategorySearchHero({
   variant,
   pageHeading,
-  description,
-  statusText,
   query,
   placeholder,
   quickActions,
@@ -845,8 +824,6 @@ function CategorySearchHero({
 }: {
   variant: "mobile" | "desktop";
   pageHeading: string;
-  description: string;
-  statusText: string;
   query: string;
   placeholder: string;
   quickActions: CategorySearchQuickAction[];
@@ -880,7 +857,6 @@ function CategorySearchHero({
       <div className="store-category-search-hero__intro">
         <p className="store-category-search-hero__eyebrow">分类</p>
         <h1 className="store-category-search-hero__title">{pageHeading}</h1>
-        <p className="store-category-search-hero__description">{description}</p>
       </div>
 
       <div className="store-category-search-hero__panel">
@@ -1004,7 +980,6 @@ function CategorySearchHero({
                 </UnifiedButton>
               ) : null}
             </div>
-            <p className="store-category-search-status">{statusText}</p>
           </div>
         ) : null}
       </div>

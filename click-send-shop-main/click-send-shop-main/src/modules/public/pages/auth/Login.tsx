@@ -523,11 +523,11 @@ export default function Login() {
 
   return (
     <div
-      className={STORE_AUTH_SHELL_CLASS}
+      className={`${STORE_AUTH_SHELL_CLASS} auth-login-page auth-next-page`}
       data-keyboard-open={keyboardOpen ? "true" : undefined}
       style={authShellStyle}
     >
-      <main className={STORE_AUTH_MAIN_CLASS}>
+      <main className={`${STORE_AUTH_MAIN_CLASS} auth-login-main auth-next-main`}>
         <div className="auth-login-topbar">
           <button
             type="button"
@@ -619,7 +619,7 @@ export default function Login() {
 
         <FormFieldShake shake={shakeKey} className="auth-login-form-wrap space-y-3.5">
           <form
-            className="auth-login-form flex flex-col gap-3.5"
+            className="auth-login-form sf-next-form-sheet auth-next-sheet flex flex-col gap-3.5"
             autoComplete="on"
             onSubmit={(e) => {
               e.preventDefault();
@@ -682,7 +682,9 @@ export default function Login() {
             phoneInputId="auth-phone"
             phoneInputName="tel"
             phoneAutoComplete="tel"
+            className="auth-login-phone-field"
             autoDetectCountryCode
+            variant="joined"
             enterKeyHint="next"
             onPhoneKeyDown={handlePhoneKeyDown}
           />

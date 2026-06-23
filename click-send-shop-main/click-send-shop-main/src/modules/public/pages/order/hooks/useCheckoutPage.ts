@@ -29,6 +29,10 @@ export function useCheckoutPage() {
   const goBack = useGoBack(localizedPath("/cart"));
   const clearBuyNow = useCartStore((s) => s.clearBuyNow);
   const buyNowCouponChoice = useCartStore((s) => s.buyNowCouponChoice);
+  const loadCart = useCartStore((s) => s.loadCart);
+  const cartHasLoaded = useCartStore((s) => s.hasLoaded);
+  const cartLoading = useCartStore((s) => s.loading);
+  const cartError = useCartStore((s) => s.error);
   const siteInfo = useSiteInfo();
   const capabilities = useSiteCapabilities();
 
@@ -179,10 +183,20 @@ export function useCheckoutPage() {
   }, [clearBuyNow]);
 
   useEffect(() => {
+    if (isBuyNow || submittedOrder || orderFinalizing || cartLoading) return;
+    if (cartHasLoaded || cartItems.length > 0) return;
+    void loadCart({ force: true });
+  }, [cartHasLoaded, cartItems.length, cartLoading, isBuyNow, loadCart, orderFinalizing, submittedOrder]);
+
+  const cartReadyForEmptyDecision = isBuyNow || cartHasLoaded || cartItems.length > 0 || Boolean(cartError);
+  const cartHydrating = !cartReadyForEmptyDecision && !submittedOrder && !orderFinalizing;
+
+  useEffect(() => {
+    if (cartHydrating || cartLoading) return;
     if (items.length === 0 && !submittedOrder && !orderFinalizing) {
       navigate(localizedPath("/cart"), { replace: true });
     }
-  }, [items.length, submittedOrder, orderFinalizing, navigate, localizedPath]);
+  }, [cartHydrating, cartLoading, items.length, submittedOrder, orderFinalizing, navigate, localizedPath]);
 
   const submission = useCheckoutSubmission({
     items,
@@ -232,7 +246,8 @@ export function useCheckoutPage() {
     goBack,
     unreadCount,
     items,
-    isEmpty: items.length === 0 && !submittedOrder && !orderFinalizing,
+    cartHydrating,
+    isEmpty: !cartHydrating && items.length === 0 && !submittedOrder && !orderFinalizing,
     name,
     setName,
     phone,

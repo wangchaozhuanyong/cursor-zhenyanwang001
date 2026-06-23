@@ -22,5 +22,5 @@ export function buildProfileSecondaryItems(notificationBadgeText: string): Profi
 
 export function buildInstallShortcutItem(showInstallShortcut: boolean, customerServiceDownloadEnabled: boolean): ProfileServiceItem | null {
   if (!showInstallShortcut || !customerServiceDownloadEnabled) return null;
-  return { key: "install", label: "添加桌面", icon: Smartphone, path: "/support-download?tab=download", auth: false };
+  return { key: "install", label: "添加桌面", icon: Smartphone, path: "/install", auth: false };
 }

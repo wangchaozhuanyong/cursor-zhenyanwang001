@@ -3,14 +3,12 @@ import {
   BadgePercent,
   ClipboardList,
   Gift,
-  Heart,
   PackageSearch,
   RefreshCw,
-  ShieldCheck,
-  ShoppingCart,
   Sparkles,
   Ticket,
   Truck,
+  Users,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import SeoHead from "@/components/SeoHead";
@@ -234,23 +232,10 @@ export default function StoreHomeV2() {
   const showHotSales = isHomeModuleEnabled(homeModules, "hot_sales", audience);
   const showRecommend = isAuthenticated && isHomeModuleEnabled(homeModules, "recommend", "member");
   const showGuestRecommend = !isAuthenticated && isHomeModuleEnabled(homeModules, "guest_recommend", "guest");
-  const pendingOrderCount = useMemo(() => orders.filter((order) => (
-    order.status === "pending" ||
-    order.status === "paid" ||
-    order.status === "shipped"
-  )).length, [orders]);
-
   return (
     <div
       className={cn(
-        "store-page-shell store-v12-page store-home-v12-page store-bottom-safe text-[var(--theme-text)]",
-        clientStyle === "black_gold"
-          ? "bg-[linear-gradient(180deg,color-mix(in_srgb,var(--theme-primary)_6%,var(--theme-surface))_0%,var(--theme-bg)_26rem,var(--theme-bg)_100%)]"
-          : clientStyle === "deep_enterprise"
-            ? "bg-[linear-gradient(180deg,#101B34_0%,#101B34_10rem,color-mix(in_srgb,var(--theme-primary)_6%,var(--theme-surface))_10rem,var(--theme-bg)_32rem,var(--theme-bg)_100%)]"
-            : clientStyle === "blue_portal"
-              ? "bg-[linear-gradient(180deg,color-mix(in_srgb,var(--theme-primary)_8%,white)_0%,var(--theme-bg)_24rem,color-mix(in_srgb,var(--theme-accent)_3%,var(--theme-bg))_100%)]"
-              : "bg-[linear-gradient(180deg,color-mix(in_srgb,var(--theme-primary)_7%,var(--theme-surface))_0%,var(--theme-bg)_28rem,color-mix(in_srgb,var(--theme-primary)_3%,var(--theme-bg))_100%)]",
+        "store-page-shell store-bottom-safe sf-next-page sf-next-home-page text-[var(--sf-ink)]",
       )}
       data-store-home-version="v2"
       data-storefront-client-style={clientStyle}
@@ -271,7 +256,7 @@ export default function StoreHomeV2() {
           { id: "organization", data: buildOrganizationJsonLd(siteInfo) },
         ]}
       />
-      <main className={storefrontPageClassName("space-y-4 pt-[var(--store-page-y)] md:space-y-5 lg:space-y-6")}>
+      <main className={storefrontPageClassName("sf-next-home-main")}>
         <h1 className="sr-only">{slogan}</h1>
         <p className="sr-only">{description}</p>
 
@@ -294,26 +279,6 @@ export default function StoreHomeV2() {
           onNavigate={navigatePath}
         />
 
-        {isAuthenticated ? (
-          <HomeBuyingStatusBoard
-            authenticated={isAuthenticated}
-            cartCount={cartItems.length}
-            pendingOrderCount={pendingOrderCount}
-            favoriteCount={favoriteIds.length}
-            historyCount={historyProducts.length}
-            couponEnabled={siteCapabilities.couponEnabled}
-            onNavigate={navigatePath}
-          />
-        ) : null}
-
-        {showNavGrid ? (
-          <div className="store-home-v4-nav-panel overflow-hidden">
-            <HomeOpsBlocks />
-          </div>
-        ) : null}
-
-        {showTrustBar ? <HomeTrustBar className="store-home-trust-compact" /> : null}
-
         <HomePrimaryCampaignV2
           campaigns={enabledCampaigns}
           fallbackCampaigns={fallbackCampaignEntrances}
@@ -322,6 +287,14 @@ export default function StoreHomeV2() {
           onCampaignImpression={handleCampaignImpression}
           onCampaignClick={handleCampaignClick}
         />
+
+        {showNavGrid ? (
+          <div className="store-home-v4-nav-panel overflow-hidden">
+            <HomeOpsBlocks />
+          </div>
+        ) : null}
+
+        {showTrustBar ? <HomeTrustBar className="store-home-trust-compact" /> : null}
 
         {siteCapabilities.mallEnabled && showNewArrivals ? (
           <HomeProductSectionV2
@@ -342,7 +315,6 @@ export default function StoreHomeV2() {
         {siteCapabilities.mallEnabled && showGuestRecommend ? (
           <HomeProductSectionV2
             title={getHomeModuleTitle(homeModules, "guest_recommend", "精选商品")}
-            subtitle="活动、热销和推荐商品合并展示"
             products={guestProducts}
             loading={homeLoading && guestProducts.length === 0}
             skeletonCount={homeModules.guestRecommendMax}
@@ -352,6 +324,11 @@ export default function StoreHomeV2() {
             onNavigate={navigatePath}
           />
         ) : null}
+
+        <HomeInviteEntry
+          authenticated={isAuthenticated}
+          onNavigate={navigatePath}
+        />
 
         {siteCapabilities.mallEnabled && showHotSales ? (
           <HomeProductSectionV2
@@ -424,99 +401,6 @@ export default function StoreHomeV2() {
   );
 }
 
-function HomeBuyingStatusBoard({
-  authenticated,
-  cartCount,
-  pendingOrderCount,
-  favoriteCount,
-  historyCount,
-  couponEnabled,
-  onNavigate,
-}: {
-  authenticated: boolean;
-  cartCount: number;
-  pendingOrderCount: number;
-  favoriteCount: number;
-  historyCount: number;
-  couponEnabled: boolean;
-  onNavigate: (path: string) => void;
-}) {
-  const cards = [
-    {
-      key: "cart",
-      label: "购物车",
-      value: `${Math.max(0, cartCount)}`,
-      desc: "结算前确认价格、活动和库存",
-      icon: ShoppingCart,
-      path: "/cart",
-    },
-    {
-      key: "orders",
-      label: authenticated ? "待处理订单" : "订单同步",
-      value: authenticated ? `${Math.max(0, pendingOrderCount)}` : "登录",
-      desc: authenticated ? "订单进度一目了然" : "登录后查看订单和服务",
-      icon: ClipboardList,
-      path: authenticated ? "/orders" : "/login?from=/",
-    },
-    {
-      key: "saved",
-      label: "常看商品",
-      value: `${Math.max(0, favoriteCount + historyCount)}`,
-      desc: "收藏和浏览记录会辅助生成推荐",
-      icon: Heart,
-      path: authenticated ? "/favorites" : "/history",
-    },
-    {
-      key: "pricing",
-      label: couponEnabled ? "可用优惠" : "金额确认",
-      value: couponEnabled ? "优惠" : "结算",
-      desc: couponEnabled ? "下单前查看活动与券" : "下单前核对金额",
-      icon: ShieldCheck,
-      path: couponEnabled ? "/coupons" : "/categories",
-    },
-  ];
-
-  return (
-    <section className="store-home-v12-status-board" aria-label="快捷操作">
-      <div className="store-home-v12-status-board__head">
-        <div className="min-w-0">
-          <h2>快捷操作</h2>
-        </div>
-        <UnifiedButton
-          type="button"
-          className="store-home-v12-status-board__cta"
-          onClick={() => onNavigate("/checkout")}
-        >
-          <ShoppingCart size={14} aria-hidden />
-          <span>去结算</span>
-        </UnifiedButton>
-      </div>
-      <div className="store-home-v12-status-board__grid">
-        {cards.map((card) => {
-          const Icon = card.icon;
-          return (
-            <UnifiedButton
-              key={card.key}
-              type="button"
-              className="store-home-v12-status-card"
-              onClick={() => onNavigate(card.path)}
-            >
-              <span className="store-home-v12-status-card__icon">
-                <Icon size={18} aria-hidden />
-              </span>
-              <span className="store-home-v12-status-card__copy">
-                <b>{card.value}</b>
-                <strong>{card.label}</strong>
-                <small>{card.desc}</small>
-              </span>
-            </UnifiedButton>
-          );
-        })}
-      </div>
-    </section>
-  );
-}
-
 function HomeProcurementCommand({
   couponEnabled,
   pointsEnabled,
@@ -530,7 +414,6 @@ function HomeProcurementCommand({
     ? {
         key: "coupons",
         label: "优惠券",
-        description: "可用券与活动",
         icon: Ticket,
         path: "/coupons",
         tone: "wine",
@@ -539,7 +422,6 @@ function HomeProcurementCommand({
     : {
         key: "points",
         label: "积分福利",
-        description: "签到奖励与积分福利",
         icon: BadgePercent,
         path: "/points",
         tone: "gold",
@@ -549,7 +431,6 @@ function HomeProcurementCommand({
     {
       key: "categories",
       label: "分类",
-      description: "按分类快速找货",
       icon: PackageSearch,
       path: "/categories",
       tone: "jade",
@@ -558,7 +439,6 @@ function HomeProcurementCommand({
     {
       key: "promotions",
       label: "活动中心",
-      description: "秒杀、满减、会员价",
       icon: Gift,
       path: "/promotions",
       tone: "wine",
@@ -567,7 +447,6 @@ function HomeProcurementCommand({
     {
       key: "new",
       label: "新品上新",
-      description: "最近上架优先看",
       icon: Sparkles,
       path: NEW_ARRIVAL_CATEGORY_PATH,
       tone: "gold",
@@ -577,7 +456,6 @@ function HomeProcurementCommand({
     {
       key: "logistics",
       label: "物流售后",
-      description: "查看配送和售后进度",
       icon: Truck,
       path: "/orders?tab=shipped",
       tone: "slate",
@@ -586,7 +464,6 @@ function HomeProcurementCommand({
     {
       key: "orders",
       label: "我的订单",
-      description: "支付、配送、售后",
       icon: ClipboardList,
       path: "/orders",
       tone: "slate",
@@ -624,12 +501,38 @@ function HomeProcurementCommand({
               </span>
               <span className="store-home-command-card__copy">
                 <strong>{action.label}</strong>
-                <small>{action.description}</small>
               </span>
             </UnifiedButton>
           );
         })}
       </div>
+    </section>
+  );
+}
+
+function HomeInviteEntry({
+  authenticated,
+  onNavigate,
+}: {
+  authenticated: boolean;
+  onNavigate: (path: string) => void;
+}) {
+  return (
+    <section className="sf-next-home-invite" aria-label="邀请好友">
+      <div className="sf-next-home-invite__mark" aria-hidden="true">
+        <Users size={22} />
+      </div>
+      <div className="sf-next-home-invite__copy">
+        <h2>邀请好友</h2>
+        <p>{authenticated ? "分享邀请码，查看奖励与邀请记录" : "登录后生成专属邀请卡"}</p>
+      </div>
+      <UnifiedButton
+        type="button"
+        className="sf-next-home-invite__action"
+        onClick={() => onNavigate(authenticated ? "/invite" : "/login?from=/invite")}
+      >
+        {authenticated ? "去邀请" : "去登录"}
+      </UnifiedButton>
     </section>
   );
 }

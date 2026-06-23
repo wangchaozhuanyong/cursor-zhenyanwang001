@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { BadgePercent, Calculator, Coins, Heart, Minus, PackageCheck, Pin, Plus, Share2, Trash2, ShoppingBag, Loader2, Check, LogIn, ShieldCheck, Sparkles, X } from "lucide-react";
+import { BadgePercent, Heart, Minus, Pin, Plus, Share2, Trash2, ShoppingBag, Loader2, Check, LogIn, ShieldCheck, Sparkles, X } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import StorePageHeader from "@/components/store/StorePageHeader";
 import { STORE_MOBILE_PAGE_HEADER_CLASS } from "@/constants/storeLayout";
@@ -24,7 +24,6 @@ import { THEME_ALERT_ERROR_SOFT } from "@/utils/themeVisuals";
 import StorePriceAmount from "@/components/store/StorePriceAmount";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { DesktopPurchaseCard, DesktopPurchaseTwoColumn } from "@/components/store/DesktopPurchasePattern";
-import { ClientButton, EmptyState as ClientEmptyState } from "@/components/client";
 import { usePublicLocale } from "@/i18n/publicLocale";
 import CartPromotionNudge from "@/modules/storefront-v2/cart/CartPromotionNudge";
 import CouponPicker from "@/components/CouponPicker";
@@ -57,7 +56,6 @@ export default function Cart() {
     toggleSelect,
     setSelectAll,
     totalAmountSelected,
-    totalPointsSelected,
     totalItemsSelected,
     hasLoaded,
   } = useCartStore();
@@ -76,7 +74,6 @@ export default function Cart() {
   const [cartPreviewError, setCartPreviewError] = useState<string | null>(null);
   const [selectedCoupon, setSelectedCoupon] = useState<CheckoutPickerCoupon | null>(null);
   const [couponSelectionTouched, setCouponSelectionTouched] = useState(false);
-  const discountPanelRef = useRef<HTMLDivElement | null>(null);
   const backgroundSyncStartedRef = useRef(false);
 
   const selectedCount = items.filter((i) => selection[cartLineKey(i.product.id, i.variant_id)] !== false).length;
@@ -84,7 +81,6 @@ export default function Cart() {
   const someSelected = selectedCount > 0;
   const totalQty = items.reduce((s, i) => s + i.qty, 0);
   const selectedQty = totalItemsSelected();
-  const selectedPoints = totalPointsSelected();
   const selectedAmount = Number(totalAmountSelected() || 0);
   const selectedItems = useMemo(
     () => items.filter((item) => selection[cartLineKey(item.product.id, item.variant_id)] !== false),
@@ -220,10 +216,6 @@ export default function Cart() {
     setSelectedCoupon(coupon);
   };
 
-  const focusDiscountPanel = () => {
-    discountPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-  };
-
   const handleCheckout = () => {
     if (totalItemsSelected() === 0) {
       toast.error(t("cart.selectItemsFirst"));
@@ -331,19 +323,8 @@ export default function Cart() {
       />
 
       <main className="mx-auto w-full max-w-screen-xl px-[var(--store-page-x)] md:px-6 md:py-4">
-        <CartV12Overview
-          loading={loading}
-          itemCount={items.length}
-          selectedLineCount={selectedCount}
-          selectedQty={selectedQty}
-          selectedAmount={selectedAmount}
-          selectedPoints={selectedPoints}
-          allSelected={allSelected}
-          onPromotions={() => navigate(localizedPath("/promotions"))}
-          onCoupons={focusDiscountPanel}
-        />
         {items.length > 0 ? (
-          <div ref={discountPanelRef}>
+          <div>
             <CartDiscountPanel
               selectedAmount={selectedAmount}
               estimatedDiscount={estimatedDiscount}
@@ -524,7 +505,6 @@ export default function Cart() {
                     return (
                     <motion.div
                       key={lineKey}
-                      layout
                       exit={{ opacity: 0, x: -100 }}
                       className="store-cart-item relative flex min-w-0 gap-2.5 py-4 sm:gap-3 md:py-5"
                     >
@@ -766,17 +746,21 @@ export default function Cart() {
                 <p className="text-sm">{t("cart.loading")}</p>
               </div>
             ) : (
-              <ClientEmptyState
-                icon={<ShoppingBag size={30} />}
-                title={t("cart.emptyTitle")}
-                description={t("cart.emptyDescription")}
-                action={
-                  <ClientButton type="button" onClick={() => navigate(localizedPath("/categories"))}>
-                    {t("cart.browseCategories")}
-                  </ClientButton>
-                }
-                className="max-w-none"
-              />
+              <section className="store-account-v12-empty-panel store-cart-empty-card max-w-none">
+                <span className="store-account-v12-empty-panel__icon" aria-hidden>
+                  <ShoppingBag size={28} />
+                </span>
+                <h2>{t("cart.emptyTitle")}</h2>
+                <p>{t("cart.emptyDescription")}</p>
+                <UnifiedButton
+                  type="button"
+                  onClick={() => navigate(localizedPath("/categories"))}
+                  className="store-account-v12-empty-panel__action"
+                >
+                  <ShoppingBag size={17} aria-hidden />
+                  {t("cart.browseCategories")}
+                </UnifiedButton>
+              </section>
             )}
           </div>
         )}
@@ -1075,83 +1059,6 @@ function CartDiscountPanel({
           onBrowse={onBrowse}
         />
       ) : null}
-    </section>
-  );
-}
-
-function CartV12Overview({
-  loading,
-  itemCount,
-  selectedLineCount,
-  selectedQty,
-  selectedAmount,
-  selectedPoints,
-  allSelected,
-  onPromotions,
-  onCoupons,
-}: {
-  loading: boolean;
-  itemCount: number;
-  selectedLineCount: number;
-  selectedQty: number;
-  selectedAmount: number;
-  selectedPoints: number;
-  allSelected: boolean;
-  onPromotions: () => void;
-  onCoupons: () => void;
-}) {
-  const stats = [
-    {
-      label: "已选商品",
-      value: loading ? "同步中" : `${selectedLineCount}/${itemCount}`,
-      hint: allSelected && itemCount > 0 ? "已全选" : "可分批结算",
-      icon: ShoppingBag,
-    },
-    {
-      label: "结算数量",
-      value: `${selectedQty}`,
-      hint: "按购物车选中项",
-      icon: PackageCheck,
-    },
-    {
-      label: "预估小计",
-      value: `RM ${selectedAmount.toFixed(2)}`,
-      hint: "去结算前可查看明细",
-      icon: Calculator,
-    },
-    {
-      label: "预计积分",
-      value: loading ? "同步中" : `${selectedPoints}`,
-      hint: selectedPoints > 0 ? "结算页可使用" : itemCount > 0 ? "当前商品暂无积分" : "待选商品",
-      icon: Coins,
-    },
-  ];
-
-  return (
-    <section className="store-cart-v12-overview" aria-label="购物车概览">
-      <div className="store-cart-v12-overview__stats">
-        {stats.map((item) => {
-          const Icon = item.icon;
-          return (
-            <div key={item.label}>
-              <span aria-hidden>
-                <Icon size={15} />
-              </span>
-              <strong>{item.value}</strong>
-              <small>{item.label}</small>
-              <em>{item.hint}</em>
-            </div>
-          );
-        })}
-      </div>
-      <div className="store-cart-v12-overview__actions">
-        <UnifiedButton type="button" onClick={onPromotions}>
-          活动中心
-        </UnifiedButton>
-        <UnifiedButton type="button" onClick={onCoupons}>
-          优惠明细
-        </UnifiedButton>
-      </div>
     </section>
   );
 }

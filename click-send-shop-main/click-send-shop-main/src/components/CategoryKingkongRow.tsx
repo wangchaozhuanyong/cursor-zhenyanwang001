@@ -78,6 +78,7 @@ export default function CategoryKingkongRow({
           items.map((item) => (
             <CategoryNavTile
               key={item.id}
+              id={item.id}
               label={item.label}
               iconValue={item.iconValue}
               active={item.active}

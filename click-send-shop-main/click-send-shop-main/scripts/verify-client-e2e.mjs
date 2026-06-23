@@ -12,22 +12,83 @@ const STATIC_ROUTES = [
   { path: "/categories", name: "分类" },
   { path: "/new-arrivals", name: "新品" },
   { path: "/search", name: "搜索" },
+  { path: "/promotions", name: "活动列表" },
+  { path: "/promotions/smoke-slug", name: "活动详情占位" },
+  { path: "/deals", name: "旧活动入口重定向" },
+  { path: "/deals/smoke-slug", name: "旧活动详情入口重定向" },
   { path: "/cart", name: "购物车" },
+  { path: "/checkout", name: "结算(应跳转登录)" },
+  { path: "/payment/result?order_no=SMOKE", name: "支付结果" },
+  { path: "/orders", name: "订单列表(应跳转登录)" },
+  { path: "/orders/SMOKE", name: "订单详情(应跳转登录)" },
+  { path: "/orders/SMOKE/logistics", name: "物流详情(应跳转登录)" },
+  { path: "/coupons", name: "优惠券" },
   { path: "/favorites", name: "收藏" },
   { path: "/profile", name: "我的" },
+  { path: "/address", name: "地址(应跳转登录)" },
   { path: "/history", name: "浏览记录" },
+  { path: "/notifications", name: "通知(应跳转登录)" },
   { path: "/login", name: "登录" },
+  { path: "/register", name: "注册" },
+  { path: "/forgot", name: "找回密码别名" },
+  { path: "/forgot-password", name: "找回密码" },
+  { path: "/login/bind-phone", name: "绑定手机号" },
   { path: "/help", name: "帮助" },
+  { path: "/support-download", name: "客服下载" },
+  { path: "/install", name: "安装应用" },
   { path: "/about", name: "关于" },
-  { path: "/checkout", name: "结算(应跳转登录)" },
-  { path: "/orders", name: "订单(应跳转登录)" },
+  { path: "/delivery", name: "配送说明" },
+  { path: "/feature-status", name: "功能状态" },
+  { path: "/feedback", name: "意见反馈" },
+  { path: "/content/contact-us", name: "CMS 内容页" },
   { path: "/settings", name: "设置(应跳转登录)" },
+  { path: "/member/benefits", name: "会员权益(应跳转登录)" },
+  { path: "/member-benefits", name: "会员权益别名重定向" },
+  { path: "/points", name: "积分(应跳转登录)" },
+  { path: "/points/gifts", name: "积分礼品(应跳转登录)" },
+  { path: "/rewards", name: "奖励记录(应跳转登录)" },
+  { path: "/wallet", name: "钱包(应跳转登录)" },
+  { path: "/returns", name: "售后(应跳转登录)" },
+  { path: "/returns/SMOKE", name: "售后详情(应跳转登录)" },
+  { path: "/reviews/pending", name: "待评价(应跳转登录)" },
+  { path: "/invite", name: "邀请好友(应跳转登录)" },
+  { path: "/tiktok", name: "大马通独立页" },
 ];
 
 const issues = [];
+const DEFAULT_MIN_ROOT_CHARS = 16;
 
 function record(severity, area, message, extra = {}) {
   issues.push({ severity, area, message, ...extra });
+}
+
+function isExpectedConsoleNoise(path, text) {
+  if (/favicon|404.*\.(png|ico)/i.test(text)) return true;
+  if ((path === "/promotions/smoke-slug" || path === "/deals/smoke-slug") && /\b404\b|Not Found/i.test(text)) {
+    return true;
+  }
+  return false;
+}
+
+async function readPageState(page) {
+  return page.evaluate(() => {
+    const root = document.querySelector("#root");
+    const rootText = (root?.textContent || "").replace(/\s+/g, " ").trim();
+    const bodyText = (document.body?.innerText || "").replace(/\s+/g, " ").trim();
+    const doc = document.documentElement;
+    return {
+      hasRoot: Boolean(root),
+      rootChars: rootText.length,
+      bodySample: bodyText.slice(0, 220),
+      horizontalOverflow: Math.max(0, doc.scrollWidth - doc.clientWidth),
+      hasViteError: bodyText.includes("[plugin:vite]") || bodyText.includes("Internal server error"),
+      hasRuntimeError:
+        bodyText.includes("ReferenceError") ||
+        bodyText.includes("TypeError") ||
+        bodyText.includes("Cannot find module") ||
+        bodyText.includes("Unhandled Runtime Error"),
+    };
+  });
 }
 
 async function visitRoute(page, { path, name }) {
@@ -36,7 +97,7 @@ async function visitRoute(page, { path, name }) {
   const onConsole = (msg) => {
     if (msg.type() === "error") {
       const t = msg.text();
-      if (/favicon|404.*\.(png|ico)/i.test(t)) return;
+      if (isExpectedConsoleNoise(path, t)) return;
       consoleErrors.push(t);
     }
   };
@@ -48,12 +109,14 @@ async function visitRoute(page, { path, name }) {
   let httpStatus = -1;
   let hasErrorBoundary = false;
   let title = "";
+  let state = null;
   try {
     const res = await page.goto(url, { waitUntil: "domcontentloaded", timeout: 45000 });
     httpStatus = res?.status() ?? -1;
     await page.waitForTimeout(800);
     title = await page.title();
     hasErrorBoundary = await page.getByText("页面出错了").isVisible().catch(() => false);
+    state = await readPageState(page);
   } catch (err) {
     record("error", name, err instanceof Error ? err.message : String(err), { path, url });
   } finally {
@@ -63,6 +126,21 @@ async function visitRoute(page, { path, name }) {
 
   if (httpStatus >= 500) {
     record("error", name, `HTTP ${httpStatus}`, { path, url });
+  }
+  if (state && !state.hasRoot) {
+    record("error", name, "缺少 #root", { path, url });
+  }
+  if (state && state.rootChars < DEFAULT_MIN_ROOT_CHARS) {
+    record("error", name, `页面内容过短 (${state.rootChars})`, { path, sample: state.bodySample });
+  }
+  if (state && state.horizontalOverflow > 8) {
+    record("error", name, `横向溢出 ${state.horizontalOverflow}px`, { path, sample: state.bodySample });
+  }
+  if (state?.hasViteError) {
+    record("error", name, "Vite 错误可见", { path, sample: state.bodySample });
+  }
+  if (state?.hasRuntimeError) {
+    record("error", name, "运行时错误文本可见", { path, sample: state.bodySample });
   }
   if (hasErrorBoundary) {
     const detail = await page.locator("text=页面出错了").locator("..").textContent().catch(() => "");
@@ -78,7 +156,16 @@ async function visitRoute(page, { path, name }) {
     }
   }
 
-  return { path, name, httpStatus, title, consoleErrors: consoleErrors.length, hasErrorBoundary };
+  return {
+    path,
+    name,
+    httpStatus,
+    title,
+    consoleErrors: consoleErrors.length,
+    hasErrorBoundary,
+    rootChars: state?.rootChars ?? 0,
+    horizontalOverflow: state?.horizontalOverflow ?? 0,
+  };
 }
 
 async function flowHomeToProduct(page) {
@@ -103,6 +190,32 @@ async function flowHomeToProduct(page) {
       if (!(await addBtn.isVisible().catch(() => false))) {
         record("warn", area, "详情页未找到加购/购买按钮", { url: page.url() });
       }
+    }
+  } catch (err) {
+    record("error", area, err instanceof Error ? err.message : String(err));
+  }
+}
+
+async function flowPromotionsToDetail(page) {
+  const area = "活动列表→活动详情";
+  try {
+    await page.goto(`${BASE}/promotions`, { waitUntil: "domcontentloaded", timeout: 45000 });
+    await page.waitForTimeout(1200);
+    const card = page.locator('a[href^="/promotions/"]').first();
+    const count = await card.count();
+    if (count === 0) {
+      record("warn", area, "活动列表未找到活动详情链接", { path: "/promotions" });
+      return;
+    }
+    const href = await card.getAttribute("href");
+    await card.click();
+    await page.waitForTimeout(1000);
+    if (href && !new URL(page.url()).pathname.includes(href.replace(/\?.*$/, ""))) {
+      record("warn", area, "点击后 URL 未进入对应活动详情", { expected: href, actual: page.url() });
+    }
+    if (await page.getByText("页面出错了").isVisible().catch(() => false)) {
+      const errText = await page.locator("body").innerText().catch(() => "");
+      record("error", area, "活动详情崩溃", { url: page.url(), snippet: errText.slice(0, 400) });
     }
   } catch (err) {
     record("error", area, err instanceof Error ? err.message : String(err));
@@ -170,15 +283,19 @@ async function flowBottomNav(page) {
   ];
   try {
     await page.goto(`${BASE}/`, { waitUntil: "domcontentloaded", timeout: 45000 });
+    await page.waitForTimeout(1200);
     for (const tab of tabs) {
-      const link = page.getByRole("button", { name: tab.label }).first();
-      if (!(await link.isVisible().catch(() => false))) {
+      const link = page.locator(`[data-store-nav-path="${tab.path}"]`).first();
+      const fallbackLink = page.getByRole("button", { name: tab.label }).first();
+      const target = (await link.isVisible().catch(() => false)) ? link : fallbackLink;
+      if (!(await target.isVisible().catch(() => false))) {
         record("warn", area, `未找到导航：${tab.path}`);
         continue;
       }
-      await link.click();
+      await target.click();
       await page.waitForTimeout(900);
-      if (!page.url().includes(tab.path) && tab.path !== "/") {
+      const currentPath = new URL(page.url()).pathname;
+      if (tab.path === "/" ? currentPath !== "/" : !currentPath.includes(tab.path)) {
         record("warn", area, `点击后 URL 异常`, { expected: tab.path, actual: page.url() });
       }
       if (await page.getByText("页面出错了").isVisible().catch(() => false)) {
@@ -221,25 +338,29 @@ async function probeLoginApi(request) {
 }
 
 async function flowLoginCarousel(page) {
-  const area = "登录页轮播";
+  const area = "登录页";
   try {
     await page.goto(`${BASE}/login`, { waitUntil: "domcontentloaded", timeout: 45000 });
     await page.waitForTimeout(1500);
-    const carouselBefore = await page.locator("[data-login-banner], .login-banner, [class*='carousel']").count();
-    const account = page.locator('input[type="text"], input[type="email"], input[name="account"], input[autocomplete="username"]').first();
+    const account = page.locator("#auth-phone, input[type='tel'], input[type='text'], input[type='email'], input[name='account'], input[autocomplete='username']").first();
+    const password = page.locator("#auth-password, input[type='password']").first();
+    const submit = page.locator("form .auth-login-submit, form button[type='submit']").first();
     if (await account.isVisible().catch(() => false)) {
       await account.click();
       await page.waitForTimeout(400);
+    } else {
+      record("warn", area, "未找到登录账号输入框");
     }
     const remember = page.getByRole("checkbox", { name: /记住/i }).first();
     if (await remember.isVisible().catch(() => false)) {
       await remember.click();
       await page.waitForTimeout(400);
     }
-    const carouselAfter = carouselBefore;
-    const bodyHasBanner = await page.locator("img").count();
-    if (bodyHasBanner === 0 && carouselBefore === 0) {
-      record("warn", area, "登录页未见轮播/图片（可能无配置或 API 失败）");
+    if (!(await password.isVisible().catch(() => false))) {
+      record("warn", area, "未找到登录密码输入框");
+    }
+    if (!(await submit.isVisible().catch(() => false))) {
+      record("warn", area, "未找到登录提交按钮");
     }
     if (await page.getByText("页面出错了").isVisible().catch(() => false)) {
       record("error", area, "页面错误边界");
@@ -271,6 +392,7 @@ async function main() {
   }
 
   await flowHomeToProduct(page);
+  await flowPromotionsToDetail(page);
   await flowCategories(page);
   await flowSearch(page);
   await flowBottomNav(page);

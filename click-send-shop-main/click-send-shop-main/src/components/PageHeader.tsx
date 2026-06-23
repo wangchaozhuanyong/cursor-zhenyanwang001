@@ -47,8 +47,8 @@ export default function PageHeader({
   );
 
   return (
-    <header className={cn("header-safe-top store-glass-surface sticky top-0 z-header border-b backdrop-blur-xl", className)}>
-      <div className={cn("relative mx-auto flex h-11 w-full max-w-screen-xl items-center justify-between gap-2 px-[var(--store-header-x)]", contentClassName)}>
+    <header className={cn("store-mobile-page-header header-safe-top store-glass-surface sticky top-0 z-header border-b backdrop-blur-xl", className)}>
+      <div className={cn("store-mobile-page-header__inner relative mx-auto flex h-11 w-full max-w-screen-xl items-center justify-between gap-2 px-[var(--store-header-x)]", contentClassName)}>
         {hasRightSlot ? (
           <>
             <div className="flex min-w-0 flex-1 items-center gap-2">

@@ -99,6 +99,10 @@ export function isHomeNavImageIcon(value: string): boolean {
   return v.startsWith("http") || v.startsWith("/") || v.startsWith("data:image/");
 }
 
+export function isHomeNavIconToken(value: string): boolean {
+  return value.trim().toLowerCase() in ICON_TOKENS;
+}
+
 function resolveIconImageSrc(value: string): string {
   return ensureMediaUrl(value);
 }

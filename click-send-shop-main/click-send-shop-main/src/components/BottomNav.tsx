@@ -182,7 +182,7 @@ export default function BottomNav() {
   return (
     <nav
       className={cn(
-        "store-bottom-nav",
+        "store-bottom-nav store-bottom-nav--stable",
         getBottomNavShellClassName(navStyle, "fixed"),
         "md:hidden translate-y-0 opacity-100",
       )}
@@ -193,8 +193,8 @@ export default function BottomNav() {
         WebkitTapHighlightColor: "transparent",
       }}
     >
-      <div className={cn("store-bottom-nav-inner", getBottomNavInnerClassName(navStyle))} style={{ touchAction: "manipulation" }}>
-        <div className="grid h-[68px] items-center px-1" style={{ gridTemplateColumns: `repeat(${visibleTabs.length}, minmax(0, 1fr))` }}>
+      <div className={cn("store-bottom-nav-inner store-bottom-nav__inner", getBottomNavInnerClassName(navStyle))} style={{ touchAction: "manipulation" }}>
+        <div className="store-bottom-nav__grid grid h-[68px] items-center px-1" style={{ gridTemplateColumns: `repeat(${visibleTabs.length}, minmax(0, 1fr))` }}>
           {visibleTabs.map((tab) => {
             const isCurrent = isTabActive(tab.path);
             const isActive = isCurrent || isTabPending(tab.path);
@@ -203,6 +203,7 @@ export default function BottomNav() {
               <UnifiedButton
                 key={tab.path}
                 type="button"
+                data-store-nav-path={tab.path}
                 aria-current={isCurrent ? "page" : undefined}
                 aria-label={tab.label}
                 onPointerDown={(event) => handlePointerDown(event, tab.path)}

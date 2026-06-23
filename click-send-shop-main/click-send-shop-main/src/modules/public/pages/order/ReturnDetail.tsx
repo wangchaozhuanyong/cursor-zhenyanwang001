@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { CheckCircle2, Circle, CreditCard, ImagePlus, Loader2, PackageCheck, RotateCcw, Truck, X } from "lucide-react";
+import { CreditCard, ImagePlus, Loader2, PackageCheck, RotateCcw, Truck, X } from "lucide-react";
 import { toast } from "sonner";
 import { useGoBack } from "@/hooks/useGoBack";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
@@ -25,6 +25,7 @@ import {
   getReturnTypeLabel,
 } from "./returnProgress";
 import { usePublicLocale, type PublicLocale } from "@/i18n/publicLocale";
+import StatusTimeline, { type StatusTimelineItem } from "@/modules/storefront-v2/design/components/StatusTimeline";
 
 const ORDER_REFUND_STATUS_LABELS: Record<PublicLocale, Record<string, string>> = {
   zh: {
@@ -340,6 +341,23 @@ export default function ReturnDetail() {
   const refundStatusLabel = detail
     ? getOrderRefundStatusLabel(detail.refund_summary?.order_refund_status || detail.refund_summary?.order_payment_status, locale)
     : "";
+  const progressItems: StatusTimelineItem[] = timeline.map((item, index) => ({
+    id: item.key,
+    title: item.title,
+    description: item.note || "",
+    time: item.time ? formatDateTime(item.time) : "",
+    state: item.current ? "current" : item.done || index < timeline.length - 1 ? "complete" : "upcoming",
+  }));
+  const logisticsTrackItems: StatusTimelineItem[] = (detail?.logistics_tracks || []).map((track, index) => ({
+    id: track.id || `${track.tracking_no}-${track.event_time}-${index}`,
+    title: getLogisticsTrackTitle(track, locale),
+    description: [
+      track.description || track.location || "-",
+      [track.carrier, track.tracking_no, track.source].filter(Boolean).join(" · "),
+    ].filter(Boolean).join("\n"),
+    time: track.event_time ? formatDateTime(track.event_time) : "-",
+    state: index === 0 ? "current" : "complete",
+  }));
 
   return (
     <StoreAccountLayout title={copy.title} onBack={goBack} backFallback={localizedPath("/returns")} desktopBackLabel={copy.backToProgress} className="store-v12-page store-return-detail-v12-page" mainClassName="sm:px-4 xl:py-6">
@@ -426,21 +444,7 @@ export default function ReturnDetail() {
 
             <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
               <h2 className="font-semibold text-foreground">{copy.progress}</h2>
-              <div className="mt-4 space-y-4">
-                {timeline.map((item, index) => (
-                  <div key={item.key} className="grid grid-cols-[24px_1fr] gap-3">
-                    <div className="flex flex-col items-center">
-                      {item.current ? <Circle className="fill-[var(--theme-primary)] text-[var(--theme-primary)]" size={16} /> : <CheckCircle2 className="text-[var(--theme-primary)]" size={16} />}
-                      {index < timeline.length - 1 ? <span className="mt-1 h-full w-px min-h-8 bg-border" /> : null}
-                    </div>
-                    <div className="pb-1">
-                      <p className="font-medium text-foreground">{item.title}</p>
-                      {item.note ? <p className="mt-1 whitespace-pre-wrap text-xs text-muted-foreground">{item.note}</p> : null}
-                      {item.time ? <p className="mt-1 text-[11px] text-muted-foreground">{formatDateTime(item.time)}</p> : null}
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <StatusTimeline items={progressItems} className="mt-4 store-return-detail-v12-timeline" />
             </section>
 
             {action?.key === "evidence" ? (
@@ -596,26 +600,7 @@ export default function ReturnDetail() {
               <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
                 <h2 className="flex items-center gap-2 font-semibold text-foreground"><Truck size={16} />{copy.logisticsTracks}</h2>
                 {detail.logistics_tracks?.length ? (
-                  <div className="mt-3 space-y-3">
-                    {detail.logistics_tracks.map((track, index) => (
-                      <div key={track.id} className="grid grid-cols-[22px_1fr] gap-3 text-xs">
-                        <div className="flex flex-col items-center">
-                          <Circle className={index === 0 ? "fill-[var(--theme-primary)] text-[var(--theme-primary)]" : "text-muted-foreground"} size={14} />
-                          {index < (detail.logistics_tracks?.length || 0) - 1 ? <span className="mt-1 h-full w-px min-h-8 bg-border" /> : null}
-                        </div>
-                        <div className="min-w-0 rounded-xl bg-background/60 p-3">
-                          <div className="flex flex-wrap items-center justify-between gap-2">
-                            <p className="font-medium text-foreground">{getLogisticsTrackTitle(track, locale)}</p>
-                            <p className="text-muted-foreground">{track.event_time ? formatDateTime(track.event_time) : "-"}</p>
-                          </div>
-                          <p className="mt-1 break-words text-muted-foreground">{track.description || track.location || "-"}</p>
-                          <p className="mt-1 text-[11px] text-muted-foreground">
-                            {[track.carrier, track.tracking_no, track.source].filter(Boolean).join(" · ")}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                  <StatusTimeline items={logisticsTrackItems} className="mt-3 store-return-detail-v12-timeline" />
                 ) : (
                   <p className="mt-3 rounded-xl border border-dashed border-border p-3 text-xs text-muted-foreground">
                     {copy.noCarrierTracks}

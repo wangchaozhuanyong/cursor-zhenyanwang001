@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import {
   CalendarCheck,
   Loader2,
+  RefreshCw,
   Star,
   TrendingDown,
   TrendingUp,
@@ -17,11 +18,6 @@ import { useLoyaltyVisibility } from "@/hooks/useLoyaltyVisibility";
 import { toast } from "sonner";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import {
-  THEME_ACCENT_HERO_ICON,
-  THEME_ACCENT_HERO_LABEL,
-  THEME_ACCENT_HERO_SHELL,
-  THEME_ACCENT_HERO_SUBTLE,
-  THEME_ACCENT_HERO_VALUE,
   THEME_ROW_ICON_NEGATIVE,
   THEME_ROW_ICON_POSITIVE,
   THEME_TEXT_DANGER,
@@ -31,7 +27,6 @@ import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 import { formatPointsRecordLabel } from "@/utils/pointsDisplayLabels";
 import { cn } from "@/lib/utils";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
-import { ClientButton, EmptyState as ClientEmptyState } from "@/components/client";
 
 const POINTS_ERROR_LABELS: Record<string, string> = {
   "Already signed in today": "今天已经签到过了",
@@ -115,51 +110,33 @@ function PointsHeroCard({
   const rewardText = signInHintText(signInConfig, configReady);
 
   return (
-    <section className={cn("relative overflow-hidden rounded-2xl px-5 py-5 sm:px-8 sm:py-7", THEME_ACCENT_HERO_SHELL)}>
-      <Star
-        size={132}
-        className={cn("pointer-events-none absolute -right-5 top-7 opacity-15", THEME_ACCENT_HERO_ICON)}
-        aria-hidden
-      />
-      <div className="relative flex flex-col gap-5">
-        <div className="flex items-center justify-between gap-4">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/15">
-                <Star size={20} className={THEME_ACCENT_HERO_ICON} aria-hidden />
-              </span>
-              <p className={cn(THEME_ACCENT_HERO_LABEL, "normal-case tracking-normal")}>当前积分</p>
-            </div>
-          </div>
-          <span className="inline-flex min-h-8 shrink-0 items-center gap-1.5 rounded-full bg-white/15 px-3 text-xs font-semibold">
-            <CalendarCheck size={14} aria-hidden />
-            {statusText}
-          </span>
-        </div>
-        <p className={cn("store-stat-value -mt-1 w-full break-words text-center text-5xl leading-none sm:text-6xl", THEME_ACCENT_HERO_VALUE)}>
-          {balance}
-        </p>
+    <section className="sf-next-folio store-points-v12-folio" aria-label="当前积分">
+      <div className="sf-next-folio__topline">
+        <p className="sf-next-folio__eyebrow">当前积分</p>
+        <span className="sf-next-folio__status">
+          <CalendarCheck size={14} aria-hidden />
+          {statusText}
+        </span>
+      </div>
+      <div className="sf-next-folio__value-row">
+        <strong className="sf-next-folio__value">{balance}</strong>
+        <span className="sf-next-folio__unit">PTS</span>
+      </div>
+      <p className="sf-next-folio__caption">{rewardText}</p>
+      {!signedInToday ? (
+        <p className="sf-next-folio__caption store-points-v12-folio__hint">每天一次，签到后积分会自动入账。</p>
+      ) : null}
 
-        <div className="rounded-2xl bg-white/10 px-4 py-3">
-          <p className={cn("text-sm font-medium leading-5", THEME_ACCENT_HERO_SUBTLE)}>{rewardText}</p>
-          {!signedInToday ? (
-            <p className={cn("mt-1 text-xs leading-5", THEME_ACCENT_HERO_SUBTLE)}>每天一次，签到后积分会自动入账。</p>
-          ) : null}
-        </div>
-
-        <div className="border-t border-white/20 pt-4">
-          <div className="flex justify-end">
-            <UnifiedButton
-              type="button"
-              onClick={onSignIn}
-              disabled={signingIn || !signInEnabled}
-              className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-white px-6 py-2.5 text-sm font-semibold text-[var(--theme-price)] shadow-lg transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-65 sm:w-auto"
-            >
-              <CalendarCheck size={16} aria-hidden />
-              {signInLabel}
-            </UnifiedButton>
-          </div>
-        </div>
+      <div className="store-points-v12-folio__actions">
+        <UnifiedButton
+          type="button"
+          onClick={onSignIn}
+          disabled={signingIn || !signInEnabled}
+          className="sf-next-folio__action"
+        >
+          <CalendarCheck size={14} aria-hidden />
+          {signInLabel}
+        </UnifiedButton>
       </div>
     </section>
   );
@@ -175,26 +152,29 @@ function PointsRecordsLoading() {
 
 function PointsRecordsError({ error, onRetry }: { error: string; onRetry: () => void }) {
   return (
-    <ClientEmptyState
-      title="积分记录加载失败"
-      description={error}
-      icon={<Star size={30} />}
-      action={
-        <ClientButton type="button" onClick={onRetry}>
-          重试
-        </ClientButton>
-      }
-    />
+    <section className="store-account-v12-empty-panel store-points-v12-state" role="alert">
+      <span className="store-account-v12-empty-panel__icon" aria-hidden>
+        <Star size={28} />
+      </span>
+      <h2>积分记录加载失败</h2>
+      <p>{error}</p>
+      <UnifiedButton type="button" onClick={onRetry} className="store-account-v12-empty-panel__action">
+        <RefreshCw size={17} aria-hidden />
+        重试
+      </UnifiedButton>
+    </section>
   );
 }
 
 function PointsRecordsEmpty() {
   return (
-    <ClientEmptyState
-      title="暂无积分记录"
-      description="完成签到或获得积分后，记录会显示在这里。"
-      icon={<Star size={30} />}
-    />
+    <section className="store-account-v12-empty-panel store-points-v12-state">
+      <span className="store-account-v12-empty-panel__icon" aria-hidden>
+        <Star size={28} />
+      </span>
+      <h2>暂无积分记录</h2>
+      <p>完成签到或获得积分后，记录会显示在这里。</p>
+    </section>
   );
 }
 
@@ -379,7 +359,12 @@ export default function Points() {
   };
 
   return (
-    <StoreAccountLayout title="我的积分" onBack={goBack} className="store-v12-page store-account-subpage-v12-page store-points-v12-page" mainClassName="sm:py-6 xl:py-6">
+    <StoreAccountLayout
+      title="我的积分"
+      onBack={goBack}
+      className="sf-next-page store-v12-page store-account-subpage-v12-page store-points-v12-page"
+      mainClassName="sf-next-account-main sm:py-6 xl:py-6"
+    >
       <div className="store-points-v12-stack flex flex-col gap-6">
         <PointsHeroCard
           balance={displayBalance}

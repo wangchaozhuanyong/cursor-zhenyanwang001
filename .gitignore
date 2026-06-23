@@ -51,6 +51,7 @@ _deploy_bundle/
 **/artifacts/
 **/.codex-artifacts/
 **/.codex-tmp/
+design-previews/five-mall-skins-effect-preview/
 
 # 生产应急操作脚本，仅本地临时使用
 server/scripts/_remote-manual-switch.sh

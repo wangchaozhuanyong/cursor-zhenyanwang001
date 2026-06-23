@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { ArrowLeft, BadgePercent, CheckCircle2, Headphones, PackageCheck, ShieldCheck, Truck, type LucideIcon } from "lucide-react";
+import { ArrowLeft, BadgePercent, Headphones, PackageCheck, ShieldCheck } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useProductStore } from "@/stores/useProductStore";
 import { useCartStore } from "@/stores/useCartStore";
@@ -58,6 +58,11 @@ import { DesktopPurchaseActionCard } from "@/components/store/DesktopPurchasePat
 import ProductActivityPanel from "@/modules/storefront-v2/product-detail/ProductActivityPanel";
 import { buildProductDisplayPriceModel } from "@/modules/storefront-v2/product/productDisplayPricing";
 import { usePublicLocale } from "@/i18n/publicLocale";
+import {
+  storefrontDisplayText,
+  storefrontOptionalDisplayText,
+  storefrontProductNameFallback,
+} from "@/utils/storefrontCopySanitizer";
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -220,6 +225,10 @@ export default function ProductDetail() {
   }
 
   const activeActivity = product.active_activity;
+  const displayProductName = storefrontDisplayText(
+    product.name,
+    storefrontProductNameFallback(activeActivity?.type),
+  );
   const availableVariants = purchaseAvailableVariants;
   const selectedVariant = purchaseSelectedVariant;
   const hasMultipleVariants = availableVariants.length > 1;
@@ -255,32 +264,6 @@ export default function ProductDetail() {
   }
   const showPriceMeta = salesCount !== null || statusBadges.length > 0;
   const detailSections = buildDetailSections(product.description);
-  const detailSummaryItems = [
-    {
-      label: "详情条目",
-      value: `${detailSections.length} 条`,
-      desc: detailSections.length > 1 ? "已拆分为可扫描的商品说明" : "下单前建议确认商品说明",
-      icon: CheckCircle2,
-    },
-    {
-      label: "规格库存",
-      value: hasMultipleVariants ? `${availableVariants.length} 个规格` : "默认规格",
-      desc: soldOut ? "当前不可购买" : "库存会在结算前确认",
-      icon: PackageCheck,
-    },
-    {
-      label: "活动规则",
-      value: activeActivity ? "已命中" : "普通价格",
-      desc: activeActivity ? "活动价、限购、互斥以结算页为准" : "暂无活动优惠",
-      icon: BadgePercent,
-    },
-    {
-      label: "配送售后",
-      value: "订单确认",
-      desc: "地址、运费和售后资格跟随订单状态",
-      icon: Truck,
-    },
-  ];
   const restricted = isRestrictedProduct(product);
   const showRegulatedNotice = shouldShowRegulatedNotice(
     product,
@@ -290,11 +273,11 @@ export default function ProductDetail() {
   const canIndex = canIndexProductDetail(product, siteInfo);
   const siteName = siteInfo.siteName || STORE_COPY.brandName;
   const canonical = buildCanonical(`/product/${product.id}`);
-  const productDescRaw = stripHtml(product.description || "");
+  const productDescRaw = storefrontOptionalDisplayText(stripHtml(product.description || "")) || "";
   const productDescription = truncateText(
     restricted
       ? "本页面包含受年龄、地区或当地法规限制的商品或服务信息，仅面向符合法定年龄并符合当地规定的用户展示。具体适用范围以当地法律法规、平台规则和客服确认为准。"
-      : productDescRaw || `查看 ${product.name} 的详情、价格、库存状态与客服咨询说明。具体购买或办理信息以下单页面和客服确认为准。`,
+      : productDescRaw || `查看 ${displayProductName} 的详情、价格、库存状态与客服咨询说明。具体购买或办理信息以下单页面和客服确认为准。`,
     150,
   );
   const seoImage = selectedVariant?.image_url || product.cover_image || product.images?.[0] || siteInfo.ogImageUrl || "/og-default.png";
@@ -302,16 +285,16 @@ export default function ProductDetail() {
   const galleryImages = Array.from(new Set([...(selectedVariant?.image_url ? [selectedVariant.image_url] : []), ...(Array.isArray(product.images) && product.images.length ? product.images : []), ...(product.cover_image ? [product.cover_image] : [])].filter((url): url is string => typeof url === "string" && url.trim().length > 0)));
   const galleryImageAlts = galleryImages.map((url, index) => {
     if (selectedVariant?.image_url && url === selectedVariant.image_url) {
-      return `${product.name} ${selectedVariant.title || selectedVariant.sku_code || "规格图"}`;
+      return `${displayProductName} ${selectedVariant.title || selectedVariant.sku_code || "规格图"}`;
     }
     if (product.cover_image && url === product.cover_image) {
-      return product.cover_image_alt || `${product.name} 主图`;
+      return product.cover_image_alt || `${displayProductName} 主图`;
     }
     const imageIndex = Array.isArray(product.images) ? product.images.findIndex((img) => img === url) : -1;
     if (imageIndex >= 0) {
-      return product.image_alts?.[imageIndex] || `${product.name} 详情图 ${imageIndex + 1}`;
+      return product.image_alts?.[imageIndex] || `${displayProductName} 详情图 ${imageIndex + 1}`;
     }
-    return `${product.name} 商品图 ${index + 1}`;
+    return `${displayProductName} 商品图 ${index + 1}`;
   });
 
   const ensureVariantSelected = () => {
@@ -439,7 +422,7 @@ export default function ProductDetail() {
   const handleShare = async () => {
     const url = window.location.href;
     const sharePayload = buildProductSharePayload(
-      product.name,
+      displayProductName,
       displayPriceAmount,
       url,
       siteInfo.siteName,
@@ -466,11 +449,11 @@ export default function ProductDetail() {
   return (
     <div className={cn("store-conversion-page store-v12-page store-product-detail-page store-bottom-action-space min-h-screen text-[var(--theme-text)] md:pb-0 lg:pb-0", pageBgClass)} data-storefront-client-style={clientStyle}>
       <SeoHead
-        title={`${product.name}｜${siteName}`}
+        title={`${displayProductName}｜${siteName}`}
         description={productDescription}
         canonical={canonical}
         robots={canIndex ? "index,follow" : "noindex,follow"}
-        ogTitle={`${product.name}｜${siteName}`}
+        ogTitle={`${displayProductName}｜${siteName}`}
         ogDescription={productDescription}
         ogImage={seoImage}
         ogType="product"
@@ -498,7 +481,7 @@ export default function ProductDetail() {
               <ProductImageGallery
                 images={galleryImages}
                 imageAlts={galleryImageAlts}
-                name={product.name}
+                name={displayProductName}
                 videoUrl={product.video_url}
               />
             </div>
@@ -552,7 +535,7 @@ export default function ProductDetail() {
                 ) : null}
               </div>
               <h1 className="mt-3 font-display text-lg font-semibold leading-snug text-foreground md:text-[22px] md:leading-tight">
-                {product.name}
+                {displayProductName}
               </h1>
               <ProductActivityPanel activity={activeActivity} />
               {showRegulatedNotice ? <RegulatedProductNotice {...regulatedNoticeProps} /> : null}
@@ -583,7 +566,6 @@ export default function ProductDetail() {
 
             <ProductDetailContentPanel
               sections={detailSections}
-              summaryItems={detailSummaryItems}
             />
           </div>
         </div>
@@ -707,15 +689,8 @@ export default function ProductDetail() {
 
 function ProductDetailContentPanel({
   sections,
-  summaryItems,
 }: {
   sections: string[];
-  summaryItems: Array<{
-    label: string;
-    value: string;
-    desc: string;
-    icon: LucideIcon;
-  }>;
 }) {
   return (
     <section className="store-product-v12-content-panel" aria-labelledby="product-detail-content-heading">
@@ -724,23 +699,7 @@ function ProductDetailContentPanel({
           <ShieldCheck size={15} aria-hidden />
           商品详情
         </span>
-        <h2 id="product-detail-content-heading">下单前确认这些信息</h2>
-        <p>详情、规格库存、活动和配送售后都在这里查看，下单前请确认清楚。</p>
-      </div>
-      <div className="store-product-v12-content-panel__summary">
-        {summaryItems.map((item) => {
-          const Icon = item.icon;
-          return (
-            <div key={item.label}>
-              <span aria-hidden>
-                <Icon size={16} />
-              </span>
-              <small>{item.label}</small>
-              <strong>{item.value}</strong>
-              <p>{item.desc}</p>
-            </div>
-          );
-        })}
+        <h2 id="product-detail-content-heading">商品详情</h2>
       </div>
       <div className="store-product-v12-content-panel__list">
         {sections.map((section, idx) => (
@@ -829,7 +788,7 @@ function DetailPurchaseBar({
 }
 
 function buildDetailSections(description: string): string[] {
-  const raw = (description || "").trim();
+  const raw = storefrontOptionalDisplayText(stripHtml(description || "")) || "";
   if (!raw) return ["商品或服务详情正在完善。下单前建议先联系客服确认内容、规格、配送、售后或服务边界。"];
   const parts = raw
     .split(/\n+|[；;。]/g)

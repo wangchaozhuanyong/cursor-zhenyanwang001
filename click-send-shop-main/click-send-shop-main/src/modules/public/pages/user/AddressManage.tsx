@@ -1,5 +1,5 @@
 import { useState, useEffect, type ReactNode } from "react";
-import { Check, Edit3, Home, Loader2, MapPin, Phone, Plus, ShieldCheck, Trash2 } from "lucide-react";
+import { Check, Edit3, Loader2, MapPin, Phone, Plus, Trash2 } from "lucide-react";
 import { useGoBack } from "@/hooks/useGoBack";
 import { useUserStore, type Address } from "@/stores/useUserStore";
 import { toast } from "sonner";
@@ -10,12 +10,11 @@ import { formatAddressForDisplay } from "@/services/addressService";
 import { THEME_ACCENT_CHIP_CLASS } from "@/utils/themeVisuals";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
-import { ClientButton, EmptyState as ClientEmptyState } from "@/components/client";
 import { usePublicLocale } from "@/i18n/publicLocale";
 
 type AddressForm = Omit<Address, "id">;
-const CARD = "rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-[var(--store-card-x)] py-[var(--store-card-y)] shadow-[var(--theme-shadow)] sm:p-4";
-const ADDRESS_HERO_IMAGE = "/assets/home-banners/address-hero-premium-bg.webp";
+const CARD = "store-address-v12-card";
+const FORM_CONTROL = "store-address-v12-control";
 
 const EMPTY_FORM: AddressForm = {
   recipient_name: "",
@@ -105,80 +104,44 @@ export default function AddressManage() {
     <UnifiedButton
       type="button"
       onClick={openAdd}
-      className="inline-flex h-9 items-center gap-1.5 rounded-full bg-[var(--theme-primary)] px-3 text-xs font-semibold text-[var(--theme-primary-foreground)]"
+      className="store-address-v12-add-button"
     >
       <Plus size={14} aria-hidden />
       {t("address.add")}
     </UnifiedButton>
   );
-  const defaultAddress = addresses.find((addr) => addr.isDefault);
-
   return (
     <>
       <StoreAccountLayout
         title={t("address.title")}
         onBack={goBack}
         rightSlot={addAddressButton}
-        className="store-v12-page store-account-subpage-v12-page store-address-v12-page text-[var(--theme-text)]"
-        mainClassName="pb-24 sm:py-4 md:pb-12"
+        className="sf-next-page store-v12-page store-account-subpage-v12-page store-address-v12-page text-[var(--theme-text)]"
+        mainClassName="sf-next-account-main pb-24 sm:py-4 md:pb-12"
       >
-        <section
-          className="store-address-v12-hero relative overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-4 shadow-[var(--theme-shadow)] sm:px-6 sm:py-6"
-          style={{
-            backgroundImage: `linear-gradient(112deg, color-mix(in srgb, var(--theme-surface) 98%, transparent) 0%, color-mix(in srgb, var(--theme-surface) 91%, transparent) 52%, color-mix(in srgb, var(--theme-bg) 52%, transparent) 100%), radial-gradient(circle at 84% 14%, color-mix(in srgb, var(--theme-primary) 12%, transparent), transparent 34%), url("${ADDRESS_HERO_IMAGE}")`,
-            backgroundPosition: "center right",
-            backgroundSize: "cover",
-          }}
-        >
-          <div className="relative grid gap-4 md:grid-cols-[minmax(0,1fr)_15rem] md:items-stretch">
-            <div className="min-w-0">
-              <div className="grid grid-cols-[repeat(3,minmax(0,1fr))] gap-2">
-                <AddressMetric icon={<MapPin size={13} aria-hidden />} label={t("address.addressCount")} value={`${addresses.length}${t("address.addressCountUnit") ? ` ${t("address.addressCountUnit")}` : ""}`} />
-                <AddressMetric icon={<Home size={13} aria-hidden />} label={t("address.defaultAddress")} value={defaultAddress ? t("address.set") : t("address.notSet")} />
-                <AddressMetric icon={<ShieldCheck size={13} aria-hidden />} label={t("address.deliveryArea")} value="马来西亚" />
-              </div>
-            </div>
-            <div className="store-address-v12-default-card rounded-2xl border border-[color-mix(in_srgb,var(--theme-primary)_18%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-surface)_88%,transparent)] p-4 backdrop-blur">
-              <p className="text-xs font-semibold text-[var(--theme-text-muted-on-surface)]">{t("address.defaultCheckout")}</p>
-              <p className="mt-2 line-clamp-2 text-sm font-black leading-5 text-[var(--theme-text-on-surface)]">
-                {defaultAddress ? formatAddressForDisplay(defaultAddress) : t("address.noDefaultFallback")}
-              </p>
-              <UnifiedButton
-                type="button"
-                onClick={openAdd}
-                className="mt-4 inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-xl bg-[var(--theme-primary)] px-4 text-sm font-bold text-[var(--theme-primary-foreground)]"
-              >
-                <Plus size={15} aria-hidden />
-                {t("address.addAddress")}
-              </UnifiedButton>
-            </div>
-          </div>
-        </section>
-
         {addressLoading && addresses.length === 0 ? (
-          <div className="mt-4 flex min-h-[180px] flex-col items-center justify-center rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] py-12 text-[var(--theme-text-muted)] shadow-[var(--theme-shadow)]">
+          <div className="store-address-v12-loading">
             <Loader2 size={24} className="mb-3 animate-spin text-[var(--theme-price)]" aria-label={t("address.loading")} />
             <p className="text-sm">{t("address.loading")}</p>
           </div>
         ) : addresses.length === 0 ? (
-          <div className="mt-4">
-            <ClientEmptyState
-              title={t("address.emptyTitle")}
-              description={t("address.emptyDescription")}
-              icon={<MapPin size={30} />}
-              action={
-                <ClientButton type="button" onClick={openAdd}>
-                  {t("address.addAddress")}
-                </ClientButton>
-              }
-            />
-          </div>
+          <section className="store-account-v12-empty-panel store-address-v12-empty">
+            <span className="store-account-v12-empty-panel__icon" aria-hidden>
+              <MapPin size={28} />
+            </span>
+            <h2>{t("address.emptyTitle")}</h2>
+            <p>{t("address.emptyDescription")}</p>
+            <UnifiedButton type="button" onClick={openAdd} className="store-account-v12-empty-panel__action">
+              <Plus size={17} aria-hidden />
+              {t("address.addAddress")}
+            </UnifiedButton>
+          </section>
         ) : (
-          <div className="store-address-v12-list mt-4 space-y-3 xl:grid xl:grid-cols-2 xl:gap-4 xl:space-y-0">
+          <div className="store-address-v12-list space-y-3 xl:grid xl:grid-cols-2 xl:gap-4 xl:space-y-0">
             {addresses.map((addr) => (
-              <div key={addr.id} className={`${CARD} store-address-v12-card`}>
+              <article key={addr.id} className={CARD}>
                 <div className="flex items-start gap-3">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[color-mix(in_srgb,var(--theme-primary)_10%,var(--theme-surface))] text-[var(--theme-primary)]">
+                  <div className="store-address-v12-pin">
                     <MapPin size={20} aria-hidden />
                   </div>
                   <div className="min-w-0 flex-1">
@@ -193,20 +156,20 @@ export default function AddressManage() {
                     <p className="mt-2 text-sm leading-6 text-[var(--theme-text-on-surface)]">{formatAddressForDisplay(addr)}</p>
                   </div>
                 </div>
-                <div className="mt-3 flex items-center justify-between border-t border-[var(--theme-border)] pt-3">
+                <div className="store-address-v12-card__actions">
                   <UnifiedButton
                     type="button"
                     onClick={() => setDefaultAddress(addr.id)}
                     disabled={addr.isDefault}
-                    className="inline-flex h-9 items-center gap-1.5 rounded-full border border-[var(--theme-border)] px-3 text-xs font-semibold text-[var(--theme-text-muted-on-surface)] disabled:opacity-80"
+                    className="store-address-v12-action store-address-v12-action--default"
                   >
                     <span className={`flex h-4 w-4 items-center justify-center rounded-full border ${addr.isDefault ? "border-[var(--theme-primary)] bg-[var(--theme-primary)]" : "border-[var(--theme-border)]"}`}>
                       {addr.isDefault && <Check size={10} className="text-[var(--theme-primary-foreground)]" aria-hidden />}
                     </span>
                     {addr.isDefault ? t("address.defaultAddress") : t("address.setDefault")}
                   </UnifiedButton>
-                  <div className="flex items-center gap-2">
-                    <UnifiedButton type="button" onClick={() => openEdit(addr)} className="inline-flex h-9 items-center gap-1.5 rounded-full border border-[var(--theme-border)] px-3 text-xs font-semibold text-[var(--theme-text-on-surface)]">
+                  <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
+                    <UnifiedButton type="button" onClick={() => openEdit(addr)} className="store-address-v12-action store-address-v12-action--edit">
                       <Edit3 size={13} aria-hidden />
                       {t("address.edit")}
                     </UnifiedButton>
@@ -220,14 +183,14 @@ export default function AddressManage() {
                           toast.error(t("address.deleteFailed"));
                         }
                       }}
-                      className="inline-flex h-9 items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--theme-danger)_30%,var(--theme-border))] px-3 text-xs font-semibold text-[var(--theme-danger)]"
+                      className="store-address-v12-action store-address-v12-action--delete"
                     >
                       <Trash2 size={13} aria-hidden />
                       {t("address.delete")}
                     </UnifiedButton>
                   </div>
                 </div>
-              </div>
+              </article>
             ))}
           </div>
         )}
@@ -243,29 +206,29 @@ export default function AddressManage() {
         onSubmit={handleSave}
         height="90vh"
       >
-        <div className="space-y-3">
+        <div className="store-address-v12-form">
           <AddressField label={t("address.recipient")}>
-            <input aria-label={t("address.recipient")} value={form.recipient_name} onChange={(e) => setForm((f) => ({ ...f, recipient_name: e.target.value }))} placeholder={t("address.recipientPlaceholder")} className="h-11 w-full rounded-lg bg-[var(--theme-bg)] px-4 text-sm ring-1 ring-[var(--theme-border)] outline-none focus:ring-2 focus:ring-[var(--theme-primary)]/30" />
+            <input aria-label={t("address.recipient")} value={form.recipient_name} onChange={(e) => setForm((f) => ({ ...f, recipient_name: e.target.value }))} placeholder={t("address.recipientPlaceholder")} className={FORM_CONTROL} />
           </AddressField>
           <AddressField label={t("address.phone")}>
-            <input aria-label={t("address.phone")} value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} placeholder={t("address.phonePlaceholder")} className="h-11 w-full rounded-lg bg-[var(--theme-bg)] px-4 text-sm ring-1 ring-[var(--theme-border)] outline-none focus:ring-2 focus:ring-[var(--theme-primary)]/30" />
+            <input aria-label={t("address.phone")} value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} placeholder={t("address.phonePlaceholder")} className={FORM_CONTROL} />
           </AddressField>
           <AddressField label={t("address.line1")}>
-            <input aria-label={t("address.line1")} value={form.line1} onChange={(e) => setForm((f) => ({ ...f, line1: e.target.value }))} placeholder={t("address.line1Placeholder")} className="h-11 w-full rounded-lg bg-[var(--theme-bg)] px-4 text-sm ring-1 ring-[var(--theme-border)] outline-none focus:ring-2 focus:ring-[var(--theme-primary)]/30" />
+            <input aria-label={t("address.line1")} value={form.line1} onChange={(e) => setForm((f) => ({ ...f, line1: e.target.value }))} placeholder={t("address.line1Placeholder")} className={FORM_CONTROL} />
           </AddressField>
           <AddressField label={t("address.line2")}>
-            <input aria-label={t("address.line2")} value={form.line2} onChange={(e) => setForm((f) => ({ ...f, line2: e.target.value }))} placeholder={t("address.line2Placeholder")} className="h-11 w-full rounded-lg bg-[var(--theme-bg)] px-4 text-sm ring-1 ring-[var(--theme-border)] outline-none focus:ring-2 focus:ring-[var(--theme-primary)]/30" />
+            <input aria-label={t("address.line2")} value={form.line2} onChange={(e) => setForm((f) => ({ ...f, line2: e.target.value }))} placeholder={t("address.line2Placeholder")} className={FORM_CONTROL} />
           </AddressField>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="store-address-v12-form-grid">
             <AddressField label={t("address.city")}>
-              <input aria-label={t("address.city")} value={form.city} onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))} placeholder={t("address.cityPlaceholder")} className="h-11 w-full rounded-lg bg-[var(--theme-bg)] px-4 text-sm ring-1 ring-[var(--theme-border)] outline-none focus:ring-2 focus:ring-[var(--theme-primary)]/30" />
+              <input aria-label={t("address.city")} value={form.city} onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))} placeholder={t("address.cityPlaceholder")} className={FORM_CONTROL} />
             </AddressField>
             <AddressField label={t("address.postcode")}>
-              <input aria-label={t("address.postcode")} value={form.postcode} onChange={(e) => setForm((f) => ({ ...f, postcode: e.target.value }))} placeholder={t("address.postcodePlaceholder")} className="h-11 w-full rounded-lg bg-[var(--theme-bg)] px-4 text-sm ring-1 ring-[var(--theme-border)] outline-none focus:ring-2 focus:ring-[var(--theme-primary)]/30" />
+              <input aria-label={t("address.postcode")} value={form.postcode} onChange={(e) => setForm((f) => ({ ...f, postcode: e.target.value }))} placeholder={t("address.postcodePlaceholder")} className={FORM_CONTROL} />
             </AddressField>
           </div>
           <AddressField label={t("address.state")}>
-            <select aria-label={t("address.state")} value={form.state} onChange={(e) => setForm((f) => ({ ...f, state: e.target.value }))} className="h-11 w-full rounded-lg bg-[var(--theme-bg)] px-4 text-sm ring-1 ring-[var(--theme-border)] outline-none focus:ring-2 focus:ring-[var(--theme-primary)]/30">
+            <select aria-label={t("address.state")} value={form.state} onChange={(e) => setForm((f) => ({ ...f, state: e.target.value }))} className={FORM_CONTROL}>
               {MALAYSIA_STATES.map((state) => (
                 <option key={state} value={state}>
                   {state}
@@ -273,7 +236,7 @@ export default function AddressManage() {
               ))}
             </select>
           </AddressField>
-          <label className="flex items-center gap-2 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-3 text-sm font-medium text-[var(--theme-text-on-surface)]">
+          <label className="store-address-v12-default-toggle">
             <input type="checkbox" checked={form.isDefault} onChange={(e) => setForm((f) => ({ ...f, isDefault: e.target.checked }))} />
             {t("address.setDefaultAddress")}
           </label>
@@ -283,22 +246,10 @@ export default function AddressManage() {
   );
 }
 
-function AddressMetric({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
-  return (
-    <div className="flex min-h-[86px] min-w-0 flex-col items-center justify-center rounded-2xl border border-[color-mix(in_srgb,var(--theme-primary)_14%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-surface)_86%,transparent)] px-2 py-2.5 text-center shadow-[0_14px_28px_-30px_color-mix(in_srgb,var(--theme-text)_44%,transparent)] backdrop-blur">
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[color-mix(in_srgb,var(--theme-primary)_10%,var(--theme-surface))] text-[var(--theme-primary)]">
-        {icon}
-      </span>
-      <p className="mt-1.5 max-w-full truncate text-[10px] font-semibold leading-tight text-[var(--theme-text-muted-on-surface)]">{label}</p>
-      <p className="mt-1 max-w-full truncate text-sm font-black leading-tight text-[var(--theme-text-on-surface)]">{value}</p>
-    </div>
-  );
-}
-
 function AddressField({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <label className="block space-y-1.5">
-      <span className="text-xs font-semibold text-[var(--theme-text-muted-on-surface)]">{label}</span>
+    <label className="store-address-v12-field">
+      <span>{label}</span>
       {children}
     </label>
   );

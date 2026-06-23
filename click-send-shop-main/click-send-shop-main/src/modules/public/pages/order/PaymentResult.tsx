@@ -33,6 +33,13 @@ function labelPaymentStatus(status: string | null | undefined, t: (key: string) 
   return key ? t(key) : t("payment.status.unknown");
 }
 
+function resultTone(state: ResultState) {
+  if (state === "paid") return "success";
+  if (state === "failed") return "error";
+  if (state === "pending") return "pending";
+  return "loading";
+}
+
 export default function PaymentResult() {
   const [searchParams] = useSearchParams();
   const location = useLocation();
@@ -120,43 +127,49 @@ export default function PaymentResult() {
   }, [error, refreshing, state, t]);
 
   return (
-    <main className="store-page-shell store-v12-page store-payment-result-v12-page store-bottom-safe mx-auto flex min-h-[70vh] max-w-2xl flex-col items-center justify-center px-4 py-10 text-center">
-      <section className="store-payment-result-v12-card w-full rounded-3xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-6 shadow-sm">
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[var(--theme-muted)]">
-          {view.icon}
+    <main className="store-page-shell store-v12-page store-payment-result-v12-page store-bottom-safe mx-auto flex min-h-[70vh] max-w-2xl flex-col px-4 py-6 text-center sm:py-10">
+      <section className="store-payment-result-v12-card w-full" data-state={resultTone(state)}>
+        <div className="store-payment-result-v12-status">
+          <div className="store-payment-result-v12-icon" aria-hidden="true">
+            {view.icon}
+          </div>
+          <div className="store-payment-result-v12-copy">
+            <h1>{view.title}</h1>
+            <p>{view.description}</p>
+          </div>
         </div>
-        <h1 className="text-2xl font-semibold text-[var(--theme-text)]">{view.title}</h1>
-        <p className="mt-2 text-sm leading-6 text-[var(--theme-text-muted)]">{view.description}</p>
 
         {order ? (
-          <div className="mt-5 rounded-2xl bg-[var(--theme-muted)] p-4 text-left text-sm text-[var(--theme-text)]">
-            <div className="flex items-center justify-between gap-3">
-              <span>{t("payment.orderNo")}</span>
-              <strong>{order.order_no}</strong>
-            </div>
-            <div className="mt-2 flex items-center justify-between gap-3">
-              <span>{t("payment.status")}</span>
-              <strong>{labelPaymentStatus(order.payment_status, t)}</strong>
-            </div>
-            <div className="mt-2 flex items-center justify-between gap-3">
+          <div className="store-payment-result-v12-receipt" aria-label={t("payment.viewOrder")}>
+            <div className="store-payment-result-v12-amount">
               <span>{t("payment.amountDue")}</span>
               <strong>RM {Number(order.total_amount || 0).toFixed(2)}</strong>
             </div>
+            <dl className="store-payment-result-v12-lines">
+              <div>
+                <dt>{t("payment.orderNo")}</dt>
+                <dd>{order.order_no}</dd>
+              </div>
+              <div>
+                <dt>{t("payment.status")}</dt>
+                <dd>{labelPaymentStatus(order.payment_status, t)}</dd>
+              </div>
+            </dl>
           </div>
         ) : null}
 
-        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
-          <UnifiedButton type="button" onClick={load} disabled={refreshing} className="inline-flex items-center justify-center gap-2 rounded-full px-5 py-2">
+        <div className="store-payment-result-v12-actions">
+          <UnifiedButton type="button" onClick={load} disabled={refreshing} className="store-payment-result-v12-action store-payment-result-v12-action--primary">
             {refreshing ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
             {t("payment.refresh")}
           </UnifiedButton>
-          <Link className="inline-flex items-center justify-center gap-2 rounded-full border border-[var(--theme-border)] px-5 py-2 text-sm font-medium text-[var(--theme-text)]" to={localizedPath(order ? `/orders/${order.id}` : "/orders")}>
+          <Link className="store-payment-result-v12-action" to={localizedPath(order ? `/orders/${order.id}` : "/orders")}>
             <ShoppingBag size={16} />
             {t("payment.viewOrder")}
           </Link>
           {authRequired ? (
             <Link
-              className="inline-flex items-center justify-center gap-2 rounded-full border border-[var(--theme-border)] px-5 py-2 text-sm font-medium text-[var(--theme-text)]"
+              className="store-payment-result-v12-action"
               to={localizedPath("/login")}
               state={{ from: `${location.pathname}${location.search}` }}
             >
@@ -164,7 +177,7 @@ export default function PaymentResult() {
               {t("payment.loginToView")}
             </Link>
           ) : null}
-          <Link className="inline-flex items-center justify-center gap-2 rounded-full border border-[var(--theme-border)] px-5 py-2 text-sm font-medium text-[var(--theme-text)]" to={localizedPath(SUPPORT_PAGE_PATH)}>
+          <Link className="store-payment-result-v12-action" to={localizedPath(SUPPORT_PAGE_PATH)}>
             <MessageCircle size={16} />
             {t("payment.contactSupport")}
           </Link>

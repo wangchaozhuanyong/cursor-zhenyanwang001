@@ -44,12 +44,12 @@ export default function StorePageHeader({
     <header
       className={cn(
         sticky ? "sticky top-0" : "relative",
-        "z-header border-b backdrop-blur-xl pt-[env(safe-area-inset-top,0px)]",
+        "store-page-header z-header border-b backdrop-blur-xl pt-[env(safe-area-inset-top,0px)]",
         transparent ? "bg-transparent" : surfaceClass,
         className,
       )}
     >
-      <div className="mx-auto w-full max-w-screen-xl px-[var(--store-header-x)]">
+      <div className="store-page-header__inner mx-auto w-full max-w-screen-xl px-[var(--store-header-x)]">
         <div
           className={cn(
             "flex items-center gap-3",

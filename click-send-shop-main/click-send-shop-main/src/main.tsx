@@ -5,8 +5,13 @@ import { BrowserRouter } from "react-router-dom";
 import "./index.css";
 import "@/styles/client-redesign.css";
 import "@/styles/store-tablet-visual.css";
+import "@/styles/storefront-foundation.css";
+import "@/styles/storefront-next.tokens.css";
+import "@/styles/storefront-next.primitives.css";
+import "@/styles/storefront-next.extended-routes.css";
 import { initPwaOfflineNavigation, markStoreSpaReady } from "@/lib/pwaOfflineNavigation";
 import AppVersionReadyMarker from "@/components/AppVersionReadyMarker";
+import AppBootReady from "@/components/AppBootReady";
 import { NavigationHistoryRecorder } from "@/components/NavigationHistoryRecorder";
 import { initPwaInstallPromptCapture } from "@/lib/pwaInstallPromptStore";
 
@@ -43,7 +48,8 @@ createRoot(document.getElementById("root")!).render(
   <Suspense fallback={null}>
     {isTikTokLanding ? (
       <>
-        <AppVersionReadyMarker appName="storefront" />
+        <AppVersionReadyMarker appName="storefront" onReady={markStoreSpaReady} />
+        <AppBootReady />
         <BrowserRouter
           future={{
             v7_startTransition: true,

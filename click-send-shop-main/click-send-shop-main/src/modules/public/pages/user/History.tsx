@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { BadgePercent, Clock, History as HistoryIcon, PackageCheck, Trash2 } from "lucide-react";
+import { BadgePercent, Clock, History as HistoryIcon, LogIn, PackageCheck, Search, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useHistoryStore } from "@/stores/useHistoryStore";
 import { isLoggedIn } from "@/utils/token";
@@ -7,7 +7,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
-import { EmptyState as ClientEmptyState } from "@/components/client";
 import { BottomSheetConfirm } from "@/modules/micro-interactions";
 import { usePublicLocale } from "@/i18n/publicLocale";
 import AccountProductCard, { AccountProductCardSkeleton } from "./components/AccountProductCard";
@@ -35,20 +34,24 @@ export default function History() {
             </UnifiedButton>
           ) : undefined
         }
-        className="store-v12-page store-account-subpage-v12-page store-history-v12-page pb-6"
-        mainClassName="sm:px-4 xl:py-6"
+        className="sf-next-page store-v12-page store-account-subpage-v12-page store-history-v12-page pb-6"
+        mainClassName="sf-next-account-main sm:px-4 xl:py-6"
       >
         <div className="mx-auto w-full max-w-lg space-y-3 md:max-w-none">
         {!isLoggedIn() && (
-          <div className="store-account-v12-notice">
+          <div className="store-account-v12-notice store-account-v12-sync-notice">
             <span className="store-v12-card-icon"><Clock size={16} aria-hidden /></span>
-            <p>未登录时仅在本机记录浏览；登录后多端同步。</p>
+            <div>
+              <strong>本机浏览记录</strong>
+              <p>未登录时只保存在当前设备，登录后可同步到账号。</p>
+            </div>
             <UnifiedButton
               type="button"
               onClick={() => navigate(localizedPath("/login"), { state: { from: localizedPath("/history") } })}
-              className="font-semibold text-theme-price"
+              className="store-account-v12-notice-action"
             >
-              登录
+              <LogIn size={15} aria-hidden />
+              <span>登录同步</span>
             </UnifiedButton>
           </div>
         )}
@@ -84,26 +87,46 @@ export default function History() {
             <AccountProductCardSkeleton variant="history" />
           </div>
         ) : history.length === 0 ? (
-          <ClientEmptyState
-            title="暂无浏览记录"
-            icon={<Clock size={30} />}
-          />
+          <section className="store-account-v12-empty-panel">
+            <span className="store-account-v12-empty-panel__icon" aria-hidden>
+              <Clock size={24} />
+            </span>
+            <h2>暂无浏览记录</h2>
+            <p>浏览过的商品会出现在这里，方便你回看价格、活动和库存状态。</p>
+            <UnifiedButton
+              type="button"
+              onClick={() => navigate(localizedPath("/categories"))}
+              className="store-account-v12-empty-panel__action"
+            >
+              <Search size={16} aria-hidden />
+              <span>去逛商品</span>
+            </UnifiedButton>
+          </section>
         ) : (
-          <div className="store-account-v12-product-grid">
-            <AnimatePresence>
-              {history.map((product, i) => (
-                <motion.div
-                  key={product.id}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.03 }}
-                  className="min-w-0"
-                >
-                  <AccountProductCard product={product} index={i} variant="history" />
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
+          <section className="store-history-v12-group" aria-label="最近浏览商品">
+            <div className="store-history-v12-group__head">
+              <div>
+                <span>History</span>
+                <h2>最近浏览</h2>
+              </div>
+              <small>按最近访问顺序展示</small>
+            </div>
+            <div className="store-account-v12-product-grid">
+              <AnimatePresence>
+                {history.map((product, i) => (
+                  <motion.div
+                    key={product.id}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.03 }}
+                    className="min-w-0"
+                  >
+                    <AccountProductCard product={product} index={i} variant="history" />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+          </section>
         )}
         </div>
       </StoreAccountLayout>

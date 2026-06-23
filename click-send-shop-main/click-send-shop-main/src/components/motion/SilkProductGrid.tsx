@@ -23,6 +23,7 @@ type SilkProductGridProps = {
   showFullSkeleton?: boolean;
   showSoftRefreshing?: boolean;
   emptyState?: ReactNode;
+  itemKeyPrefix?: string;
   /** 由列表页注入，避免每张卡重复订阅站点配置 */
   siteContext?: ProductCardSiteContext;
 };
@@ -36,6 +37,7 @@ export default function SilkProductGrid({
   showFullSkeleton = false,
   showSoftRefreshing = false,
   emptyState,
+  itemKeyPrefix = "product",
 }: SilkProductGridProps) {
   const isListView = displayMode === "list";
   const shouldDeferList = products.length > INITIAL_PRODUCT_RENDER_LIMIT;
@@ -75,11 +77,10 @@ export default function SilkProductGrid({
             ))
           : visibleProducts.map((product, index) => (
               <ProductCardV2
-                key={product.id}
+                key={`${itemKeyPrefix}:${index}:${product.id}`}
                 product={product}
                 index={index}
                 variant={isListView ? "list" : "grid"}
-                className="[content-visibility:auto] [contain-intrinsic-size:280px]"
               />
             ))}
         {!showFullSkeleton && products.length === 0 ? emptyState : null}

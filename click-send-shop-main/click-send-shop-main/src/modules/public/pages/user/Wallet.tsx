@@ -57,20 +57,28 @@ export default function Wallet() {
   }, [rewardsEnabled]);
 
   return (
-    <StoreAccountLayout title="返现余额" onBack={goBack} className="store-v12-page store-wallet-v12-page store-account-subpage-v12-page pb-8">
-      <section className="store-wallet-v12-hero" aria-label="返现余额">
-        <p className="store-wallet-v12-hero__label">可用返现</p>
-        <strong className="store-wallet-v12-hero__amount">
+    <StoreAccountLayout
+      title="返现余额"
+      onBack={goBack}
+      className="sf-next-page store-v12-page store-wallet-v12-page store-account-subpage-v12-page pb-8"
+      mainClassName="sf-next-account-main sm:px-4 xl:py-6"
+    >
+      <section className="sf-next-folio store-wallet-v12-hero" aria-label="返现余额">
+        <div className="sf-next-folio__topline">
+          <p className="sf-next-folio__eyebrow store-wallet-v12-hero__label">可用返现</p>
+          <span className="sf-next-folio__status">{rewardsEnabled ? "购物抵扣" : "未开启"}</span>
+        </div>
+        <strong className="sf-next-folio__value store-wallet-v12-hero__amount">
           {loading ? "RM --" : rewardsEnabled ? `RM ${money(rewardBalance)}` : "未开启"}
         </strong>
-        <div className="store-wallet-v12-hero__meta">
-          <span>
-            <b>{loading ? "RM --" : `RM ${money(pendingAmount)}`}</b>
-            <small>待入账</small>
+        <div className="sf-next-folio__meta store-wallet-v12-hero__meta">
+          <span className="sf-next-folio__meta-item">
+            <b className="sf-next-folio__meta-value">{loading ? "RM --" : `RM ${money(pendingAmount)}`}</b>
+            <small className="sf-next-folio__meta-label">待入账</small>
           </span>
-          <span>
-            <b>{rewardsEnabled ? "可使用" : "未开启"}</b>
-            <small>结算抵扣</small>
+          <span className="sf-next-folio__meta-item">
+            <b className="sf-next-folio__meta-value">{rewardsEnabled ? "可使用" : "未开启"}</b>
+            <small className="sf-next-folio__meta-label">结算抵扣</small>
           </span>
         </div>
       </section>

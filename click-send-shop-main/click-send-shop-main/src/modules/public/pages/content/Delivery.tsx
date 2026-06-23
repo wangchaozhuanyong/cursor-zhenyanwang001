@@ -75,8 +75,8 @@ export default function Delivery() {
       title="配送方式"
       onBack={goBack}
       backFallback="/"
-      className="store-v12-page store-delivery-v12-page"
-      contentClassName="md:max-w-5xl xl:max-w-6xl"
+      className="sf-next-page store-v12-page store-delivery-v12-page"
+      contentClassName="sf-next-account-main md:max-w-5xl xl:max-w-6xl"
     >
       <SeoHead
         title={`配送方式｜${siteName}`}
@@ -85,7 +85,7 @@ export default function Delivery() {
         robots="index,follow"
       />
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
+      <div className="store-delivery-v12-lead">
         <section className="store-v12-info-hero">
           <span className="store-v12-eyebrow">
             <Truck size={15} aria-hidden />
@@ -119,7 +119,7 @@ export default function Delivery() {
       {hasCmsDelivery ? (
         <section className="store-v12-info-card mt-4">
           <article
-            className="store-body-text store-content-v12-article max-w-none leading-relaxed text-muted-foreground [&_h2]:text-lg [&_h2]:font-semibold [&_h3]:text-base [&_h3]:font-semibold"
+            className="store-body-text store-content-v12-article"
             dangerouslySetInnerHTML={{ __html: sanitizeCmsHtml(page?.content || "") }}
           />
         </section>

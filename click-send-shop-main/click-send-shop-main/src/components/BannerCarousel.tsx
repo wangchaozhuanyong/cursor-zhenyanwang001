@@ -263,7 +263,7 @@ export default function BannerCarousel({
     if (!loading) return null;
     return (
       <div
-        className={`store-hero-carousel store-hero-carousel--showcase store-hero-loading-shell relative w-full overflow-hidden border border-[var(--theme-border)] bg-[var(--theme-surface)] ${bannerContainerClass}`}
+        className={`store-hero-carousel store-hero-carousel--showcase store-hero-loading-shell store-skin-banner relative w-full overflow-hidden border border-[var(--theme-border)] bg-[var(--theme-surface)] ${bannerContainerClass}`}
         data-banner-style={bannerStyle}
         data-theme-banner-style={bannerStyle}
         style={{ aspectRatio: BANNER_ASPECT_CSS, borderRadius: "var(--theme-radius)" }}
@@ -362,9 +362,10 @@ export default function BannerCarousel({
 
   return (
     <div
-      className={`store-hero-carousel store-hero-carousel--showcase relative w-full overflow-hidden ${bannerContainerClass} ${bannerLink ? "cursor-pointer" : ""}`}
+      className={`store-hero-carousel store-hero-carousel--showcase store-skin-banner relative w-full overflow-hidden ${bannerContainerClass} ${bannerLink ? "cursor-pointer" : ""}`}
       data-banner-style={bannerStyle}
       data-theme-banner-style={bannerStyle}
+      data-banner-has-copy={hasTextLayer ? "true" : "false"}
       data-copy-tone={hasTextLayer ? copyTone : undefined}
       data-slide-direction={slideDirection}
       data-auto-paused={paused || hoverPaused || !motionEnabled ? "true" : "false"}

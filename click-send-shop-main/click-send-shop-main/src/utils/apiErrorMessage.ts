@@ -125,6 +125,22 @@ const API_ERROR_ZH: Record<string, string> = {
 
 const API_ERROR_PATTERNS: Array<{ test: RegExp; format: (m: RegExpMatchArray) => string }> = [
   {
+    test: /^address:\s*Invalid input$/i,
+    format: () => "收货地址信息不完整，请检查后重试",
+  },
+  {
+    test: /^(name|contact_name|recipient):\s*Invalid input$/i,
+    format: () => "收货人信息不完整，请检查后重试",
+  },
+  {
+    test: /^(phone|mobile):\s*Invalid input$/i,
+    format: () => "手机号格式不正确",
+  },
+  {
+    test: /^[a-zA-Z0-9_.-]+:\s*Invalid input$/i,
+    format: () => "填写信息不正确，请检查后重试",
+  },
+  {
     test: /Illegal mix of collations/i,
     format: () => "数据库表字符集排序规则不一致，请联系技术人员执行数据库迁移。",
   },

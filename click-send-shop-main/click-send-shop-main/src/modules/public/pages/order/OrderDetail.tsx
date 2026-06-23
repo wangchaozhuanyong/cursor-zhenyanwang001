@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ClipboardList, Copy, CreditCard, PackageCheck, Truck, WalletCards } from "lucide-react";
+import { ClipboardList, Copy, CreditCard, PackageCheck, RefreshCw, Truck, WalletCards } from "lucide-react";
 import { toast } from "sonner";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 import { OrderAutoConfirmCountdown } from "@/components/order/OrderAutoConfirmCountdown";
@@ -27,7 +27,6 @@ import { SUPPORT_PAGE_PATH } from "@/utils/supportDownloadConfig";
 import { useGoBack } from "@/hooks/useGoBack";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import ProductCoverImage from "@/components/ProductCoverImage";
-import { ClientButton, EmptyState as ClientEmptyState } from "@/components/client";
 import { usePublicLocale } from "@/i18n/publicLocale";
 import {
   getBuyerOrderStatusTextLocalized,
@@ -381,7 +380,13 @@ export default function OrderDetail() {
   if (loading) {
     return (
       <StoreAccountLayout title={copy.detailTitle} onBack={handleBack} className="store-v12-page store-order-detail-v12-page">
-        <div className="rounded-2xl border border-border bg-card p-4 text-center text-sm text-muted-foreground">{copy.loading}</div>
+        <section className="store-account-v12-empty-panel store-order-detail-v12-state" aria-live="polite">
+          <span className="store-account-v12-empty-panel__icon" aria-hidden>
+            <RefreshCw size={28} className="animate-spin" />
+          </span>
+          <h2>{copy.loading}</h2>
+          <p>正在同步订单状态、商品、金额和物流信息。</p>
+        </section>
       </StoreAccountLayout>
     );
   }
@@ -389,15 +394,17 @@ export default function OrderDetail() {
   if (error || !order) {
     return (
       <StoreAccountLayout title={copy.detailTitle} onBack={handleBack} className="store-v12-page store-order-detail-v12-page">
-        <ClientEmptyState
-          title={error ? copy.loadFailed : copy.notFound}
-          description={error || copy.unavailable}
-          action={
-            <ClientButton type="button" onClick={() => id && loadOrderDetail(id)}>
-              {copy.retry}
-            </ClientButton>
-          }
-        />
+        <section className="store-account-v12-empty-panel store-order-detail-v12-state" role={error ? "alert" : "status"}>
+          <span className="store-account-v12-empty-panel__icon" aria-hidden>
+            <ClipboardList size={28} />
+          </span>
+          <h2>{error ? copy.loadFailed : copy.notFound}</h2>
+          <p>{error || copy.unavailable}</p>
+          <UnifiedButton type="button" onClick={() => id && loadOrderDetail(id)} className="store-account-v12-empty-panel__action">
+            <RefreshCw size={17} aria-hidden />
+            {copy.retry}
+          </UnifiedButton>
+        </section>
       </StoreAccountLayout>
     );
   }
@@ -486,30 +493,38 @@ export default function OrderDetail() {
           </div>
         </section>
 
-        <section className="store-order-detail-v12-summary store-orders-v12-stat-grid">
-          <div className="store-orders-v12-stat">
-            <span className="store-orders-v12-stat__icon"><WalletCards size={17} aria-hidden /></span>
-            <strong>{money(order.total_amount)}</strong>
-            <span>{copy.paidAmount}</span>
-            <small>{Number(order.shipping_fee || 0) === 0 ? copy.freeShipping : `${copy.shippingFee} ${money(order.shipping_fee)}`}</small>
+        <section className="store-order-detail-v12-summary" aria-label="订单概览">
+          <div className="store-order-detail-v12-fact">
+            <span className="store-order-detail-v12-fact__icon"><WalletCards size={16} aria-hidden /></span>
+            <div className="store-order-detail-v12-fact__copy">
+              <span>{copy.paidAmount}</span>
+              <strong>{money(order.total_amount)}</strong>
+              <small>{Number(order.shipping_fee || 0) === 0 ? copy.freeShipping : `${copy.shippingFee} ${money(order.shipping_fee)}`}</small>
+            </div>
           </div>
-          <div className="store-orders-v12-stat">
-            <span className="store-orders-v12-stat__icon"><CreditCard size={17} aria-hidden /></span>
-            <strong>{paymentMethodLabel}</strong>
-            <span>{copy.paymentMethod}</span>
-            <small>{paidAtLabel}</small>
+          <div className="store-order-detail-v12-fact">
+            <span className="store-order-detail-v12-fact__icon"><CreditCard size={16} aria-hidden /></span>
+            <div className="store-order-detail-v12-fact__copy">
+              <span>{copy.paymentMethod}</span>
+              <strong>{paymentMethodLabel}</strong>
+              <small>{paidAtLabel}</small>
+            </div>
           </div>
-          <div className="store-orders-v12-stat">
-            <span className="store-orders-v12-stat__icon"><Truck size={17} aria-hidden /></span>
-            <strong>{logisticsStatus}</strong>
-            <span>{copy.logistics}</span>
-            <small>{logisticsText}</small>
+          <div className="store-order-detail-v12-fact">
+            <span className="store-order-detail-v12-fact__icon"><Truck size={16} aria-hidden /></span>
+            <div className="store-order-detail-v12-fact__copy">
+              <span>{copy.logistics}</span>
+              <strong>{logisticsStatus}</strong>
+              <small>{logisticsText}</small>
+            </div>
           </div>
-          <div className="store-orders-v12-stat">
-            <span className="store-orders-v12-stat__icon"><ClipboardList size={17} aria-hidden /></span>
-            <strong>{order.items.length} SKU</strong>
-            <span>{copy.productInfo}</span>
-            <small>{itemQuantity} 件商品</small>
+          <div className="store-order-detail-v12-fact">
+            <span className="store-order-detail-v12-fact__icon"><ClipboardList size={16} aria-hidden /></span>
+            <div className="store-order-detail-v12-fact__copy">
+              <span>{copy.productInfo}</span>
+              <strong>{order.items.length} SKU</strong>
+              <small>{itemQuantity} 件商品</small>
+            </div>
           </div>
         </section>
 
@@ -581,7 +596,7 @@ export default function OrderDetail() {
           })}
         </section>
 
-        <div className="rounded-2xl border border-border bg-card p-3">
+        <div className="store-order-detail-v12-price-card rounded-2xl border border-border bg-card p-3">
           <p className="text-sm font-medium">{copy.priceDetail}</p>
           <div className="mt-2 flex justify-between text-sm">
             <span className="text-muted-foreground">{copy.productAmount}</span>
@@ -620,7 +635,7 @@ export default function OrderDetail() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-border bg-card p-3">
+        <div className="store-order-detail-v12-info-card rounded-2xl border border-border bg-card p-3">
           <p className="text-sm font-medium">{copy.orderInfo}</p>
           <div className="mt-2 flex items-center justify-between gap-3 text-sm">
             <span className="text-muted-foreground">{copy.orderNo}</span>
@@ -682,7 +697,7 @@ export default function OrderDetail() {
           ) : null}
         </div>
 
-        <div className="hidden rounded-2xl border border-border bg-card p-3 md:flex md:flex-wrap md:justify-end md:gap-2">
+        <div className="store-order-detail-v12-actions-card hidden rounded-2xl border border-border bg-card p-3 md:flex md:flex-wrap md:justify-end md:gap-2">
           {canUserCancelOrder(order) ? (
             <UnifiedButton type="button" className="rounded-full border px-3 py-1 text-xs" onClick={() => setCancelConfirmOpen(true)}>
               {copy.cancelOrder}
@@ -743,7 +758,7 @@ export default function OrderDetail() {
       </div>
 
       {showMobileBar ? (
-        <div className="fixed bottom-0 left-0 right-0 z-checkout-bar border-t border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md pb-safe safe-bottom-bar md:hidden">
+        <div className="store-order-detail-v12-mobile-bar fixed bottom-0 left-0 right-0 z-checkout-bar border-t border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md pb-safe safe-bottom-bar md:hidden">
           <div className="mx-auto flex max-w-lg items-center gap-2 px-4 py-3">
             <UnifiedButton
               type="button"

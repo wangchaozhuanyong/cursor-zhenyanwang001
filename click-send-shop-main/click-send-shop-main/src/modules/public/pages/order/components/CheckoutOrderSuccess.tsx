@@ -314,15 +314,16 @@ export function CheckoutOrderSuccess({
       title={headerTitle}
       onBack={onHome}
       backFallback="/"
+      className="store-v12-page store-checkout-success-v12-page"
       contentClassName="md:max-w-3xl xl:max-w-4xl"
     >
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        className="mx-auto w-full max-w-lg space-y-3 pb-8 md:max-w-none"
+        className="store-checkout-success-v12-stack mx-auto w-full max-w-lg space-y-3 pb-8 md:max-w-none"
       >
         {/* 状态摘要：横向紧凑，避免上半区过高 */}
-        <div className="overflow-hidden rounded-2xl border border-border bg-card">
+        <div className="store-checkout-success-v12-status-card overflow-hidden rounded-2xl border border-border bg-card">
           <div className="flex items-start gap-3 p-4">
             <motion.div
               initial={{ scale: 0.85, opacity: 0 }}
@@ -368,7 +369,7 @@ export function CheckoutOrderSuccess({
           ) : null}
         </div>
 
-        <div className="rounded-2xl border border-border bg-card p-4">
+        <div className="store-checkout-success-v12-info-card rounded-2xl border border-border bg-card p-4">
           <h3 className="mb-3 text-sm font-semibold text-foreground">{copy.keyInfo}</h3>
           <div className="space-y-2 text-sm">
             <div className="flex items-center justify-between">
@@ -395,7 +396,7 @@ export function CheckoutOrderSuccess({
         </div>
 
         {/* 下一步操作 */}
-        <div className="space-y-2.5">
+        <div className="store-checkout-success-v12-actions space-y-2.5">
           <p className="px-0.5 text-xs font-semibold text-muted-foreground">{copy.nextActions}</p>
           {isOnlinePending && (
             <>
@@ -424,7 +425,7 @@ export function CheckoutOrderSuccess({
                 {alternatePayOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
               </UnifiedButton>
               {alternatePayOpen && (
-                <div className="space-y-2 rounded-xl border border-border bg-card p-3">
+                <div className="store-checkout-success-v12-alt-actions space-y-2 rounded-xl border border-border bg-card p-3">
                   <p className="px-1 text-center text-[11px] text-muted-foreground">{copy.alternatePaymentWarning}</p>
                   <UnifiedButton
                     type="button"
@@ -530,7 +531,7 @@ export function CheckoutOrderSuccess({
                 {moreWaysOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
               </UnifiedButton>
               {moreWaysOpen && (
-                <div className="space-y-2 rounded-xl border border-border bg-card p-3">
+                <div className="store-checkout-success-v12-alt-actions space-y-2 rounded-xl border border-border bg-card p-3">
                   {onlinePaymentEnabled ? (
                     <UnifiedButton
                       type="button"
@@ -594,7 +595,7 @@ export function CheckoutOrderSuccess({
         </div>
 
         {/* 订单详情 */}
-        <div className="rounded-2xl border border-border bg-card p-4">
+        <div className="store-checkout-success-v12-products-card rounded-2xl border border-border bg-card p-4">
           <h3 className="mb-4 text-sm font-semibold text-foreground">{copy.orderDetails}</h3>
           {order.items.map((item) => (
             <div key={item.product.id} className="flex items-center gap-3 border-b border-border py-3 last:border-0">
@@ -639,7 +640,7 @@ export function CheckoutOrderSuccess({
           </div>
         </div>
 
-        <div className="space-y-2.5 pt-1">
+        <div className="store-checkout-success-v12-footer-actions space-y-2.5 pt-1">
           <UnifiedButton
             onClick={onViewOrders}
             className="w-full rounded-full border-2 border-border py-3.5 text-center text-sm font-semibold text-foreground transition-all active:scale-[0.98] hover:bg-secondary"

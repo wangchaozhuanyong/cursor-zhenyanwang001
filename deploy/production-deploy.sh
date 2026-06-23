@@ -11,6 +11,8 @@ LOG_FILE="${LOG_FILE:-$PROJECT_DIR/deploy.log}"
 DEPLOY_LOCK_FILE="${DEPLOY_LOCK_FILE:-$PROJECT_DIR/.deploy.lock}"
 HEALTH_PORT="${HEALTH_PORT:-3001}"
 HEALTH_PATH="${HEALTH_PATH:-/api/health/live}"
+HEALTH_RETRIES="${HEALTH_RETRIES:-20}"
+HEALTH_INTERVAL_SECONDS="${HEALTH_INTERVAL_SECONDS:-3}"
 PUBLIC_FRONTEND="${PUBLIC_FRONTEND:-/var/www/damatong/dist}"
 ADMIN_PUBLIC_FRONTEND="${ADMIN_PUBLIC_FRONTEND:-/var/www/damatong/admin-dist}"
 VITE_API_BASE_URL="${VITE_API_BASE_URL:-/api}"
@@ -387,14 +389,15 @@ fi
 pm2 save 2>/dev/null || true
 
 STATUS="000"
-for i in 1 2 3 4 5; do
-  STATUS=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:${HEALTH_PORT}${HEALTH_PATH}" || echo "000")
+for ((i = 1; i <= HEALTH_RETRIES; i++)); do
+  STATUS=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:${HEALTH_PORT}${HEALTH_PATH}" 2>/dev/null || true)
+  STATUS="${STATUS:-000}"
   if [[ "$STATUS" == "200" ]]; then
     echo "✅ 健康检查通过" | tee -a "$LOG_FILE"
     break
   fi
-  echo "⚠️ 第 $i 次健康检查失败，HTTP=$STATUS" | tee -a "$LOG_FILE"
-  sleep 2
+  echo "⚠️ 第 $i/${HEALTH_RETRIES} 次健康检查失败，HTTP=$STATUS" | tee -a "$LOG_FILE"
+  sleep "$HEALTH_INTERVAL_SECONDS"
 done
 
 if [[ "$STATUS" != "200" ]]; then

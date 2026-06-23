@@ -113,7 +113,8 @@ fi
 echo
 echo "==== 4) GET http://127.0.0.1:${HEALTH_PORT}${HEALTH_PATH} ===="
 LIVE_BODY=$(mktemp)
-LIVE_CODE=$(curl -sS -o "$LIVE_BODY" -w "%{http_code}" "http://127.0.0.1:${HEALTH_PORT}${HEALTH_PATH}" || echo "000")
+LIVE_CODE=$(curl -sS -o "$LIVE_BODY" -w "%{http_code}" "http://127.0.0.1:${HEALTH_PORT}${HEALTH_PATH}" 2>/dev/null || true)
+LIVE_CODE="${LIVE_CODE:-000}"
 if [[ "$LIVE_CODE" == "200" ]]; then
   echo "✅ HTTP $LIVE_CODE"
   head -c 300 "$LIVE_BODY" 2>/dev/null
@@ -129,7 +130,8 @@ rm -f "$LIVE_BODY" 2>/dev/null || true
 echo
 echo "==== 5) GET http://127.0.0.1:${HEALTH_PORT}${READY_PATH} ===="
 READY_BODY=$(mktemp)
-READY_CODE=$(curl -sS -o "$READY_BODY" -w "%{http_code}" "http://127.0.0.1:${HEALTH_PORT}${READY_PATH}" || echo "000")
+READY_CODE=$(curl -sS -o "$READY_BODY" -w "%{http_code}" "http://127.0.0.1:${HEALTH_PORT}${READY_PATH}" 2>/dev/null || true)
+READY_CODE="${READY_CODE:-000}"
 READY_REDIS_OK=0
 if [[ "$READY_CODE" == "200" ]]; then
   echo "✅ HTTP $READY_CODE"

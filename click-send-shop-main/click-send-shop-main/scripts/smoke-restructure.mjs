@@ -226,6 +226,8 @@ async function pickBaseUrls() {
 function isExpectedNetworkNoise(message, route = null) {
   if (/favicon|manifest\.webmanifest|apple-touch-icon/i.test(message)) return true;
   if (/googletagmanager\.com|google-analytics\.com/i.test(message)) return true;
+  if (route?.path?.includes("/payment/result?order_no=SMOKE") && /\b401\b|Unauthorized/i.test(message)) return true;
+  if (route?.path?.includes("/promotions/smoke-slug") && /\b404\b|Not Found/i.test(message)) return true;
   if (route?.path?.includes("/deals/smoke-slug") && /\b404\b|Not Found/i.test(message)) return true;
   if (!REQUIRE_API && /ERR_CONNECTION_REFUSED|Failed to load resource|NetworkError|Load failed/i.test(message)) return true;
   if (!REQUIRE_API && /\/api\/|\/admin\/api\//i.test(message)) return true;

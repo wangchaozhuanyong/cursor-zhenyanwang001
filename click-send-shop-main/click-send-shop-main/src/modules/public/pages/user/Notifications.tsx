@@ -174,8 +174,45 @@ export default function Notifications() {
         className="sf-next-page store-v12-page store-account-subpage-v12-page store-notifications-v12-page"
         mainClassName="sf-next-account-main sm:px-4 xl:py-6"
       >
+        <div ref={filtersRef} className="store-notifications-v12-filters no-scrollbar">
+          {NOTIFICATION_FILTERS.map((item) => {
+            const Icon = item.icon;
+            const activeFilter = filter === item.key;
+            return (
+              <UnifiedButton
+                key={item.key}
+                ref={(el) => setFilterRef(item.key, el)}
+                type="button"
+                onClick={() => {
+                  scrollFilterToKey(item.key);
+                  setFilter(item.key);
+                }}
+                className={`store-notifications-v12-filter ${activeFilter ? "is-active" : ""}`}
+              >
+                <span className="inline-flex min-w-0 items-center gap-1.5">
+                  <Icon size={14} aria-hidden className="shrink-0" />
+                  <span className="truncate">{item.label}</span>
+                </span>
+                <span className="shrink-0 text-[11px] font-black">{filterCounts[item.key]}</span>
+              </UnifiedButton>
+            );
+          })}
+        </div>
         {!loading && notifications.length === 0 && (
-          <section className="store-account-v12-empty-panel store-account-v12-status-panel">
+          <section className="store-account-v12-empty-panel store-account-v12-status-panel store-notifications-v12-empty">
+            <div className="store-notifications-v12-empty-lines" aria-hidden>
+              {[
+                ["订单消息", "付款、发货、售后状态"],
+                ["优惠提醒", "优惠券、活动和积分更新"],
+                ["系统通知", "账号、安全和服务说明"],
+              ].map(([title, text]) => (
+                <span key={title}>
+                  <i />
+                  <b>{title}</b>
+                  <em>{text}</em>
+                </span>
+              ))}
+            </div>
             <span className="store-account-v12-empty-panel__icon" aria-hidden>
               <Bell size={28} />
             </span>
@@ -183,32 +220,6 @@ export default function Notifications() {
             <p>订单、物流、优惠和系统消息会出现在这里。</p>
           </section>
         )}
-        {notifications.length > 0 ? (
-          <div ref={filtersRef} className="store-notifications-v12-filters no-scrollbar">
-            {NOTIFICATION_FILTERS.map((item) => {
-              const Icon = item.icon;
-              const activeFilter = filter === item.key;
-              return (
-                <UnifiedButton
-                  key={item.key}
-                  ref={(el) => setFilterRef(item.key, el)}
-                  type="button"
-                  onClick={() => {
-                    scrollFilterToKey(item.key);
-                    setFilter(item.key);
-                  }}
-                  className={`store-notifications-v12-filter ${activeFilter ? "is-active" : ""}`}
-                >
-                  <span className="inline-flex min-w-0 items-center gap-1.5">
-                    <Icon size={14} aria-hidden className="shrink-0" />
-                    <span className="truncate">{item.label}</span>
-                  </span>
-                  <span className="shrink-0 text-[11px] font-black">{filterCounts[item.key]}</span>
-                </UnifiedButton>
-              );
-            })}
-          </div>
-        ) : null}
         {notifications.length > 0 && filteredNotifications.length === 0 ? (
           <section className="store-account-v12-empty-panel store-account-v12-status-panel">
             <span className="store-account-v12-empty-panel__icon" aria-hidden>

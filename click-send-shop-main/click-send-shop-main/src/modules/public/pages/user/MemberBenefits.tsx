@@ -5,6 +5,7 @@ import { useGoBack } from "@/hooks/useGoBack";
 import * as memberBenefitsService from "@/services/memberBenefitsService";
 import type { MemberBenefitsLevel, MemberBenefitsOverview } from "@/services/memberBenefitsService";
 import type { MemberLevel } from "@/types/user";
+import { useUserStore } from "@/stores/useUserStore";
 import {
   benefitIcon,
   buildBenefitHighlightsFromLevel,
@@ -152,8 +153,26 @@ function buildLevelItems(
   }));
 }
 
+function toMemberBenefitsLevel(level?: MemberLevel | null): MemberBenefitsLevel | null {
+  if (!level?.id && !level?.name) return null;
+  return {
+    id: level.id || "profile-current",
+    name: level.name || "普通会员",
+    min_spent: Number(level.min_spent ?? 0),
+    min_orders: Number(level.min_orders ?? 0),
+    sort_order: Number(level.sort_order ?? 0),
+    is_default: Boolean(level.is_default),
+    description: level.description || "当前会员等级",
+    discount_rate: level.discount_rate,
+    points_multiplier: level.points_multiplier,
+    free_shipping_enabled: level.free_shipping_enabled,
+    benefits: [],
+  };
+}
+
 export default function MemberBenefits() {
   const goBack = useGoBack("/profile");
+  const profileMemberLevel = useUserStore((s) => s.memberLevel);
   const benefitsQuery = useQuery<MemberBenefitsOverview>({
     queryKey: memberBenefitsService.memberBenefitsQueryKey,
     queryFn: memberBenefitsService.fetchMemberBenefits,
@@ -161,14 +180,24 @@ export default function MemberBenefits() {
 
   const data = benefitsQuery.data ?? null;
   const loading = benefitsQuery.isLoading && !data;
-  const failed = benefitsQuery.isError && !data;
-  const currentLevel = data?.current_level;
-  const nextLevel = data?.next_level;
-  const progressPercent = useMemo(() => computeUpgradeProgress(data), [data]);
   const displayLevels = useMemo(() => orderedDisplayLevels(data), [data]);
+  const fallbackCurrentLevel = useMemo(
+    () => toMemberBenefitsLevel(profileMemberLevel) || displayLevels.find((level) => level.is_default) || displayLevels[0] || FALLBACK_LEVELS[0],
+    [displayLevels, profileMemberLevel],
+  );
+  const currentLevel = data?.current_level ?? fallbackCurrentLevel;
+  const currentLevelIndex = displayLevels.findIndex((level) => isCurrentLevel(level, currentLevel));
+  const fallbackNextLevel = currentLevelIndex >= 0 ? displayLevels[currentLevelIndex + 1] : displayLevels[1];
+  const nextLevel = data?.next_level ?? fallbackNextLevel ?? null;
+  const progressPercent = useMemo(() => (data ? computeUpgradeProgress(data) : 8), [data]);
+  const progressDescription = data
+    ? buildProgressDesc(data)
+    : nextLevel
+      ? <>距离 <b>{displayLevelName(nextLevel, "下一等级")}</b> 需要 {formatLevelRequirement(nextLevel)}</>
+      : <>当前已经是最高会员等级，所有可用权益将自动保留</>;
   const benefits = useMemo(() => buildBenefitItems(currentLevel), [currentLevel]);
   const levels = useMemo(() => buildLevelItems(displayLevels, currentLevel, nextLevel), [displayLevels, currentLevel, nextLevel]);
-  const state: MemberBenefitsViewState = failed ? "error" : loading ? "loading" : currentLevel ? "ready" : "empty";
+  const state: MemberBenefitsViewState = loading ? "loading" : currentLevel ? "ready" : "empty";
 
   return (
     <StoreAccountLayout
@@ -183,7 +212,7 @@ export default function MemberBenefits() {
         totalSpentLabel={formatMoney(data?.stats?.total_spent)}
         validOrderCountLabel={`${Number(data?.stats?.order_count ?? 0)} 笔`}
         progressPercent={progressPercent}
-        progressDescription={buildProgressDesc(data)}
+        progressDescription={progressDescription}
         benefits={benefits}
         levels={levels}
         nextLevelRequirement={nextLevel ? formatLevelRequirement(nextLevel) : undefined}

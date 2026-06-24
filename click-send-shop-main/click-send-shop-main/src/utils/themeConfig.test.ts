@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { normalizeThemeConfig, normalizeThemeSkinsPayload } from "@/utils/themeConfig";
 import { generateThemePalette } from "@/utils/themeContrast";
+import { buildStorefrontNextSkinTokens } from "@/utils/storefrontSkinTokens";
 
 describe("themeConfig", () => {
   it("keeps storefront structure fields from admin config", () => {
@@ -123,6 +124,23 @@ describe("themeConfig", () => {
     expect(palette["--mall-bg"]).toBeTruthy();
     expect(palette["--mall-grain-opacity"]).toBe("0.018");
     expect(palette["--theme-image-filter"]).toContain("contrast(0.94)");
+  });
+
+  it("keeps storefront-next canvas and accent tied to each skin palette", () => {
+    const config = normalizeThemeConfig({
+      bgColor: "#F4EFF7",
+      surfaceColor: "#FFFDFE",
+      primaryColor: "#5D4778",
+      borderColor: "#E3D8EA",
+      textColor: "#241B2E",
+      mutedTextColor: "#75677E",
+    });
+    const palette = generateThemePalette(config);
+    const storefrontTokens = buildStorefrontNextSkinTokens(config, palette);
+
+    expect(storefrontTokens["--theme-bg"]).toBe(palette["--mall-bg"]);
+    expect(storefrontTokens["--sf-canvas"]).toBe(palette["--mall-bg"]);
+    expect(storefrontTokens["--sf-accent"]).toBe(palette["--mall-primary"]);
   });
 
   it("uses the database default skin when runtimeSkinId is not present", () => {

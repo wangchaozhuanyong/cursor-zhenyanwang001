@@ -1,6 +1,6 @@
 import { lazy, Suspense } from "react";
 import { BrowserRouter, useLocation } from "react-router-dom";
-import AppRouteFallback, { StoreOutletFallback } from "@/components/AppRouteFallback";
+import AppRouteFallback, { DelayedRouteFallback, StoreOutletFallback } from "@/components/AppRouteFallback";
 import { NavigationHistoryRecorder } from "@/components/NavigationHistoryRecorder";
 import { StoreAppRoutes } from "@/routes/StoreAppRoutes";
 
@@ -11,7 +11,7 @@ function StoreAppContent() {
   const isTikTokLanding = /^\/tiktok\/?$/.test(location.pathname);
 
   return (
-    <Suspense fallback={isTikTokLanding ? <AppRouteFallback /> : <StoreOutletFallback />}>
+    <Suspense fallback={isTikTokLanding ? <AppRouteFallback /> : <DelayedRouteFallback fallback={<StoreOutletFallback />} delayMs={180} />}>
       {isTikTokLanding ? <TikTokLanding /> : <StoreAppRoutes />}
     </Suspense>
   );

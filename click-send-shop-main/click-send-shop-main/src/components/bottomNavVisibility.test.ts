@@ -12,6 +12,11 @@ describe("shouldHideBottomNav", () => {
     expect(shouldHideBottomNav("/en/search")).toBe(true);
   });
 
+  it("hides on standalone support flows mounted inside the front layout", () => {
+    expect(shouldHideBottomNav("/support-download")).toBe(true);
+    expect(shouldHideBottomNav("/en/support-download")).toBe(true);
+  });
+
   it("hides on detail pages while keeping promotion list navigation", () => {
     expect(shouldHideBottomNav("/product/demo-product")).toBe(true);
     expect(shouldHideBottomNav("/promotions/demo-campaign")).toBe(true);

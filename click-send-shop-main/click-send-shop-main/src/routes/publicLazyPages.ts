@@ -2,8 +2,13 @@ import { lazy } from "react";
 
 export type PreloadableLazy<T extends React.ComponentType<never>> = T & { preload?: () => Promise<unknown> };
 export function lazyWithPreload<T extends React.ComponentType<never>>(factory: () => Promise<{ default: T }>) {
-  const Component = lazy(factory) as PreloadableLazy<T>;
-  Component.preload = factory;
+  let pending: Promise<{ default: T }> | undefined;
+  const load = () => {
+    pending ??= factory();
+    return pending;
+  };
+  const Component = lazy(load) as PreloadableLazy<T>;
+  Component.preload = load;
   return Component;
 }
 
@@ -53,5 +58,9 @@ export const SupportDownload = lazyWithPreload(() => import("@/modules/public/pa
 export const Delivery = lazyWithPreload(() => import("@/modules/public/pages/content/Delivery"));
 export const FeatureStatus = lazyWithPreload(() => import("@/modules/public/pages/content/FeatureStatus"));
 export const TikTokLanding = lazy(() => import("@/modules/public/pages/content/TikTokLanding"));
+export const ClientDesignSystem = lazyWithPreload(() => import("@/modules/public/pages/design/ClientDesignSystem").then((module) => ({ default: module.ClientDesignSystem })));
+export const ClientCouponDetailDesign = lazyWithPreload(() => import("@/modules/public/pages/design/ClientDesignSystem").then((module) => ({ default: module.ClientCouponDetailDesign })));
+export const ClientShareDetailDesign = lazyWithPreload(() => import("@/modules/public/pages/design/ClientDesignSystem").then((module) => ({ default: module.ClientShareDetailDesign })));
+export const ClientStatesDesign = lazyWithPreload(() => import("@/modules/public/pages/design/ClientDesignSystem").then((module) => ({ default: module.ClientStatesDesign })));
 
 export const NotFound = lazy(() => import("@/modules/public/pages/error/NotFound"));

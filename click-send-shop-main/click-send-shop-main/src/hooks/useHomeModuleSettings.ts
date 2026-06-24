@@ -5,6 +5,8 @@ import * as homeService from "@/services/homeService";
 import type { HomeNavItem } from "@/types/content";
 
 const HOME_MODULE_CACHE_KEY = "home_module_settings_cache_v1";
+const HOME_MODULE_CACHE_REVISION_KEY = "home_module_settings_cache_revision_v1";
+const HOME_MODULE_CACHE_INVALIDATED_EVENT = "store:home-module-settings-cache-invalidated";
 const HOME_MODULE_CACHE_TTL_MS = 60_000;
 
 function isFresh(cachedAt: number) {
@@ -95,7 +97,7 @@ async function loadHomeModuleSettings() {
   return inflight;
 }
 
-export function invalidateHomeModuleSettingsCache() {
+function clearHomeModuleSettingsCache() {
   cachedSettings = null;
   cachedNavItems = null;
   inflight = null;
@@ -108,6 +110,17 @@ export function invalidateHomeModuleSettingsCache() {
   }
 }
 
+export function invalidateHomeModuleSettingsCache() {
+  clearHomeModuleSettingsCache();
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(HOME_MODULE_CACHE_REVISION_KEY, String(Date.now()));
+  } catch {
+    // ignore storage failures
+  }
+  window.dispatchEvent(new Event(HOME_MODULE_CACHE_INVALIDATED_EVENT));
+}
+
 export function useHomeModuleSettings() {
   const [settings, setSettings] = useState<HomeModuleSettings>(cachedSettings ?? DEFAULT_HOME_MODULE_SETTINGS);
   const [navItems, setNavItems] = useState<HomeNavItem[]>(cachedNavItems ?? []);
@@ -115,14 +128,35 @@ export function useHomeModuleSettings() {
 
   useEffect(() => {
     let alive = true;
-    void loadHomeModuleSettings().then((next) => {
+
+    const refresh = () => {
+      void loadHomeModuleSettings().then((next) => {
+        if (!alive) return;
+        setSettings(next.settings);
+        setNavItems(next.navItems);
+        setReady(true);
+      });
+    };
+
+    const handleInvalidated = () => {
+      clearHomeModuleSettingsCache();
       if (!alive) return;
-      setSettings(next.settings);
-      setNavItems(next.navItems);
-      setReady(true);
-    });
+      setReady(false);
+      refresh();
+    };
+
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key !== HOME_MODULE_CACHE_REVISION_KEY) return;
+      handleInvalidated();
+    };
+
+    refresh();
+    window.addEventListener(HOME_MODULE_CACHE_INVALIDATED_EVENT, handleInvalidated);
+    window.addEventListener("storage", handleStorage);
     return () => {
       alive = false;
+      window.removeEventListener(HOME_MODULE_CACHE_INVALIDATED_EVENT, handleInvalidated);
+      window.removeEventListener("storage", handleStorage);
     };
   }, []);
 

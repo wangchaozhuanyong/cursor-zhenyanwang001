@@ -8,7 +8,6 @@ import * as rewardService from "@/services/rewardService";
 import { useLoyaltyVisibility } from "@/hooks/useLoyaltyVisibility";
 import type { RewardConfig, RewardTransaction, RewardTransactionCategory } from "@/types/reward";
 import {
-  THEME_BTN_PRICE,
   THEME_ROW_ICON_NEGATIVE,
   THEME_ROW_ICON_POSITIVE,
   THEME_TEXT_DANGER,
@@ -183,53 +182,52 @@ export default function Rewards() {
         </div>
       </motion.div>
 
-      <div className="mt-4 overflow-hidden rounded-[24px] border border-[var(--theme-border)] bg-[var(--theme-surface)] shadow-[0_18px_42px_-32px_rgba(0,0,0,0.32)]">
-        <div className={cn("grid", inviteEnabled ? "grid-cols-2" : "grid-cols-1")}>
+      <section className="store-rewards-v12-actions" aria-label="返现操作">
+        <div className={cn("store-rewards-v12-actions__grid", inviteEnabled ? "is-two" : "is-one")}>
           <UnifiedButton
             type="button"
             onClick={() => navigate("/")}
-            className="group flex min-w-0 items-center justify-center gap-3 px-3 py-5 text-left transition-colors hover:bg-[color-mix(in_srgb,var(--theme-primary)_6%,var(--theme-surface))] sm:gap-4 sm:px-4"
+            className="store-rewards-v12-action"
           >
-            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-price)_13%,var(--theme-surface))] text-[var(--theme-price)] sm:h-14 sm:w-14">
+            <span className="store-rewards-v12-action__icon">
               <ShoppingBag size={23} />
             </span>
-            <span className="min-w-0">
-              <span className="block whitespace-nowrap text-sm font-semibold text-[var(--theme-text)] sm:text-base">去购物</span>
-              <span className="mt-1 block whitespace-nowrap text-[11px] text-[var(--theme-text-muted)] sm:text-xs">使用返现抵扣</span>
+            <span className="store-rewards-v12-action__copy">
+              <strong>去购物</strong>
+              <small>使用返现抵扣</small>
             </span>
+            <ArrowRight size={15} className="store-rewards-v12-action__arrow" aria-hidden />
           </UnifiedButton>
           {inviteEnabled ? (
             <UnifiedButton
               type="button"
               onClick={() => navigate("/invite")}
-              className="group flex min-w-0 items-center justify-center gap-3 border-l border-[var(--theme-border)] px-3 py-5 text-left transition-colors hover:bg-[color-mix(in_srgb,var(--theme-primary)_6%,var(--theme-surface))] sm:gap-4 sm:px-4"
+              className="store-rewards-v12-action"
             >
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-danger)_11%,var(--theme-surface))] text-[var(--theme-danger)] sm:h-14 sm:w-14">
+              <span className="store-rewards-v12-action__icon">
                 <Users size={23} />
               </span>
-              <span className="min-w-0">
-                <span className="flex min-w-0 items-center gap-2">
-                  <span className="whitespace-nowrap text-sm font-semibold text-[var(--theme-text)] sm:text-base">邀请好友赚返现</span>
-                  <ArrowRight size={14} className="hidden shrink-0 text-[var(--theme-text-muted)] sm:block" />
-                </span>
-                <span className="mt-1 block whitespace-nowrap text-[11px] text-[var(--theme-text-muted)] sm:text-xs">好友下单 你得返现</span>
+              <span className="store-rewards-v12-action__copy">
+                <strong>邀请返现</strong>
+                <small>好友下单后记录</small>
               </span>
+              <ArrowRight size={15} className="store-rewards-v12-action__arrow" aria-hidden />
             </UnifiedButton>
           ) : null}
         </div>
-      </div>
+      </section>
 
-      <div className="mt-6 flex border-b border-[var(--theme-border)]">
+      <div className="store-rewards-v12-tabs" role="tablist" aria-label="返现记录筛选">
         {TABS.map((item) => (
           <UnifiedButton
             key={item.key}
             type="button"
+            role="tab"
+            aria-selected={tab === item.key}
             onClick={() => void handleTabChange(item.key)}
             className={cn(
-              "relative flex-1 rounded-none px-1 pb-3 pt-2 text-base font-medium transition-colors",
-              tab === item.key
-                ? "text-[var(--theme-price)] after:absolute after:bottom-0 after:left-1/2 after:h-1 after:w-14 after:-translate-x-1/2 after:rounded-full after:bg-[var(--theme-price)]"
-                : "text-[color-mix(in_srgb,var(--theme-text)_62%,var(--theme-text-muted))]",
+              "store-rewards-v12-tab",
+              tab === item.key && "is-active",
             )}
           >
             {item.label}
@@ -237,55 +235,48 @@ export default function Rewards() {
         ))}
       </div>
 
-      <div className="mt-7">
-        <h3 className="mb-4 text-xl font-bold text-foreground">返现明细</h3>
+      <section className="store-rewards-v12-ledger" aria-label="返现明细">
+        <h3 className="store-rewards-v12-ledger__title">返现明细</h3>
         {loading && records.length === 0 ? (
-          <div className="flex items-center justify-center rounded-[24px] border border-border bg-card p-12">
-            <Loader2 size={20} className="animate-spin text-muted-foreground" />
+          <div className="store-rewards-v12-state" aria-busy="true">
+            <Loader2 size={20} className="animate-spin" />
+            <p>正在同步返现记录</p>
           </div>
         ) : error ? (
-          <div className="flex flex-col items-center justify-center gap-3 rounded-[24px] border border-border bg-card p-10 text-center">
-            <p className="text-sm text-muted-foreground">{error}</p>
-            <UnifiedButton type="button" onClick={() => void loadInitial()} className={cn("rounded-full px-5 py-2 text-sm font-semibold", THEME_BTN_PRICE)}>
+          <div className="store-account-v12-empty-panel store-rewards-v12-state" role="alert">
+            <span className="store-account-v12-empty-panel__icon" aria-hidden>
+              <CircleHelp size={21} />
+            </span>
+            <h2>{error}</h2>
+            <p>请重新加载返现记录。</p>
+            <UnifiedButton type="button" onClick={() => void loadInitial()} className="store-account-v12-empty-panel__action">
               重试
             </UnifiedButton>
           </div>
         ) : records.length === 0 ? (
-          <div className="rounded-[24px] border border-[color-mix(in_srgb,var(--theme-price)_16%,var(--theme-border))] bg-card px-6 py-10 text-center shadow-[0_18px_42px_-34px_rgba(238,54,26,0.42)] sm:px-8">
-            <div className="mx-auto flex h-32 w-44 items-end justify-center">
-              <div className="relative h-24 w-28 rounded-[22px] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--theme-danger)_36%,white)_0%,color-mix(in_srgb,var(--theme-danger)_70%,var(--theme-price))_100%)] shadow-[0_18px_35px_-26px_rgba(238,54,26,0.8)]">
-                <div className="absolute -top-8 left-8 h-14 w-14 rounded-xl bg-[var(--theme-surface)] shadow-[0_12px_26px_-18px_rgba(0,0,0,0.3)]">
-                  <div className="mx-auto mt-3 h-1 w-9 rounded-full bg-[color-mix(in_srgb,var(--theme-price)_20%,var(--theme-surface))]" />
-                  <div className="mx-auto mt-3 h-1 w-9 rounded-full bg-[color-mix(in_srgb,var(--theme-price)_20%,var(--theme-surface))]" />
-                </div>
-                <div className="absolute -left-7 bottom-1 flex h-9 w-9 items-center justify-center rounded-full border-2 border-[color-mix(in_srgb,var(--theme-warning)_50%,white)] bg-[color-mix(in_srgb,var(--theme-warning)_28%,white)] text-xs font-bold text-[color-mix(in_srgb,var(--theme-warning)_84%,var(--theme-text))]">
-                  ￥
-                </div>
-                <div className="absolute -right-6 bottom-1 flex h-9 w-9 items-center justify-center rounded-full border-2 border-[color-mix(in_srgb,var(--theme-warning)_50%,white)] bg-[color-mix(in_srgb,var(--theme-warning)_28%,white)] text-xs font-bold text-[color-mix(in_srgb,var(--theme-warning)_84%,var(--theme-text))]">
-                  ￥
-                </div>
-                <div className="absolute right-[-12px] top-10 h-8 w-11 rounded-full bg-[color-mix(in_srgb,var(--theme-danger)_28%,var(--theme-surface))]" />
-              </div>
-            </div>
-            <p className="mt-5 text-xl font-bold text-[var(--theme-text)]">暂无返现记录</p>
-            <p className="mx-auto mt-3 max-w-[18rem] text-sm leading-relaxed text-muted-foreground">邀请好友付款成功或购物使用返现余额后，会在这里显示明细。</p>
-            <div className="mt-7 flex flex-wrap justify-center gap-3">
+          <div className="store-account-v12-empty-panel store-rewards-v12-state">
+            <span className="store-account-v12-empty-panel__icon" aria-hidden>
+              <Gift size={21} />
+            </span>
+            <h2>暂无返现记录</h2>
+            <p>邀请好友付款成功或购物抵扣后，会在这里显示。</p>
+            <div className="store-rewards-v12-empty-actions">
               {inviteEnabled ? (
-                <UnifiedButton type="button" onClick={() => navigate("/invite")} className={cn("rounded-full px-8 py-3 text-sm font-semibold", THEME_BTN_PRICE)}>
+                <UnifiedButton type="button" onClick={() => navigate("/invite")} className="store-account-v12-empty-panel__action">
                   去邀请好友
                 </UnifiedButton>
               ) : null}
-              <UnifiedButton type="button" onClick={() => navigate("/")} className="rounded-full border border-[var(--theme-price)] px-8 py-3 text-sm font-semibold text-[var(--theme-price)]">
+              <UnifiedButton type="button" onClick={() => navigate("/")} className="store-account-v12-empty-panel__action is-secondary">
                 去购物
               </UnifiedButton>
             </div>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="store-rewards-v12-record-groups">
             {groupedRecords.map(([monthLabel, monthRecords]) => (
-              <div key={monthLabel}>
-                <p className="mb-2 text-xs font-medium text-muted-foreground">{monthLabel}</p>
-                <div className="space-y-2">
+              <div key={monthLabel} className="store-rewards-v12-record-group">
+                <p className="store-rewards-v12-record-group__label">{monthLabel}</p>
+                <div className="store-rewards-v12-record-list">
                   {monthRecords.map((record) => {
                     const positive = Number(record.amount) >= 0;
                     const orderPath = record.order_id ? `/orders/${record.order_id}` : null;
@@ -296,23 +287,23 @@ export default function Rewards() {
                         disabled={!orderPath}
                         onClick={() => orderPath && navigate(orderPath)}
                         className={cn(
-                          "flex w-full items-center gap-3 rounded-2xl border border-border bg-card px-[var(--store-card-x)] py-[var(--store-card-y)] text-left sm:p-4",
-                          orderPath ? "transition-colors hover:bg-secondary/60" : "cursor-default",
+                          "store-rewards-v12-record",
+                          orderPath ? "is-clickable" : "is-static",
                         )}
                       >
-                        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${positive ? THEME_ROW_ICON_POSITIVE : THEME_ROW_ICON_NEGATIVE}`}>
+                        <div className={cn("store-rewards-v12-record__icon", positive ? THEME_ROW_ICON_POSITIVE : THEME_ROW_ICON_NEGATIVE)}>
                           {positive ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
                         </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium text-foreground">
+                        <div className="store-rewards-v12-record__copy">
+                          <p>
                             {formatRewardTransactionLabel(record.type, record.reason)}
                           </p>
-                          <p className="mt-0.5 text-[11px] text-muted-foreground">
+                          <small>
                             {record.order_no ? `订单 ${record.order_no} · ` : ""}
                             {formatDateTime(record.created_at)}
-                          </p>
+                          </small>
                         </div>
-                        <span className={`shrink-0 text-sm font-bold ${positive ? THEME_TEXT_SUCCESS : THEME_TEXT_DANGER}`}>
+                        <span className={cn("store-rewards-v12-record__amount", positive ? THEME_TEXT_SUCCESS : THEME_TEXT_DANGER)}>
                           {Number(record.amount) > 0 ? "+" : ""}
                           {money(record.amount)}
                         </span>
@@ -327,14 +318,14 @@ export default function Rewards() {
                 type="button"
                 onClick={() => void loadMore()}
                 disabled={loadingMore}
-                className="w-full rounded-xl border border-border bg-card py-3 text-sm text-muted-foreground transition-colors hover:bg-secondary disabled:opacity-60"
+                className="store-rewards-v12-load-more"
               >
                 {loadingMore ? "加载中..." : "加载更多"}
               </UnifiedButton>
             ) : null}
           </div>
         )}
-      </div>
+      </section>
       </StoreAccountLayout>
     </TooltipProvider>
   );

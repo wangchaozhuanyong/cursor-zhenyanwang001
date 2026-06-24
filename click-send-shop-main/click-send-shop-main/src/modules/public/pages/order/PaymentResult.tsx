@@ -44,7 +44,12 @@ export default function PaymentResult() {
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const { localizedPath, t } = usePublicLocale();
-  const orderId = searchParams.get("order_id") || searchParams.get("orderId") || "";
+  const orderId =
+    searchParams.get("order_id")
+    || searchParams.get("orderId")
+    || searchParams.get("order_no")
+    || searchParams.get("orderNo")
+    || "";
   const [order, setOrder] = useState<Order | null>(null);
   const [error, setError] = useState("");
   const [authRequired, setAuthRequired] = useState(false);

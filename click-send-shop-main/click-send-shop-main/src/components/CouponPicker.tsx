@@ -146,12 +146,14 @@ export default function CouponPicker({ totalAmount, shippingFee = 0, selectedCou
   const usableCount = coupons.filter(isUsable).length;
   const close = () => setOpen(false);
   const listProps = { coupons, unusableCoupons, selectedCouponId, selected, totalAmount, onSelect, onClose: close, getDiscountAmount, isUsable, getAmountParts, getMinSpendText };
-  const statusLabel = loading ? "加载中..." : selected ? `-RM ${getDiscountAmount(selected)}` : usableCount > 0 ? `${usableCount} 张可用` : "暂无可用";
+  const statusLabel = loading ? "同步可用优惠" : selected ? `-RM ${getDiscountAmount(selected)}` : usableCount > 0 ? `${usableCount} 张可用` : "暂无可用";
 
   return (
     <div className={embedded ? "" : "store-card overflow-hidden rounded-2xl border border-[var(--theme-border)]"}>
       <UnifiedButton
         type="button"
+        aria-busy={loading}
+        disabled={embedded && loading && coupons.length === 0 && unusableCoupons.length === 0}
         onClick={() => (isMobileSheet ? setOpen(true) : setOpen((v) => !v))}
         className={embedded ? "flex w-full items-center justify-between gap-3 rounded-xl border border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-primary)_6%,var(--theme-surface))] px-4 py-3.5 text-left" : "flex w-full items-center justify-between p-5"}
       >
@@ -161,7 +163,7 @@ export default function CouponPicker({ totalAmount, shippingFee = 0, selectedCou
               <p className="text-sm font-medium text-[var(--theme-text-on-surface)]">{selected ? selected.title : "选择优惠券"}</p>
               <p className="mt-0.5 text-xs text-[var(--theme-text-muted-on-surface)]">{statusLabel}</p>
             </div>
-            {loading ? <Loader2 size={18} className="shrink-0 animate-spin text-[var(--theme-text-muted-on-surface)]" /> : <ChevronRight size={18} className="shrink-0 text-[var(--theme-text-muted-on-surface)]" />}
+            {loading ? <span className="store-checkout-coupon-loading-pill" aria-hidden /> : <ChevronRight size={18} className="shrink-0 text-[var(--theme-text-muted-on-surface)]" />}
           </>
         ) : (
           <>

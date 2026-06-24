@@ -9,6 +9,9 @@ const API = process.env.API_BASE_URL
   : `${BASE}/api`;
 const VIEWPORT = parseViewport(process.env.VIEWPORT || "390x844");
 const WAIT_MS = Number(process.env.CAPTURE_WAIT_MS || 900);
+const ADMIN_PHONE = process.env.ADMIN_PHONE || "18800000001";
+const ADMIN_PASSWORD = String(process.env.ADMIN_PASSWORD || "").trim();
+const ADMIN_REQUEST_ORIGIN = new URL(BASE).origin;
 
 function stamp() {
   const d = new Date();
@@ -66,11 +69,18 @@ async function registerUser() {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ phone, countryCode, password }),
   });
+  const token = login.token?.accessToken || login.token;
+  const profile = token
+    ? await jfetch(`${API}/user/profile`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }).catch(() => null)
+    : null;
   return {
     phone,
     password,
     countryCode,
-    token: login.token?.accessToken || login.token,
+    token,
+    profile,
   };
 }
 
@@ -82,20 +92,120 @@ async function authPost(pathname, token, payload) {
   });
 }
 
+async function authPut(pathname, token, payload) {
+  return jfetch(`${API}${pathname}`, {
+    method: "PUT",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
+async function adminPut(pathname, admin, payload) {
+  const headers = {
+    Authorization: `Bearer ${admin.token}`,
+    "Content-Type": "application/json",
+    Origin: ADMIN_REQUEST_ORIGIN,
+    Referer: `${ADMIN_REQUEST_ORIGIN}/admin`,
+  };
+  if (admin.csrfToken) {
+    headers["X-CSRF-Token"] = admin.csrfToken;
+    headers.Cookie = `admin_csrf_token=${encodeURIComponent(admin.csrfToken)}`;
+  }
+  return jfetch(`${API}${pathname}`, {
+    method: "PUT",
+    headers,
+    body: JSON.stringify(payload),
+  });
+}
+
+async function authGet(pathname, token) {
+  return jfetch(`${API}${pathname}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+async function loginAdminForVisualSeed() {
+  if (!ADMIN_PASSWORD) {
+    return {
+      token: "",
+      error: "ADMIN_PASSWORD env is missing; skipped admin order status transition for return-detail data state",
+    };
+  }
+  try {
+    const login = await jfetch(`${API}/admin/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Origin: ADMIN_REQUEST_ORIGIN, Referer: `${ADMIN_REQUEST_ORIGIN}/admin/login` },
+      body: JSON.stringify({ phone: ADMIN_PHONE, username: ADMIN_PHONE, password: ADMIN_PASSWORD }),
+    });
+    const token = typeof login?.token === "string" ? login.token : login?.token?.accessToken;
+    const csrfToken = String(login?.csrfToken || "");
+    return token
+      ? { token, csrfToken, error: "" }
+      : { token: "", csrfToken: "", error: "admin login did not return a token; skipped return-detail data-state seed" };
+  } catch (error) {
+    return {
+      token: "",
+      csrfToken: "",
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
+async function prepareOrderForReturnDetailSeed(orderId) {
+  if (!orderId) {
+    return { ok: false, error: "missing order id for return-detail data-state seed" };
+  }
+  const admin = await loginAdminForVisualSeed();
+  if (!admin.token) return { ok: false, error: admin.error };
+  try {
+    for (const status of ["paid", "shipped", "completed"]) {
+      await adminPut(`/admin/orders/${encodeURIComponent(orderId)}/status`, admin, {
+        status,
+        remark: "client visual audit return-detail seed",
+      });
+    }
+    return { ok: true, error: "" };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
 async function seedProduct(token) {
   const products = await jfetch(`${API}/products?page=1&pageSize=20`);
-  const product = products?.list?.find((item) => item?.id) || null;
-  if (!product?.id) return null;
-  await authPost("/cart", token, { productId: product.id, qty: 1 });
-  return product;
+  const candidates = Array.isArray(products?.list)
+    ? products.list.filter((item) => item?.id)
+    : [];
+  for (const product of candidates) {
+    try {
+      await authPost("/cart", token, { productId: product.id, qty: 1 });
+      return { product, cartSeeded: true };
+    } catch {
+      // Some live data has a stock number but no purchasable default SKU.
+      // Keep looking so the visual audit can still exercise checkout routes.
+    }
+  }
+  return { product: candidates[0] || null, cartSeeded: false };
 }
 
 async function createAddress(token, phone) {
+  const addressPayload = {
+    recipient_name: "Visual Audit",
+    phone,
+    line1: "Jalan Sultan Ismail 1",
+    line2: "Unit Visual Audit",
+    city: "Kuala Lumpur",
+    state: "Kuala Lumpur",
+    postcode: "50250",
+    country: "MY",
+  };
   try {
     return await authPost("/addresses", token, {
-      name: "Visual Audit",
-      phone,
-      address: "Kuala Lumpur visual audit address",
+      name: addressPayload.recipient_name,
+      phone: addressPayload.phone,
+      address: `__MYADDR_V1__:${JSON.stringify(addressPayload)}`,
       isDefault: true,
     });
   } catch {
@@ -119,6 +229,59 @@ async function createOrder(token, product, phone) {
   }
 }
 
+async function fetchOrder(token, orderId) {
+  if (!orderId) return null;
+  try {
+    return await authGet(`/orders/${encodeURIComponent(orderId)}`, token);
+  } catch {
+    return null;
+  }
+}
+
+async function seedHistory(token, product) {
+  if (!product?.id) return false;
+  try {
+    await authPost("/history", token, { product_id: product.id });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function firstReturnForUser(token) {
+  const data = await authGet("/returns?page=1&pageSize=1", token);
+  return Array.isArray(data?.list) ? data.list[0] || null : null;
+}
+
+async function seedReturnRequest(token, order, phone) {
+  const orderItem = Array.isArray(order?.items)
+    ? order.items.find((item) => item?.order_item_id)
+    : null;
+  if (!order?.id || !orderItem?.order_item_id) {
+    return { returnRequest: null, error: "missing order item for return request" };
+  }
+  try {
+    const returnRequest = await authPost("/returns", token, {
+      order_id: order.id,
+      order_item_id: orderItem.order_item_id,
+      quantity: 1,
+      type: "refund",
+      reason: "视觉验收售后申请",
+      description: "用于客户端售后详情页面视觉验收。",
+      images: [],
+      proof_images: [],
+      contact_phone: phone,
+    });
+    return { returnRequest, error: "" };
+  } catch (error) {
+    const existing = await firstReturnForUser(token).catch(() => null);
+    return {
+      returnRequest: existing,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
 async function firstPromotionSlug() {
   try {
     const data = await jfetch(`${API}/marketing/promotions?page=1&pageSize=1`);
@@ -128,7 +291,31 @@ async function firstPromotionSlug() {
   }
 }
 
+function buildUserStorageValue(profile) {
+  if (!profile || typeof profile !== "object") return "";
+  const d = profile;
+  return JSON.stringify({
+    state: {
+      nickname: d.nickname || "用户",
+      avatar: d.avatar || "",
+      phone: d.phone || "",
+      wechat: d.wechat || "",
+      whatsapp: d.whatsapp || "",
+      birthday: d.birthday || null,
+      birthdayLocked: d.birthdayLocked ?? d.birthday_locked ?? false,
+      inviteCode: d.inviteCode || d.invite_code || "",
+      parentInviteCode: d.parentInviteCode || d.parent_invite_code || "",
+      pointsBalance: Number(d.pointsBalance ?? d.points_balance ?? 0),
+      memberLevel: d.memberLevel || d.member_level || null,
+      addresses: [],
+      subordinateEnabled: Boolean(d.subordinateEnabled ?? d.subordinate_enabled ?? false),
+    },
+    version: 0,
+  });
+}
+
 async function loginFrontend(page, user) {
+  await installFrontendAuthHint(page.context(), page);
   await page.goto(`${BASE}/login`, { waitUntil: "domcontentloaded", timeout: 45000 });
   await page.waitForSelector("#root", { timeout: 12000 });
   await page.waitForTimeout(WAIT_MS);
@@ -140,16 +327,92 @@ async function loginFrontend(page, user) {
   const submit = page.locator("form .auth-login-submit, form button[type='submit']").first();
   if ((await submit.count()) === 0) return false;
   await submit.click();
-  await page.waitForTimeout(1600);
+  await page.waitForTimeout(Math.max(1600, WAIT_MS));
   await page.goto(`${BASE}/profile`, { waitUntil: "domcontentloaded", timeout: 45000 });
+  return waitForFrontendAuthReady(page);
+}
+
+async function installFrontendAuthHint(context, page, profile = null) {
+  const authStorageValue = JSON.stringify({ state: { isAuthenticated: true }, version: 0 });
+  const userStorageValue = buildUserStorageValue(profile);
+  await context.addInitScript(({ authValue, userValue }) => {
+    try {
+      window.localStorage.setItem("user_authenticated", "1");
+      window.localStorage.setItem("auth-storage", authValue);
+      if (userValue) window.localStorage.setItem("user-storage", userValue);
+    } catch {
+      // Ignore storage failures in restricted browser modes.
+    }
+  }, { authValue: authStorageValue, userValue: userStorageValue });
+  await page.evaluate(({ authValue, userValue }) => {
+    try {
+      window.localStorage.setItem("user_authenticated", "1");
+      window.localStorage.setItem("auth-storage", authValue);
+      if (userValue) window.localStorage.setItem("user-storage", userValue);
+    } catch {
+      // Ignore storage failures in restricted browser modes.
+    }
+  }, { authValue: authStorageValue, userValue: userStorageValue }).catch(() => undefined);
+}
+
+async function loginBrowserContext(context, page, user) {
+  try {
+    const response = await context.request.post(`${API}/auth/login`, {
+      data: {
+        phone: user.phone,
+        countryCode: user.countryCode,
+        password: user.password,
+      },
+      headers: { "Content-Type": "application/json" },
+      timeout: 15000,
+    });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok() || body.code !== 0) return false;
+    const profileResponse = await context.request.get(`${API}/user/profile`, {
+      headers: { "X-Client-Visual-Audit": "1" },
+      timeout: 15000,
+    }).catch(() => null);
+    const profileBody = profileResponse ? await profileResponse.json().catch(() => ({})) : {};
+    const profile = profileResponse?.ok() && profileBody?.code === 0 ? profileBody.data : null;
+    await installFrontendAuthHint(context, page, profile);
+    await page.goto(`${BASE}/profile`, { waitUntil: "domcontentloaded", timeout: 45000 });
+    return waitForFrontendAuthReady(page);
+  } catch {
+    return false;
+  }
+}
+
+async function waitForFrontendAuthReady(page) {
+  await page.waitForSelector("#root", { timeout: 12000 }).catch(() => undefined);
+  const ready = await page.waitForFunction(
+    async (apiBase) => {
+      const hasLocalHint = window.localStorage.getItem("user_authenticated") === "1";
+      if (!hasLocalHint) return false;
+      try {
+        const res = await fetch(`${apiBase}/user/profile`, {
+          credentials: "include",
+          headers: { "X-Client-Visual-Audit": "1" },
+        });
+        const body = await res.json().catch(() => ({}));
+        return res.ok && body?.code === 0;
+      } catch {
+        return false;
+      }
+    },
+    API,
+    { timeout: 12000 },
+  ).then(() => true).catch(() => false);
+  if (!ready) return false;
   await page.waitForTimeout(WAIT_MS);
   return !page.url().includes("/login");
 }
 
-function routePlan({ productId, promotionSlug, orderId }) {
+function routePlan({ productId, promotionSlug, orderId, orderNo, returnId }) {
   const productPath = productId ? `/product/${productId}` : "/product/v10-smoke-product-flash";
   const promotionPath = promotionSlug ? `/promotions/${promotionSlug}` : "/promotions/smoke-slug";
   const orderPath = orderId ? `/orders/${orderId}` : "/orders/SMOKE";
+  const returnPath = returnId ? `/returns/${returnId}` : "/returns/SMOKE";
+  const paymentLookup = orderId || orderNo || "";
   return [
     ["01-home", "/", "guest"],
     ["02-categories", "/categories", "guest"],
@@ -158,7 +421,7 @@ function routePlan({ productId, promotionSlug, orderId }) {
     ["05-product-detail", productPath, "guest"],
     ["06-cart", "/cart", "auth"],
     ["07-checkout", "/checkout", "auth"],
-    ["08-payment-result", orderId ? `/payment/result?order_no=${encodeURIComponent(orderId)}` : "/payment/result?order_no=SMOKE", "auth"],
+    ["08-payment-result", paymentLookup ? `/payment/result?order_id=${encodeURIComponent(paymentLookup)}` : "/payment/result?order_no=SMOKE", "auth"],
     ["09-orders", "/orders", "auth"],
     ["10-order-detail", orderPath, "auth"],
     ["11-coupons", "/coupons", "auth"],
@@ -171,6 +434,7 @@ function routePlan({ productId, promotionSlug, orderId }) {
     ["18-login", "/login", "guest"],
     ["18-register", "/register", "guest"],
     ["19-invite", "/invite", "auth"],
+    ["45-member-benefits", "/member/benefits", "auth"],
     ["20-forgot-password", "/forgot-password", "guest"],
     ["21-bind-phone", "/login/bind-phone", "guest"],
     ["22-support-download", "/support-download", "guest"],
@@ -187,18 +451,276 @@ function routePlan({ productId, promotionSlug, orderId }) {
     ["33-rewards", "/rewards", "auth"],
     ["34-wallet", "/wallet", "auth"],
     ["35-returns", "/returns", "auth"],
-    ["36-return-detail", "/returns/SMOKE", "auth"],
+    ["36-return-detail", returnPath, "auth"],
     ["37-pending-reviews", "/reviews/pending", "auth"],
     ["38-history", "/history", "auth"],
     ["39-promotion-detail", promotionPath, "guest"],
     ["40-tiktok", "/tiktok", "guest"],
+    ["41-system", "/client-design/system", "guest"],
+    ["42-coupon-detail", "/client-design/coupon-detail", "auth"],
+    ["43-share-detail", "/client-design/share-detail", "auth"],
+    ["44-states", "/client-design/states", "guest"],
   ].map(([id, pathname, mode]) => ({ id, pathname, mode }));
 }
 
-async function captureRoute(page, route, outDir) {
-  const response = await page.goto(`${BASE}${route.pathname}`, { waitUntil: "domcontentloaded", timeout: 45000 });
+async function waitForRouteReady(page, route) {
+  const pathname = route.pathname.split("?")[0];
+  const waits = [];
+  if (pathname === "/") {
+    waits.push(".sf-next-home-hero, .store-home-command-panel");
+    await page.waitForFunction(
+      () => !document.querySelector(".store-home-command-card--loading"),
+      { timeout: 6500 },
+    ).catch(() => undefined);
+  } else if (pathname === "/categories") {
+    waits.push(".sf-next-category-shell, .sf-next-listing-section");
+    await page.waitForFunction(
+      () => !document.querySelector(".sf-next-product-card--skeleton, .store-product-card-v2--skeleton"),
+      { timeout: 6500 },
+    ).catch(() => undefined);
+  } else if (pathname === "/profile") {
+    waits.push(".client-profile-hero-card, .client-profile-guest-card");
+  } else if (pathname === "/cart") {
+    waits.push(".store-cart-item, .store-cart-empty-card");
+    await page.waitForFunction(
+      () => {
+        const text = document.body?.innerText || "";
+        return !text.includes("加载中") && !text.includes("Loading");
+      },
+      { timeout: 12000 },
+    ).catch(() => undefined);
+  } else if (pathname === "/coupons") {
+    waits.push(".sf-next-coupon-hero, .store-coupons-v12-state:not([aria-live='polite'])");
+    await page.waitForFunction(
+      () => !(document.body?.innerText || "").includes("优惠券加载中"),
+      { timeout: 6500 },
+    ).catch(() => undefined);
+  } else if (pathname.startsWith("/content/")) {
+    waits.push(".store-content-v12-article, .store-content-v12-meta, .store-contact-v12-panel, .sf-next-route-state");
+    await page.waitForFunction(
+      () => {
+        const text = document.body?.innerText || "";
+        return !document.querySelector(".store-content-v12-skeleton")
+          && !text.includes("加载中...");
+      },
+      { timeout: 12000 },
+    ).catch(() => undefined);
+  } else if (pathname === "/promotions") {
+    waits.push(".store-promotions-v12-card__title, .store-promotions-v12-state-panel");
+  } else if (pathname === "/search") {
+    await page.waitForFunction(
+      () => !document.querySelector(".sf-next-search-recent-card--skeleton"),
+      { timeout: 6500 },
+    ).catch(() => undefined);
+  } else if (pathname === "/address") {
+    waits.push(".store-address-v12-card, .store-address-v12-empty");
+    await page.waitForFunction(
+      () => !(document.body?.innerText || "").includes("加载中"),
+      { timeout: 6500 },
+    ).catch(() => undefined);
+  } else if (pathname === "/checkout") {
+    waits.push(".store-checkout-card");
+    await page.waitForFunction(
+      () => {
+        const text = document.body?.innerText || "";
+        return (text.includes("Visual Audit") || text.includes("Jalan Sultan Ismail"))
+          && !text.includes("请选择收货信息")
+          && !text.includes("添加收货地址后才能提交订单");
+      },
+      { timeout: 12000 },
+    ).catch(() => undefined);
+  } else if (pathname === "/invite") {
+    waits.push(".sf-next-share-pass");
+    await page.waitForFunction(
+      () => {
+        const text = document.body?.innerText || "";
+        return !text.includes("邀请码 加载中") && !text.includes("等待邀请码");
+      },
+      { timeout: 12000 },
+    ).catch(() => undefined);
+  } else if (pathname === "/member/benefits") {
+    waits.push(".sc-benefits__folio, .sc-benefits__message");
+  } else if (pathname.startsWith("/client-design/")) {
+    waits.push(".store-client-design-page__main, .store-client-design-section");
+    if (pathname === "/client-design/coupon-detail") {
+      waits.push(".sf-next-value-vault");
+    } else if (pathname === "/client-design/share-detail") {
+      waits.push(".sf-next-share-pass");
+      await page.waitForFunction(
+        () => {
+          const text = document.body?.innerText || "";
+          return !text.includes("邀请码 加载中");
+        },
+        { timeout: 12000 },
+      ).catch(() => undefined);
+    } else if (pathname === "/client-design/states") {
+      waits.push(".store-design-state-skeleton, .sf-next-route-state");
+    } else {
+      waits.push(".store-design-system-swatches");
+    }
+  } else if (pathname === "/notifications") {
+    waits.push(".store-account-v12-status-panel, .store-notifications-v12-card, .store-notifications-v12-filters");
+    await page.waitForFunction(
+      () => !(document.body?.innerText || "").includes("正在加载消息"),
+      { timeout: 6500 },
+    ).catch(() => undefined);
+  } else if (pathname === "/reviews/pending") {
+    waits.push(".store-pending-reviews-v12-card, .store-pending-reviews-v12-state");
+    await page.waitForFunction(
+      () => !document.querySelector(".store-pending-reviews-v12-skeleton"),
+      { timeout: 6500 },
+    ).catch(() => undefined);
+  } else if (pathname === "/orders") {
+    waits.push(".store-orders-v12-card:not(.store-orders-v12-skeleton-card), .store-orders-v12-state");
+  } else if (/^\/orders\/[^/]+$/.test(pathname)) {
+    waits.push(".store-order-detail-v12-hero:not(.store-order-detail-v12-loading-hero), .store-order-detail-v12-state");
+  } else if (/^\/orders\/[^/]+\/logistics$/.test(pathname)) {
+    waits.push(".store-logistics-v12-hero, .store-logistics-v12-card:not(.store-logistics-v12-loading)");
+  } else if (pathname === "/payment/result") {
+    waits.push(".store-payment-result-v12-card");
+    await page.waitForFunction(
+      () => {
+        const text = document.body?.innerText || "";
+        return !text.includes("正在确认支付") && !text.includes("正在读取后端订单状态");
+      },
+      { timeout: 12000 },
+    ).catch(() => undefined);
+  } else if (pathname === "/rewards") {
+    waits.push(".store-rewards-v12-folio, .store-rewards-v12-state");
+    await page.waitForFunction(
+      () => {
+        const text = document.body?.innerText || "";
+        return !text.includes("正在同步返现奖励") && !text.includes("正在同步返现记录");
+      },
+      { timeout: 12000 },
+    ).catch(() => undefined);
+  } else if (pathname === "/wallet") {
+    waits.push(".store-wallet-v12-hero");
+    await page.waitForFunction(
+      () => {
+        const text = document.body?.innerText || "";
+        return !text.includes("RM --") && !text.includes("同步中");
+      },
+      { timeout: 12000 },
+    ).catch(() => undefined);
+  } else if (pathname === "/points" || pathname === "/points/gifts") {
+    if (pathname === "/points") {
+      waits.push(".store-points-v12-folio, .store-points-v12-state");
+    }
+    await page.waitForFunction(
+      () => {
+        const text = document.body?.innerText || "";
+        return !text.includes("正在同步积分")
+          && !text.includes("规则同步中")
+          && !text.includes("正在加载签到规则")
+          && !text.includes("加载中 积分明细");
+      },
+      { timeout: 6500 },
+    ).catch(() => undefined);
+    if (pathname === "/points/gifts") {
+      waits.push(".store-points-gifts-v12-grid, .store-points-gifts-v12-state");
+      await page.waitForFunction(
+        () => !document.querySelector(".store-points-gifts-v12-state .animate-spin"),
+        { timeout: 6500 },
+      ).catch(() => undefined);
+    }
+  } else if (pathname === "/returns") {
+    waits.push(".store-returns-v12-hero");
+    await page.waitForFunction(
+      () => {
+        const text = document.body?.innerText || "";
+        return text.includes("售后进度中心")
+          && !text.includes("正在同步退款")
+          && !text.includes("加载中...");
+      },
+      { timeout: 12000 },
+    ).catch(() => undefined);
+  } else if (/^\/returns\/[^/]+$/.test(pathname)) {
+    await page.waitForFunction(
+      (targetPathname) => {
+        const text = document.body?.innerText || "";
+        if (location.pathname !== targetPathname) {
+          return !text.includes("正在同步退款") && !text.includes("加载中...");
+        }
+        return Boolean(document.querySelector(".store-return-detail-v12-hero"))
+          || !text.includes("加载中...");
+      },
+      pathname,
+      { timeout: 6500 },
+    ).catch(() => undefined);
+  } else if (pathname === "/history") {
+    waits.push(".store-history-v12-group, .store-account-v12-empty-panel");
+    await page.waitForFunction(
+      () => {
+        const text = document.body?.innerText || "";
+        return (text.includes("最近浏览") || text.includes("暂无浏览记录"))
+          && !document.querySelector(".store-history-v12-page .animate-pulse");
+      },
+      { timeout: 12000 },
+    ).catch(() => undefined);
+  }
+
+  for (const selector of waits) {
+    await page.locator(selector).first().waitFor({ state: "visible", timeout: 6500 }).catch(() => undefined);
+  }
+
+  if (pathname === "/returns") {
+    await page.waitForFunction(
+      () => {
+        const text = document.body?.innerText || "";
+        return !text.includes("正在同步退款") && !text.includes("加载中...");
+      },
+      { timeout: 6500 },
+    ).catch(() => undefined);
+  }
+}
+
+async function captureRoute(page, route, outDir, user) {
+  if (route.mode === "auth" && user?.profile) {
+    await installFrontendAuthHint(page.context(), page, user.profile);
+  }
+  let response = await page.goto(`${BASE}${route.pathname}`, { waitUntil: "domcontentloaded", timeout: 45000 });
+  if (route.mode === "auth" && user && page.url().includes("/login")) {
+    await loginBrowserContext(page.context(), page, user) || await loginFrontend(page, user);
+    response = await page.goto(`${BASE}${route.pathname}`, { waitUntil: "domcontentloaded", timeout: 45000 });
+  }
   await page.waitForSelector("#root", { timeout: 12000 }).catch(() => undefined);
   await page.waitForTimeout(WAIT_MS);
+  if (route.mode === "auth" && user && page.url().includes("/login")) {
+    await loginBrowserContext(page.context(), page, user) || await loginFrontend(page, user);
+    response = await page.goto(`${BASE}${route.pathname}`, { waitUntil: "domcontentloaded", timeout: 45000 });
+    await page.waitForSelector("#root", { timeout: 12000 }).catch(() => undefined);
+    await page.waitForTimeout(WAIT_MS);
+  }
+  await page.waitForFunction(
+    () => (document.querySelector("#root")?.textContent || "").replace(/\s+/g, "").length > 0,
+    { timeout: 6500 },
+  ).catch(() => undefined);
+  await waitForRouteReady(page, route);
+  await page.waitForTimeout(Math.max(350, Math.floor(WAIT_MS / 3)));
+  if (route.mode === "auth" && user && page.url().includes("/login")) {
+    await loginBrowserContext(page.context(), page, user) || await loginFrontend(page, user);
+    response = await page.goto(`${BASE}${route.pathname}`, { waitUntil: "domcontentloaded", timeout: 45000 });
+    await page.waitForSelector("#root", { timeout: 12000 }).catch(() => undefined);
+    await page.waitForTimeout(WAIT_MS);
+    await waitForRouteReady(page, route);
+    await page.waitForFunction(
+      () => (document.querySelector("#root")?.textContent || "").replace(/\s+/g, "").length > 0,
+      { timeout: 6500 },
+    ).catch(() => undefined);
+    await page.waitForTimeout(Math.max(350, Math.floor(WAIT_MS / 3)));
+  }
+  const rootHasText = await page.evaluate(() => (document.querySelector("#root")?.textContent || "").replace(/\s+/g, "").length > 0).catch(() => false);
+  if (!rootHasText) {
+    response = await page.reload({ waitUntil: "domcontentloaded", timeout: 45000 }).catch(() => response);
+    await page.waitForSelector("#root", { timeout: 12000 }).catch(() => undefined);
+    await page.waitForTimeout(WAIT_MS);
+    await waitForRouteReady(page, route);
+    await page.waitForFunction(
+      () => (document.querySelector("#root")?.textContent || "").replace(/\s+/g, "").length > 0,
+      { timeout: 6500 },
+    ).catch(() => undefined);
+  }
   await page.evaluate(() => window.scrollTo(0, 0)).catch(() => undefined);
   const state = await page.evaluate(() => {
     const root = document.querySelector("#root");
@@ -289,15 +811,20 @@ async function main() {
   let user = null;
   let product = null;
   let order = null;
+  let returnRequest = null;
   let promotionSlug = "";
   let authReady = false;
   let cartSeeded = false;
+  let returnSeedError = "";
+  let returnOrderPrepared = false;
+  let returnOrderPrepareError = "";
 
   if (apiAvailable) {
     try {
       user = await registerUser();
-      product = await seedProduct(user.token);
-      cartSeeded = Boolean(product?.id);
+      const seed = await seedProduct(user.token);
+      product = seed.product;
+      cartSeeded = seed.cartSeeded;
       await createAddress(user.token, user.phone);
       promotionSlug = await firstPromotionSlug();
     } catch {
@@ -312,10 +839,21 @@ async function main() {
   const authPage = await authContext.newPage();
 
   if (user) {
-    authReady = await loginFrontend(authPage, user);
+    authReady = await loginBrowserContext(authContext, authPage, user) || await loginFrontend(authPage, user);
     if (authReady && product) {
       order = await createOrder(user.token, product, user.phone);
+      order = await fetchOrder(user.token, order?.id) || order;
+      await seedHistory(user.token, product);
       await seedProduct(user.token).catch(() => undefined);
+      const prepared = await prepareOrderForReturnDetailSeed(order?.id || "");
+      returnOrderPrepared = prepared.ok;
+      returnOrderPrepareError = prepared.error;
+      if (prepared.ok) {
+        order = await fetchOrder(user.token, order?.id) || order;
+      }
+      const returnSeed = await seedReturnRequest(user.token, order, user.phone);
+      returnRequest = returnSeed.returnRequest;
+      returnSeedError = [returnOrderPrepareError, returnSeed.error].filter(Boolean).join("; ");
     }
   }
 
@@ -323,11 +861,13 @@ async function main() {
     productId: product?.id || "",
     promotionSlug,
     orderId: order?.id || "",
+    orderNo: order?.order_no || order?.orderNo || "",
+    returnId: returnRequest?.id || "",
   });
   const captures = [];
   for (const route of routes) {
     const page = route.mode === "auth" && authReady ? authPage : guestPage;
-    captures.push(await captureRoute(page, route, outDir));
+    captures.push(await captureRoute(page, route, outDir, user));
   }
 
   await makeContactSheet(outDir, captures);
@@ -346,6 +886,12 @@ async function main() {
     orderCreated: Boolean(order?.id),
     productId: product?.id || "",
     orderId: order?.id || "",
+    orderNo: order?.order_no || order?.orderNo || "",
+    returnOrderPrepared,
+    returnOrderPrepareError,
+    returnId: returnRequest?.id || "",
+    returnSeeded: Boolean(returnRequest?.id),
+    returnSeedError,
     promotionSlug,
     outputDir: outDir,
     contactSheet: path.join(outDir, "contact-sheet.png"),

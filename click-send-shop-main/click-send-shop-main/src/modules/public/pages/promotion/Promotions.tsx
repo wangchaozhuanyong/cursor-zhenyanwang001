@@ -379,6 +379,84 @@ function PromotionSkeleton({ className = "" }: { className?: string }) {
   );
 }
 
+function PromotionsFolio({
+  list,
+  selectedType,
+}: {
+  list: StorefrontPromotion[];
+  selectedType: PromotionFilter;
+}) {
+  const { localizedPath, promotionTypeLabel, t } = usePublicLocale();
+  const featured = list[0];
+  const activeCount = list.filter((promotion) => promotion.runtime_status === "active").length;
+  const typeCount = new Set(list.map((promotion) => promotion.type)).size;
+  const label = selectedType ? promotionTypeLabel(selectedType) : t("common.allPromotions");
+  const title = featured ? displayPromotionTitle(featured, promotionTypeLabel) : t("promotion.headerTitle");
+  const description = featured ? displayPromotionSubtitle(featured) : t("promotion.headerSubtitle");
+  const actionHref = featured
+    ? localizedPath(`${PROMOTIONS_BASE_PATH}/${featured.slug}`)
+    : localizedPath("/coupons");
+  const actionLabel = featured ? promotionActionLabel(featured.type) : t("promotion.goCoupons");
+
+  return (
+    <section className="store-promotions-v12-folio" aria-label="活动概览">
+      <div className="store-promotions-v12-folio__copy">
+        <span className="store-promotions-v12-folio__eyebrow">
+          <Gift size={15} aria-hidden />
+          {label}
+        </span>
+        <h2>{title}</h2>
+        <p>{description}</p>
+      </div>
+
+      <div className="store-promotions-v12-folio__stats" aria-label="活动数据">
+        <span>
+          <Gift size={15} aria-hidden />
+          <strong>{list.length}</strong>
+          活动
+        </span>
+        <span>
+          <Zap size={15} aria-hidden />
+          <strong>{activeCount}</strong>
+          进行中
+        </span>
+        <span>
+          <Store size={15} aria-hidden />
+          <strong>{typeCount}</strong>
+          类型
+        </span>
+      </div>
+
+      <Link className="store-promotions-v12-folio__action" to={actionHref}>
+        {actionLabel}
+        <ArrowRight size={16} aria-hidden />
+      </Link>
+    </section>
+  );
+}
+
+function PromotionsFolioSkeleton() {
+  return (
+    <section className="store-promotions-v12-folio store-promotions-v12-folio--loading" aria-busy="true" aria-label="活动概览加载中">
+      <div className="store-promotions-v12-folio__copy">
+        <span className="store-promotions-v12-folio__eyebrow skeleton-base skeleton-shimmer" />
+        <span className="store-promotions-v12-folio__title-skeleton skeleton-base skeleton-shimmer" />
+        <span className="store-promotions-v12-folio__text-skeleton skeleton-base skeleton-shimmer" />
+      </div>
+      <div className="store-promotions-v12-folio__stats" aria-hidden="true">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <span key={index}>
+            <i className="skeleton-base skeleton-shimmer" />
+            <strong className="skeleton-base skeleton-shimmer" />
+            <small className="skeleton-base skeleton-shimmer" />
+          </span>
+        ))}
+      </div>
+      <span className="store-promotions-v12-folio__action skeleton-base skeleton-shimmer" aria-hidden="true" />
+    </section>
+  );
+}
+
 export default function Promotions() {
   const [searchParams] = useSearchParams();
   const { localizedPath, promotionTypeLabel, t } = usePublicLocale();
@@ -438,6 +516,12 @@ export default function Promotions() {
       />
 
       <main className="mx-auto w-full max-w-6xl px-[var(--store-page-x)] pb-6 pt-3 md:px-6 md:py-8 lg:px-8">
+        {showFullSkeleton ? (
+          <PromotionsFolioSkeleton />
+        ) : list.length ? (
+          <PromotionsFolio list={list} selectedType={selectedType} />
+        ) : null}
+
         <nav
           ref={filtersRef}
           className="store-promotions-v12-filters no-scrollbar flex gap-2 overflow-x-auto overflow-y-hidden scroll-smooth pb-1 [-webkit-overflow-scrolling:touch] sm:grid sm:grid-cols-5 sm:overflow-visible sm:pb-0 lg:grid-cols-10"
@@ -478,7 +562,13 @@ export default function Promotions() {
         ) : error && list.length === 0 ? (
           <PromotionStatePanel kind="error" onRetry={() => void load()} />
         ) : list.length ? (
-          <section className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <section
+            className={cn(
+              "store-promotions-v12-list mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3",
+              list.length === 1 && "store-promotions-v12-list--single",
+            )}
+            aria-label={t("common.promotions")}
+          >
             {list.map((promotion) => <PromotionCard key={promotion.id} promotion={promotion} />)}
           </section>
         ) : (

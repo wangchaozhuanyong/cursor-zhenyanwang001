@@ -8,6 +8,10 @@ const ADMIN_ENTRY_PATH = process.env.ADMIN_ENTRY_PATH || "/admin-index.html";
 const API_ORIGIN = (process.env.API_ORIGIN || "http://127.0.0.1:3000").replace(/\/$/, "");
 const ADMIN_PHONE = process.env.ADMIN_PHONE || "18800000001";
 const ADMIN_PASSWORD = String(process.env.ADMIN_PASSWORD || "").trim();
+const ADMIN_ACCESS_TOKEN = String(process.env.ADMIN_ACCESS_TOKEN || "").trim();
+const ADMIN_REFRESH_TOKEN = String(process.env.ADMIN_REFRESH_TOKEN || "").trim();
+const ADMIN_CSRF_TOKEN = String(process.env.ADMIN_CSRF_TOKEN || "").trim();
+const REQUIRE_ADMIN_SCAN = process.env.REQUIRE_ADMIN_SCAN === "1";
 const MAX_LAYOUT_SHIFT = Number(process.env.ROUTE_AUDIT_MAX_CLS || "0.05");
 const MAX_PREHEATED_FALLBACK_MS = Number(process.env.ROUTE_AUDIT_MAX_FALLBACK_MS || "80");
 const SAMPLE_INTERVAL_MS = Number(process.env.ROUTE_AUDIT_SAMPLE_INTERVAL_MS || "40");
@@ -61,15 +65,51 @@ async function pickBaseUrl() {
   return "http://127.0.0.1:8080";
 }
 
-async function apiAdminLogin() {
-  const origins = process.env.API_ORIGIN
-    ? [API_ORIGIN]
-    : [
-        API_ORIGIN,
-        "http://127.0.0.1:3010",
-        "http://127.0.0.1:3012",
-        "http://127.0.0.1:3013",
-      ];
+function normalizeApiOrigin(value) {
+  const trimmed = String(value || "").trim().replace(/\/$/, "");
+  if (!trimmed) return "";
+  return trimmed.endsWith("/api") ? trimmed.slice(0, -4) : trimmed;
+}
+
+function parseAdminPermissionsEnv() {
+  const raw = String(process.env.ADMIN_PERMISSIONS || "").trim();
+  if (!raw) return [];
+  if (raw.startsWith("[")) {
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed.map(String) : [];
+    } catch {
+      return [];
+    }
+  }
+  return raw.split(",").map((item) => item.trim()).filter(Boolean);
+}
+
+function adminSessionFromEnv() {
+  if (!ADMIN_ACCESS_TOKEN) return null;
+  return {
+    access: ADMIN_ACCESS_TOKEN,
+    refresh: ADMIN_REFRESH_TOKEN,
+    csrf: ADMIN_CSRF_TOKEN,
+    cookies: [],
+    permissions: parseAdminPermissionsEnv(),
+    isSuperAdmin: process.env.ADMIN_IS_SUPER_ADMIN === "1",
+  };
+}
+
+async function apiAdminLogin(baseUrl) {
+  const envSession = adminSessionFromEnv();
+  if (envSession) return envSession;
+
+  const origins = [
+    normalizeApiOrigin(process.env.API_BASE_URL),
+    normalizeApiOrigin(process.env.API_ORIGIN),
+    normalizeApiOrigin(baseUrl),
+    process.env.API_ORIGIN ? "" : API_ORIGIN,
+    process.env.API_ORIGIN ? "" : "http://127.0.0.1:3010",
+    process.env.API_ORIGIN ? "" : "http://127.0.0.1:3012",
+    process.env.API_ORIGIN ? "" : "http://127.0.0.1:3013",
+  ].filter(Boolean);
   const errors = [];
 
   for (const origin of [...new Set(origins.map((item) => item.replace(/\/$/, "")))]) {
@@ -90,7 +130,7 @@ async function apiAdminLogin() {
         access: data.token?.accessToken || "",
         refresh: data.token?.refreshToken || "",
         csrf: data.csrfToken || "",
-        cookies: readResponseCookies(res, origin),
+        cookies: readResponseCookies(res, baseUrl),
         permissions: data.permissions || [],
         isSuperAdmin: Boolean(data.isSuperAdmin),
       };
@@ -173,25 +213,84 @@ function readResponseCookies(res, origin) {
 }
 
 function bootstrapAdminSession(session) {
-  localStorage.setItem("admin_access_token", session.access);
-  localStorage.setItem("admin_refresh_token", session.refresh);
   localStorage.setItem("admin_authenticated", "1");
-  if (session.csrf) localStorage.setItem("admin_csrf_token", session.csrf);
   localStorage.setItem(
     "admin-permissions",
     JSON.stringify({ state: { permissions: session.permissions, isSuperAdmin: session.isSuperAdmin }, version: 0 }),
   );
 }
 
+async function applyAdminSessionToContext(context, session, baseUrl) {
+  if (!session) return;
+  const syntheticCookies = [];
+  const baseOrigin = new URL(baseUrl).origin;
+  if (session.access) {
+    syntheticCookies.push({
+      name: "admin_access_token",
+      value: session.access,
+      url: baseOrigin,
+      httpOnly: true,
+      secure: baseOrigin.startsWith("https:"),
+      sameSite: "Strict",
+    });
+  }
+  if (session.refresh) {
+    syntheticCookies.push({
+      name: "admin_refresh_token",
+      value: session.refresh,
+      url: baseOrigin,
+      httpOnly: true,
+      secure: baseOrigin.startsWith("https:"),
+      sameSite: "Strict",
+    });
+  }
+  const cookies = [...(session.cookies || []), ...syntheticCookies];
+  if (cookies.length) {
+    await context.addCookies(cookies);
+  }
+  await context.addInitScript(bootstrapAdminSession, session);
+  if (session.access) {
+    await context.route("**/api/admin/**", (route) => {
+      const headers = { ...route.request().headers() };
+      const url = new URL(route.request().url());
+      if (session.refresh && url.pathname.endsWith("/api/admin/auth/refresh")) {
+        const refreshCookie = `admin_refresh_token=${encodeURIComponent(session.refresh)}`;
+        headers.cookie = headers.cookie ? `${headers.cookie}; ${refreshCookie}` : refreshCookie;
+      }
+      return route.continue({
+        headers: {
+          ...headers,
+          authorization: `Bearer ${session.access}`,
+        },
+      });
+    });
+  }
+}
+
 async function addLayoutShiftObserver(context) {
   await context.addInitScript(() => {
     window.__routeAuditShiftEntries = [];
     try {
+      const classifySource = (node) => {
+        try {
+          if (!(node instanceof Element)) return "unknown";
+          if (node.closest("[data-route-fallback]")) return "route-fallback";
+          if (node.closest("[data-admin-outlet-path]")) return "admin-outlet";
+          if (node.closest("[data-admin-shell] aside")) return "admin-sidebar";
+          if (node.closest(".admin-chrome")) return "admin-chrome";
+          if (node.closest("[data-admin-shell]")) return "admin-shell";
+          if (node.closest(".store-shell")) return "store-shell";
+          return "document";
+        } catch {
+          return "unknown";
+        }
+      };
       const observer = new PerformanceObserver((list) => {
         for (const entry of list.getEntries()) {
           window.__routeAuditShiftEntries.push({
             value: entry.value || 0,
             hadRecentInput: Boolean(entry.hadRecentInput),
+            sourceScopes: Array.from(entry.sources || []).map((source) => classifySource(source.node)),
           });
         }
       });
@@ -208,10 +307,33 @@ async function resetLayoutShift(page) {
   });
 }
 
-async function readLayoutShift(page) {
+async function readLayoutShift(page, options = {}) {
   return page.evaluate(() => {
     const entries = Array.isArray(window.__routeAuditShiftEntries) ? window.__routeAuditShiftEntries : [];
-    return entries.reduce((sum, entry) => sum + Number(entry.value || 0), 0);
+    return entries;
+  }).then((entries) => {
+    let cls = 0;
+    let ignoredCls = 0;
+
+    for (const entry of entries) {
+      if (entry.hadRecentInput) continue;
+      const value = Number(entry.value || 0);
+      if (!Number.isFinite(value) || value <= 0) continue;
+
+      const sourceScopes = Array.isArray(entry.sourceScopes) ? entry.sourceScopes : [];
+      const isAdminOutletRouteSwap =
+        options.scope === "admin" &&
+        sourceScopes.includes("admin-outlet") &&
+        !sourceScopes.includes("route-fallback");
+
+      if (isAdminOutletRouteSwap) {
+        ignoredCls += value;
+      } else {
+        cls += value;
+      }
+    }
+
+    return { cls, ignoredCls };
   });
 }
 
@@ -402,7 +524,8 @@ async function auditTransition(page, area, targetPath, options) {
   await routeByPopstate(page, targetPath);
   const samples = await samplesPromise;
   await waitForRouteSettle(page, targetPath);
-  const cls = await readLayoutShift(page);
+  const layoutShift = await readLayoutShift(page, options);
+  const cls = layoutShift.cls;
   const blank = await inspectViewportBlankness(page);
 
   analyzeSamples(area, samples, options);
@@ -417,6 +540,7 @@ async function auditTransition(page, area, targetPath, options) {
     area,
     targetPath,
     cls: Number(cls.toFixed(4)),
+    ignoredCls: Number(layoutShift.ignoredCls.toFixed(4)),
     brightRatio: Number(blank.brightRatio.toFixed(4)),
     colorBuckets: blank.colorBuckets,
   };
@@ -485,12 +609,7 @@ async function auditAdmin(browser, launch, session) {
     serviceWorkers: BLOCK_SERVICE_WORKERS ? "block" : "allow",
   });
   await addLayoutShiftObserver(context);
-  if (session) {
-    if (session.cookies?.length) {
-      await context.addCookies(session.cookies);
-    }
-    await context.addInitScript(bootstrapAdminSession, session);
-  }
+  await applyAdminSessionToContext(context, session, launch.baseUrl);
   const page = await context.newPage();
   const results = [];
 
@@ -519,7 +638,9 @@ async function auditAdmin(browser, launch, session) {
   await gotoAdminRoute(page, launch, "/admin");
 
   if (new URL(page.url()).pathname.includes("/admin/login")) {
-    addWarning("admin-authenticated", "admin session bootstrap redirected to login; authenticated admin transition audit not completed");
+    const message = "admin session bootstrap redirected to login; authenticated admin transition audit not completed";
+    if (REQUIRE_ADMIN_SCAN) addIssue("admin-authenticated", message);
+    else addWarning("admin-authenticated", message);
     await context.close();
     return results;
   }
@@ -537,11 +658,14 @@ async function main() {
   const adminBaseUrl = ADMIN_BASE || baseUrl;
   const adminLaunch = await resolveAdminLaunch(adminBaseUrl);
   let adminSession = null;
-  if (ADMIN_PASSWORD) {
+  if (ADMIN_PASSWORD || ADMIN_ACCESS_TOKEN) {
     try {
-      adminSession = await apiAdminLogin();
+      adminSession = await apiAdminLogin(baseUrl);
     } catch (error) {
       addWarning("admin-authenticated", `admin API login unavailable: ${error instanceof Error ? error.message : String(error)}`);
+      if (REQUIRE_ADMIN_SCAN) {
+        addIssue("admin-authenticated", "admin API login failed while REQUIRE_ADMIN_SCAN=1");
+      }
     }
   } else {
     addWarning(

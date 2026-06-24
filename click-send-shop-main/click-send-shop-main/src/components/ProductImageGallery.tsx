@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import RatioImage from "@/components/client/RatioImage";
 import { THEME_PRODUCT_MEDIA_ASPECT_STYLE } from "@/constants/productMediaAspect";
+import { getProductFallbackImage } from "@/utils/productFallbackImage";
 import { productCoverForDetail } from "@/utils/uploadImageVariant";
 
 interface ProductImageGalleryProps {
@@ -24,6 +25,7 @@ export default function ProductImageGallery({ images, imageAlts, name, videoUrl,
   const [current, setCurrent] = useState(0);
   const [touchStart, setTouchStart] = useState(0);
   const currentItem = media[current];
+  const fallbackImage = getProductFallbackImage(name);
 
   useEffect(() => {
     if (current >= media.length) setCurrent(Math.max(0, media.length - 1));
@@ -45,7 +47,18 @@ export default function ProductImageGallery({ images, imageAlts, name, videoUrl,
   if (media.length === 0) {
     return (
       <div className="relative">
-        <div className="relative w-full overflow-hidden bg-secondary" style={THEME_PRODUCT_MEDIA_ASPECT_STYLE} />
+        <div className="relative w-full overflow-hidden bg-secondary" style={THEME_PRODUCT_MEDIA_ASPECT_STYLE}>
+          <RatioImage
+            src={fallbackImage}
+            alt={`${name} 商品图`}
+            ratio="1 / 1"
+            rounded="none"
+            className="h-full w-full bg-transparent"
+            imgClassName="h-full w-full [object-fit:var(--theme-image-fit,cover)]"
+            sizes="100vw"
+            fetchPriority="high"
+          />
+        </div>
         {overlay}
       </div>
     );
@@ -80,6 +93,7 @@ export default function ProductImageGallery({ images, imageAlts, name, videoUrl,
             ) : (
               <RatioImage
                 src={productCoverForDetail(currentItem.url)}
+                fallbackSrc={fallbackImage}
                 alt={currentItem.alt || (current === 0 ? `${name} 主图` : `${name} 详情图 ${current + 1}`)}
                 ratio="1 / 1"
                 rounded="none"

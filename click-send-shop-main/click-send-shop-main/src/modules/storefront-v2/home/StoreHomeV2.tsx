@@ -232,7 +232,7 @@ export default function StoreHomeV2() {
   return (
     <div
       className={cn(
-        "store-page-shell store-bottom-safe sf-next-page sf-next-home-page text-[var(--sf-ink)]",
+        "store-page-shell store-bottom-safe sf-next-page sf-next-home-page store-home-v12-page text-[var(--sf-ink)]",
       )}
       data-store-home-version="v2"
       data-storefront-client-style={clientStyle}
@@ -282,7 +282,7 @@ export default function StoreHomeV2() {
         <HomePrimaryCampaignV2
           campaigns={enabledCampaigns}
           fallbackCampaigns={fallbackCampaignEntrances}
-          loading={campaignsLoading && homeModulesReady}
+          loading={campaignsLoading || !homeModulesReady}
           onNavigate={navigatePath}
           onCampaignImpression={handleCampaignImpression}
           onCampaignClick={handleCampaignClick}
@@ -301,6 +301,7 @@ export default function StoreHomeV2() {
             emptyText="新品正在整理中，可以先看分类。"
             emptyActionLabel="去分类"
             showPrice={siteInfo.newArrivalShowPrice !== "0"}
+            previewLimit={4}
             className="store-home-v12-shelf--new-arrivals"
             onNavigate={navigatePath}
           />
@@ -315,6 +316,7 @@ export default function StoreHomeV2() {
             actionLabel="全部商品"
             emptyText="精选商品暂时没有更新，可以先进入分类浏览。"
             emptyActionLabel="浏览分类"
+            previewLimit={4}
             onNavigate={navigatePath}
           />
         ) : null}
@@ -334,6 +336,7 @@ export default function StoreHomeV2() {
             actionPath="/categories?sort=sales_desc"
             emptyText="热销榜暂时没有数据，可以先看全部商品。"
             emptyActionLabel="全部商品"
+            previewLimit={4}
             className="store-home-v12-shelf--hot-sales"
             onNavigate={navigatePath}
           />
@@ -348,6 +351,7 @@ export default function StoreHomeV2() {
             actionLabel="更多推荐"
             emptyText="还没有足够的浏览记录生成推荐，可以先看看热销商品。"
             emptyActionLabel="看热销"
+            previewLimit={4}
             className="store-home-v12-shelf--recommend"
             onNavigate={navigatePath}
           />
@@ -407,14 +411,19 @@ function HomeQuickEntryPanel({
   onNavigate: (path: string) => void;
 }) {
   const actions = useMemo(
-    () => filterVisibleHomeNavItems(Array.isArray(navItems) ? navItems : [], capabilities).slice(0, 15),
+    () => filterVisibleHomeNavItems(Array.isArray(navItems) ? navItems : [], capabilities).slice(0, 10),
     [capabilities, navItems],
   );
 
   if (ready && actions.length === 0) return null;
 
   return (
-    <section className="store-home-command-panel" aria-label="快捷入口">
+    <section
+      className="store-home-command-panel store-home-command-panel--silent"
+      aria-label="快捷入口"
+      data-command-count={ready ? actions.length : 10}
+      data-has-more="false"
+    >
       <div className="store-home-command-panel__intro">
         <h2>快捷入口</h2>
         <UnifiedButton
@@ -429,7 +438,7 @@ function HomeQuickEntryPanel({
       </div>
       <div className="store-home-command-panel__actions">
         {!ready
-          ? Array.from({ length: 6 }).map((_, index) => (
+          ? Array.from({ length: 10 }).map((_, index) => (
               <div key={index} className="store-home-command-card store-home-command-card--loading" aria-hidden>
                 <span className="store-home-command-card__icon skeleton-base skeleton-shimmer" />
                 <span className="store-home-command-card__copy">

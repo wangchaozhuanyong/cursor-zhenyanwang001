@@ -2,7 +2,6 @@ import { CN_TIMEZONE, formatDateTime } from "@/utils/formatDateTime";
 import { useCallback, useEffect, useState } from "react";
 import {
   CalendarCheck,
-  Loader2,
   RefreshCw,
   Star,
   TrendingDown,
@@ -83,7 +82,7 @@ function signInHintText(config: SignInConfig | null, ready: boolean) {
 
 function signInStatusText(config: SignInConfig | null, ready: boolean, signedInToday: boolean) {
   if (signedInToday) return "今日已签到";
-  if (!ready) return "状态加载中";
+  if (!ready) return "规则同步中";
   if (!config) return "规则未加载";
   if (config.enabled) return "今日可签到";
   return "暂不可签到";
@@ -105,7 +104,7 @@ function PointsHeroCard({
   onSignIn: () => void;
 }) {
   const signInEnabled = configReady && Boolean(signInConfig?.enabled) && !signedInToday;
-  const signInLabel = signingIn ? "签到中..." : signedInToday ? "明天再来" : signInEnabled ? "每日签到" : "签到不可用";
+  const signInLabel = signingIn ? "签到中..." : !configReady ? "加载中" : signedInToday ? "明天再来" : signInEnabled ? "每日签到" : "签到不可用";
   const statusText = signInStatusText(signInConfig, configReady, signedInToday);
   const rewardText = signInHintText(signInConfig, configReady);
 
@@ -144,8 +143,17 @@ function PointsHeroCard({
 
 function PointsRecordsLoading() {
   return (
-    <div className="flex items-center justify-center rounded-xl border border-border bg-card p-10">
-      <Loader2 size={20} className="animate-spin text-muted-foreground" aria-label="加载中" />
+    <div className="store-points-v12-loading-list" aria-label="积分明细加载中" aria-busy="true">
+      {Array.from({ length: 4 }).map((_, index) => (
+        <article key={`points-record-loading-${index}`} className="store-points-v12-loading-row" aria-hidden>
+          <span className="store-points-v12-loading-row__icon" />
+          <span className="store-points-v12-loading-row__body">
+            <span className="store-points-v12-loading-row__line" />
+            <span className="store-points-v12-loading-row__line is-short" />
+          </span>
+          <span className="store-points-v12-loading-row__amount" />
+        </article>
+      ))}
     </div>
   );
 }

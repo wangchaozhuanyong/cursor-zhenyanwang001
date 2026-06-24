@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { MessageSquareText, PackageCheck, RefreshCw, Star } from "lucide-react";
+import { CheckCircle2, MessageSquareText, PackageCheck, RefreshCw, Star } from "lucide-react";
 import * as reviewService from "@/services/reviewService";
 import type { PendingReviewItem } from "@/types/review";
 import ReviewComposerSheet from "@/components/review/ReviewComposerSheet";
@@ -77,7 +77,16 @@ export default function PendingReviews() {
         </section>
 
         {loading ? (
-          <div className="store-pending-reviews-v12-stack">
+          <section className="store-pending-reviews-v12-loading" aria-busy="true" aria-live="polite">
+            <div className="store-pending-reviews-v12-loading__head">
+              <span aria-hidden>
+                <MessageSquareText size={18} />
+              </span>
+              <div>
+                <h2>同步评价资格</h2>
+                <p>确认收货后的商品会自动出现在这里。</p>
+              </div>
+            </div>
             {Array.from({ length: 3 }).map((_, index) => (
               <div key={index} className="store-pending-reviews-v12-skeleton">
                 <span />
@@ -87,7 +96,7 @@ export default function PendingReviews() {
                 </div>
               </div>
             ))}
-          </div>
+          </section>
         ) : null}
 
         {!loading && error ? (
@@ -164,6 +173,26 @@ export default function PendingReviews() {
               </section>
             ))}
           </div>
+        ) : null}
+
+        {!loading && !error ? (
+          <section className="store-pending-reviews-v12-guide" aria-label="评价说明">
+            <h2>评价规范</h2>
+            <ul>
+              <li>
+                <CheckCircle2 size={16} aria-hidden />
+                <span>确认收货后，符合评价条件的商品会自动进入待评价列表。</span>
+              </li>
+              <li>
+                <CheckCircle2 size={16} aria-hidden />
+                <span>提交后评价会进入审核流程，通过后展示在商品页。</span>
+              </li>
+              <li>
+                <CheckCircle2 size={16} aria-hidden />
+                <span>已评价商品会从待评价列表移除，不会重复提醒。</span>
+              </li>
+            </ul>
+          </section>
         ) : null}
       </div>
       <ReviewComposerSheet

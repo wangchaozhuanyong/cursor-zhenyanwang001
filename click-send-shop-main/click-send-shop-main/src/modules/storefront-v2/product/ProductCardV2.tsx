@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ArrowUpRight, ShoppingCart } from "lucide-react";
+import { ArrowUpRight, Plus } from "lucide-react";
 import ProductCoverImage from "@/components/ProductCoverImage";
 import { THEME_PRODUCT_MEDIA_ASPECT_STYLE } from "@/constants/productMediaAspect";
 import { cn } from "@/lib/utils";
@@ -59,7 +59,7 @@ export default function ProductCardV2({
         data-product-card-variant={variant}
         className={cn(
           storefrontCardClassName(),
-          "store-product-card-v2 store-product-card-v2--list store-skin-product-card",
+          "store-product-card-v2 sf-next-product-card sf-next-product-card--list store-product-card-v2--list store-skin-product-card",
           "group grid min-w-0 grid-cols-[5.75rem_minmax(0,1fr)] items-stretch gap-3 p-2.5 hover:-translate-y-0.5 sm:grid-cols-[6rem_minmax(0,1fr)] sm:p-3",
           cardToneClassName,
           className,
@@ -110,7 +110,7 @@ export default function ProductCardV2({
       data-product-card-variant={variant}
       className={cn(
         storefrontCardClassName(),
-        "store-product-card-v2 store-skin-product-card",
+        "store-product-card-v2 sf-next-product-card sf-next-product-card--grid store-skin-product-card",
         "group flex min-w-0 flex-col overflow-hidden p-1.5 hover:-translate-y-0.5",
         cardToneClassName,
         variant === "compact" && "max-w-[13rem]",
@@ -143,15 +143,13 @@ export default function ProductCardV2({
         {vm.soldOut ? <SoldOutMask /> : null}
       </div>
 
-      <div className="store-skin-product-card__info flex min-h-[132px] flex-1 flex-col px-1.5 pb-2 pt-3 sm:px-2">
-        <h3 className={t.text.productTitle}>{vm.name}</h3>
-        <DecisionMetaRow items={vm.decisionTexts} />
-        <ActivityProgressBar percent={vm.activityProgressPercent} text={vm.activityProgressText} />
+      <div className="store-skin-product-card__info sf-next-product-card__info flex min-h-[104px] flex-1 flex-col px-1.5 pb-2 pt-2.5 sm:px-2">
+        <h3 className={cn(t.text.productTitle, "sf-next-product-card__title")}>{vm.name}</h3>
         {showPrice ? (
-          <div className="mt-auto flex items-end justify-between gap-2 pt-3">
-            <StorefrontPrice amount={vm.priceText} originalAmount={vm.originalPriceText} />
+          <div className="sf-next-product-card__footer mt-auto flex items-end justify-between gap-2 pt-2.5">
+            <StorefrontPrice className="sf-next-product-card__price" amount={vm.priceText} originalAmount={vm.originalPriceText} />
             <span className={cn("store-product-card-v2__action store-skin-product-card__action-hint", actionClassName)}>
-              <ShoppingCart size={14} />
+              <Plus size={17} strokeWidth={2.4} />
             </span>
           </div>
         ) : null}

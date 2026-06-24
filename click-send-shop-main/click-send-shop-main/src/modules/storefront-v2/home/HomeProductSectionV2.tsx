@@ -16,6 +16,7 @@ type HomeProductSectionV2Props = {
   emptyText?: string;
   emptyActionLabel?: string;
   showPrice?: boolean;
+  previewLimit?: number;
   className?: string;
   onNavigate: (path: string) => void;
 };
@@ -31,9 +32,13 @@ export default function HomeProductSectionV2({
   emptyText = "暂无商品",
   emptyActionLabel = "去分类",
   showPrice = true,
+  previewLimit,
   className,
   onNavigate,
 }: HomeProductSectionV2Props) {
+  const visibleProducts = previewLimit && previewLimit > 0 ? products.slice(0, previewLimit) : products;
+  const effectiveSkeletonCount = previewLimit && previewLimit > 0 ? Math.min(skeletonCount, previewLimit) : skeletonCount;
+
   return (
     <section className={["store-home-product-shelf store-home-v12-shelf min-w-0", className].filter(Boolean).join(" ")}>
       <div className="store-home-v12-shelf__head">
@@ -55,10 +60,10 @@ export default function HomeProductSectionV2({
       </div>
       <div className="store-home-product-shelf__grid grid grid-cols-2 gap-2.5 sm:gap-4 md:grid-cols-3 xl:grid-cols-4">
         {loading
-          ? Array.from({ length: skeletonCount }).map((_, index) => (
+          ? Array.from({ length: effectiveSkeletonCount }).map((_, index) => (
               <ProductCardV2Skeleton key={`home-v2-skeleton-${title}-${index}`} />
             ))
-          : products.map((product, index) => (
+          : visibleProducts.map((product, index) => (
               <ProductCardV2
                 key={product.id}
                 product={product}

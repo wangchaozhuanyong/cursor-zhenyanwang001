@@ -199,6 +199,8 @@ export default function SupportDownload({ installMode = false }: SupportDownload
   }, [platforms, recommendedPlatform]);
   const pageTitle = config.title?.trim() || "";
   const displayTitle = installMode ? "安装应用" : pageTitle || STORE_COPY.supportCenterTitle;
+  const displaySiteName = siteInfo.siteName?.trim() || STORE_COPY.brandName;
+  const installMark = (displaySiteName.trim().charAt(0) || "大").toUpperCase();
   const workingHours = config.support.workingHours?.trim() || "客服时间以后台配置为准";
   const installStatusText = useMemo(() => {
     if (pwa.installed) return "已从桌面应用打开";
@@ -255,6 +257,19 @@ export default function SupportDownload({ installMode = false }: SupportDownload
       {mobileHeader}
 
       <main className="support-download-shell">
+        {installMode ? (
+          <section className="support-install-identity" aria-label="应用身份">
+            <span className="support-install-identity__mark" aria-hidden="true">
+              {installMark}
+            </span>
+            <div>
+              <strong>{displaySiteName}</strong>
+              <span>添加到手机桌面后，可从桌面快速打开商城。</span>
+            </div>
+            <small>WEB APP</small>
+          </section>
+        ) : null}
+
         <section className="support-download-overview" aria-label={installMode ? "安装状态概览" : "客服服务概览"}>
           <article className="support-download-overview-card support-download-overview-card--value-only">
             <span className="support-download-overview-icon" aria-hidden="true">
@@ -345,9 +360,11 @@ export default function SupportDownload({ installMode = false }: SupportDownload
 
           {!activeView && !queryChannelId ? (
             <section className="support-empty-panel">
-              <strong>当前没有可用客服渠道</strong>
+              <strong>{installMode ? "当前没有可用安装方式" : "当前没有可用客服渠道"}</strong>
               <span>
-                后台配置客服二维码或账号后会显示在这里。你也可以先进入帮助中心查看常见问题。
+                {installMode
+                  ? "后台配置添加桌面或下载指引后会显示在这里。你也可以先进入帮助中心查看常见问题。"
+                  : "后台配置客服二维码或账号后会显示在这里。你也可以先进入帮助中心查看常见问题。"}
               </span>
               <div className="support-empty-actions">
                 <UnifiedButton type="button" onClick={() => navigate("/help")} className="support-outline-action">

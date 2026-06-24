@@ -67,6 +67,9 @@ function isExpectedConsoleNoise(path, text) {
   if ((path === "/promotions/smoke-slug" || path === "/deals/smoke-slug") && /\b404\b|Not Found/i.test(text)) {
     return true;
   }
+  if (path.startsWith("/payment/result") && /\b401\b|Unauthorized/i.test(text)) {
+    return true;
+  }
   return false;
 }
 

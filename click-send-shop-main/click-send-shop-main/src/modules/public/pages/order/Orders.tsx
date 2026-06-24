@@ -117,6 +117,36 @@ function money(value: unknown) {
   return Number.isFinite(amount) ? amount.toFixed(2) : "0.00";
 }
 
+function OrdersLoadingSkeleton() {
+  return (
+    <div className="store-orders-v12-loading-stack" aria-busy="true" aria-label="订单加载中">
+      {Array.from({ length: 2 }).map((_, index) => (
+        <article key={index} className="store-orders-v12-card store-orders-v12-skeleton-card">
+          <div className="store-orders-v12-card-head">
+            <div className="min-w-0">
+              <div className="sf-next-skeleton store-orders-v12-skeleton-line is-order" />
+              <div className="sf-next-skeleton store-orders-v12-skeleton-line is-date" />
+            </div>
+            <div className="sf-next-skeleton store-orders-v12-skeleton-pill" />
+          </div>
+          <div className="store-orders-v12-product-row">
+            <div className="sf-next-skeleton store-orders-v12-product-media" />
+            <div className="store-orders-v12-product-content">
+              <div className="sf-next-skeleton store-orders-v12-skeleton-line is-title" />
+              <div className="sf-next-skeleton store-orders-v12-skeleton-line is-variant" />
+              <div className="sf-next-skeleton store-orders-v12-skeleton-line is-price" />
+            </div>
+          </div>
+          <div className="store-orders-v12-skeleton-actions">
+            <div className="sf-next-skeleton store-orders-v12-skeleton-button" />
+            <div className="sf-next-skeleton store-orders-v12-skeleton-button is-primary" />
+          </div>
+        </article>
+      ))}
+    </div>
+  );
+}
+
 export default function Orders() {
   const navigate = useNavigate();
   const { localizedPath, locale } = usePublicLocale();
@@ -311,7 +341,7 @@ export default function Orders() {
           </div>
         </div>
 
-        {loading ? <p className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 text-center text-sm text-muted-foreground">{copy.loading}</p> : null}
+        {loading ? <OrdersLoadingSkeleton /> : null}
         {error ? (
           <section className="store-account-v12-empty-panel store-orders-v12-state" role="alert">
             <span className="store-account-v12-empty-panel__icon" aria-hidden>

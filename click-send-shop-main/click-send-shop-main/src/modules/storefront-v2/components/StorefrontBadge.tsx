@@ -18,7 +18,7 @@ type StorefrontBadgeProps = {
 
 export default function StorefrontBadge({ children, tone = "normal", className }: StorefrontBadgeProps) {
   return (
-    <span className={cn("inline-flex h-5 max-w-full items-center rounded-full px-2 text-[10px] font-black leading-none", toneClassName[tone], className)}>
+    <span className={cn("storefront-badge inline-flex h-5 max-w-full items-center rounded-full px-2 text-[10px] font-black leading-none", toneClassName[tone], className)}>
       {children}
     </span>
   );

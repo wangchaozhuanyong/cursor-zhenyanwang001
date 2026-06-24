@@ -1,25 +1,26 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ChevronRight, Package, Search as SearchIcon, X } from "lucide-react";
+import { ArrowLeft, ChevronRight, Search as SearchIcon, X } from "lucide-react";
+import ProductCoverImage from "@/components/ProductCoverImage";
 import { STORE_COPY } from "@/constants/storeCopy";
-import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { useClientDesignStyle } from "@/modules/storefront-v2/design/useClientDesignStyle";
+import StorefrontPrice from "@/modules/storefront-v2/components/StorefrontPrice";
+import { buildProductCardV2Model } from "@/modules/storefront-v2/product/productCardV2Model";
 import { useGoBack } from "@/hooks/useGoBack";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { cn } from "@/lib/utils";
-import { getStoreHeaderSurfaceClass } from "@/utils/storeHeaderSurface";
 import { useProductStore } from "@/stores/useProductStore";
 import { useHistoryStore } from "@/stores/useHistoryStore";
 import SilkProductGrid from "@/components/motion/SilkProductGrid";
 import { fetchHotSearchTerms, fetchSearchSuggestions, trackSearchKeyword } from "@/services/searchService";
 import type { HotSearchTerm, SearchSuggestion } from "@/types/search";
-import { getProductGridClassName } from "@/utils/productGridClasses";
 import { THEME_ALERT_ERROR_SOFT } from "@/utils/themeVisuals";
 import SeoHead from "@/components/SeoHead";
 import { buildCanonical } from "@/utils/seo";
 import { setSearchAttribution } from "@/services/analyticsService";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import { appendThemePreviewParams } from "@/utils/themePreviewParams";
 import type { Product, ProductListParams } from "@/types/product";
 
 const HISTORY_KEY = "search_history";
@@ -37,13 +38,16 @@ function buildHotTermLabels(terms: HotSearchTerm[]): string[] {
   const pushTerm = (term: string) => {
     const label = normalizeHotTerm(term);
     const key = label.toLocaleLowerCase();
+    if (/^\d+$/.test(label)) return;
     if (!label || seen.has(key)) return;
     seen.add(key);
     labels.push(label);
   };
 
-  const rankedTerms = terms.length > 0 ? terms.map((term) => term.keyword) : FALLBACK_HOT_TERMS;
-  rankedTerms.forEach(pushTerm);
+  if (terms.length > 0) {
+    terms.map((term) => term.keyword).forEach(pushTerm);
+  }
+  FALLBACK_HOT_TERMS.forEach(pushTerm);
   return labels.slice(0, MAX_HOT_TERMS);
 }
 
@@ -59,16 +63,25 @@ function saveHistory(list: string[]) {
   localStorage.setItem(HISTORY_KEY, JSON.stringify(list.slice(0, MAX_HISTORY)));
 }
 
+function uniqueProductsById(items: Product[], limit: number) {
+  const seen = new Set<string>();
+  const result: Product[] = [];
+  items.forEach((item) => {
+    if (!item?.id || seen.has(item.id)) return;
+    seen.add(item.id);
+    result.push(item);
+  });
+  return result.slice(0, limit);
+}
+
 export default function Search() {
   const goBack = useGoBack("/");
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { themeConfig } = useThemeRuntime();
   const clientStyle = useClientDesignStyle();
   const siteInfo = useSiteInfo();
   const siteCapabilities = useSiteCapabilities();
-  const surfaceClass = getStoreHeaderSurfaceClass(themeConfig);
-  const productGridClass = getProductGridClassName(themeConfig.productCardVariant);
+  const productGridClass = "sf-next-product-grid store-product-grid grid grid-cols-2 gap-x-5 gap-y-8 pt-1 md:grid-cols-3 xl:grid-cols-4";
   const productCardSiteContext = useMemo(
     () => ({
       restrictedComplianceEnabled: siteCapabilities.restrictedProductComplianceEnabled,
@@ -82,7 +95,7 @@ export default function Search() {
   const [submittedQuery, setSubmittedQuery] = useState(initialKeyword);
   const [hotTerms, setHotTerms] = useState<HotSearchTerm[]>([]);
   const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
-  const [searchHistory, setSearchHistory] = useState<string[]>([]);
+  const [searchHistory, setSearchHistory] = useState<string[]>(() => (typeof window === "undefined" ? [] : getHistory()));
   const [readySearchQueryKey, setReadySearchQueryKey] = useState("");
   const suggestDebounceRef = useRef<ReturnType<typeof setTimeout>>();
   const pendingTrackKeywordRef = useRef(initialKeyword);
@@ -94,10 +107,22 @@ export default function Search() {
     loading,
     listRefreshing,
     error,
+    hotProducts,
+    newProducts,
+    recommendedProducts,
     loadProducts,
+    loadHomeData,
   } = useProductStore();
   const historyProducts = useHistoryStore((state) => state.history);
   const loadHistory = useHistoryStore((state) => state.loadHistory);
+  const shouldShowDiscovery = !submittedQuery.trim();
+  const hasDiscoveryProducts =
+    hotProducts.length > 0 || newProducts.length > 0 || recommendedProducts.length > 0;
+  const recentBrowseProducts = useMemo(() => historyProducts.slice(0, 3), [historyProducts]);
+  const recommendedBrowseProducts = useMemo(
+    () => uniqueProductsById([...hotProducts, ...newProducts, ...recommendedProducts], 3),
+    [hotProducts, newProducts, recommendedProducts],
+  );
   const searchProductParams = useMemo<ProductListParams | null>(() => {
     const keyword = submittedQuery.trim();
     if (!keyword) return null;
@@ -135,12 +160,13 @@ export default function Search() {
   }, []);
 
   useEffect(() => {
-    setSearchHistory(getHistory());
-  }, []);
-
-  useEffect(() => {
     loadHistory().catch(() => {});
   }, [loadHistory]);
+
+  useEffect(() => {
+    if (!shouldShowDiscovery) return;
+    void loadHomeData({ background: hasDiscoveryProducts });
+  }, [hasDiscoveryProducts, loadHomeData, shouldShowDiscovery]);
 
   useEffect(() => {
     if (suggestDebounceRef.current) clearTimeout(suggestDebounceRef.current);
@@ -231,21 +257,19 @@ export default function Search() {
     commitSearch(query);
   }, [commitSearch, query]);
 
+  const handleFormSubmit = useCallback((event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    handleSubmit();
+  }, [handleSubmit]);
+
   const hotTermLabels = useMemo(() => buildHotTermLabels(hotTerms), [hotTerms]);
   const shouldShowSuggestions = query.trim().length > 0 && suggestions.length > 0 && query.trim() !== submittedQuery.trim();
-  const shouldShowDiscovery = !submittedQuery.trim();
+  const showDiscoveryProductsLoading = shouldShowDiscovery && loading && recentBrowseProducts.length === 0 && recommendedBrowseProducts.length === 0;
   const siteName = siteInfo.siteName || STORE_COPY.brandName;
 
   return (
     <div
-      className={cn(
-        "store-page-shell store-v12-page store-search-v12-page store-search-page store-client-search-page store-bottom-safe text-[var(--theme-text)]",
-        clientStyle === "black_gold"
-          ? "bg-[linear-gradient(180deg,color-mix(in_srgb,var(--theme-primary)_5%,var(--theme-surface))_0%,var(--theme-bg)_22rem,var(--theme-bg)_100%)]"
-          : clientStyle === "deep_enterprise"
-            ? "bg-[linear-gradient(180deg,#101B34_0%,#101B34_6rem,color-mix(in_srgb,var(--theme-primary)_5%,var(--theme-surface))_6rem,var(--theme-bg)_24rem,var(--theme-bg)_100%)]"
-            : "bg-[linear-gradient(180deg,color-mix(in_srgb,var(--theme-primary)_6%,var(--theme-surface))_0%,var(--theme-bg)_22rem,color-mix(in_srgb,var(--theme-primary)_3%,var(--theme-bg))_100%)]",
-      )}
+      className="store-page-shell store-v12-page store-search-v12-page store-search-page store-client-search-page sf-next-search-page store-bottom-safe text-[var(--theme-text)]"
       data-storefront-client-style={clientStyle}
     >
       <SeoHead
@@ -254,39 +278,36 @@ export default function Search() {
         canonical={buildCanonical("/search")}
         robots="noindex,follow"
       />
-      <header className={cn("store-client-search-header sticky top-0 z-header pt-[env(safe-area-inset-top,0px)]", surfaceClass)}>
-        <div className="mx-auto w-full max-w-screen-xl px-[var(--store-header-x)]">
-          <div className="store-client-search-line">
-            <div className="store-client-search-input">
-              <SearchIcon size={17} aria-hidden />
-              <input
-                type="search"
-                value={query}
-                autoFocus
-                placeholder={STORE_COPY.searchPlaceholder}
-                onChange={(event) => handleQueryChange(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") {
-                    event.preventDefault();
-                    handleSubmit();
-                  }
-                }}
-                aria-label={STORE_COPY.searchPlaceholder}
-              />
-              {query ? (
-                <UnifiedButton type="button" onClick={clearSearch} className="store-client-search-clear" aria-label="清空搜索">
-                  <X size={14} aria-hidden />
-                </UnifiedButton>
-              ) : null}
-            </div>
-            <UnifiedButton type="button" onClick={goBack} className="store-client-search-cancel">
-              取消
-            </UnifiedButton>
+      <header className="store-client-search-header sf-next-search-header sticky top-0 z-header pt-[env(safe-area-inset-top,0px)]">
+        <form className="sf-next-search-bar mx-auto w-full max-w-screen-xl" onSubmit={handleFormSubmit} role="search">
+          <UnifiedButton type="button" onClick={goBack} className="sf-next-search-nav-button" aria-label="返回">
+            <ArrowLeft size={22} aria-hidden />
+          </UnifiedButton>
+          <label className="sr-only" htmlFor="store-search-input">搜索商品</label>
+          <div className="store-client-search-input sf-next-search-input">
+            <SearchIcon size={19} aria-hidden />
+            <input
+              id="store-search-input"
+              type="search"
+              value={query}
+              autoFocus
+              placeholder="搜索商品"
+              onChange={(event) => handleQueryChange(event.target.value)}
+              aria-label={STORE_COPY.searchPlaceholder}
+            />
+            {query ? (
+              <UnifiedButton type="button" onClick={clearSearch} className="store-client-search-clear" aria-label="清空搜索">
+                <X size={14} aria-hidden />
+              </UnifiedButton>
+            ) : null}
           </div>
-        </div>
+          <UnifiedButton type="submit" className="sf-next-search-nav-button" aria-label="搜索">
+            <SearchIcon size={22} aria-hidden />
+          </UnifiedButton>
+        </form>
       </header>
 
-      <main className="store-client-search-body mx-auto max-w-screen-xl px-[var(--store-page-x)] py-[var(--store-page-y)] md:px-6 md:py-6">
+      <main className="store-client-search-body sf-next-search-body mx-auto w-full max-w-screen-xl">
         {shouldShowSuggestions ? (
           <SearchListSection title="搜索建议">
             {suggestions.map((item) => (
@@ -302,58 +323,43 @@ export default function Search() {
 
         {shouldShowDiscovery ? (
           <>
-            <section className="store-client-search-section" aria-labelledby="client-hot-search-title">
-              <h2 id="client-hot-search-title" className="store-client-search-group-label">热门搜索</h2>
-              <div className="store-client-search-chip-grid">
-                {hotTermLabels.map((term) => (
-                  <UnifiedButton key={term} type="button" onClick={() => commitSearch(term)} className="store-client-search-chip">
-                    {term}
-                  </UnifiedButton>
-                ))}
-              </div>
-            </section>
+            <SearchHistorySection
+              items={searchHistory}
+              onClear={clearSearchHistory}
+              onSelect={commitSearch}
+            />
 
-            {searchHistory.length > 0 ? (
-              <SearchListSection
-                title="最近搜索"
-                action={
-                  <UnifiedButton type="button" onClick={clearSearchHistory} className="store-client-search-section-action">
-                    清空
-                  </UnifiedButton>
-                }
-              >
-                {searchHistory.slice(0, 5).map((term) => (
-                  <SearchSuggestionRow
-                    key={term}
-                    label={term}
-                    meta="历史"
-                    onClick={() => commitSearch(term)}
-                  />
-                ))}
-              </SearchListSection>
-            ) : null}
-
-            <SearchListSection title="最近浏览">
-              {historyProducts.length > 0 ? (
-                historyProducts.slice(0, 3).map((product) => (
-                  <RecentProductRow
-                    key={product.id}
-                    product={product}
-                    onClick={() => navigate(`/product/${product.id}`)}
-                  />
-                ))
-              ) : (
-                <div className="store-client-search-empty-row">暂无最近浏览</div>
-              )}
+            <SearchListSection title="热门搜索">
+              {hotTermLabels.slice(0, 4).map((term, index) => (
+                <SearchSuggestionRow
+                  key={`hot-term-${index}`}
+                  label={term}
+                  index={index + 1}
+                  onClick={() => commitSearch(term)}
+                />
+              ))}
             </SearchListSection>
 
+            <RecentBrowseSection
+              products={recentBrowseProducts}
+              onOpen={(product) => navigate(appendThemePreviewParams(buildProductCardV2Model(product).href))}
+            />
+
+            {recentBrowseProducts.length === 0 ? (
+              <SearchProductStripSection
+                title="推荐浏览"
+                products={recommendedBrowseProducts}
+                loading={showDiscoveryProductsLoading}
+                onOpen={(product) => navigate(appendThemePreviewParams(buildProductCardV2Model(product).href))}
+              />
+            ) : null}
           </>
         ) : (
           <>
-            <div className="store-client-search-results-head">
+            <div className="store-client-search-results-head sf-next-search-results-head">
               <div>
                 <span>搜索结果</span>
-                <h1>“{submittedQuery}”</h1>
+                <h1>{submittedQuery}</h1>
               </div>
               <UnifiedButton type="button" onClick={clearSearch}>
                 清空
@@ -395,38 +401,141 @@ export default function Search() {
   );
 }
 
-function SearchListSection({ title, action, children }: { title: string; action?: ReactNode; children: ReactNode }) {
+function SearchHistorySection({
+  items,
+  onClear,
+  onSelect,
+}: {
+  items: string[];
+  onClear: () => void;
+  onSelect: (term: string) => void;
+}) {
+  if (!items.length) return null;
   return (
-    <section className="store-client-search-section" aria-labelledby={`client-search-section-${title}`}>
+    <section className="store-client-search-section sf-next-search-section" aria-labelledby="client-search-history-title">
       <div className="store-client-search-section-head">
-        <h2 id={`client-search-section-${title}`} className="store-client-search-group-label">{title}</h2>
-        {action}
+        <h2 id="client-search-history-title" className="store-client-search-group-label">搜索历史</h2>
+        <UnifiedButton type="button" onClick={onClear} className="store-client-search-section-action">
+          清空
+        </UnifiedButton>
       </div>
-      <div className="store-client-search-list">{children}</div>
+      <div className="sf-next-search-history-chips">
+        {items.slice(0, 4).map((term) => (
+          <UnifiedButton key={term} type="button" onClick={() => onSelect(term)} className="store-client-search-chip">
+            {term}
+          </UnifiedButton>
+        ))}
+      </div>
     </section>
   );
 }
 
-function SearchSuggestionRow({ label, meta, onClick }: { label: string; meta: string; onClick: () => void }) {
+function SearchListSection({ title, action, children }: { title: string; action?: ReactNode; children: ReactNode }) {
   return (
-    <UnifiedButton type="button" onClick={onClick} className="store-client-search-row">
-      <span className="store-client-search-row-icon"><SearchIcon size={17} aria-hidden /></span>
-      <span className="store-client-search-row-text">{label}</span>
-      <span className="store-client-search-row-side">{meta}</span>
+    <section className="store-client-search-section sf-next-search-section" aria-labelledby={`client-search-section-${title}`}>
+      <div className="store-client-search-section-head">
+        <h2 id={`client-search-section-${title}`} className="store-client-search-group-label">{title}</h2>
+        {action}
+      </div>
+      <div className="store-client-search-list sf-next-search-list">{children}</div>
+    </section>
+  );
+}
+
+function SearchSuggestionRow({
+  label,
+  meta,
+  index,
+  onClick,
+}: {
+  label: string;
+  meta?: string;
+  index?: number;
+  onClick: () => void;
+}) {
+  return (
+    <UnifiedButton type="button" onClick={onClick} className="store-client-search-row sf-next-search-row">
+      <span className="sf-next-search-row-rank">{index ? String(index).padStart(2, "0") : <SearchIcon size={18} aria-hidden />}</span>
+      <span className={cn("store-client-search-row-text", index && index <= 2 && "is-emphasis")}>{label}</span>
+      <span className="store-client-search-row-side">
+        {meta || <ChevronRight size={18} aria-hidden />}
+      </span>
     </UnifiedButton>
   );
 }
 
-function RecentProductRow({ product, onClick }: { product: Product; onClick: () => void }) {
+function RecentBrowseSection({
+  products,
+  onOpen,
+}: {
+  products: Product[];
+  onOpen: (product: Product) => void;
+}) {
+  if (products.length === 0) return null;
   return (
-    <UnifiedButton type="button" onClick={onClick} className="store-client-search-row">
-      <span className="store-client-search-row-icon"><Package size={17} aria-hidden /></span>
-      <span className="store-client-search-row-text">
-        <strong>{product.name}</strong>
+    <section className="store-client-search-section sf-next-search-section" aria-labelledby="client-search-recent-title">
+      <div className="store-client-search-section-head">
+        <h2 id="client-search-recent-title" className="store-client-search-group-label">最近浏览</h2>
+      </div>
+      <div className="sf-next-search-recent-grid">
+        {products.map((product) => (
+          <RecentProductCard key={product.id} product={product} onOpen={() => onOpen(product)} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function SearchProductStripSection({
+  title,
+  products,
+  loading,
+  onOpen,
+}: {
+  title: string;
+  products: Product[];
+  loading: boolean;
+  onOpen: (product: Product) => void;
+}) {
+  if (products.length === 0 && !loading) return null;
+  return (
+    <section className="store-client-search-section sf-next-search-section" aria-labelledby={`client-search-product-strip-${title}`}>
+      <div className="store-client-search-section-head">
+        <h2 id={`client-search-product-strip-${title}`} className="store-client-search-group-label">{title}</h2>
+      </div>
+      <div className="sf-next-search-recent-grid" aria-busy={loading || undefined}>
+        {products.length > 0
+          ? products.map((product) => (
+            <RecentProductCard key={product.id} product={product} onOpen={() => onOpen(product)} />
+          ))
+          : Array.from({ length: 3 }).map((_, index) => (
+            <span key={`search-product-strip-skeleton-${index}`} className="sf-next-search-recent-card sf-next-search-recent-card--skeleton" aria-hidden>
+              <span className="sf-next-search-recent-card__media" />
+              <span className="sf-next-search-recent-card__skeleton-line" />
+              <span className="sf-next-search-recent-card__skeleton-price" />
+            </span>
+          ))}
+      </div>
+    </section>
+  );
+}
+
+function RecentProductCard({ product, onOpen }: { product: Product; onOpen: () => void }) {
+  const vm = buildProductCardV2Model(product);
+  return (
+    <UnifiedButton type="button" className="sf-next-search-recent-card" onClick={onOpen}>
+      <span className="sf-next-search-recent-card__media">
+        <ProductCoverImage
+          url={vm.imageUrl}
+          alt={vm.imageAlt}
+          className="h-full w-full"
+          imgClassName="h-full w-full object-cover"
+          loading="lazy"
+          sizes="112px"
+        />
       </span>
-      <span className="store-client-search-row-side">
-        <ChevronRight size={15} aria-hidden />
-      </span>
+      <span className="sf-next-search-recent-card__name">{vm.name}</span>
+      <StorefrontPrice className="sf-next-search-recent-card__price" amount={vm.priceText} originalAmount={vm.originalPriceText} />
     </UnifiedButton>
   );
 }

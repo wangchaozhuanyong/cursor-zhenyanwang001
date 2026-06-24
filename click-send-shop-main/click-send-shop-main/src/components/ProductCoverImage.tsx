@@ -1,5 +1,6 @@
 import RatioImage, { type ClientImageRatio } from "@/components/client/RatioImage";
 import { THEME_PRODUCT_MEDIA_RATIO } from "@/constants/productMediaAspect";
+import { getProductFallbackImage } from "@/utils/productFallbackImage";
 import { resolveProductImageSrc, type UploadImageVariant } from "@/utils/uploadImageVariant";
 
 type ProductCoverImageProps = {
@@ -31,11 +32,13 @@ export default function ProductCoverImage({
   withBlurPlaceholder = true,
 }: ProductCoverImageProps) {
   const { src, fallbackSrc } = resolveProductImageSrc(url, variant);
+  const fallbackImage = getProductFallbackImage(alt);
 
   return (
     <RatioImage
-      src={src}
-      fallbackSrc={fallbackSrc}
+      src={src || fallbackImage}
+      fallbackSrc={fallbackSrc || fallbackImage}
+      finalFallbackSrc={fallbackImage}
       alt={alt}
       ratio={ratio}
       fit={fit}

@@ -40,10 +40,12 @@ const browserGate = hasBaseUrl
       npm("客户端路由烟测", "smoke:restructure"),
       command("客户端 E2E 入口检查", "node", ["scripts/verify-client-e2e.mjs"]),
       npm("UI 重叠扫描", "audit:overlap", {
-        env: hasAdminAuth ? {} : { SKIP_ADMIN: process.env.SKIP_ADMIN || "1" },
+        env: hasAdminAuth ? { REQUIRE_ADMIN_SCAN: process.env.REQUIRE_ADMIN_SCAN || "1" } : { SKIP_ADMIN: process.env.SKIP_ADMIN || "1" },
         reason: hasAdminAuth ? "" : "未提供 ADMIN_BASE_URL/ADMIN_PASSWORD，跳过后台登录态扫描",
       }),
-      npm("路由切换扫描", "audit:route-transition"),
+      npm("路由切换扫描", "audit:route-transition", {
+        env: hasAdminAuth ? { REQUIRE_ADMIN_SCAN: process.env.REQUIRE_ADMIN_SCAN || "1" } : {},
+      }),
     ]
   : [];
 

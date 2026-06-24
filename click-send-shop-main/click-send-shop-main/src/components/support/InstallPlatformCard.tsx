@@ -1,4 +1,4 @@
-import { Apple, CheckCircle2, Copy, Info, PlusSquare, Share2, Smartphone } from "lucide-react";
+import { Apple, CheckCircle2, ChevronDown, Copy, Info, PlusSquare, Share2, Smartphone } from "lucide-react";
 import { toast } from "sonner";
 import type { DownloadPlatform } from "@/types/content";
 import type { usePwaInstallPrompt } from "@/hooks/usePwaInstallPrompt";
@@ -39,6 +39,12 @@ function IosGuideIcon({ icon }: { icon: (typeof IOS_STEP_ICONS)[number] }) {
   return <CheckCircle2 size={18} aria-hidden="true" />;
 }
 
+function compactText(text: string, maxLength = 86) {
+  const normalized = text.replace(/\s+/g, " ").trim();
+  if (normalized.length <= maxLength) return normalized;
+  return `${normalized.slice(0, maxLength - 1)}…`;
+}
+
 export default function InstallPlatformCard({ platform, browser, pwa, recommended, installUrl }: Props) {
   const isAndroid = platform.type === "android";
   const isIos = platform.type === "ios";
@@ -69,6 +75,9 @@ export default function InstallPlatformCard({ platform, browser, pwa, recommende
   const instructions = (platform.instructions || [])
     .map((step) => step.trim())
     .filter(Boolean);
+  const visibleInstructions = instructions.slice(0, 3);
+  const hasLongDescription = description.replace(/\s+/g, " ").trim().length > 86;
+  const shouldShowDetails = hasLongDescription || instructions.length > visibleInstructions.length;
 
   return (
     <section className="support-install-card">
@@ -86,7 +95,7 @@ export default function InstallPlatformCard({ platform, browser, pwa, recommende
             ) : null}
           </div>
           {description ? (
-            <p>{description}</p>
+            <p className="support-install-summary">{compactText(description)}</p>
           ) : null}
         </div>
       </div>
@@ -162,7 +171,7 @@ export default function InstallPlatformCard({ platform, browser, pwa, recommende
             </p>
           ) : null}
           <div className="support-ios-step-grid">
-            {instructions.map((step, index) => (
+            {visibleInstructions.map((step, index) => (
               <div key={`${platform.id}-${index}-${step}`} className="support-ios-step-card">
                 <span className="support-ios-step-number">{index + 1}</span>
                 <span className="support-ios-step-icon">
@@ -177,12 +186,34 @@ export default function InstallPlatformCard({ platform, browser, pwa, recommende
         </div>
       ) : null}
 
-      {showDefaultInstructions ? (
-        <ol className="support-install-steps">
-          {instructions.map((step, index) => (
-            <li key={`${platform.id}-${index}`}>{step}</li>
+      {showDefaultInstructions && visibleInstructions.length > 0 ? (
+        <div className="support-install-step-grid" aria-label="安装关键步骤">
+          {visibleInstructions.map((step, index) => (
+            <div key={`${platform.id}-${index}-${step}`} className="support-install-step-card">
+              <span className="support-install-step-number">{index + 1}</span>
+              <p>{step}</p>
+            </div>
           ))}
-        </ol>
+        </div>
+      ) : null}
+
+      {shouldShowDetails ? (
+        <details className="support-install-details">
+          <summary>
+            <span>完整安装说明</span>
+            <ChevronDown size={16} aria-hidden="true" />
+          </summary>
+          <div className="support-install-details__content">
+            {hasLongDescription ? <p>{description}</p> : null}
+            {instructions.length > visibleInstructions.length ? (
+              <ol>
+                {instructions.map((step, index) => (
+                  <li key={`${platform.id}-detail-${index}`}>{step}</li>
+                ))}
+              </ol>
+            ) : null}
+          </div>
+        </details>
       ) : null}
 
       {showBottomCopyButton ? (

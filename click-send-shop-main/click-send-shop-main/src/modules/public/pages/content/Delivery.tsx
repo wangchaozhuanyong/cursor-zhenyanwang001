@@ -1,4 +1,4 @@
-import { Clock3, MapPin, PackageCheck, ShieldCheck, Truck } from "lucide-react";
+import { MapPin, PackageCheck, ShieldCheck, Truck } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import SeoHead from "@/components/SeoHead";
@@ -35,11 +35,24 @@ const deliveryZones = [
 ];
 
 const ruleItems = [
-  "运费会在结算页自动计算。",
   "地址需要包含州属、城市、邮编和手机号，避免配送规则匹配失败。",
+  "手机号需要能正常联系，便于客服或物流确认。",
   "库存、活动和运费会在提交订单前确认。",
   "限制类商品、超重商品或特殊地址可能出现不可配送提示。",
 ];
+
+const SHIPPING_PLACEHOLDER_MARKERS = [
+  "请在后台",
+  "内容管理",
+  "维护配送政策正文",
+  "这里展示配送说明",
+];
+
+function isShippingPlaceholderBody(body?: string | null): boolean {
+  const text = String(body || "").trim();
+  if (!text) return true;
+  return SHIPPING_PLACEHOLDER_MARKERS.some((marker) => text.includes(marker));
+}
 
 export default function Delivery() {
   const goBack = useGoBack("/");
@@ -64,7 +77,8 @@ export default function Delivery() {
     };
   }, []);
 
-  const hasCmsDelivery = Boolean(page?.content?.trim());
+  const cmsDeliveryBody = page?.content && !isShippingPlaceholderBody(page.content) ? page.content : "";
+  const hasCmsDelivery = Boolean(cmsDeliveryBody);
   const seoDescription = useMemo(() => {
     if (page?.content) return truncateText(stripHtml(page.content), 150);
     return `${siteName} 配送方式、东西马配送说明、地址填写和物流轨迹说明。`;
@@ -117,46 +131,48 @@ export default function Delivery() {
       </div>
 
       {hasCmsDelivery ? (
-        <section className="store-v12-info-card mt-4">
+        <section className="store-v12-info-card mt-4" aria-labelledby="delivery-cms-title">
+          <div className="store-v12-card-title" id="delivery-cms-title">
+            <PackageCheck size={18} aria-hidden />
+            配送政策正文
+          </div>
           <article
             className="store-body-text store-content-v12-article"
-            dangerouslySetInnerHTML={{ __html: sanitizeCmsHtml(page?.content || "") }}
+            dangerouslySetInnerHTML={{ __html: sanitizeCmsHtml(cmsDeliveryBody) }}
           />
         </section>
-      ) : (
-        <>
-          <section className="store-v12-grid mt-4">
-            {deliveryZones.map((item) => {
-              const Icon = item.icon;
-              return (
-                <article key={item.title} className="store-v12-info-card">
-                  <span className="store-v12-card-icon" aria-hidden>
-                    <Icon size={20} />
-                  </span>
-                  <h3>{item.title}</h3>
-                  <p>{item.description}</p>
-                  <small>{item.meta}</small>
-                </article>
-              );
-            })}
-          </section>
+      ) : null}
 
-          <section className="store-v12-info-card mt-4">
-            <div className="store-v12-card-title">
-              <Clock3 size={18} aria-hidden />
-              下单前需要知道
+      <section className="store-delivery-v12-section mt-4" aria-labelledby="delivery-zone-title">
+        <h2 className="store-v12-section-title" id="delivery-zone-title">配送范围</h2>
+        <div className="store-v12-grid">
+          {deliveryZones.map((item) => {
+            const Icon = item.icon;
+            return (
+              <article key={item.title} className="store-v12-info-card">
+                <span className="store-v12-card-icon" aria-hidden>
+                  <Icon size={20} />
+                </span>
+                <h3>{item.title}</h3>
+                <p>{item.description}</p>
+                <small>{item.meta}</small>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="store-delivery-v12-section mt-4" aria-labelledby="delivery-ready-title">
+        <h2 className="store-v12-section-title" id="delivery-ready-title">准备地址</h2>
+        <div className="store-delivery-v12-checklist">
+          {ruleItems.map((item) => (
+            <div key={item} className="store-v12-list-row">
+              <span className="store-v12-dot" aria-hidden />
+              <span>{item}</span>
             </div>
-            <div className="store-v12-list">
-              {ruleItems.map((item) => (
-                <div key={item} className="store-v12-list-row">
-                  <span className="store-v12-dot" aria-hidden />
-                  <span>{item}</span>
-                </div>
-              ))}
-            </div>
-          </section>
-        </>
-      )}
+          ))}
+        </div>
+      </section>
     </StoreStandardPageShell>
   );
 }

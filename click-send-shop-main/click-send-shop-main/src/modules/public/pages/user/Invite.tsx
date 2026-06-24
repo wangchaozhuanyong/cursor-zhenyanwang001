@@ -13,6 +13,7 @@ import { copyToClipboard } from "@/utils/clipboard";
 import { runGuardedDownload } from "@/utils/downloadConfirm";
 import { triggerBrowserFileDownload } from "@/utils/fileDownload";
 import { useLoyaltyVisibility } from "@/hooks/useLoyaltyVisibility";
+import { useThemeQrColors } from "@/hooks/useThemeQrColors";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 import SharePassCard from "@/modules/storefront-v2/design/components/SharePassCard";
 import logoIconUrl from "@/assets/logo-icon.png";
@@ -372,6 +373,7 @@ export default function Invite() {
   const navigate = useNavigate();
   const goBack = useGoBack();
   const { inviteCode, parentInviteCode, loadProfile } = useUserStore();
+  const qrColors = useThemeQrColors();
   const [stats, setStats] = useState<InviteStats | null>(null);
   const [records, setRecords] = useState<InviteRecord[]>([]);
   const [copyState, setCopyState] = useState<"idle" | "loading" | "copied">("idle");
@@ -496,7 +498,15 @@ export default function Invite() {
     >
       <main className="sf-next-container sf-next-invite-page">
         <div className="pointer-events-none fixed -left-[9999px] -top-[9999px]" aria-hidden>
-          <QRCodeCanvas ref={qrRef} value={inviteLink} size={520} level="H" marginSize={2} fgColor="#12231f" bgColor="#ffffff" />
+          <QRCodeCanvas
+            ref={qrRef}
+            value={inviteLink}
+            size={520}
+            level="H"
+            marginSize={2}
+            fgColor={qrColors.foreground}
+            bgColor={qrColors.background}
+          />
         </div>
 
         <SharePassCard
@@ -506,7 +516,14 @@ export default function Invite() {
           disabled={!inviteCode}
           onCopyInviteCode={copyInviteCode}
           qrCode={inviteCode ? (
-            <QRCodeCanvas value={inviteLink} size={132} level="H" marginSize={1} fgColor="#20231f" bgColor="#ffffff" />
+            <QRCodeCanvas
+              value={inviteLink}
+              size={132}
+              level="H"
+              marginSize={1}
+              fgColor={qrColors.foreground}
+              bgColor={qrColors.background}
+            />
           ) : (
             <span className="sf-next-qr-waiting">等待邀请码</span>
           )}

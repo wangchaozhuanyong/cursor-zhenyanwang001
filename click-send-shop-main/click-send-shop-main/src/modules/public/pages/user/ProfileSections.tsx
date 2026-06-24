@@ -1,10 +1,9 @@
 import type { LucideIcon } from "lucide-react";
 import {
-  Camera,
   ChevronRight,
-  Crown,
   LogOut,
   PackageCheck,
+  Pencil,
   ShieldCheck,
   Ticket,
   User,
@@ -100,20 +99,63 @@ function ProfileSectionTitle({
   );
 }
 
-export function ProfileHeroCard({
+export function ProfileIdentityHeader({
   logoSrc,
   avatar,
   userName,
-  memberLevelName,
-  progress,
-  assets,
-  unreadCount,
   onMessageClick,
-  onMemberLevelClick,
   onProfileClick,
-  onViewAllBenefits,
-  onAssetNavigate,
   onAvatarClick,
+  unreadCount,
+}: {
+  logoSrc: string;
+  avatar?: string;
+  userName: string;
+  onMessageClick: () => void;
+  onProfileClick: () => void;
+  onAvatarClick: () => void;
+  unreadCount: number;
+}) {
+  const displayName = formatProfileHeroName(userName);
+  const avatarSrc = avatar || profileVipAvatarImage || logoSrc;
+
+  return (
+    <section className="client-profile-identity" aria-label="账户资料">
+      <UnifiedButton type="button" onClick={onAvatarClick} className="client-profile-identity__avatar" aria-label="更换头像">
+        {avatarSrc ? (
+          <StableImage
+            src={avatarSrc}
+            alt={userName}
+            className="client-profile-identity__avatar-image"
+            imgClassName="object-cover"
+          />
+        ) : (
+          <span>{userName.slice(0, 1)}</span>
+        )}
+      </UnifiedButton>
+      <button type="button" onClick={onProfileClick} className="client-profile-identity__copy">
+        <strong title={userName} aria-label={userName}>{displayName}</strong>
+        <span>查看账户资料</span>
+      </button>
+      <div className="client-profile-identity__actions">
+        <NotificationIconButton
+          unreadCount={unreadCount}
+          onClick={onMessageClick}
+          className="client-profile-identity__icon-button"
+        />
+        <UnifiedButton type="button" onClick={onProfileClick} className="client-profile-identity__icon-button" aria-label="编辑资料">
+          <Pencil size={21} aria-hidden />
+        </UnifiedButton>
+      </div>
+    </section>
+  );
+}
+
+export function ProfileHeroCard({
+  memberLevelName,
+  assets,
+  onMemberLevelClick,
+  onAssetNavigate,
 }: {
   logoSrc: string;
   avatar?: string;
@@ -129,100 +171,39 @@ export function ProfileHeroCard({
   onAssetNavigate?: (item: ProfileAssetItem) => void;
   onAvatarClick: () => void;
 }) {
-  const displayName = formatProfileHeroName(userName);
-  const progressPercent = Math.min(100, Math.max(0, Math.round(progress?.percent ?? 0)));
-  const avatarSrc = avatar || profileVipAvatarImage || logoSrc;
+  const folioAssets = (assets || []).slice(0, 3);
 
   return (
-    <section className="store-profile-vip-card client-profile-hero-card">
+    <section className="store-profile-vip-card client-profile-hero-card" onClick={onMemberLevelClick}>
       <span className="profile-vip-watermark" aria-hidden="true" />
-      <div className="profile-vip-header">
-        <UnifiedButton type="button" onClick={onAvatarClick} className="profile-avatar-button" aria-label="更换头像">
-          <span className="profile-avatar-ring">
-            {avatarSrc ? (
-              <StableImage
-                src={avatarSrc}
-                alt={userName}
-                className="profile-avatar-image h-full w-full rounded-full"
-                imgClassName="rounded-full object-cover"
-              />
-            ) : (
-              <span className="profile-avatar-fallback">{userName.slice(0, 1)}</span>
-            )}
-          </span>
-          <span className="profile-avatar-camera">
-            <Camera size={11} />
-          </span>
-        </UnifiedButton>
-
-        <div className="profile-vip-copy">
-          <div className="profile-vip-name-row">
-            <p className="profile-vip-name" title={userName} aria-label={userName}>{displayName}</p>
-            <UnifiedButton type="button" onClick={onMemberLevelClick} className="profile-vip-badge">
-              <Crown size={13} />
-              <span>{memberLevelName}</span>
-            </UnifiedButton>
-          </div>
-        </div>
-
-        <div className="profile-vip-message">
-          <NotificationIconButton
-            unreadCount={unreadCount}
-            onClick={onMessageClick}
-            className="profile-vip-notification"
-          />
-        </div>
+      <div className="profile-vip-folio-head">
+        <span>MEMBER FOLIO</span>
+        <h2>{memberLevelName}</h2>
+        <p>权益以当前会员配置为准</p>
       </div>
 
-      {progress ? (
-        <div className="profile-vip-progress">
-          <div className="profile-vip-progress-meta">
-            <span>{progress.label}</span>
-            <b>{progress.value}</b>
-          </div>
-          <div className="profile-vip-progress-track">
-            <span
-              style={{ width: `${progressPercent}%` }}
-              role="progressbar"
-              aria-label="会员等级进度"
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-valuenow={progressPercent}
-            />
-          </div>
-        </div>
-      ) : null}
-
-      {assets?.length ? (
+      {folioAssets.length ? (
         <div className="profile-card-assets" aria-label="我的资产">
-          {assets.map((item) => (
+          {folioAssets.map((item) => (
             <UnifiedButton
               key={item.key}
               type="button"
               data-feature-key={item.key}
-              onClick={() => onAssetNavigate?.(item)}
+              aria-label={`${item.label}：${item.value}`}
+              onClick={(event) => {
+                event.stopPropagation();
+                onAssetNavigate?.(item);
+              }}
               className="profile-card-asset"
             >
-              <span className="profile-card-asset-icon" aria-hidden="true">
-                <item.icon size={15} strokeWidth={2.2} />
+              <span className="profile-card-asset-token" aria-hidden="true">
+                {item.label.replace(/^我的/, "").slice(0, 1) || "会"}
               </span>
-              <b>{item.value}</b>
               <span>{item.label}</span>
             </UnifiedButton>
           ))}
         </div>
       ) : null}
-
-      <div className="profile-vip-actions">
-        <UnifiedButton type="button" onClick={onProfileClick} className="profile-vip-action profile-vip-action--ghost">
-          <User size={19} />
-          <span>个人资料</span>
-        </UnifiedButton>
-        <UnifiedButton type="button" onClick={onViewAllBenefits} className="profile-vip-action profile-vip-action--gold">
-          <Crown size={19} />
-          <span>会员权益</span>
-        </UnifiedButton>
-      </div>
     </section>
   );
 }

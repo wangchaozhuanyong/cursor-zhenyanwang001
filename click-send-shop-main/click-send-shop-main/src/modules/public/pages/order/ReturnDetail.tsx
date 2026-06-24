@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { CreditCard, ImagePlus, Loader2, PackageCheck, RotateCcw, Truck, X } from "lucide-react";
+import { useParams } from "react-router-dom";
+import { AlertTriangle, CreditCard, ImagePlus, Loader2, PackageCheck, RotateCcw, Truck, X } from "lucide-react";
 import { toast } from "sonner";
 import { useGoBack } from "@/hooks/useGoBack";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
@@ -29,6 +29,7 @@ import StatusTimeline, { type StatusTimelineItem } from "@/modules/storefront-v2
 
 const ORDER_REFUND_STATUS_LABELS: Record<PublicLocale, Record<string, string>> = {
   zh: {
+    none: "暂无退款",
     pending: "待处理",
     paid: "未退款",
     partially_refunded: "部分退款",
@@ -36,6 +37,7 @@ const ORDER_REFUND_STATUS_LABELS: Record<PublicLocale, Record<string, string>> =
     refunding: "退款中",
   },
   en: {
+    none: "No refund yet",
     pending: "Pending",
     paid: "Not refunded",
     partially_refunded: "Partially refunded",
@@ -58,6 +60,8 @@ const RETURN_DETAIL_COPY: Record<PublicLocale, {
   completedSubmitted: string;
   title: string;
   backToProgress: string;
+  unavailableTitle: string;
+  unavailableDescription: string;
   loading: string;
   order: string;
   quantity: string;
@@ -111,6 +115,8 @@ const RETURN_DETAIL_COPY: Record<PublicLocale, {
     completedSubmitted: "售后已确认完成",
     title: "售后详情",
     backToProgress: "返回售后进度",
+    unavailableTitle: "售后记录不可用",
+    unavailableDescription: "该售后记录不存在，或当前账号没有查看权限。",
     loading: "加载中...",
     order: "订单",
     quantity: "申请数量",
@@ -164,6 +170,8 @@ const RETURN_DETAIL_COPY: Record<PublicLocale, {
     completedSubmitted: "After-sales case confirmed completed",
     title: "After-sales details",
     backToProgress: "Back to progress",
+    unavailableTitle: "Return record unavailable",
+    unavailableDescription: "This after-sales record does not exist, or this account cannot view it.",
     loading: "Loading...",
     order: "Order",
     quantity: "Request quantity",
@@ -207,7 +215,12 @@ const RETURN_DETAIL_COPY: Record<PublicLocale, {
 
 function getOrderRefundStatusLabel(status?: string, locale: PublicLocale = "zh") {
   const labels = ORDER_REFUND_STATUS_LABELS[locale] || ORDER_REFUND_STATUS_LABELS.zh;
-  return labels[status || ""] || status || RETURN_DETAIL_COPY[locale]?.noRefund || RETURN_DETAIL_COPY.zh.noRefund;
+  const normalized = String(status || "").trim().toLowerCase();
+  const noRefund = RETURN_DETAIL_COPY[locale]?.noRefund || RETURN_DETAIL_COPY.zh.noRefund;
+  if (!normalized || normalized === "none" || normalized === "null" || normalized === "undefined") {
+    return noRefund;
+  }
+  return labels[normalized] || status || noRefund;
 }
 
 function money(value?: number | string | null) {
@@ -216,12 +229,12 @@ function money(value?: number | string | null) {
 
 export default function ReturnDetail() {
   const { id } = useParams();
-  const navigate = useNavigate();
   const { localizedPath, locale } = usePublicLocale();
   const copy = RETURN_DETAIL_COPY[locale];
   const goBack = useGoBack(localizedPath("/returns"));
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [detail, setDetail] = useState<ReturnRequest | null>(null);
+  const [errorMessage, setErrorMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [evidenceText, setEvidenceText] = useState("");
@@ -235,17 +248,18 @@ export default function ReturnDetail() {
   const loadDetail = useCallback(async () => {
     if (!id) return;
     setLoading(true);
+    setErrorMessage("");
     try {
       const data = await returnService.fetchReturnById(id);
       setDetail(data);
       setContactPhone(data.contact_phone || "");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : copy.loadFailed);
-      navigate(localizedPath("/returns"), { replace: true });
+      setDetail(null);
+      setErrorMessage(error instanceof Error ? error.message : copy.loadFailed);
     } finally {
       setLoading(false);
     }
-  }, [copy.loadFailed, id, localizedPath, navigate]);
+  }, [copy.loadFailed, id]);
 
   useEffect(() => {
     void loadDetail();
@@ -363,6 +377,22 @@ export default function ReturnDetail() {
     <StoreAccountLayout title={copy.title} onBack={goBack} backFallback={localizedPath("/returns")} desktopBackLabel={copy.backToProgress} className="store-v12-page store-return-detail-v12-page" mainClassName="sm:px-4 xl:py-6">
       <main className="mx-auto w-full max-w-3xl space-y-4 text-sm">
         {loading ? <p className="rounded-xl border border-border bg-card p-4 text-muted-foreground">{copy.loading}</p> : null}
+        {!loading && !detail && errorMessage ? (
+          <section className="store-account-v12-empty-panel store-return-detail-v12-state" role="status">
+            <span className="store-account-v12-empty-panel__icon" aria-hidden>
+              <AlertTriangle size={20} />
+            </span>
+            <h2>{copy.unavailableTitle}</h2>
+            <p>{errorMessage || copy.unavailableDescription}</p>
+            <UnifiedButton
+              type="button"
+              onClick={goBack}
+              className="store-account-v12-empty-panel__action"
+            >
+              {copy.backToProgress}
+            </UnifiedButton>
+          </section>
+        ) : null}
         {detail ? (
           <>
             <section className="store-return-detail-v12-hero">

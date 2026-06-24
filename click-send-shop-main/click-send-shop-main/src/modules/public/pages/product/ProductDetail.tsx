@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { ArrowLeft, BadgePercent, Headphones, PackageCheck, ShieldCheck } from "lucide-react";
+import { ArrowLeft, BadgePercent, ChevronRight, Headphones, PackageCheck, ShieldCheck } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useProductStore } from "@/stores/useProductStore";
 import { useCartStore } from "@/stores/useCartStore";
@@ -274,6 +274,7 @@ export default function ProductDetail() {
   const siteName = siteInfo.siteName || STORE_COPY.brandName;
   const canonical = buildCanonical(`/product/${product.id}`);
   const productDescRaw = storefrontOptionalDisplayText(stripHtml(product.description || "")) || "";
+  const productLead = productDescRaw ? truncateText(detailSections[0] || productDescRaw, 42) : "";
   const productDescription = truncateText(
     restricted
       ? "本页面包含受年龄、地区或当地法规限制的商品或服务信息，仅面向符合法定年龄并符合当地规定的用户展示。具体适用范围以当地法律法规、平台规则和客服确认为准。"
@@ -447,7 +448,7 @@ export default function ProductDetail() {
   };
 
   return (
-    <div className={cn("store-conversion-page store-v12-page store-product-detail-page store-bottom-action-space min-h-screen text-[var(--theme-text)] md:pb-0 lg:pb-0", pageBgClass)} data-storefront-client-style={clientStyle}>
+    <div className={cn("store-conversion-page store-v12-page sf-next-product-detail-page store-product-detail-page store-bottom-action-space min-h-screen text-[var(--theme-text)] md:pb-0 lg:pb-0", pageBgClass)} data-storefront-client-style={clientStyle}>
       <SeoHead
         title={`${displayProductName}｜${siteName}`}
         description={productDescription}
@@ -466,7 +467,7 @@ export default function ProductDetail() {
         onShare={handleShare}
         onCart={() => navigate(localizedPath("/cart"))}
       />
-      <main className="mx-auto w-full max-w-screen-xl px-0 md:px-6 lg:px-8">
+      <main className="sf-next-product-detail-main mx-auto w-full max-w-screen-xl px-0 md:px-6 lg:px-8">
         <UnifiedButton
           type="button"
           onClick={goBack}
@@ -475,9 +476,9 @@ export default function ProductDetail() {
           <ArrowLeft size={16} />
           返回
         </UnifiedButton>
-        <div className="store-detail-layout md:grid md:grid-cols-2 md:gap-10 md:items-start md:py-6 lg:gap-12 lg:py-8">
+        <div className="store-detail-layout sf-next-product-detail-layout md:grid md:grid-cols-2 md:gap-10 md:items-start md:py-6 lg:gap-12 lg:py-8">
           <div className={cn("md:sticky md:self-start", STORE_DETAIL_STICKY_TOP_CLASS)}>
-            <div className="store-detail-gallery relative overflow-hidden md:theme-rounded md:border md:border-[var(--theme-border)]">
+            <div className="store-detail-gallery sf-next-product-gallery relative overflow-hidden md:theme-rounded md:border md:border-[var(--theme-border)]">
               <ProductImageGallery
                 images={galleryImages}
                 imageAlts={galleryImageAlts}
@@ -496,7 +497,7 @@ export default function ProductDetail() {
                 aria-hidden
               />
               <div
-                className="store-detail-info-card px-[var(--store-page-x)] pt-5 md:px-0 md:pt-0"
+                className="store-detail-info-card sf-next-product-summary px-[var(--store-page-x)] pt-5 md:px-0 md:pt-0"
                 style={
                   headerSolid
                     ? { scrollMarginTop: "calc(var(--store-tab-header-height, 3.5rem) + env(safe-area-inset-top, 0px))" }
@@ -537,6 +538,9 @@ export default function ProductDetail() {
               <h1 className="mt-3 font-display text-lg font-semibold leading-snug text-foreground md:text-[22px] md:leading-tight">
                 {displayProductName}
               </h1>
+              {productLead ? (
+                <p className="sf-next-product-lead">{productLead}</p>
+              ) : null}
               <ProductActivityPanel activity={activeActivity} />
               {showRegulatedNotice ? <RegulatedProductNotice {...regulatedNoticeProps} /> : null}
               {purchaseAgeBlocked ? (
@@ -544,10 +548,19 @@ export default function ProductDetail() {
                   该商品需年满 {purchaseMinimumAge} 岁方可购买，请点击下方「需年龄确认」完成验证。
                 </p>
               ) : null}
+              <ProductTradeRows
+                couponEnabled={siteCapabilities.couponEnabled}
+                couponLabel={activeActivity?.promo_label || product.activity_promo_label || "可用优惠以结算页为准"}
+                specLabel={selectedVariant?.title || defaultVariant?.title || (hasMultipleVariants ? "请选择规格" : "标准规格")}
+                deliveryLabel="配送方式以结算页为准"
+                onCouponClick={() => navigate(localizedPath("/coupons"))}
+                onSpecClick={() => openPurchaseSheet("cart")}
+              />
               <ProductTagList tags={product.tags} max={6} size="md" className="mt-3" />
               </div>
               <DesktopPurchaseActionCard className="mt-4">
                 <DetailPurchaseBar
+                  mode="desktop"
                   soldOut={soldOut}
                   purchaseBlocked={purchaseAgeBlocked}
                   isFavorite={isFavorite}
@@ -608,6 +621,7 @@ export default function ProductDetail() {
       <div className="store-mobile-submit-bar fixed bottom-0 left-0 right-0 z-checkout-bar border-t border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md pb-safe safe-bottom-bar md:hidden">
         <div className="mx-auto w-full px-[var(--store-page-x)] py-3 sm:max-w-lg sm:px-4">
           <DetailPurchaseBar
+            mode="mobile"
             soldOut={soldOut}
             purchaseBlocked={purchaseAgeBlocked}
             isFavorite={isFavorite}
@@ -713,8 +727,81 @@ function ProductDetailContentPanel({
   );
 }
 
+function ProductTradeRows({
+  couponEnabled,
+  couponLabel,
+  specLabel,
+  deliveryLabel,
+  onCouponClick,
+  onSpecClick,
+}: {
+  couponEnabled: boolean;
+  couponLabel: string;
+  specLabel: string;
+  deliveryLabel: string;
+  onCouponClick: () => void;
+  onSpecClick: () => void;
+}) {
+  const rows = [
+    couponEnabled
+      ? {
+        key: "coupon",
+        label: "领券",
+        value: couponLabel,
+        onClick: onCouponClick,
+      }
+      : null,
+    {
+      key: "spec",
+      label: "规格",
+      value: specLabel,
+      onClick: onSpecClick,
+    },
+    {
+      key: "delivery",
+      label: "配送",
+      value: deliveryLabel,
+      onClick: undefined,
+    },
+  ].filter(Boolean) as Array<{
+    key: string;
+    label: string;
+    value: string;
+    onClick?: () => void;
+  }>;
+
+  return (
+    <div className="sf-next-product-trade-rows" aria-label="商品交易信息">
+      {rows.map((row) => {
+        const content = (
+          <>
+            <span className="sf-next-product-trade-row__label">{row.label}</span>
+            <span className="sf-next-product-trade-row__value">{row.value}</span>
+            {row.onClick ? <ChevronRight size={17} aria-hidden /> : null}
+          </>
+        );
+        return row.onClick ? (
+          <UnifiedButton
+            key={row.key}
+            type="button"
+            onClick={row.onClick}
+            className="sf-next-product-trade-row"
+          >
+            {content}
+          </UnifiedButton>
+        ) : (
+          <div key={row.key} className="sf-next-product-trade-row">
+            {content}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 /** 详情页购买操作条：左收藏/客服，右加入购物车 + 立即购买（淘宝式双按钮） */
 function DetailPurchaseBar({
+  mode = "desktop",
   soldOut,
   purchaseBlocked = false,
   isFavorite,
@@ -723,6 +810,7 @@ function DetailPurchaseBar({
   onAddToCart,
   onBuyNow,
 }: {
+  mode?: "desktop" | "mobile";
   soldOut: boolean;
   purchaseBlocked?: boolean;
   isFavorite: boolean;
@@ -733,8 +821,8 @@ function DetailPurchaseBar({
 }) {
   const disabled = soldOut;
   return (
-    <div className="store-detail-purchase-bar flex items-stretch gap-3">
-      <div className="flex shrink-0 items-center gap-4 pr-1">
+    <div className="store-detail-purchase-bar flex items-stretch gap-3" data-mode={mode}>
+      <div className="store-detail-purchase-bar__utility flex shrink-0 items-center gap-4 pr-1">
         <div className="flex min-w-[2.75rem] flex-col items-center gap-0.5 text-[var(--theme-text-muted)]">
           <FavoriteMotionButton
             active={isFavorite}
@@ -744,26 +832,28 @@ function DetailPurchaseBar({
           />
           <span className="text-[10px]">{isFavorite ? "已收藏" : "收藏"}</span>
         </div>
-        <UnifiedButton
-          type="button"
-          onClick={onCustomerService}
-          className="flex min-w-[2.75rem] flex-col items-center gap-0.5 text-[var(--theme-text-muted)]"
-          aria-label="联系客服"
-        >
-          <span className="store-detail-mini-action-icon flex h-9 w-9 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)]">
-            <Headphones size={18} strokeWidth={2} aria-hidden="true" />
-          </span>
-          <span className="text-[10px]">客服</span>
-        </UnifiedButton>
+        {mode === "desktop" ? (
+          <UnifiedButton
+            type="button"
+            onClick={onCustomerService}
+            className="flex min-w-[2.75rem] flex-col items-center gap-0.5 text-[var(--theme-text-muted)]"
+            aria-label="联系客服"
+          >
+            <span className="store-detail-mini-action-icon flex h-9 w-9 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)]">
+              <Headphones size={18} strokeWidth={2} aria-hidden="true" />
+            </span>
+            <span className="text-[10px]">客服</span>
+          </UnifiedButton>
+        ) : null}
       </div>
-      <div className="w-px shrink-0 self-stretch bg-[var(--theme-border)]" aria-hidden />
-      <div className="flex min-w-0 flex-1 overflow-hidden rounded-full shadow-sm">
+      {mode === "desktop" ? <div className="store-detail-purchase-bar__divider w-px shrink-0 self-stretch bg-[var(--theme-border)]" aria-hidden /> : null}
+      <div className="store-detail-purchase-bar__primary flex min-w-0 flex-1 overflow-hidden rounded-full shadow-sm">
         <UnifiedButton
           type="button"
           disabled={disabled}
           onClick={onAddToCart}
           className={cn(
-            "min-h-11 flex-1 px-2 text-sm font-semibold transition-opacity",
+            "store-detail-add-cart min-h-11 flex-1 px-2 text-sm font-semibold transition-opacity",
             THEME_BTN_ACCENT_SOLID,
             "disabled:cursor-not-allowed disabled:opacity-50",
           )}
@@ -775,7 +865,7 @@ function DetailPurchaseBar({
           disabled={disabled}
           onClick={onBuyNow}
           className={cn(
-            "min-h-11 flex-1 px-2 text-sm font-semibold transition-opacity",
+            "store-detail-buy-now min-h-11 flex-1 px-2 text-sm font-semibold transition-opacity",
             "bg-[var(--theme-price)] text-[var(--theme-price-foreground)]",
             "disabled:cursor-not-allowed disabled:opacity-50",
           )}

@@ -106,7 +106,7 @@ export const ACCOUNT_FEATURE_REGISTRY: AccountFeatureItem[] = [
   { key: "settings", label: "账户设置", path: "/settings", icon: Settings, requireAuth: true, group: "secondary", visibleOn: ALL_VIEWPORTS },
   { key: "memberBenefits", label: "会员权益", path: "/member/benefits", icon: User, requireAuth: true, capability: "memberLevelEnabled", group: "hero", visibleOn: ALL_VIEWPORTS },
   { key: "support", label: "客服中心", path: "/support-download?tab=support", icon: Headphones, capability: "customerServiceDownloadEnabled", group: "services", visibleOn: ALL_VIEWPORTS },
-  { key: "install", label: "添加到桌面", path: "/support-download?tab=download", icon: Smartphone, capability: "customerServiceDownloadEnabled", group: "services", visibleOn: ALL_VIEWPORTS },
+  { key: "install", label: "安装应用", path: "/support-download?tab=download", icon: Smartphone, capability: "customerServiceDownloadEnabled", group: "services", visibleOn: ALL_VIEWPORTS },
   { key: "help", label: "帮助中心", path: "/help", icon: CircleHelp, group: "secondary", visibleOn: ALL_VIEWPORTS },
   { key: "about", label: "关于我们", path: "/about", icon: Info, group: "secondary", visibleOn: ALL_VIEWPORTS },
 ];

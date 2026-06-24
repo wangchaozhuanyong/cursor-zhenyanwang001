@@ -1,13 +1,38 @@
 import { useEffect, useState } from "react";
 import { fetchLoyaltyConfig, type LoyaltyConfig } from "@/services/loyaltyService";
 
+let cachedLoyaltyConfig: LoyaltyConfig | null = null;
+let loyaltyConfigRequest: Promise<LoyaltyConfig> | null = null;
+
+function loadLoyaltyConfig() {
+  if (cachedLoyaltyConfig) return Promise.resolve(cachedLoyaltyConfig);
+  if (!loyaltyConfigRequest) {
+    loyaltyConfigRequest = fetchLoyaltyConfig()
+      .then((cfg) => {
+        cachedLoyaltyConfig = cfg;
+        return cfg;
+      })
+      .finally(() => {
+        loyaltyConfigRequest = null;
+      });
+  }
+  return loyaltyConfigRequest;
+}
+
 export function useLoyaltyVisibility() {
-  const [config, setConfig] = useState<LoyaltyConfig | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [config, setConfig] = useState<LoyaltyConfig | null>(cachedLoyaltyConfig);
+  const [loading, setLoading] = useState(!cachedLoyaltyConfig);
 
   useEffect(() => {
     let cancelled = false;
-    fetchLoyaltyConfig()
+    if (cachedLoyaltyConfig) {
+      setConfig(cachedLoyaltyConfig);
+      setLoading(false);
+      return () => {
+        cancelled = true;
+      };
+    }
+    loadLoyaltyConfig()
       .then((cfg) => {
         if (cancelled) return;
         setConfig(cfg);
@@ -26,4 +51,3 @@ export function useLoyaltyVisibility() {
 
   return { config, loading };
 }
-

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Heart, LogIn, ShoppingCart, Store, Trash2 } from "lucide-react";
+import { Heart, LogIn, Plus, ShoppingCart, Store, Trash2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
 import { useCartStore } from "@/stores/useCartStore";
@@ -22,6 +22,7 @@ export default function Favorites() {
   const { favoriteProducts, loadFavorites, loading, toggleFavorite } = useFavoritesStore();
   const addItem = useCartStore((s) => s.addItem);
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const favoriteCount = favoriteProducts.length;
 
   useEffect(() => {
     loadFavorites();
@@ -55,61 +56,87 @@ export default function Favorites() {
         )}
 
         {loading && favoriteProducts.length === 0 ? (
-          <div className="sf-next-favorite-grid">
-            <FavoriteProductTileSkeleton />
-            <FavoriteProductTileSkeleton />
-            <FavoriteProductTileSkeleton />
-            <FavoriteProductTileSkeleton />
-          </div>
+          <>
+            <FavoriteListHeader count={0} />
+            <div className="sf-next-favorite-grid">
+              <FavoriteProductTileSkeleton />
+              <FavoriteProductTileSkeleton />
+              <FavoriteProductTileSkeleton />
+              <FavoriteProductTileSkeleton />
+            </div>
+          </>
         ) : favoriteProducts.length === 0 ? (
-          <section className="store-account-v12-empty-panel">
-            <span className="store-account-v12-empty-panel__icon" aria-hidden>
-              <Heart size={24} />
-            </span>
-            <h2>收藏夹还是空的</h2>
-            <p>看到喜欢的商品可以先收藏，之后从这里快速回到商品详情。</p>
-            <UnifiedButton
-              type="button"
-              onClick={() => navigate(localizedPath("/categories"))}
-              className="store-account-v12-empty-panel__action"
-            >
-              <Store size={16} aria-hidden />
-              <span>浏览商品</span>
-            </UnifiedButton>
-          </section>
+          <>
+            <FavoriteListHeader count={0} />
+            <section className="store-account-v12-empty-panel store-favorites-v12-empty">
+              <div className="store-favorites-v12-empty-preview" aria-hidden>
+                {Array.from({ length: 4 }).map((_, index) => (
+                  <span key={index}>
+                    <i />
+                    <b><Plus size={14} /></b>
+                  </span>
+                ))}
+              </div>
+              <span className="store-account-v12-empty-panel__icon" aria-hidden>
+                <Heart size={24} />
+              </span>
+              <h2>收藏夹还是空的</h2>
+              <p>看到喜欢的商品可以先收藏，之后从这里快速回到商品详情。</p>
+              <UnifiedButton
+                type="button"
+                onClick={() => navigate(localizedPath("/categories"))}
+                className="store-account-v12-empty-panel__action"
+              >
+                <Store size={16} aria-hidden />
+                <span>浏览商品</span>
+              </UnifiedButton>
+            </section>
+          </>
         ) : (
-          <div className="sf-next-favorite-grid">
-            {favoriteProducts.map((p, index) => (
-              <FavoriteProductTile
-                key={p.id}
-                product={p as unknown as Product}
-                index={index}
-                removing={removingId === p.id}
-                onRemove={async () => {
-                  try {
-                    setRemovingId(p.id);
-                    await toggleFavorite(p);
-                    toast.success("已取消收藏");
-                  } catch (e) {
-                    toast.error(e instanceof Error ? e.message : "取消收藏失败");
-                  } finally {
-                    window.setTimeout(() => setRemovingId((old) => (old === p.id ? null : old)), 180);
-                  }
-                }}
-                onAddToCart={async () => {
-                  try {
-                    await addItem(p as unknown as Product, 1, null);
-                    toast.success("已加入购物车");
-                  } catch (e) {
-                    toast.error(e instanceof Error ? e.message : "加入购物车失败");
-                  }
-                }}
-              />
-            ))}
-          </div>
+          <>
+            <FavoriteListHeader count={favoriteCount} />
+            <div className="sf-next-favorite-grid">
+              {favoriteProducts.map((p, index) => (
+                <FavoriteProductTile
+                  key={p.id}
+                  product={p as unknown as Product}
+                  index={index}
+                  removing={removingId === p.id}
+                  onRemove={async () => {
+                    try {
+                      setRemovingId(p.id);
+                      await toggleFavorite(p);
+                      toast.success("已取消收藏");
+                    } catch (e) {
+                      toast.error(e instanceof Error ? e.message : "取消收藏失败");
+                    } finally {
+                      window.setTimeout(() => setRemovingId((old) => (old === p.id ? null : old)), 180);
+                    }
+                  }}
+                  onAddToCart={async () => {
+                    try {
+                      await addItem(p as unknown as Product, 1, null);
+                      toast.success("已加入购物车");
+                    } catch (e) {
+                      toast.error(e instanceof Error ? e.message : "加入购物车失败");
+                    }
+                  }}
+                />
+              ))}
+            </div>
+          </>
         )}
       </div>
     </StoreAccountLayout>
+  );
+}
+
+function FavoriteListHeader({ count }: { count: number }) {
+  return (
+    <div className="store-favorites-v12-toolbar" aria-label="收藏列表状态">
+      <p>共 {count} 件</p>
+      <span>最近收藏</span>
+    </div>
   );
 }
 

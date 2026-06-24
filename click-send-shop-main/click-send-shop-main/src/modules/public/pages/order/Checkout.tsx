@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { ShoppingBag } from "lucide-react";
 import AppRouteFallback from "@/components/AppRouteFallback";
 import NotificationIconButton from "@/components/NotificationIconButton";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
@@ -27,6 +28,7 @@ import CheckoutPromotionExplanation from "@/modules/storefront-v2/checkout/Check
 import { fetchPrimaryFullReductionCampaign } from "@/modules/storefront-v2/campaign/campaignService";
 import type { StorefrontCampaignVm } from "@/modules/storefront-v2/campaign/campaignTypes";
 import { usePublicLocale } from "@/i18n/publicLocale";
+import RouteStatePanel from "@/modules/storefront-v2/design/components/RouteStatePanel";
 
 export default function Checkout() {
   const { localizedPath, t } = usePublicLocale();
@@ -91,7 +93,41 @@ export default function Checkout() {
   }
 
   if (checkout.isEmpty) {
-    return null;
+    return (
+      <StoreStandardPageShell
+        title={t("checkout.confirmOrder")}
+        onBack={checkout.goBack}
+        backFallback={localizedPath("/cart")}
+        desktopBackLabel={t("checkout.backCart")}
+        className="store-conversion-page store-v12-page store-checkout-v12-page store-checkout-page store-checkout-v12-empty-page"
+        contentClassName="store-checkout-v12-empty-main"
+        rightSlot={<NotificationIconButton unreadCount={checkout.unreadCount} onClick={checkout.goNotifications} />}
+      >
+        <RouteStatePanel
+          icon={<ShoppingBag size={30} aria-hidden />}
+          title="暂无可结算商品"
+          description="购物车为空或当前没有选中的商品，请返回购物车确认后再提交订单。"
+          primaryAction={(
+            <button
+              type="button"
+              className="sf-next-button sf-next-button--primary"
+              onClick={() => checkout.navigate(localizedPath("/cart"))}
+            >
+              返回购物车
+            </button>
+          )}
+          secondaryAction={(
+            <button
+              type="button"
+              className="sf-next-button sf-next-button--secondary"
+              onClick={() => checkout.navigate(localizedPath("/categories"))}
+            >
+              继续选购
+            </button>
+          )}
+        />
+      </StoreStandardPageShell>
+    );
   }
 
   if (checkout.submittedOrder) {

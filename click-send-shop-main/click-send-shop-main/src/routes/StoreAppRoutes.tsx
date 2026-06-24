@@ -36,6 +36,7 @@ import { STOREFRONT_NEXT_SCOPE } from "@/modules/storefront-v2/design/storefront
 import { scheduleIdleTask } from "@/utils/idleScheduler";
 import { isStoreTabPath } from "@/utils/storeBottomInset";
 import { NEW_ARRIVAL_CATEGORY_PATH } from "@/constants/newArrivalNavigation";
+import { areClientDesignRoutesEnabled } from "@/utils/clientDesignRoutes";
 import {
   getRememberedStoreScrollPosition,
   getStoreScrollKey,
@@ -55,19 +56,35 @@ import {
   Cart, Checkout, PaymentResult, Orders, OrderDetail, OrderLogistics, Returns, ReturnDetail, PendingReviews,
   Profile, Feedback, MemberBenefits, Settings, AddressManage, Favorites, History, Notifications, Coupons, Points, PointsGiftShop, Rewards, Wallet, Invite,
   Help, About, ContentCmsPage, SupportDownload, Delivery, FeatureStatus, TikTokLanding, NotFound,
+  ClientDesignSystem, ClientCouponDetailDesign, ClientShareDetailDesign, ClientStatesDesign,
 } from "@/routes/publicLazyPages";
+import RouteStatePanel from "@/modules/storefront-v2/design/components/RouteStatePanel";
 
 const CARD_EQUAL_MOBILE_FIX_STYLE_ID = "store-card-equal-mobile-fix";
 const GLOBAL_WIDGET_DELAY_MS = 9000;
 const PRIVACY_TRACKING_DELAY_MS = 1000;
 const ENABLE_LEGACY_CARD_OVERLAP_FIX = false;
+const STORE_FAST_ROUTE_PRELOADS = [
+  "/categories",
+  "/search",
+  "/product/__preload__",
+  "/promotions/__preload__",
+];
 const CRITICAL_STORE_ROUTE_PRELOADS = [
   "/categories",
+  "/search",
   "/promotions",
   "/cart",
+  "/checkout",
+  "/orders",
   "/profile",
-  "/search",
   "/coupons",
+  "/invite",
+  "/points",
+  "/points/gifts",
+  "/rewards",
+  "/wallet",
+  "/settings",
   "/help",
 ];
 
@@ -218,21 +235,29 @@ function StoreCriticalRoutePreloader() {
   useEffect(() => {
     let cancelled = false;
     const timers = new Set<number>();
-    const cancelIdle = scheduleIdleTask("store-critical-route-preload", () => {
+    const preloadCriticalRoutes = () => {
       void import("@/utils/storeRoutePreload").then(({ preloadStoreRoute }) => {
         if (cancelled) return;
-        CRITICAL_STORE_ROUTE_PRELOADS.forEach((path, index) => {
-          const timer = window.setTimeout(() => {
-            timers.delete(timer);
-            preloadStoreRoute(path, "idle");
-          }, index * 120);
-          timers.add(timer);
+        STORE_FAST_ROUTE_PRELOADS.forEach((path) => {
+          preloadStoreRoute(path, "immediate");
         });
+        CRITICAL_STORE_ROUTE_PRELOADS
+          .filter((path) => !STORE_FAST_ROUTE_PRELOADS.includes(path))
+          .forEach((path, index) => {
+            const timer = window.setTimeout(() => {
+              timers.delete(timer);
+              preloadStoreRoute(path, "idle");
+            }, index * 120);
+            timers.add(timer);
+          });
       }).catch(() => undefined);
+    };
+    const cancelIdle = scheduleIdleTask("store-critical-route-preload", () => {
+      preloadCriticalRoutes();
     }, {
-      delayMs: 650,
-      timeoutMs: 2500,
-      jitterMs: 450,
+      delayMs: 120,
+      timeoutMs: 1800,
+      jitterMs: 0,
     });
 
     return () => {
@@ -429,19 +454,42 @@ function HomeRoute() {
   return <StoreHomeV2 />;
 }
 
+function LoyaltyFeatureLoadingState({ feature }: { feature: "points" | "reward" | "referral" }) {
+  const label = feature === "points" ? "积分" : feature === "referral" ? "邀请奖励" : "返现奖励";
+  return (
+    <main className="sf-next-page store-v12-page store-loyalty-route-loading" aria-busy="true">
+      <RouteStatePanel
+        title={`正在同步${label}`}
+        description="系统正在读取后台会员功能配置，请稍候。"
+      />
+    </main>
+  );
+}
+
+function CapabilityLoadingState() {
+  return (
+    <main className="sf-next-page store-v12-page store-capability-route-loading" aria-busy="true">
+      <RouteStatePanel
+        title="正在准备页面"
+        description="正在读取商城配置，请稍候。"
+      />
+    </main>
+  );
+}
+
 function LoyaltyRouteGuard({ feature, children }: { feature: "points" | "reward" | "referral"; children: ReactNode }) {
   const capabilities = useSiteCapabilities();
   const { localizedPath } = usePublicLocale();
   const { config, loading } = useLoyaltyVisibility();
   const enabled = isLoyaltyFeatureEnabled(feature, capabilities, config);
-  if (loading) return <AppRouteFallback />;
+  if (loading) return <LoyaltyFeatureLoadingState feature={feature} />;
   if (!enabled) return <Navigate to={localizedPath("/profile")} replace />;
   return <>{children}</>;
 }
 
 function CapabilityRoute({ enabled, children }: { enabled: boolean; children: ReactNode }) {
   const ready = useSiteCapabilitiesReady();
-  if (!ready) return <AppRouteFallback />;
+  if (!ready) return <CapabilityLoadingState />;
   if (!enabled) return <FeatureUnavailable />;
   return <>{children}</>;
 }
@@ -459,7 +507,7 @@ function PublicLocaleRouteScope({ multilingualEnabled }: { multilingualEnabled: 
   const ready = useSiteCapabilitiesReady();
   const { locale } = useParams();
   if (!isPublicLocale(locale)) return <NotFound />;
-  if (!ready) return <AppRouteFallback />;
+  if (!ready) return <DelayedRouteFallback fallback={<AppRouteFallback />} delayMs={180} />;
   if (!multilingualEnabled) {
     return <Navigate to={stripPublicLocaleFromPath(`${location.pathname}${location.search}${location.hash}`)} replace />;
   }
@@ -496,6 +544,7 @@ function renderFrontLayoutRoutes(capabilities: ReturnType<typeof useSiteCapabili
 }
 
 function renderStandalonePublicRoutes(capabilities: ReturnType<typeof useSiteCapabilities>, localized = false) {
+  const clientDesignRoutesEnabled = areClientDesignRoutesEnabled();
   return (
     <>
       <Route path={publicRoutePath("/login", localized)} element={<Login />} />
@@ -507,6 +556,14 @@ function renderStandalonePublicRoutes(capabilities: ReturnType<typeof useSiteCap
       <Route path={publicRoutePath("/about", localized)} element={<About />} />
       <Route path={publicRoutePath("/delivery", localized)} element={<Delivery />} />
       <Route path={publicRoutePath("/feature-status", localized)} element={<FeatureStatus />} />
+      {clientDesignRoutesEnabled ? (
+        <>
+          <Route path={publicRoutePath("/client-design/system", localized)} element={<ClientDesignSystem />} />
+          <Route path={publicRoutePath("/client-design/coupon-detail", localized)} element={<ClientCouponDetailDesign />} />
+          <Route path={publicRoutePath("/client-design/share-detail", localized)} element={<ClientShareDetailDesign />} />
+          <Route path={publicRoutePath("/client-design/states", localized)} element={<ClientStatesDesign />} />
+        </>
+      ) : null}
       <Route path={publicRoutePath("/feedback", localized)} element={<Feedback />} />
       <Route path={publicRoutePath("/favorites", localized)} element={<Favorites />} />
       <Route
@@ -577,6 +634,8 @@ function MainStoreRoutes() {
   const suppressMarketingPopups = shouldSuppressMarketingPopups(location.pathname);
   const deferNonCriticalWidgets = shouldDeferNonCriticalWidgets(location.pathname);
   const nonCriticalWidgetDelayMs = deferNonCriticalWidgets ? GLOBAL_WIDGET_DELAY_MS : 3000;
+  const routeFallbackKey = `${location.pathname}${location.search}`;
+  const routeFallbackDelayMs = location.pathname.startsWith("/product/") ? 520 : 320;
 
   return (
     <ErrorBoundary resetKey={`${location.pathname}${location.search}`}>
@@ -599,7 +658,15 @@ function MainStoreRoutes() {
             <LanguageGate />
             <AgeGate />
             {ENABLE_LEGACY_CARD_OVERLAP_FIX ? <StoreCardOverlapFix /> : null}
-            <Suspense fallback={<DelayedRouteFallback fallback={<StoreOutletFallback />} delayMs={320} />}>
+            <Suspense
+              fallback={(
+                <DelayedRouteFallback
+                  key={routeFallbackKey}
+                  fallback={<StoreOutletFallback />}
+                  delayMs={routeFallbackDelayMs}
+                />
+              )}
+            >
               <AppBootReady />
               <Routes>
                 {renderFrontLayoutRoutes(capabilities)}

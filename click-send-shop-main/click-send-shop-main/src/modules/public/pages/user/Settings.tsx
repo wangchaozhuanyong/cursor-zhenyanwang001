@@ -212,7 +212,7 @@ export default function Settings() {
       title="账户设置"
       onBack={goBack}
       className="sf-next-page store-v12-page store-account-subpage-v12-page store-settings-v12-page text-[var(--theme-text)]"
-      mainClassName="sf-next-account-main pb-28 pt-3 sm:py-5 md:pb-12"
+      mainClassName="sf-next-account-main store-settings-v12-main pb-8 pt-3 sm:py-5 md:pb-12"
     >
       <div className="space-y-4 sm:space-y-5">
         <section className="store-account-v12-hero store-settings-v12-hero">
@@ -237,6 +237,7 @@ export default function Settings() {
             </UnifiedButton>
             <div className="min-w-0">
               <h2 title={userName}>{userName}</h2>
+              <p>个人资料</p>
             </div>
           </div>
           <div className="store-v12-status-strip store-settings-v12-status-strip" aria-label="账户状态">

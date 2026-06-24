@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { BadgePercent, Heart, Minus, Pin, Plus, Share2, Trash2, ShoppingBag, Loader2, Check, LogIn, ShieldCheck, Sparkles, X } from "lucide-react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { BadgePercent, Heart, Minus, Pencil, Pin, Plus, Share2, Trash2, ShoppingBag, Loader2, Check, LogIn, ShieldCheck, Sparkles, X } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import StorePageHeader from "@/components/store/StorePageHeader";
 import { STORE_MOBILE_PAGE_HEADER_CLASS } from "@/constants/storeLayout";
@@ -80,6 +80,16 @@ export default function Cart() {
   const allSelected = items.length > 0 && selectedCount === items.length;
   const someSelected = selectedCount > 0;
   const totalQty = items.reduce((s, i) => s + i.qty, 0);
+  const sortedCartItems = useMemo(() => {
+    const available: CartItem[] = [];
+    const unavailable: CartItem[] = [];
+    items.forEach((item) => {
+      if (getCartLineUnavailableReason(item)) unavailable.push(item);
+      else available.push(item);
+    });
+    return [...available, ...unavailable];
+  }, [items]);
+  const unavailableCount = sortedCartItems.filter((item) => Boolean(getCartLineUnavailableReason(item))).length;
   const selectedQty = totalItemsSelected();
   const selectedAmount = Number(totalAmountSelected() || 0);
   const selectedItems = useMemo(
@@ -314,37 +324,23 @@ export default function Cart() {
   };
 
   return (
-    <div className="store-page-shell store-v12-page store-cart-v12-page store-cart-page store-bottom-cart-space bg-[var(--theme-bg)] text-[var(--theme-text)] md:pb-0 lg:pb-0">
+    <div className="store-page-shell store-v12-page sf-next-cart-page store-cart-v12-page store-cart-page store-bottom-cart-space bg-[var(--theme-bg)] text-[var(--theme-text)] md:pb-0 lg:pb-0">
       <StorePageHeader
-        className={`${STORE_MOBILE_PAGE_HEADER_CLASS} store-cart-mobile-header`}
-        matchTabHeaderHeight
-        centerTitle
+        className={`${STORE_MOBILE_PAGE_HEADER_CLASS} store-cart-mobile-header sf-next-cart-header`}
+        rightSlot={items.length > 0 ? (
+          <UnifiedButton
+            type="button"
+            onClick={() => setSelectAll(!allSelected)}
+            aria-label={allSelected ? "取消全选" : t("cart.selectAll")}
+            className="sf-next-cart-edit-button"
+          >
+            <Pencil size={22} strokeWidth={2.35} aria-hidden />
+          </UnifiedButton>
+        ) : null}
         title={headerTitle}
       />
 
       <main className="mx-auto w-full max-w-screen-xl px-[var(--store-page-x)] md:px-6 md:py-4">
-        {items.length > 0 ? (
-          <div>
-            <CartDiscountPanel
-              selectedAmount={selectedAmount}
-              estimatedDiscount={estimatedDiscount}
-              estimatedPayable={estimatedPayable}
-              activityDiscount={previewActivityDiscount}
-              selectedCoupon={selectedCoupon}
-              selectedCouponDiscount={selectedCouponDiscount}
-              coupons={cartCoupons}
-              unusableCoupons={cartUnusableCoupons}
-              couponsLoading={cartCouponsLoading}
-              previewLoading={cartPreviewLoading}
-              previewError={cartPreviewError}
-              canUseCartPreviewDiscount={canUseCartPreviewDiscount}
-              promotionEvaluation={cartPreview?.promotion_evaluation ?? null}
-              onCouponSelect={handleCartCouponSelect}
-              onBrowse={() => navigate(localizedPath("/categories"))}
-              t={t}
-            />
-          </div>
-        ) : null}
         {/* 桌面端：左商品列表 / 右结算摘要 */}
         {items.length > 0 ? (
           <DesktopPurchaseTwoColumn
@@ -402,48 +398,19 @@ export default function Cart() {
           >
             <MarketingPositionNotices position="cart_notice" className="mb-3" />
             {!isLoggedIn() && (
-              <div
-                className="relative mb-4 mt-3 overflow-hidden rounded-[22px] border px-4 py-4 text-[var(--theme-text)]"
-                style={{
-                  borderColor: "color-mix(in srgb, var(--theme-price) 24%, transparent)",
-                  background:
-                    "linear-gradient(135deg, color-mix(in srgb, var(--theme-surface) 94%, white) 0%, color-mix(in srgb, var(--theme-price) 8%, var(--theme-bg)) 100%)",
-                  boxShadow: "0 18px 46px color-mix(in srgb, var(--theme-price) 11%, transparent)",
-                }}
-              >
-                <span
-                  aria-hidden="true"
-                  className="pointer-events-none absolute inset-x-5 top-0 h-px"
-                  style={{
-                    background:
-                      "linear-gradient(90deg, transparent, color-mix(in srgb, var(--theme-price) 46%, transparent), transparent)",
-                  }}
-                />
-                <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex min-w-0 items-start gap-3">
-                    <span
-                      className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border bg-[var(--theme-surface)] text-[var(--theme-price)] shadow-sm"
-                      style={{ borderColor: "color-mix(in srgb, var(--theme-price) 22%, transparent)" }}
-                    >
-                      <ShieldCheck size={18} strokeWidth={2.2} />
-                    </span>
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="text-sm font-semibold leading-5 text-[var(--theme-text)]">
-                          {t("cart.loginSyncTitle")}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  <UnifiedButton
-                    type="button"
-                    onClick={() => navigate(localizedPath("/login"), { state: { from: currentPath } })}
-                    className="inline-flex min-h-10 w-full shrink-0 items-center justify-center rounded-full border border-[var(--theme-price)] bg-[var(--theme-price)] px-4 text-sm font-semibold text-[var(--theme-price-foreground)] shadow-sm transition hover:-translate-y-0.5 hover:bg-[var(--theme-price)]/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-price)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--theme-bg)] sm:w-auto"
-                  >
-                    <LogIn className="mr-1.5 h-4 w-4" />
-                    {t("common.login")}
-                  </UnifiedButton>
-                </div>
+              <div className="sf-next-cart-login-strip">
+                <span className="sf-next-cart-login-strip__icon" aria-hidden="true">
+                  <ShieldCheck size={17} strokeWidth={2.2} />
+                </span>
+                <p>{t("cart.loginSyncTitle")}</p>
+                <UnifiedButton
+                  type="button"
+                  onClick={() => navigate(localizedPath("/login"), { state: { from: currentPath } })}
+                  className="sf-next-cart-login-strip__button"
+                >
+                  <LogIn className="h-4 w-4" aria-hidden />
+                  {t("common.login")}
+                </UnifiedButton>
               </div>
             )}
             {error && (
@@ -466,6 +433,18 @@ export default function Cart() {
                 <p className="text-sm">{t("cart.loading")}</p>
               </div>
             ) : (
+              <>
+              <div className="sf-next-cart-section-head" aria-label="购物车商品选择">
+                <span>已选商品</span>
+                <UnifiedButton
+                  type="button"
+                  onClick={() => setSelectAll(!allSelected)}
+                  className="sf-next-cart-select-all"
+                  aria-pressed={allSelected}
+                >
+                  {allSelected ? "取消全选" : "全选"}
+                </UnifiedButton>
+              </div>
               <div
                 className="store-cart-list"
                 style={{ border: 0, borderRadius: 0, background: "transparent", boxShadow: "none" }}
@@ -496,17 +475,27 @@ export default function Cart() {
                   </SquishButton>
                 </div>
                 <AnimatePresence>
-                  {items.map((item, index) => {
+                  {sortedCartItems.map((item, index) => {
                     const lineKey = cartLineKey(item.product.id, item.variant_id);
                     const selected = isSelected(item.product.id, item.variant_id);
                     const actionsOpen = openActionKey === lineKey;
-                    const isLastItem = index === items.length - 1;
+                    const unavailableReason = getCartLineUnavailableReason(item);
+                    const isFirstUnavailable = Boolean(unavailableReason) && sortedCartItems
+                      .findIndex((entry) => Boolean(getCartLineUnavailableReason(entry))) === index;
+                    const isLastItem = index === sortedCartItems.length - 1;
 
                     return (
+                    <Fragment key={lineKey}>
+                    {isFirstUnavailable ? (
+                      <div className="sf-next-cart-subsection-title">
+                        <span>失效商品</span>
+                        <small>{unavailableCount} 件</small>
+                      </div>
+                    ) : null}
                     <motion.div
-                      key={lineKey}
                       exit={{ opacity: 0, x: -100 }}
                       className="store-cart-item relative flex min-w-0 gap-2.5 py-4 sm:gap-3 md:py-5"
+                      data-unavailable={unavailableReason ? "true" : undefined}
                     >
                       <SquishButton
                         type="button"
@@ -632,6 +621,9 @@ export default function Cart() {
                                   {getCartLineDealLabel(item, t)}
                                 </span>
                               ) : null}
+                              {unavailableReason ? (
+                                <p className="sf-next-cart-line-unavailable">{unavailableReason}</p>
+                              ) : null}
                             </div>
                             <div className="store-cart-item-bottom mt-2 flex min-w-0 items-center justify-between gap-2">
                               <StorePriceAmount
@@ -731,10 +723,33 @@ export default function Cart() {
                         />
                       )}
                     </motion.div>
+                    </Fragment>
                     );
                   })}
                 </AnimatePresence>
               </div>
+              <div className="sf-next-cart-discount-section">
+                <h2>优惠</h2>
+                <CartDiscountPanel
+                  selectedAmount={selectedAmount}
+                  estimatedDiscount={estimatedDiscount}
+                  estimatedPayable={estimatedPayable}
+                  activityDiscount={previewActivityDiscount}
+                  selectedCoupon={selectedCoupon}
+                  selectedCouponDiscount={selectedCouponDiscount}
+                  coupons={cartCoupons}
+                  unusableCoupons={cartUnusableCoupons}
+                  couponsLoading={cartCouponsLoading}
+                  previewLoading={cartPreviewLoading}
+                  previewError={cartPreviewError}
+                  canUseCartPreviewDiscount={canUseCartPreviewDiscount}
+                  promotionEvaluation={cartPreview?.promotion_evaluation ?? null}
+                  onCouponSelect={handleCartCouponSelect}
+                  onBrowse={() => navigate(localizedPath("/categories"))}
+                  t={t}
+                />
+              </div>
+              </>
             )}
           </DesktopPurchaseTwoColumn>
         ) : (
@@ -948,6 +963,23 @@ function getCartLineDealLabel(item: CartItem, t: (key: string) => string) {
   if (activity?.type === "full_discount") return t("cart.lineDealFullDiscount");
   if (activity) return t("cart.lineDealPromotion");
   return item.product.activity_promo_label || null;
+}
+
+function getCartLineUnavailableReason(item: CartItem) {
+  const variant = item.variant_id
+    ? item.product.variants?.find((entry) => entry.id === item.variant_id)
+    : undefined;
+  const stock = Number(variant?.stock ?? item.product.stock ?? 0);
+  const lineStatus = String(item.line_status || "").toLowerCase();
+  if (lineStatus && !["normal", "valid", "available"].includes(lineStatus)) {
+    if (lineStatus.includes("stock")) return "库存不足";
+    if (lineStatus.includes("off") || lineStatus.includes("inactive")) return "已下架商品";
+    return "当前不可结算";
+  }
+  if (variant?.enabled === false) return "规格已停用";
+  if (item.product.lifecycle_status === 2 || item.product.status === "inactive") return "已下架商品";
+  if (Number.isFinite(stock) && stock <= 0) return "库存不足";
+  return null;
 }
 
 function CartDiscountPanel({

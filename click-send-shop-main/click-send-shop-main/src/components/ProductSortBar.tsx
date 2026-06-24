@@ -10,9 +10,9 @@ type SortItem = {
 };
 
 const baseSortItems: SortItem[] = [
-  { value: "default", label: "综合" },
-  { value: "sales", label: "热销" },
-  { value: "newest", label: "最新" },
+  { value: "default", label: "推荐排序" },
+  { value: "sales", label: "销量" },
+  { value: "newest", label: "上新" },
 ];
 
 const PRICE_SORT_KEY = "price";

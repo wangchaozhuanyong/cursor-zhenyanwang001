@@ -66,14 +66,14 @@ export default function Wallet() {
       <section className="sf-next-folio store-wallet-v12-hero" aria-label="返现余额">
         <div className="sf-next-folio__topline">
           <p className="sf-next-folio__eyebrow store-wallet-v12-hero__label">可用返现</p>
-          <span className="sf-next-folio__status">{rewardsEnabled ? "购物抵扣" : "未开启"}</span>
+          <span className="sf-next-folio__status">{loading ? "同步中" : rewardsEnabled ? "购物抵扣" : "未开启"}</span>
         </div>
         <strong className="sf-next-folio__value store-wallet-v12-hero__amount">
-          {loading ? "RM --" : rewardsEnabled ? `RM ${money(rewardBalance)}` : "未开启"}
+          {rewardsEnabled ? `RM ${money(rewardBalance)}` : "未开启"}
         </strong>
         <div className="sf-next-folio__meta store-wallet-v12-hero__meta">
           <span className="sf-next-folio__meta-item">
-            <b className="sf-next-folio__meta-value">{loading ? "RM --" : `RM ${money(pendingAmount)}`}</b>
+            <b className="sf-next-folio__meta-value">RM {money(pendingAmount)}</b>
             <small className="sf-next-folio__meta-label">待入账</small>
           </span>
           <span className="sf-next-folio__meta-item">

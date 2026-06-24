@@ -147,8 +147,8 @@ export default function SupportChannelCard({ channel }: Props) {
                 src={qrUrl}
                 alt={`${title}二维码`}
                 className="support-qr-image"
-                imgClassName="object-cover"
-                objectFit="cover"
+                imgClassName="object-contain"
+                objectFit="contain"
               />
             ) : (
               <div className="support-qr-placeholder">暂未配置二维码</div>

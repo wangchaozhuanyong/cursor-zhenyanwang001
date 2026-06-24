@@ -145,6 +145,42 @@ function canViewLogistics(order: Order) {
   return order.status === "shipped" || order.status === "completed" || order.status === "refunded";
 }
 
+function OrderDetailLoadingSkeleton() {
+  return (
+    <div className="store-order-detail-v12-loading" aria-busy="true" aria-label="订单详情加载中">
+      <section className="store-order-detail-v12-hero store-order-detail-v12-loading-hero">
+        <div className="sf-next-skeleton store-order-detail-v12-loading-icon" />
+        <div className="min-w-0 flex-1">
+          <div className="sf-next-skeleton store-order-detail-v12-loading-line is-eyebrow" />
+          <div className="sf-next-skeleton store-order-detail-v12-loading-line is-title" />
+          <div className="sf-next-skeleton store-order-detail-v12-loading-line is-subtitle" />
+        </div>
+      </section>
+
+      <section className="store-order-detail-v12-products store-order-detail-v12-loading-card">
+        <div className="store-order-detail-v12-section-head">
+          <div className="sf-next-skeleton store-order-detail-v12-loading-line is-section" />
+        </div>
+        <div className="store-order-detail-v12-product-row">
+          <div className="sf-next-skeleton store-order-detail-v12-product-media" />
+          <div className="min-w-0 flex-1">
+            <div className="sf-next-skeleton store-order-detail-v12-loading-line is-product-title" />
+            <div className="sf-next-skeleton store-order-detail-v12-loading-line is-product-meta" />
+          </div>
+          <div className="sf-next-skeleton store-order-detail-v12-loading-line is-product-price" />
+        </div>
+      </section>
+
+      <section className="store-order-detail-v12-price-card store-order-detail-v12-loading-card">
+        <div className="sf-next-skeleton store-order-detail-v12-loading-line is-section" />
+        <div className="sf-next-skeleton store-order-detail-v12-loading-line is-row" />
+        <div className="sf-next-skeleton store-order-detail-v12-loading-line is-row" />
+        <div className="sf-next-skeleton store-order-detail-v12-loading-line is-total" />
+      </section>
+    </div>
+  );
+}
+
 export default function OrderDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -379,14 +415,13 @@ export default function OrderDetail() {
 
   if (loading) {
     return (
-      <StoreAccountLayout title={copy.detailTitle} onBack={handleBack} className="store-v12-page store-order-detail-v12-page">
-        <section className="store-account-v12-empty-panel store-order-detail-v12-state" aria-live="polite">
-          <span className="store-account-v12-empty-panel__icon" aria-hidden>
-            <RefreshCw size={28} className="animate-spin" />
-          </span>
-          <h2>{copy.loading}</h2>
-          <p>正在同步订单状态、商品、金额和物流信息。</p>
-        </section>
+      <StoreAccountLayout
+        title={copy.detailTitle}
+        onBack={handleBack}
+        className="store-v12-page store-order-detail-v12-page"
+        mainClassName="pb-[calc(88px+env(safe-area-inset-bottom,0px))] md:pb-0 xl:pb-12"
+      >
+        <OrderDetailLoadingSkeleton />
       </StoreAccountLayout>
     );
   }

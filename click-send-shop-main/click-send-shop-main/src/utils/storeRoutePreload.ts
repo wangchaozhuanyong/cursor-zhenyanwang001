@@ -5,6 +5,10 @@ import {
   Cart,
   Categories,
   Checkout,
+  ClientCouponDetailDesign,
+  ClientDesignSystem,
+  ClientShareDetailDesign,
+  ClientStatesDesign,
   ContentCmsPage,
   Coupons,
   Delivery,
@@ -37,6 +41,7 @@ import {
   Wallet,
 } from "@/routes/publicLazyPages";
 import { suppressAppVersionRecovery } from "@/lib/appVersionRecovery";
+import { areClientDesignRoutesEnabled } from "@/utils/clientDesignRoutes";
 import { preloadRoute, type RoutePreloadPriority } from "@/utils/routePreloadPolicy";
 
 type Preloadable = { preload?: () => Promise<unknown> };
@@ -77,6 +82,13 @@ const exactPreloaders = new Map<string, Preloadable>([
   ["/help", Help],
   ["/about", About],
 ]);
+
+if (areClientDesignRoutesEnabled()) {
+  exactPreloaders.set("/client-design/system", ClientDesignSystem);
+  exactPreloaders.set("/client-design/coupon-detail", ClientCouponDetailDesign);
+  exactPreloaders.set("/client-design/share-detail", ClientShareDetailDesign);
+  exactPreloaders.set("/client-design/states", ClientStatesDesign);
+}
 
 const patternPreloaders: Array<[RegExp, Preloadable]> = [
   [/^\/product\/[^/]+$/, ProductDetail],

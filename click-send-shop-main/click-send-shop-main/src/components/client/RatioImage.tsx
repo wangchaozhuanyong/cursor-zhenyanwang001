@@ -15,6 +15,7 @@ export type ClientImageRatio =
 export type RatioImageProps = {
   src?: string | null;
   fallbackSrc?: string | null;
+  finalFallbackSrc?: string | null;
   alt: string;
   ratio: ClientImageRatio;
   fit?: "cover" | "contain";
@@ -47,6 +48,7 @@ const roundedClass: Record<NonNullable<RatioImageProps["rounded"]>, string> = {
 export default function RatioImage({
   src,
   fallbackSrc,
+  finalFallbackSrc,
   alt,
   ratio,
   fit = "cover",
@@ -68,9 +70,10 @@ export default function RatioImage({
 }: RatioImageProps) {
   const normalizedSrc = typeof src === "string" ? src.trim() : "";
   const normalizedFallbackSrc = typeof fallbackSrc === "string" ? fallbackSrc.trim() : "";
+  const normalizedFinalFallbackSrc = typeof finalFallbackSrc === "string" ? finalFallbackSrc.trim() : "";
   const initialDisplaySrc = useMemo(
-    () => normalizedSrc || normalizedFallbackSrc,
-    [normalizedFallbackSrc, normalizedSrc],
+    () => normalizedSrc || normalizedFallbackSrc || normalizedFinalFallbackSrc,
+    [normalizedFallbackSrc, normalizedFinalFallbackSrc, normalizedSrc],
   );
   const [displaySrc, setDisplaySrc] = useState(initialDisplaySrc);
   const [hasError, setHasError] = useState(false);
@@ -115,6 +118,11 @@ export default function RatioImage({
           onError={(event) => {
             if (normalizedFallbackSrc && displaySrc !== normalizedFallbackSrc) {
               setDisplaySrc(normalizedFallbackSrc);
+              setHasError(false);
+              return;
+            }
+            if (normalizedFinalFallbackSrc && displaySrc !== normalizedFinalFallbackSrc) {
+              setDisplaySrc(normalizedFinalFallbackSrc);
               setHasError(false);
               return;
             }

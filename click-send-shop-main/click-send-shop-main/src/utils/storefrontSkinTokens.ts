@@ -12,19 +12,20 @@ function mix(color: string, amount: number, base: string) {
 }
 
 export function buildStorefrontNextSkinTokens(config: ThemeConfig, palette: ThemePalette): ThemePalette {
-  const primary = readToken(palette, "--theme-primary", config.primaryColor);
-  const surface = readToken(palette, "--store-surface-raised", readToken(palette, "--theme-surface", config.surfaceColor));
-  const canvas = readToken(palette, "--store-page-base", readToken(palette, "--theme-bg", config.bgColor));
+  const primary = readToken(palette, "--mall-primary", readToken(palette, "--theme-primary", config.primaryColor));
+  const mallSurface = readToken(palette, "--mall-surface", readToken(palette, "--theme-surface", config.surfaceColor));
+  const surface = readToken(palette, "--store-surface-raised", mallSurface);
+  const canvas = readToken(palette, "--mall-bg", readToken(palette, "--store-page-base", readToken(palette, "--theme-bg", config.bgColor)));
   const tint = readToken(palette, "--store-page-tint", canvas);
   const card = readToken(palette, "--store-card-bg", surface);
-  const border = readToken(palette, "--store-border", readToken(palette, "--theme-border", config.borderColor));
+  const border = readToken(palette, "--mall-border", readToken(palette, "--store-border", readToken(palette, "--theme-border", config.borderColor)));
   const borderStrong = readToken(palette, "--store-border-strong", border);
-  const text = readToken(palette, "--store-text", readToken(palette, "--theme-text", config.textColor));
-  const muted = readToken(palette, "--store-muted", readToken(palette, "--theme-text-muted", config.mutedTextColor));
-  const price = readToken(palette, "--theme-price", config.priceColor);
-  const success = readToken(palette, "--theme-success", config.successColor);
-  const warning = readToken(palette, "--theme-warning", config.warningColor);
-  const danger = readToken(palette, "--theme-danger", config.dangerColor);
+  const text = readToken(palette, "--mall-text", readToken(palette, "--store-text", readToken(palette, "--theme-text", config.textColor)));
+  const muted = readToken(palette, "--mall-muted", readToken(palette, "--store-muted", readToken(palette, "--theme-text-muted", config.mutedTextColor)));
+  const price = readToken(palette, "--mall-price", readToken(palette, "--theme-price", config.priceColor));
+  const success = readToken(palette, "--mall-success", readToken(palette, "--theme-success", config.successColor));
+  const warning = readToken(palette, "--mall-warning", readToken(palette, "--theme-warning", config.warningColor));
+  const danger = readToken(palette, "--mall-danger", readToken(palette, "--theme-danger", config.dangerColor));
   const shadow = readToken(palette, "--store-card-shadow", readToken(palette, "--theme-shadow", "0 1px 2px rgb(20 24 21 / 5%)"));
   const shadowHover = readToken(palette, "--store-card-shadow-hover", readToken(palette, "--theme-shadow-hover", shadow));
   const softShadow = readToken(palette, "--store-soft-shadow", shadow);

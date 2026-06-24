@@ -8,12 +8,14 @@ import {
   ClipboardList,
   GraduationCap,
   Grid2X2,
+  Heart,
   Home,
   MapPin,
   MessageCircle,
   Search,
   ShieldCheck,
   Sparkles,
+  UserRound,
   Wrench,
   X,
 } from "lucide-react";
@@ -28,9 +30,6 @@ function withViteBase(path: string): string {
 }
 
 const FALLBACK_LOGO_SRC = withViteBase("/assets/tiktok-logo.jpeg");
-const HERO_IMAGE = withViteBase("/assets/tiktok-hero-platform.webp");
-const STUDY_IMAGE = withViteBase("/assets/tiktok-hero-study.webp");
-const SUPPORT_IMAGE = withViteBase("/assets/tiktok-hero-support.webp");
 const OFFICIAL_TARGET = "/";
 const SUPPORT_TARGET = "/support-download?tab=support";
 
@@ -39,7 +38,6 @@ type ServiceEntry = {
   title: string;
   text: string;
   icon: LucideIcon;
-  image: string;
   target: string;
   keywords: string[];
 };
@@ -57,7 +55,6 @@ const services: ServiceEntry[] = [
     title: "找房安家",
     text: "租房、家电、入住准备",
     icon: Home,
-    image: HERO_IMAGE,
     target: "/search?keyword=%E6%89%BE%E6%88%BF",
     keywords: ["房", "租房", "安家", "家具", "家电"],
   },
@@ -66,7 +63,6 @@ const services: ServiceEntry[] = [
     title: "留学陪读",
     text: "学校、住宿、陪读信息",
     icon: GraduationCap,
-    image: STUDY_IMAGE,
     target: "/search?keyword=%E7%95%99%E5%AD%A6",
     keywords: ["留学", "陪读", "学校", "住宿"],
   },
@@ -75,7 +71,6 @@ const services: ServiceEntry[] = [
     title: "签证咨询",
     text: "材料、长期签、常见问题",
     icon: ShieldCheck,
-    image: SUPPORT_IMAGE,
     target: "/help",
     keywords: ["签证", "材料", "长期签", "咨询"],
   },
@@ -84,7 +79,6 @@ const services: ServiceEntry[] = [
     title: "本地办事",
     text: "电话卡、缴费、交通指南",
     icon: ClipboardList,
-    image: HERO_IMAGE,
     target: "/delivery",
     keywords: ["电话卡", "缴费", "交通", "本地"],
   },
@@ -93,7 +87,6 @@ const services: ServiceEntry[] = [
     title: "维修搬家",
     text: "维修、清洁、安装、搬运",
     icon: Wrench,
-    image: SUPPORT_IMAGE,
     target: "/support-download?tab=support",
     keywords: ["维修", "搬家", "清洁", "安装"],
   },
@@ -102,7 +95,6 @@ const services: ServiceEntry[] = [
     title: "商务资源",
     text: "办公室、店铺、本地合作",
     icon: BriefcaseBusiness,
-    image: HERO_IMAGE,
     target: "/about",
     keywords: ["商务", "办公室", "店铺", "合作"],
   },
@@ -118,7 +110,8 @@ const bottomNav = [
   { label: "首页", icon: Home, target: OFFICIAL_TARGET },
   { label: "服务", icon: Grid2X2, target: "#services" },
   { label: "城市", icon: MapPin, target: "#cities" },
-  { label: "客服", icon: MessageCircle, target: SUPPORT_TARGET },
+  { label: "收藏", icon: Heart, target: "/favorites" },
+  { label: "我的", icon: UserRound, target: "/profile" },
 ];
 
 function readHeadMeta(selector: string): string {
@@ -238,19 +231,10 @@ function ServiceCard({ service }: { service: ServiceEntry }) {
   return (
     <article className="tiktok-v2-service-card">
       <button type="button" onClick={() => openPath(service.target)} className="tiktok-v2-service-card__button">
-        <span className="tiktok-v2-service-card__media">
-          <StableImage
-            src={service.image}
-            alt={service.title}
-            className="h-full w-full"
-            imgClassName="object-cover"
-            loading="lazy"
-          />
+        <span className="tiktok-v2-service-card__icon">
+          <Icon size={20} aria-hidden />
         </span>
         <span className="tiktok-v2-service-card__body">
-          <span className="tiktok-v2-service-card__icon">
-            <Icon size={18} aria-hidden />
-          </span>
           <strong>{service.title}</strong>
           <small>{service.text}</small>
         </span>
@@ -313,7 +297,14 @@ export default function TikTokLanding() {
         </button>
       </header>
 
-      <section className="tiktok-v2-search" aria-label="服务搜索">
+      <form
+        className="tiktok-v2-search"
+        aria-label="服务搜索"
+        onSubmit={(event) => {
+          event.preventDefault();
+          submitSearch();
+        }}
+      >
         <div className="tiktok-v2-search__field">
           <Search size={18} aria-hidden />
           <input
@@ -329,10 +320,7 @@ export default function TikTokLanding() {
             </button>
           ) : null}
         </div>
-        <UnifiedButton type="button" className="tiktok-v2-search__submit" onClick={submitSearch}>
-          搜索
-        </UnifiedButton>
-      </section>
+      </form>
 
       {normalizedQuery ? (
         <section className="tiktok-v2-suggestions" aria-live="polite">
@@ -360,16 +348,6 @@ export default function TikTokLanding() {
       ) : null}
 
       <section className="tiktok-v2-hero">
-        <div className="tiktok-v2-hero__media">
-          <StableImage
-            src={HERO_IMAGE}
-            alt="马来西亚生活服务"
-            className="h-full w-full"
-            imgClassName="object-cover"
-            loading="eager"
-            fetchPriority="high"
-          />
-        </div>
         <div className="tiktok-v2-hero__body">
           <span>Malaysia living guide</span>
           <h1>在马来西亚的生活服务入口</h1>
@@ -383,6 +361,11 @@ export default function TikTokLanding() {
               客服咨询
             </button>
           </div>
+        </div>
+        <div className="tiktok-v2-hero__art" aria-hidden>
+          <span className="tiktok-v2-hero__shape tiktok-v2-hero__shape--primary" />
+          <span className="tiktok-v2-hero__shape tiktok-v2-hero__shape--warm" />
+          <span className="tiktok-v2-hero__shape tiktok-v2-hero__shape--mint" />
         </div>
       </section>
 

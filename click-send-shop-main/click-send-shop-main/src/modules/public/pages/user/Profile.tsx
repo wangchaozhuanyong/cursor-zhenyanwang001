@@ -40,8 +40,10 @@ import { useStoreNavigationGuard } from "@/features/navigation/useStoreNavigatio
 import {
   PROFILE_CARD_CLASS,
   PROFILE_MENU_TAP,
+  ProfileAssetPanel,
   ProfileGuestCard,
   ProfileHeroCard,
+  ProfileIdentityHeader,
   ProfileInviteRewardCard,
   ProfileLogoutButton,
   ProfileOrderPanel,
@@ -321,12 +323,17 @@ export default function Profile() {
     () => buildAccountFeaturesByKeys(["wallet", "points", "coupons", "favorites"], accountFeatureCtx, "mobile"),
     [accountFeatureCtx],
   );
+  const profileStatItems = useMemo<ProfileAssetItem[]>(() => {
+    const orderedKeys = ["coupons", "points", "wallet"];
+    return orderedKeys
+      .map((key) => assetItems.find((item) => item.key === key))
+      .filter((item): item is ProfileAssetItem => Boolean(item));
+  }, [assetItems]);
   const orderActions = useMemo<ProfileOrderAction[]>(
     () => buildAccountFeaturesByKeys([
       "orderPendingPayment",
       "orderPaid",
       "orderShipped",
-      "orderPendingReview",
       "orderAfterSale",
     ], accountFeatureCtx, "mobile"),
     [accountFeatureCtx],
@@ -378,6 +385,9 @@ export default function Profile() {
         </aside>
 
         <div className="store-profile-stack client-profile-stack min-w-0 space-y-3 sm:space-y-4 xl:max-w-4xl">
+          <header className="client-profile-titlebar">
+            <h1>我的</h1>
+          </header>
           {authPending ? (
             <ProfileAuthLoadingCard />
           ) : !loggedIn ? (
@@ -387,13 +397,22 @@ export default function Profile() {
             />
           ) : (
             <>
+              <ProfileIdentityHeader
+                logoSrc={logoSrc}
+                avatar={avatar}
+                userName={userName}
+                unreadCount={unreadCount}
+                onMessageClick={() => navigateStorePath("/notifications", { requireAuth: true, from: "/profile" })}
+                onProfileClick={() => handleFeatureNavigate("settings", "/settings", true)}
+                onAvatarClick={() => avatarInputRef.current?.click()}
+              />
               <ProfileHeroCard
                 logoSrc={logoSrc}
                 avatar={avatar}
                 userName={userName}
                 memberLevelName={memberLevelName}
                 progress={memberProgress}
-                assets={assetItems}
+                assets={profileStatItems}
                 unreadCount={unreadCount}
                 onMessageClick={() => navigateStorePath("/notifications", { requireAuth: true, from: "/profile" })}
                 onMemberLevelClick={() => handleFeatureNavigate("memberBenefits", "/member/benefits", true)}
@@ -419,11 +438,17 @@ export default function Profile() {
           {!authPending ? <div className="client-profile-dashboard-grid">
             <div className="client-profile-dashboard-main">
               {loggedIn ? (
-                <ProfileOrderPanel
-                  items={orderActions}
-                  onViewAll={() => handleFeatureNavigate("orders", "/orders", true)}
-                  onNavigate={(item) => handleFeatureNavigate(item.key || "", item.path, item.auth)}
-                />
+                <>
+                  <ProfileOrderPanel
+                    items={orderActions}
+                    onViewAll={() => handleFeatureNavigate("orders", "/orders", true)}
+                    onNavigate={(item) => handleFeatureNavigate(item.key || "", item.path, item.auth)}
+                  />
+                  <ProfileAssetPanel
+                    items={profileStatItems}
+                    onNavigate={(item) => handleFeatureNavigate(item.key, item.path, item.auth)}
+                  />
+                </>
               ) : null}
 
               {loggedIn && inviteEnabled ? (

@@ -24,11 +24,41 @@ const COUPON_STYLES =
     : ["ticket"];
 const ADMIN_PHONE = process.env.ADMIN_PHONE || "18800000001";
 const ADMIN_PASSWORD = String(process.env.ADMIN_PASSWORD || "").trim();
+const ADMIN_ACCESS_TOKEN = String(process.env.ADMIN_ACCESS_TOKEN || "").trim();
+const ADMIN_REFRESH_TOKEN = String(process.env.ADMIN_REFRESH_TOKEN || "").trim();
+const ADMIN_CSRF_TOKEN = String(process.env.ADMIN_CSRF_TOKEN || "").trim();
+const REQUIRE_ADMIN_SCAN = process.env.REQUIRE_ADMIN_SCAN === "1";
 const SKIP_AUTH = READ_ONLY_AUDIT || process.env.SKIP_AUTH === "1";
 const SKIP_ADMIN = READ_ONLY_AUDIT || process.env.SKIP_ADMIN === "1";
 
 function assertAdminPassword() {
-  if (!ADMIN_PASSWORD) throw new Error("Missing ADMIN_PASSWORD env; do not use hardcoded admin credentials.");
+  if (!ADMIN_PASSWORD && !ADMIN_ACCESS_TOKEN) throw new Error("Missing ADMIN_PASSWORD env; do not use hardcoded admin credentials.");
+}
+
+function parseAdminPermissionsEnv() {
+  const raw = String(process.env.ADMIN_PERMISSIONS || "").trim();
+  if (!raw) return [];
+  if (raw.startsWith("[")) {
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed.map(String) : [];
+    } catch {
+      return [];
+    }
+  }
+  return raw.split(",").map((item) => item.trim()).filter(Boolean);
+}
+
+function adminSessionFromEnv() {
+  if (!ADMIN_ACCESS_TOKEN) return null;
+  return {
+    access: ADMIN_ACCESS_TOKEN,
+    refresh: ADMIN_REFRESH_TOKEN,
+    cookies: [],
+    csrf: ADMIN_CSRF_TOKEN,
+    permissions: parseAdminPermissionsEnv(),
+    isSuperAdmin: process.env.ADMIN_IS_SUPER_ADMIN === "1",
+  };
 }
 
 const PUBLIC_ROUTES = [
@@ -165,14 +195,97 @@ async function registerUser() {
   return { token, password, phone };
 }
 
+function splitSetCookieHeader(value) {
+  if (!value) return [];
+  const parts = [];
+  let start = 0;
+  for (let i = 0; i < value.length; i += 1) {
+    if (value[i] !== ",") continue;
+    const rest = value.slice(i + 1);
+    if (/^\s*[^=;,\s]+=/.test(rest)) {
+      parts.push(value.slice(start, i).trim());
+      start = i + 1;
+    }
+  }
+  parts.push(value.slice(start).trim());
+  return parts.filter(Boolean);
+}
+
+function parseSetCookieHeader(header, targetOrigin) {
+  const url = new URL(targetOrigin);
+  const segments = header.split(";").map((part) => part.trim()).filter(Boolean);
+  const [nameValue, ...attrs] = segments;
+  const eqIndex = nameValue.indexOf("=");
+  if (eqIndex <= 0) return null;
+
+  const cookie = {
+    name: nameValue.slice(0, eqIndex),
+    value: nameValue.slice(eqIndex + 1),
+    secure: url.protocol === "https:",
+    httpOnly: false,
+    sameSite: "Lax",
+  };
+  let cookiePath = "/";
+  let cookieDomain = "";
+
+  for (const attr of attrs) {
+    const [rawKey, ...rawValueParts] = attr.split("=");
+    const key = rawKey.toLowerCase();
+    const value = rawValueParts.join("=");
+    if (key === "path" && value) cookiePath = value;
+    else if (key === "domain" && value) cookieDomain = value;
+    else if (key === "secure") cookie.secure = true;
+    else if (key === "httponly") cookie.httpOnly = true;
+    else if (key === "samesite" && /^(Strict|Lax|None)$/i.test(value)) {
+      cookie.sameSite = value[0].toUpperCase() + value.slice(1).toLowerCase();
+    } else if (key === "max-age" && value) {
+      const seconds = Number(value);
+      if (Number.isFinite(seconds)) cookie.expires = Math.floor(Date.now() / 1000) + seconds;
+    } else if (key === "expires" && value) {
+      const time = Date.parse(value);
+      if (Number.isFinite(time)) cookie.expires = Math.floor(time / 1000);
+    }
+  }
+
+  if (cookieDomain) {
+    cookie.domain = cookieDomain;
+    cookie.path = cookiePath;
+  } else {
+    cookie.url = url.origin;
+  }
+
+  return cookie;
+}
+
+function readResponseCookies(res, targetOrigin) {
+  const headers = typeof res.headers.getSetCookie === "function"
+    ? res.headers.getSetCookie()
+    : splitSetCookieHeader(res.headers.get("set-cookie") || "");
+  return headers.map((header) => parseSetCookieHeader(header, targetOrigin)).filter(Boolean);
+}
+
 async function adminLogin() {
   assertAdminPassword();
-  const data = await jfetch(`${API}/admin/auth/login`, {
+  const envSession = adminSessionFromEnv();
+  if (envSession) return envSession;
+  const res = await fetch(`${API}/admin/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ phone: ADMIN_PHONE, password: ADMIN_PASSWORD }),
+    body: JSON.stringify({ phone: ADMIN_PHONE, username: ADMIN_PHONE, password: ADMIN_PASSWORD }),
   });
-  return data.token?.accessToken || data.token;
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok || body.code !== 0) {
+    throw new Error(`POST ${API}/admin/auth/login -> ${body.message || res.status}`);
+  }
+  const data = body.data || {};
+  return {
+    access: data.token?.accessToken || data.accessToken || "",
+    refresh: data.token?.refreshToken || data.refreshToken || "",
+    cookies: readResponseCookies(res, BASE),
+    csrf: data.csrfToken || "",
+    permissions: Array.isArray(data.permissions) ? data.permissions : [],
+    isSuperAdmin: Boolean(data.isSuperAdmin),
+  };
 }
 
 async function authPost(pathname, token, payload) {
@@ -221,11 +334,102 @@ async function loginAdminUi(page) {
   assertAdminPassword();
   await page.goto(`${BASE}/admin/login`, { waitUntil: "domcontentloaded" });
   await waitStable(page);
-  await page.getByPlaceholder("输入账号").fill(ADMIN_PHONE);
-  await page.getByPlaceholder("输入密码").fill(ADMIN_PASSWORD);
-  await page.getByRole("button", { name: "登录" }).click();
+  const accountInput = page
+    .locator("#admin-login-account, input[name='account'], input[autocomplete='username']")
+    .or(page.getByPlaceholder(/账号|手机号|手机|Account|Phone|Username/i))
+    .first();
+  const passwordInput = page
+    .locator("#admin-login-password, input[type='password'], input[autocomplete='current-password']")
+    .or(page.getByPlaceholder(/密码|Password/i))
+    .first();
+  if ((await accountInput.count()) === 0 || (await passwordInput.count()) === 0) return false;
+  await accountInput.fill(ADMIN_PHONE);
+  await passwordInput.fill(ADMIN_PASSWORD);
+  const loginButton = page.locator("form button[type='submit']").or(page.getByRole("button", { name: /登录|Login/i })).first();
+  if ((await loginButton.count()) === 0) return false;
+  await loginButton.click();
+  await page.waitForURL((url) => url.pathname.startsWith("/admin") && !url.pathname.includes("/admin/login"), {
+    timeout: FULL_AUDIT ? 6000 : 3500,
+  }).catch(() => undefined);
   await page.waitForTimeout(FULL_AUDIT ? 1500 : 800);
   return page.url().includes("/admin") && !page.url().includes("/admin/login");
+}
+
+function bootstrapAdminSession(session) {
+  localStorage.setItem("admin_authenticated", "1");
+  localStorage.setItem(
+    "admin-permissions",
+    JSON.stringify({
+      state: {
+        permissions: Array.isArray(session?.permissions) ? session.permissions : [],
+        isSuperAdmin: Boolean(session?.isSuperAdmin),
+      },
+      version: 0,
+    }),
+  );
+}
+
+async function applyAdminSessionToContext(context, session) {
+  if (!session) return;
+  const syntheticCookies = [];
+  const baseOrigin = new URL(BASE).origin;
+  if (session.access) {
+    syntheticCookies.push({
+      name: "admin_access_token",
+      value: session.access,
+      url: baseOrigin,
+      httpOnly: true,
+      secure: baseOrigin.startsWith("https:"),
+      sameSite: "Strict",
+    });
+  }
+  if (session.refresh) {
+    syntheticCookies.push({
+      name: "admin_refresh_token",
+      value: session.refresh,
+      url: baseOrigin,
+      httpOnly: true,
+      secure: baseOrigin.startsWith("https:"),
+      sameSite: "Strict",
+    });
+  }
+  const cookies = [...(session.cookies || []), ...syntheticCookies];
+  if (cookies.length) {
+    await context.addCookies(cookies);
+  }
+  await context.addInitScript(bootstrapAdminSession, session);
+  if (session.access) {
+    await context.route("**/api/admin/**", (route) => {
+      const method = route.request().method().toUpperCase();
+      if (READ_ONLY_AUDIT && method !== "GET" && method !== "HEAD" && method !== "OPTIONS") {
+        return route.abort("blockedbyclient");
+      }
+      const headers = { ...route.request().headers() };
+      const url = new URL(route.request().url());
+      if (session.refresh && url.pathname.endsWith("/api/admin/auth/refresh")) {
+        const refreshCookie = `admin_refresh_token=${encodeURIComponent(session.refresh)}`;
+        headers.cookie = headers.cookie ? `${headers.cookie}; ${refreshCookie}` : refreshCookie;
+      }
+      return route.continue({
+        headers: {
+          ...headers,
+          authorization: `Bearer ${session.access}`,
+        },
+      });
+    });
+  }
+}
+
+async function verifyAdminSession(page) {
+  await page.goto(`${BASE}/admin`, { waitUntil: "domcontentloaded", timeout: NAV_TIMEOUT_MS });
+  await waitStable(page);
+  if (page.url().includes("/admin/login")) return false;
+  return page.evaluate(() => {
+    const shell = document.querySelector("[data-admin-shell], .admin-chrome");
+    const loginInput = document.querySelector("#admin-login-account, #admin-login-password");
+    const text = document.body.innerText.replace(/\s+/g, " ").trim();
+    return Boolean(shell) && !loginInput && !/页面不存在|Page not found/i.test(text);
+  });
 }
 
 /** @param {import('@playwright/test').Page} page */
@@ -532,9 +736,12 @@ async function main() {
   }
 
   let adminApiOk = false;
+  let adminSession = null;
+  let adminUiAuthenticated = false;
+  let adminAuthenticatedScan = false;
   if (!SKIP_ADMIN && apiAvailable) {
     try {
-      await adminLogin();
+      adminSession = await adminLogin();
       adminApiOk = true;
     } catch (e) {
       report.push({ phase: "setup", error: `后台 API 登录: ${e.message}` });
@@ -548,6 +755,7 @@ async function main() {
       locale: "zh-CN",
     });
     await configureReadOnlyContext(context);
+    await applyAdminSessionToContext(context, adminSession);
 
     const page = await context.newPage();
     let userLoggedIn = false;
@@ -559,10 +767,16 @@ async function main() {
     }
 
     let adminLoggedIn = false;
-    if (adminApiOk) {
-      adminLoggedIn = await loginAdminUi(page);
+    if (adminSession) {
+      adminLoggedIn = await verifyAdminSession(page);
       if (!adminLoggedIn) {
-        report.push({ phase: "setup", error: `后台 UI 登录失败 (${vp.label})` });
+        adminLoggedIn = await loginAdminUi(page);
+        adminUiAuthenticated = adminUiAuthenticated || adminLoggedIn;
+      }
+      adminAuthenticatedScan = adminAuthenticatedScan || adminLoggedIn;
+      adminUiAuthenticated = adminUiAuthenticated || adminLoggedIn;
+      if (!adminLoggedIn) {
+        report.push({ phase: "setup", error: `后台鉴权页面扫描未建立会话 (${vp.label})` });
       }
     }
 
@@ -683,6 +897,8 @@ async function main() {
     auth: Boolean(userCreds),
     cartSeeded: cartReady,
     admin: adminApiOk,
+    adminUiAuthenticated,
+    adminAuthenticatedScan,
     apiAvailable,
     scannedPublicRoutes: PUBLIC_ROUTES.length,
     scrollModes: SCROLL_MODES.length,
@@ -693,6 +909,11 @@ async function main() {
   };
 
   console.log(JSON.stringify(summary, null, 2));
+
+  if (REQUIRE_ADMIN_SCAN && adminApiOk && !adminAuthenticatedScan) {
+    console.log("\n⚠ Extended audit: admin credentials were provided but authenticated admin UI scan did not run.");
+    process.exit(1);
+  }
 
   if (realIssues.length === 0) {
     console.log("\n✓ Extended overlap audit: no issues found.");

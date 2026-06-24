@@ -1,8 +1,8 @@
-import { useState, useEffect, forwardRef, useCallback } from "react";
+import { useState, useEffect, forwardRef, useCallback, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { BadgePercent, Crown, Gift, Loader2, RefreshCw, Sparkles, Ticket, Truck } from "lucide-react";
+import { BadgePercent, Crown, Gift, Loader2, RefreshCw, ShoppingBag, Sparkles, Ticket, Truck } from "lucide-react";
 import { useGoBack } from "@/hooks/useGoBack";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useCouponCenterStore } from "@/stores/useCouponCenterStore";
 import { useMyCouponsStore } from "@/stores/useMyCouponsStore";
 import { useCartStore } from "@/stores/useCartStore";
@@ -247,6 +247,7 @@ export default function Coupons() {
   const [category, setCategory] = useState<CouponCategory>("recommended");
   const [pageView, setPageView] = useState<PageView>(() => (isLoggedIn() ? "mine" : "claimCenter"));
   const [claimingId, setClaimingId] = useState<string | null>(null);
+  const autoSwitchedToClaimCenterRef = useRef(false);
   const canViewOwnedCoupons = isAuthenticated;
   const { containerRef: statusTabsRef, setItemRef: setStatusTabRef, scrollToKey: scrollStatusTabToKey } =
     useHorizontalActiveScroll<HTMLDivElement, HTMLButtonElement>(tab, TAB_ITEMS.length);
@@ -276,6 +277,15 @@ export default function Coupons() {
     }
   }, [location.state?.pageView]);
 
+  useEffect(() => {
+    if (autoSwitchedToClaimCenterRef.current) return;
+    if (!canViewOwnedCoupons || pageView !== "mine") return;
+    if (myLoading || centerLoading) return;
+    if (myCoupons.length > 0 || claimableCoupons.length === 0) return;
+    autoSwitchedToClaimCenterRef.current = true;
+    setPageView("claimCenter");
+  }, [canViewOwnedCoupons, centerLoading, claimableCoupons.length, myCoupons.length, myLoading, pageView]);
+
   const rawCoupons = pageView === "claimCenter" ? claimableCoupons : myCoupons;
   const loading = pageView === "claimCenter" ? centerLoading : myLoading;
   const error = pageView === "claimCenter" ? centerError : myError;
@@ -303,6 +313,9 @@ export default function Coupons() {
   const statusFilteredCoupons = pageView === "claimCenter" ? available : filterByTab(coupons, tab);
   const list = filterByCategory(statusFilteredCoupons, category);
   const blockingError = Boolean(error && rawCoupons.length === 0);
+  const visibleStatusTabs = pageView === "mine"
+    ? TAB_ITEMS.filter((item) => item.key === "mine" || item.key === "used" || item.key === "expired" || filterByTab(coupons, item.key).length > 0)
+    : TAB_ITEMS;
 
   const handleClaim = async (coupon: DisplayCoupon) => {
     if (!canViewOwnedCoupons) {
@@ -337,31 +350,9 @@ export default function Coupons() {
     navigate(localizedPath("/cart"), { state: { coupon_id: coupon.id } });
   }, [localizedPath, navigate, selectedCartCount]);
 
-  const headerRightSlot = pageView === "claimCenter" ? (
-    canViewOwnedCoupons ? (
-      <UnifiedButton
-        type="button"
-        onClick={() => setPageView("mine")}
-        className="touch-target shrink-0 whitespace-nowrap px-1 text-sm font-medium text-[var(--theme-primary)]"
-      >
-        我的优惠券
-      </UnifiedButton>
-    ) : (
-      <UnifiedButton
-        type="button"
-        onClick={() => navigate(localizedPath("/login"), { state: { from: localizedPath("/coupons"), fromState: { pageView: "claimCenter" } } })}
-        className="touch-target shrink-0 whitespace-nowrap px-1 text-sm font-medium text-[var(--theme-primary)]"
-      >
-        登录领取
-      </UnifiedButton>
-    )
-  ) : (
-    <ClaimCenterButton count={available.length} onClick={() => setPageView("claimCenter")} />
-  );
-
   if (loading && rawCoupons.length === 0) {
     return (
-      <StoreAccountLayout title={t("coupon.myCoupons")} onBack={goBack} className="sf-next-page sf-next-coupons-page-shell" mainClassName="sf-next-account-main">
+      <StoreAccountLayout title="优惠券" onBack={goBack} className="sf-next-page sf-next-coupons-page-shell" mainClassName="sf-next-account-main">
         <section className="store-account-v12-empty-panel store-account-v12-status-panel store-coupons-v12-state" aria-live="polite">
           <span className="store-account-v12-empty-panel__icon" aria-hidden>
             <Loader2 size={28} className="animate-spin" />
@@ -375,9 +366,8 @@ export default function Coupons() {
 
   return (
     <StoreAccountLayout
-      title={pageView === "claimCenter" ? t("coupon.claimCenter") : t("coupon.myCoupons")}
+      title="优惠券"
       onBack={pageView === "claimCenter" ? () => setPageView("mine") : goBack}
-      rightSlot={headerRightSlot}
       className="sf-next-page sf-next-coupons-page-shell"
       mainClassName="sf-next-account-main"
     >
@@ -394,21 +384,15 @@ export default function Coupons() {
         onGoCart={() => navigate(localizedPath("/cart"))}
       />
 
-      <CouponCategoryRail
-        coupons={statusFilteredCoupons}
-        active={category}
-        onChange={setCategory}
-      />
-
       {pageView === "mine" ? (
         <motion.div
           ref={statusTabsRef}
-          className="no-scrollbar mt-5 overflow-x-auto scroll-smooth [-webkit-overflow-scrolling:touch]"
+          className="sf-next-coupon-status-rail no-scrollbar"
           role="tablist"
           aria-label="优惠券状态筛选"
         >
-          <div className="flex min-w-max gap-1 rounded-2xl bg-[color-mix(in_srgb,var(--theme-primary)_8%,var(--theme-surface))] p-1 ring-1 ring-[var(--theme-border)]">
-            {TAB_ITEMS.map((t) => {
+          <div className="sf-next-coupon-status-rail__inner">
+            {visibleStatusTabs.map((t) => {
               const count = t.badge ? usableCount : 0;
               return (
                 <UnifiedButton
@@ -422,10 +406,10 @@ export default function Coupons() {
                     setTab(t.key);
                   }}
                   className={cn(
-                    "relative shrink-0 whitespace-nowrap rounded-xl px-3 py-2.5 text-sm font-medium transition-all",
+                    "sf-next-coupon-status-tab",
                     tab === t.key
-                      ? "bg-[var(--theme-surface)] text-[var(--theme-text-on-surface)] shadow-[var(--theme-shadow)]"
-                      : "text-[color-mix(in_srgb,var(--theme-text-on-surface)_72%,var(--theme-text-muted))]",
+                      ? "sf-next-coupon-status-tab--active"
+                      : "sf-next-coupon-status-tab--idle",
                   )}
                 >
                   {t.label}
@@ -448,8 +432,13 @@ export default function Coupons() {
         </motion.div>
       ) : null}
 
+      <CouponCategoryRail
+        coupons={statusFilteredCoupons}
+        active={category}
+        onChange={setCategory}
+      />
+
       <div className="mt-4 space-y-3 xl:grid xl:grid-cols-2 xl:gap-4 xl:space-y-0">
-        <AnimatePresence mode="popLayout">
           {blockingError ? (
             <motion.div
               key={`error-${pageView}`}
@@ -478,29 +467,15 @@ export default function Coupons() {
               exit={{ opacity: 0 }}
               className="xl:col-span-2"
             >
-              {pageView === "claimCenter" ? (
-                <section className="store-account-v12-empty-panel store-coupons-v12-state">
-                  <span className="store-account-v12-empty-panel__icon" aria-hidden>
-                    <Ticket size={28} />
-                  </span>
-                  <h2>暂无可领取优惠券</h2>
-                  <p>新优惠券上线后会出现在这里。</p>
-                </section>
-              ) : (
-                <section className="store-account-v12-empty-panel store-coupons-v12-state">
-                  <span className="store-account-v12-empty-panel__icon" aria-hidden>
-                    <Ticket size={28} />
-                  </span>
-                  <h2>{EMPTY_STATE_COPY[tab].title}</h2>
-                  <p>{EMPTY_STATE_COPY[tab].description}</p>
-                  {tab === "mine" && available.length > 0 ? (
-                    <UnifiedButton type="button" onClick={() => setPageView("claimCenter")} className="store-account-v12-empty-panel__action">
-                      <Ticket size={17} aria-hidden />
-                      去领券中心
-                    </UnifiedButton>
-                  ) : null}
-                </section>
-              )}
+              <CouponEmptyState
+                pageView={pageView}
+                tab={tab}
+                availableCount={available.length}
+                ownedCount={coupons.length}
+                selectedCartCount={selectedCartCount}
+                onShowClaimCenter={() => setPageView("claimCenter")}
+                onGoCart={() => navigate(localizedPath("/cart"))}
+              />
             </motion.div>
           ) : null}
           {!blockingError && list.map((coupon, i) => (
@@ -514,9 +489,86 @@ export default function Coupons() {
               onUse={() => handleUseCoupon(coupon)}
             />
           ))}
-        </AnimatePresence>
       </div>
     </StoreAccountLayout>
+  );
+}
+
+function CouponEmptyState({
+  pageView,
+  tab,
+  availableCount,
+  ownedCount,
+  selectedCartCount,
+  onShowClaimCenter,
+  onGoCart,
+}: {
+  pageView: PageView;
+  tab: Tab;
+  availableCount: number;
+  ownedCount: number;
+  selectedCartCount: number;
+  onShowClaimCenter: () => void;
+  onGoCart: () => void;
+}) {
+  const isClaimCenter = pageView === "claimCenter";
+  const title = isClaimCenter ? "暂无可领取优惠券" : EMPTY_STATE_COPY[tab].title;
+  const description = isClaimCenter
+    ? "新优惠券上线后会出现在这里。"
+    : EMPTY_STATE_COPY[tab].description || "当前筛选下没有匹配的优惠券。";
+  const shouldShowClaimAction = !isClaimCenter && tab === "mine" && availableCount > 0;
+  const shouldShowCartAction = selectedCartCount > 0;
+
+  return (
+    <section className="sf-next-coupon-empty" aria-label={title}>
+      <div className="sf-next-coupon-empty__pass" aria-hidden>
+        <div>
+          <span className="sf-next-coupon-empty__pass-label">优惠钱包</span>
+          <strong>{isClaimCenter ? availableCount : ownedCount}</strong>
+        </div>
+        <Ticket size={34} />
+      </div>
+
+      <div className="sf-next-coupon-empty__content">
+        <span className="sf-next-coupon-empty__icon" aria-hidden>
+          <Ticket size={28} />
+        </span>
+        <h2>{title}</h2>
+        <p>{description}</p>
+      </div>
+
+      <div className="sf-next-coupon-empty__stats" aria-label="优惠券状态">
+        <span>
+          <strong>{availableCount}</strong>
+          <em>可领取</em>
+        </span>
+        <span>
+          <strong>{ownedCount}</strong>
+          <em>已领取</em>
+        </span>
+        <span>
+          <strong>{selectedCartCount}</strong>
+          <em>购物车</em>
+        </span>
+      </div>
+
+      {shouldShowClaimAction || shouldShowCartAction ? (
+        <div className="sf-next-coupon-empty__actions">
+          {shouldShowClaimAction ? (
+            <UnifiedButton type="button" onClick={onShowClaimCenter} className="sf-next-coupon-empty__primary">
+              <Ticket size={17} aria-hidden />
+              去领券中心
+            </UnifiedButton>
+          ) : null}
+          {shouldShowCartAction ? (
+            <UnifiedButton type="button" onClick={onGoCart} className="sf-next-coupon-empty__secondary">
+              <ShoppingBag size={17} aria-hidden />
+              去购物车
+            </UnifiedButton>
+          ) : null}
+        </div>
+      ) : null}
+    </section>
   );
 }
 
@@ -543,51 +595,49 @@ function CouponVaultHero({
   onLogin: () => void;
   onGoCart: () => void;
 }) {
-  const primaryActionLabel = pageView === "claimCenter"
-    ? canViewOwnedCoupons ? "我的优惠券" : "登录领取"
-    : "领券中心";
-  const primaryAction = pageView === "claimCenter"
-    ? canViewOwnedCoupons ? onShowMine : onLogin
-    : onShowClaimCenter;
+  const walletCount = pageView === "mine" ? usableCount : availableCount;
+  const walletUnit = pageView === "mine" ? "张可用" : "张可领";
+  const sideLabel = pageView === "mine" ? `领券中心 ${availableCount}` : canViewOwnedCoupons ? `已领取 ${ownedCount}` : "登录后领取";
 
   return (
-    <section className="sf-next-coupon-hero sf-next-sheet" aria-label="优惠券概览">
-      <div>
-        <div className="sf-next-coupon-hero__metrics">
-          <CouponHeroMetric icon={<Ticket size={14} aria-hidden />} label="可领取" value={availableCount} />
-          <CouponHeroMetric icon={<BadgePercent size={14} aria-hidden />} label="可使用" value={usableCount} />
-          <CouponHeroMetric icon={<Gift size={14} aria-hidden />} label={pageView === "mine" ? "我的券" : "购物车"} value={pageView === "mine" ? ownedCount : selectedCartCount} />
+    <>
+      <section className="sf-next-coupon-hero sf-next-sheet" aria-label="优惠券概览">
+        <div className="sf-next-coupon-hero__summary">
+          <span className="sf-next-coupon-hero__eyebrow">优惠钱包</span>
+          <strong className="sf-next-coupon-hero__value">
+            {walletCount} <span>{walletUnit}</span>
+          </strong>
         </div>
-        <div className="sf-next-coupon-hero__actions">
-          <UnifiedButton
-            type="button"
-            onClick={primaryAction}
-            className="sf-next-coupon-hero__action sf-next-coupon-hero__action--primary"
-          >
-            {primaryActionLabel}
-          </UnifiedButton>
-          <UnifiedButton
-            type="button"
-            onClick={onGoCart}
-            className="sf-next-coupon-hero__action sf-next-coupon-hero__action--secondary"
-          >
-            去购物车
-          </UnifiedButton>
+        <div className="sf-next-coupon-hero__aside">
+          <span>{sideLabel}</span>
+          {selectedCartCount > 0 ? (
+            <UnifiedButton type="button" onClick={onGoCart} className="sf-next-coupon-hero__cart">
+              去购物车
+            </UnifiedButton>
+          ) : null}
         </div>
+      </section>
+      <div className="sf-next-coupon-view-switch" role="tablist" aria-label="优惠券页面切换">
+        <UnifiedButton
+          type="button"
+          role="tab"
+          aria-selected={pageView === "mine"}
+          onClick={canViewOwnedCoupons ? onShowMine : onLogin}
+          className={cn("sf-next-coupon-view-switch__item", pageView === "mine" && "is-active")}
+        >
+          我的优惠券
+        </UnifiedButton>
+        <UnifiedButton
+          type="button"
+          role="tab"
+          aria-selected={pageView === "claimCenter"}
+          onClick={onShowClaimCenter}
+          className={cn("sf-next-coupon-view-switch__item", pageView === "claimCenter" && "is-active")}
+        >
+          领券中心
+        </UnifiedButton>
       </div>
-    </section>
-  );
-}
-
-function CouponHeroMetric({ icon, label, value }: { icon: React.ReactNode; label: string; value: number }) {
-  return (
-    <div className="sf-next-coupon-hero__metric">
-      <span className="sf-next-coupon-hero__metric-label">
-        {icon}
-        {label}
-      </span>
-      <strong className="sf-next-coupon-hero__metric-value">{value}</strong>
-    </div>
+    </>
   );
 }
 
@@ -707,38 +757,5 @@ function CouponCategoryRail({
         })}
       </div>
     </motion.div>
-  );
-}
-
-function ClaimCenterButton({ count, onClick }: { count: number; onClick: () => void }) {
-  return (
-    <UnifiedButton
-      type="button"
-      onClick={onClick}
-      aria-label={count > 0 ? `领券中心，${count} 张可领取` : "领券中心"}
-      className={cn(
-        "touch-target inline-flex shrink-0 items-center justify-center gap-1 whitespace-nowrap rounded-full bg-transparent p-0",
-        "transition-transform active:scale-95",
-      )}
-    >
-      <span
-        className={cn(
-          "inline-flex h-8 items-center gap-1.5 rounded-full border px-2.5 text-[13px] font-semibold",
-          "pr-3",
-          "border-[color-mix(in_srgb,var(--theme-price)_18%,var(--theme-border))]",
-          "bg-[color-mix(in_srgb,var(--theme-price)_5%,var(--theme-surface))]",
-          "text-[color-mix(in_srgb,var(--theme-price)_62%,var(--theme-text))]",
-          "shadow-[0_5px_14px_-12px_color-mix(in_srgb,var(--theme-price)_36%,transparent)]",
-        )}
-      >
-        <Ticket size={14} strokeWidth={2.2} aria-hidden />
-        <span>领券中心</span>
-      </span>
-      {count > 0 ? (
-        <span className="inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-price)_82%,var(--theme-text))] px-1 text-[10px] font-bold leading-none text-[var(--theme-price-foreground)] shadow-sm ring-2 ring-[var(--theme-surface)]">
-          {count}
-        </span>
-      ) : null}
-    </UnifiedButton>
   );
 }

@@ -47,6 +47,7 @@ function isExpectedPath(appPath) {
   return (
     appPath === ".gitignore" ||
     appPath === "package.json" ||
+    /^server\/migrations\/167_seed_default_home_nav_items\.(up|down)\.js$/.test(appPath) ||
     appPath.startsWith("src/") ||
     appPath.startsWith("scripts/") ||
     appPath.startsWith("docs/")

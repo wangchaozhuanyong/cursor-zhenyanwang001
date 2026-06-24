@@ -9,7 +9,7 @@ type ProductCardV2SkeletonProps = {
 export default function ProductCardV2Skeleton({ variant = "grid" }: ProductCardV2SkeletonProps) {
   if (variant === "list") {
     return (
-      <div className={`${storefrontCardClassName()} store-product-card-v2 store-product-card-v2--skeleton store-product-card-v2--list store-skin-product-card grid grid-cols-[5.75rem_minmax(0,1fr)] items-stretch gap-3 p-2.5 sm:grid-cols-[6rem_minmax(0,1fr)] sm:p-3`} aria-hidden>
+      <div className={`${storefrontCardClassName()} store-product-card-v2 sf-next-product-card sf-next-product-card--list store-product-card-v2--skeleton store-product-card-v2--list store-skin-product-card grid grid-cols-[5.75rem_minmax(0,1fr)] items-stretch gap-3 p-2.5 sm:grid-cols-[6rem_minmax(0,1fr)] sm:p-3`} aria-hidden>
         <Skeleton className="store-skin-product-card__media h-full min-h-[5.75rem] w-full self-stretch rounded-[0.875rem] sm:min-h-24" />
         <div className="flex min-h-[5.75rem] flex-col gap-2 py-1 sm:min-h-24">
           <Skeleton className="h-4 w-full" />
@@ -25,7 +25,7 @@ export default function ProductCardV2Skeleton({ variant = "grid" }: ProductCardV
   }
 
   return (
-    <div className={`${storefrontCardClassName()} store-product-card-v2 store-product-card-v2--skeleton store-skin-product-card overflow-hidden p-1.5`} aria-hidden>
+    <div className={`${storefrontCardClassName()} store-product-card-v2 sf-next-product-card sf-next-product-card--grid store-product-card-v2--skeleton store-skin-product-card overflow-hidden p-1.5`} aria-hidden>
       <Skeleton className="store-skin-product-card__media w-full rounded-[0.95rem]" style={THEME_PRODUCT_MEDIA_ASPECT_STYLE} />
       <div className="space-y-2 px-1.5 pb-2 pt-3 sm:px-2">
         <Skeleton className="h-4 w-full" />

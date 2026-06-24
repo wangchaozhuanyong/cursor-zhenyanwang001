@@ -13,7 +13,7 @@ import ThemeStudioHeader from "@/modules/admin/components/theme/ThemeStudioHeade
 import type { PreviewDevice, PreviewMode } from "@/modules/admin/components/theme/themeStudioConstants";
 import { AdminSideDrawer } from "@/modules/admin/components/AdminSideDrawer";
 import { notifyGlobalThemeUpdated } from "@/lib/themeRevision";
-import { disableThemeSkin, fetchThemeSkins, publishThemeSkin, saveThemeSkinDraft } from "@/services/admin/themeService";
+import { disableThemeSkin, fetchThemeSkins, publishThemeSkin, saveSystemThemeSkins, saveThemeSkinDraft } from "@/services/admin/themeService";
 import type { ThemeConfig, ThemeHolidayRule, ThemeSkin, ThemeSkinsPayload } from "@/types/theme";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { normalizeThemeConfig, normalizeThemeSkinsPayload } from "@/utils/themeConfig";
@@ -69,6 +69,7 @@ export default function AdminThemeSettings() {
   const [selectedSkinId, setSelectedSkinId] = useState(DEFAULT_SKIN_ID);
   const [themeConfig, setThemeConfig] = useState<ThemeConfig>(normalizeThemeConfig(THEME_PRESETS[0]?.config));
   const [dirty, setDirty] = useState(false);
+  const [holidayDirty, setHolidayDirty] = useState(false);
   const [pendingSkinId, setPendingSkinId] = useState<string | null>(null);
   const [skinSearch, setSkinSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -107,7 +108,7 @@ export default function AdminThemeSettings() {
   });
 
   const loading = themeQuery.isLoading && !themeQuery.data;
-  const { markSaved } = useAdminDirtyForm({ isDirty: dirty, isReady: !loading });
+  const { markSaved } = useAdminDirtyForm({ isDirty: dirty || holidayDirty, isReady: !loading });
 
   useEffect(() => {
     if (skipServerSyncRef.current) return;
@@ -125,7 +126,7 @@ export default function AdminThemeSettings() {
       });
       return;
     }
-    if (!themeQuery.data || dirty) return;
+    if (!themeQuery.data || dirty || holidayDirty) return;
     const data = themeQuery.data;
     const normalized = normalizeThemeSkinsPayload({
       defaultSkinId: data?.defaultSkinId,
@@ -140,7 +141,7 @@ export default function AdminThemeSettings() {
       selectedSkinId: shouldPreserveSelectedSkin ? selectedSkinId : undefined,
     });
     hasAppliedServerThemeRef.current = true;
-  }, [themeQuery.data, themeQuery.isError, themeQuery.error, dirty, selectedSkinId, L]);
+  }, [themeQuery.data, themeQuery.isError, themeQuery.error, dirty, holidayDirty, selectedSkinId, L]);
 
   useEffect(() => {
     const onBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -163,6 +164,7 @@ export default function AdminThemeSettings() {
     queryClient.setQueryData(adminQueryKeys.themeSkins(), saved);
     notifyGlobalThemeUpdated();
     setDirty(false);
+    setHolidayDirty(false);
     markSaved();
   };
 
@@ -186,14 +188,14 @@ export default function AdminThemeSettings() {
   const onHolidaySkinChange = (id: string) => {
     setHolidaySkinId(id);
     setHolidayRules((prev) => prev.map((rule) => ({ ...rule, skinId: id })));
-    setDirty(true);
+    setHolidayDirty(true);
   };
 
   const onHolidayRuleChange = (ruleId: string, patch: Partial<ThemeHolidayRule>) => {
     setHolidayRules((prev) =>
       prev.map((rule) => (rule.id === ruleId ? { ...rule, ...patch } : rule)),
     );
-    setDirty(true);
+    setHolidayDirty(true);
   };
 
   const applySkinSwitch = (id: string) => {
@@ -268,12 +270,47 @@ export default function AdminThemeSettings() {
       const saved = await publishThemeSkin(selectedSkinId, { config: { ...themeConfig, festival: { ...themeConfig.festival, mode: themeConfig.festival.mode === "none" ? "springFestival" : themeConfig.festival.mode } } });
       const normalized = normalizeThemeSkinsPayload(saved);
       const nextRules = holidayRules.map((rule) => ({ ...rule, skinId: selectedSkinId }));
-      applyThemePayload(normalized, { setSkins, setDefaultSkinId, setActiveSkinId, setRuntimeSkinId, setHolidaySkinId, setHolidayRules, setSelectedSkinId, setThemeConfig }, { selectedSkinId });
-      setHolidaySkinId(selectedSkinId);
-      setHolidayRules(nextRules);
+      const savedHoliday = await saveSystemThemeSkins(normalizeThemeSkinsPayload({
+        ...normalized,
+        holidaySkinId: selectedSkinId,
+        holidayRules: nextRules,
+      }));
+      applySavedPayload(savedHoliday, { selectedSkinId });
       toast.success(L("已发布为节日可用皮肤", "Published as a festival-ready skin"));
     } catch (error) {
       toast.error(toastErrorMessage(error, L("发布失败", "Publish failed")));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const onSaveHolidaySettings = async () => {
+    if (dirty) {
+      toast.error(L("请先保存或放弃当前皮肤草稿，再保存节日规则", "Save or discard the current skin draft before saving festival rules"));
+      return;
+    }
+    setSaving(true);
+    try {
+      const source = normalizeThemeSkinsPayload(themeQuery.data ?? {
+        defaultSkinId,
+        activeSkinId,
+        holidaySkinId,
+        holidayRules,
+        skins,
+      });
+      const saved = await saveSystemThemeSkins(normalizeThemeSkinsPayload({
+        ...source,
+        holidaySkinId,
+        holidayRules: holidayRules.map((rule) => ({
+          ...rule,
+          skinId: rule.skinId || holidaySkinId,
+        })),
+      }));
+      applySavedPayload(saved, { selectedSkinId });
+      setHolidayDrawerOpen(false);
+      toast.success(L("节日自动皮肤配置已保存", "Festival skin automation saved"));
+    } catch (error) {
+      toast.error(toastErrorMessage(error, L("保存失败", "Save failed")));
     } finally {
       setSaving(false);
     }
@@ -328,7 +365,7 @@ export default function AdminThemeSettings() {
             isClientSkin={isSelectedClientSkin}
             isHolidaySkin={isSelectedHolidaySkin}
             status={selectedSkinStatus}
-            dirty={dirty}
+            dirty={dirty || holidayDirty}
             saving={saving}
             saveDisabled={!selectedSkin?.name?.trim()}
             onClientPreview={openClientPreview}
@@ -389,7 +426,7 @@ export default function AdminThemeSettings() {
                 </UnifiedButton>
                 <UnifiedButton
                   type="button"
-                  onClick={() => void onSaveSettings()}
+                  onClick={() => void onSaveHolidaySettings()}
                   disabled={saving || !selectedSkin?.name?.trim()}
                   className="inline-flex h-10 items-center justify-center rounded-xl bg-[var(--theme-primary)] px-4 text-sm font-semibold text-[var(--theme-primary-foreground)] disabled:cursor-not-allowed disabled:opacity-55"
                 >

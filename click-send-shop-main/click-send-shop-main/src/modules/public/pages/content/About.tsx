@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { BadgeCheck, FileText, ShieldCheck } from "lucide-react";
+import { FileText, LayoutPanelTop, MessageSquare, ShieldCheck } from "lucide-react";
 import { useGoBack } from "@/hooks/useGoBack";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import SeoHead from "@/components/SeoHead";
@@ -13,10 +13,22 @@ import { isAboutPlaceholderBody } from "@/constants/helpCenterConfig";
 import { STORE_COPY } from "@/constants/storeCopy";
 import BalanceFolio from "@/modules/storefront-v2/design/components/BalanceFolio";
 
-const defaultPrinciples = [
-  "商品、优惠、订单和售后信息以真实系统数据为准。",
-  "页面展示不替代客服确认，关键操作会在提交前再次校验。",
-  "账号、安全和配送相关说明优先使用后台已配置内容。",
+const informationItems = [
+  {
+    title: "品牌介绍",
+    description: "站点名称、口号与平台说明",
+    icon: FileText,
+  },
+  {
+    title: "服务范围",
+    description: "商品、配送与客户服务范围",
+    icon: LayoutPanelTop,
+  },
+  {
+    title: "联系我们",
+    description: "仅展示已配置的真实联系方式",
+    icon: MessageSquare,
+  },
 ];
 
 export default function About() {
@@ -77,18 +89,23 @@ export default function About() {
           </section>
         )}
 
-        <section className="store-v12-info-card">
-          <div className="store-v12-card-title">
-            <BadgeCheck size={18} aria-hidden />
-            服务原则
-          </div>
-          <div className="store-v12-list">
-            {defaultPrinciples.map((item) => (
-              <div key={item} className="store-v12-list-row">
-                <span className="store-v12-dot" aria-hidden />
-                <span>{item}</span>
-              </div>
-            ))}
+        <section className="store-about-v12-info-section" aria-labelledby="about-info-title">
+          <h2 className="store-v12-section-title" id="about-info-title">信息结构</h2>
+          <div className="store-about-v12-info-list">
+            {informationItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <article key={item.title} className="store-about-v12-info-row">
+                  <span className="store-v12-card-icon" aria-hidden>
+                    <Icon size={20} />
+                  </span>
+                  <div>
+                    <h3>{item.title}</h3>
+                    <p>{item.description}</p>
+                  </div>
+                </article>
+              );
+            })}
           </div>
         </section>
 

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
-import { ChevronDown, ChevronUp, Search } from "lucide-react";
-import SupportContactSection from "@/components/support/SupportContactSection";
+import { ChevronDown, ChevronRight, ClipboardList, HelpCircle, MapPin, Search, TicketPercent } from "lucide-react";
+import { Link } from "react-router-dom";
 import { DEFAULT_FAQS, DEFAULT_FAQ_CATEGORIES } from "@/constants/help";
 import SeoHead from "@/components/SeoHead";
 import { buildCanonical } from "@/utils/seo";
@@ -11,7 +11,7 @@ import { STORE_COPY } from "@/constants/storeCopy";
 import type { FaqItem } from "@/constants/help";
 import type { HelpCenterConfig } from "@/types/content";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
-import { useHorizontalActiveScroll } from "@/hooks/useHorizontalActiveScroll";
+import type { LucideIcon } from "lucide-react";
 
 function parseHelpConfig(raw?: string): { categories: string[]; faqs: FaqItem[] } | null {
   if (!raw?.trim()) return null;
@@ -41,6 +41,8 @@ function parseHelpConfig(raw?: string): { categories: string[]; faqs: FaqItem[] 
   }
 }
 
+const HELP_QUICK_ICONS: LucideIcon[] = [ClipboardList, MapPin, TicketPercent, HelpCircle];
+
 export default function Help() {
   const goBack = useGoBack();
   const siteInfo = useSiteInfo();
@@ -51,13 +53,13 @@ export default function Help() {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
   const [keyword, setKeyword] = useState("");
-  const activeCategoryKey = activeCategory || "all";
   const categoryCounts = useMemo(() => {
     return faqCategories.map((category) => ({
       category,
       count: faqs.filter((item) => item.category === category).length,
     }));
   }, [faqCategories, faqs]);
+  const quickCategories = useMemo(() => categoryCounts.slice(0, 4), [categoryCounts]);
 
   const filtered = useMemo(() => {
     const q = keyword.trim().toLowerCase();
@@ -68,8 +70,8 @@ export default function Help() {
       return item.question.toLowerCase().includes(q) || item.answer.toLowerCase().includes(q);
     });
   }, [activeCategory, faqs, keyword]);
-  const { containerRef: categoryRailRef, setItemRef: setCategoryRef, scrollToKey: scrollCategoryToKey } =
-    useHorizontalActiveScroll<HTMLDivElement, HTMLButtonElement>(activeCategoryKey, categoryCounts.length);
+  const showingFocusedList = Boolean(activeCategory || keyword.trim());
+  const visibleFaqs = showingFocusedList ? filtered.slice(0, 10) : filtered.slice(0, 6);
 
   const faqJsonLd = useMemo(
     () => ({
@@ -110,61 +112,73 @@ export default function Help() {
             className="store-help-v12-search__input"
           />
         </div>
-        <div ref={categoryRailRef} className="store-help-v12-category-rail no-scrollbar">
-          <UnifiedButton
-            ref={(el) => setCategoryRef("all", el)}
-            type="button"
-            onClick={() => {
-              scrollCategoryToKey("all");
-              setActiveCategory(null);
-            }}
-            className={`store-help-v12-category ${!activeCategory ? "is-active" : ""}`}
-          >
-            <span>全部</span>
-            <span>{faqs.length}</span>
-          </UnifiedButton>
-          {categoryCounts.map(({ category, count }) => {
-            const active = activeCategory === category;
-            return (
+        <section className="store-help-v12-quick" aria-labelledby="store-help-quick-title">
+          <div className="store-help-v12-section-head">
+            <h2 id="store-help-quick-title">常用帮助</h2>
+            {activeCategory ? (
               <UnifiedButton
-                key={category}
-                ref={(el) => setCategoryRef(category, el)}
                 type="button"
-                onClick={() => {
-                  const nextCategory = active ? null : category;
-                  scrollCategoryToKey(nextCategory || "all");
-                  setActiveCategory(nextCategory);
-                }}
-                className={`store-help-v12-category ${active ? "is-active" : ""}`}
+                onClick={() => setActiveCategory(null)}
+                className="store-help-v12-clear"
               >
-                <span>{category}</span>
-                <span>{count}</span>
+                全部问题
               </UnifiedButton>
-            );
-          })}
-        </div>
-        <div className="store-help-v12-list">
+            ) : null}
+          </div>
+          <div className="store-help-v12-quick-grid">
+            {quickCategories.map(({ category, count }, index) => {
+              const Icon = HELP_QUICK_ICONS[index] || HelpCircle;
+              const active = activeCategory === category;
+              return (
+                <UnifiedButton
+                  key={category}
+                  type="button"
+                  onClick={() => setActiveCategory(active ? null : category)}
+                  className={`store-help-v12-quick-card ${active ? "is-active" : ""}`}
+                  aria-pressed={active}
+                >
+                  <Icon size={22} aria-hidden />
+                  <span>{category}</span>
+                  <small>{count} 个问题</small>
+                </UnifiedButton>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="store-help-v12-faq-section" aria-labelledby="store-help-faq-title">
+          <div className="store-help-v12-section-head">
+            <h2 id="store-help-faq-title">{showingFocusedList ? "筛选结果" : "常见问题"}</h2>
+            {showingFocusedList ? (
+              <span>{filtered.length} 条</span>
+            ) : null}
+          </div>
           {filtered.length === 0 ? (
             <div className="store-help-v12-empty">
               <p className="text-sm font-semibold text-[var(--theme-text)]">没有找到匹配的问题</p>
-              <p className="mt-1 text-xs leading-5 text-[var(--theme-muted)]">换个关键词，或直接联系官方客服。</p>
+              <p className="mt-1 text-xs leading-5 text-[var(--theme-muted)]">换个关键词，或直接提交反馈。</p>
             </div>
           ) : null}
-          {filtered.map((faq) => (
-            <div key={faq.id} className="store-help-v12-faq">
-              <UnifiedButton type="button" onClick={() => setOpenId(openId === faq.id ? null : faq.id)} className="store-help-v12-faq__trigger">
-                <span>{faq.question}</span>
-                {openId === faq.id ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-              </UnifiedButton>
-              {openId === faq.id ? <div className="store-help-v12-faq__answer">{faq.answer}</div> : null}
-            </div>
-          ))}
-        </div>
-        <SupportContactSection
-          hideDescription
-          variant="compact"
-          className="store-help-v12-contact"
-        />
+          <div className="store-help-v12-list">
+            {visibleFaqs.map((faq) => (
+              <div key={faq.id} className="store-help-v12-faq">
+                <UnifiedButton type="button" onClick={() => setOpenId(openId === faq.id ? null : faq.id)} className="store-help-v12-faq__trigger">
+                  <span>{faq.question}</span>
+                  {openId === faq.id ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+                </UnifiedButton>
+                {openId === faq.id ? <div className="store-help-v12-faq__answer">{faq.answer}</div> : null}
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="store-help-v12-feedback" aria-labelledby="store-help-feedback-title">
+          <h2 id="store-help-feedback-title">联系与反馈</h2>
+          <Link to="/feedback" className="store-help-v12-feedback-link">
+            <span>提交反馈</span>
+            <ChevronRight size={18} aria-hidden />
+          </Link>
+        </section>
       </div>
     </StoreStandardPageShell>
   );

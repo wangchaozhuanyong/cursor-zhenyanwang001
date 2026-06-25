@@ -263,19 +263,19 @@ export default function BannerCarousel({
     if (!loading) return null;
     return (
       <div
-        className={`store-hero-carousel store-hero-carousel--showcase store-hero-loading-shell store-skin-banner relative w-full overflow-hidden border border-[var(--theme-border)] bg-[var(--theme-surface)] ${bannerContainerClass}`}
+        className={`sf-next-banner-carousel sf-next-banner-carousel--showcase sf-next-banner-loading-shell sf-next-banner-skin relative w-full overflow-hidden border border-[var(--theme-border)] bg-[var(--theme-surface)] ${bannerContainerClass}`}
         data-banner-style={bannerStyle}
         data-theme-banner-style={bannerStyle}
         style={{ aspectRatio: BANNER_ASPECT_CSS, borderRadius: "var(--theme-radius)" }}
         aria-busy="true"
       >
         <div className="absolute inset-0 skeleton-base skeleton-shimmer" />
-        <div className="store-hero-loading-copy" aria-hidden>
-          <span className="store-hero-loading-kicker" />
-          <span className="store-hero-loading-title" />
-          <span className="store-hero-loading-line" />
+        <div className="sf-next-banner-loading-copy" aria-hidden>
+          <span className="sf-next-banner-loading-kicker" />
+          <span className="sf-next-banner-loading-title" />
+          <span className="sf-next-banner-loading-line" />
         </div>
-        <div className="store-hero-loading-dots" aria-hidden>
+        <div className="sf-next-banner-loading-dots" aria-hidden>
           <span />
           <span />
           <span />
@@ -327,8 +327,8 @@ export default function BannerCarousel({
         height={BANNER_IMAGE_HEIGHT}
         loading={isActive || isNext ? "eager" : "lazy"}
         fetchPriority={isActive ? "high" : "low"}
-        className="store-hero-slide-image absolute inset-0 h-full w-full"
-        imgClassName={hasTextLayer ? "store-hero-image-with-copy object-cover" : "object-cover object-center"}
+        className="sf-next-banner-slide-image absolute inset-0 h-full w-full"
+        imgClassName={hasTextLayer ? "sf-next-banner-image-with-copy object-cover" : "object-cover object-center"}
         dataActive={isActive ? "true" : "false"}
         onLoad={(event) => {
           if (event.currentTarget.naturalWidth <= 0) return;
@@ -357,12 +357,12 @@ export default function BannerCarousel({
   const rootStyle = {
     aspectRatio: BANNER_ASPECT_CSS,
     borderRadius: bannerStyle === "premium" || bannerStyle === "fresh" ? undefined : "var(--theme-radius)",
-    "--store-hero-auto-rotate-ms": `${resolvedAutoRotateMs}ms`,
+    "--sf-next-banner-auto-rotate-ms": `${resolvedAutoRotateMs}ms`,
   } as CSSProperties;
 
   return (
     <div
-      className={`store-hero-carousel store-hero-carousel--showcase store-skin-banner relative w-full overflow-hidden ${bannerContainerClass} ${bannerLink ? "cursor-pointer" : ""}`}
+      className={`sf-next-banner-carousel sf-next-banner-carousel--showcase sf-next-banner-skin relative w-full overflow-hidden ${bannerContainerClass} ${bannerLink ? "cursor-pointer" : ""}`}
       data-banner-style={bannerStyle}
       data-theme-banner-style={bannerStyle}
       data-banner-has-copy={hasTextLayer ? "true" : "false"}
@@ -392,36 +392,36 @@ export default function BannerCarousel({
 
       {hasTextLayer ? (
         <>
-          <div className="store-hero-text-wash pointer-events-none absolute inset-0 z-10" aria-hidden />
-          <div className="store-hero-copy-zone pointer-events-none absolute inset-y-0 left-0 z-20 flex w-full items-center px-3 py-3 sm:px-5 sm:py-4 lg:px-7">
+          <div className="sf-next-banner-text-wash pointer-events-none absolute inset-0 z-10" aria-hidden />
+          <div className="sf-next-banner-copy-zone pointer-events-none absolute inset-y-0 left-0 z-20 flex w-full items-center px-3 py-3 sm:px-5 sm:py-4 lg:px-7">
             <div
               key={`copy-${banner.id || safeIndex}`}
               ref={copyPanelRef}
-              className="store-hero-copy-panel"
+              className="sf-next-banner-copy-panel"
               data-ready={activeImageReady ? "true" : "false"}
             >
               {bannerTitle ? (
-                <h2 className="store-hero-copy-title text-[16px] font-bold leading-tight text-[var(--theme-text-on-surface)] sm:text-xl lg:text-3xl">
+                <h2 className="sf-next-banner-copy-title text-[16px] font-bold leading-tight text-[var(--theme-text-on-surface)] sm:text-xl lg:text-3xl">
                   {bannerTitle}
                 </h2>
               ) : null}
               {bannerTitle && (bannerCopy.subtitle || bannerCopy.body) ? (
-                <span className="store-hero-copy-divider" aria-hidden="true" />
+                <span className="sf-next-banner-copy-divider" aria-hidden="true" />
               ) : null}
               {bannerCopy.subtitle ? (
-                <p className="store-hero-copy-subtitle mt-1.5 text-[12px] font-semibold leading-5 text-[var(--theme-text-muted-on-surface)] sm:mt-2 sm:text-base sm:leading-6 lg:text-xl lg:leading-8">
+                <p className="sf-next-banner-copy-subtitle mt-1.5 text-[12px] font-semibold leading-5 text-[var(--theme-text-muted-on-surface)] sm:mt-2 sm:text-base sm:leading-6 lg:text-xl lg:leading-8">
                   {bannerCopy.subtitle}
                 </p>
               ) : null}
               {bannerCopy.body ? (
-                <p className="store-hero-copy-desc mt-1 text-[11px] leading-5 text-[var(--theme-text-muted-on-surface)] sm:mt-1.5 sm:text-sm sm:leading-6 lg:text-base lg:leading-7">
+                <p className="sf-next-banner-copy-desc mt-1 text-[11px] leading-5 text-[var(--theme-text-muted-on-surface)] sm:mt-1.5 sm:text-sm sm:leading-6 lg:text-base lg:leading-7">
                   {bannerCopy.body}
                 </p>
               ) : null}
               {bannerCtaText ? (
                 <UnifiedButton
                   type="button"
-                  className="store-hero-copy-cta pointer-events-auto mt-3 inline-flex items-center justify-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-bold sm:mt-4 sm:px-4 sm:text-sm"
+                  className="sf-next-banner-copy-cta pointer-events-auto mt-3 inline-flex items-center justify-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-bold sm:mt-4 sm:px-4 sm:text-sm"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleOpenBanner();
@@ -438,11 +438,11 @@ export default function BannerCarousel({
 
       {showControls ? (
         <div
-          className="store-hero-indicators pointer-events-auto absolute z-30"
+          className="sf-next-banner-indicators pointer-events-auto absolute z-30"
           onClick={(e) => e.stopPropagation()}
           aria-label="轮播图分页"
         >
-          <div className="store-hero-dots">
+          <div className="sf-next-banner-dots">
             {banners.map((_, index) => (
               <UnifiedButton
                 key={index}
@@ -451,11 +451,11 @@ export default function BannerCarousel({
                   e.stopPropagation();
                   goTo(index, true);
                 }}
-                className="store-hero-dot-button"
+                className="sf-next-banner-dot-button"
                 aria-label={`第 ${index + 1} 张轮播图`}
                 aria-current={index === safeIndex ? "true" : undefined}
               >
-                <span className="store-hero-dot block rounded-full transition-all duration-200" />
+                <span className="sf-next-banner-dot block rounded-full transition-all duration-200" />
               </UnifiedButton>
             ))}
           </div>

@@ -30,9 +30,9 @@ const FrontLayout = React.forwardRef<HTMLDivElement>((_, ref) => {
   }, [location.pathname]);
 
   return (
-    <div ref={ref} className="store-front-layout relative min-w-0 overflow-x-clip">
+    <div ref={ref} className="sf-next-front-layout relative min-w-0 overflow-x-clip">
       <StoreShell>
-        <div className="store-front-layout__content relative isolate w-full min-w-0">
+        <div className="sf-next-front-layout__content relative isolate w-full min-w-0">
           <FrontPageTransition>
             <Suspense fallback={<DelayedRouteFallback fallback={null} delayMs={260} />}>
               <Outlet />

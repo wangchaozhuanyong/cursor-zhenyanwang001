@@ -41,10 +41,10 @@ describe("ProfileAssetPanel", () => {
     vi.clearAllMocks();
   });
 
-  it("uses the client redesign asset grid without inline column overrides", async () => {
+  it("uses the storefront next asset grid without inline column overrides", async () => {
     await renderPanel();
 
-    const panel = container?.querySelector(".client-profile-asset-panel");
+    const panel = container?.querySelector(".sf-next-profile-asset-panel");
     const grid = container?.querySelector<HTMLElement>(".profile-asset-grid");
     const actions = container?.querySelectorAll(".profile-asset-action");
 

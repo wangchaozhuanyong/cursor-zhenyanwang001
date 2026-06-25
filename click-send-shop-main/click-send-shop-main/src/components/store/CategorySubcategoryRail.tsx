@@ -40,7 +40,7 @@ export default function CategorySubcategoryRail({
   return (
     <div
       ref={railRef}
-      className={cn("store-category-subtabs no-scrollbar flex flex-nowrap gap-1.5", className)}
+      className={cn("sf-next-category-subtabs no-scrollbar flex flex-nowrap gap-1.5", className)}
       role="tablist"
       aria-label="子分类"
     >
@@ -52,9 +52,9 @@ export default function CategorySubcategoryRail({
             (allItem.onSelect ?? (() => onSelect(allItem.id)))();
           }}
           layoutId={layoutId}
-          activeClassName="store-category-subtab-active-bg"
-          activeTextClass="store-category-subtab-active-label"
-          className="store-category-subtab px-3"
+          activeClassName="sf-next-category-subtab-active-bg"
+          activeTextClass="sf-next-category-subtab-active-label"
+          className="sf-next-category-subtab px-3"
           btnRef={(el) => setItemRef(allItem.id, el)}
         >
           {allItem.label ?? "全部"}
@@ -69,9 +69,9 @@ export default function CategorySubcategoryRail({
             onSelect(child.id);
           }}
           layoutId={layoutId}
-          activeClassName="store-category-subtab-active-bg"
-          activeTextClass="store-category-subtab-active-label"
-          className="store-category-subtab px-3"
+          activeClassName="sf-next-category-subtab-active-bg"
+          activeTextClass="sf-next-category-subtab-active-label"
+          className="sf-next-category-subtab px-3"
           btnRef={(el) => setItemRef(child.id, el)}
         >
           {storefrontCategoryName(child.name)}

@@ -133,10 +133,10 @@ function DesignShell({
     <StoreStandardPageShell
       title={meta.title}
       backFallback={localizedPath("/")}
-      className="sf-next-page store-v12-page store-client-design-page"
-      contentClassName="store-client-design-page__main"
+      className="sf-next-page sf-next-route-page sf-next-design-page"
+      contentClassName="sf-next-design-page__main"
     >
-      <div className="store-client-design-page__intro">
+      <div className="sf-next-design-page__intro">
         <p>{meta.subtitle}</p>
       </div>
       {children}
@@ -146,8 +146,8 @@ function DesignShell({
 
 function Swatch({ label, className }: { label: string; className: string }) {
   return (
-    <div className="store-design-system-swatch">
-      <span className={cn("store-design-system-swatch__chip", className)} />
+    <div className="sf-next-design-system-swatch">
+      <span className={cn("sf-next-design-system-swatch__chip", className)} />
       <span>{label}</span>
     </div>
   );
@@ -156,22 +156,22 @@ function Swatch({ label, className }: { label: string; className: string }) {
 function SystemDesignRoute() {
   return (
     <DesignShell kind="system">
-      <section className="store-client-design-section" aria-labelledby="design-color-title">
+      <section className="sf-next-design-section" aria-labelledby="design-color-title">
         <h2 id="design-color-title">颜色</h2>
-        <div className="store-design-system-swatches">
-          <Swatch label="Canvas" className="store-design-system-swatch__chip--canvas" />
-          <Swatch label="Surface" className="store-design-system-swatch__chip--surface" />
-          <Swatch label="Ink" className="store-design-system-swatch__chip--ink" />
-          <Swatch label="Accent" className="store-design-system-swatch__chip--accent" />
-          <Swatch label="Price" className="store-design-system-swatch__chip--price" />
+        <div className="sf-next-design-system-swatches">
+          <Swatch label="Canvas" className="sf-next-design-system-swatch__chip--canvas" />
+          <Swatch label="Surface" className="sf-next-design-system-swatch__chip--surface" />
+          <Swatch label="Ink" className="sf-next-design-system-swatch__chip--ink" />
+          <Swatch label="Accent" className="sf-next-design-system-swatch__chip--accent" />
+          <Swatch label="Price" className="sf-next-design-system-swatch__chip--price" />
         </div>
       </section>
 
-      <section className="store-client-design-section" aria-labelledby="design-spacing-title">
+      <section className="sf-next-design-section" aria-labelledby="design-spacing-title">
         <h2 id="design-spacing-title">间距与线条</h2>
-        <div className="store-design-system-spacing">
+        <div className="sf-next-design-system-spacing">
           {[4, 8, 12, 16, 24, 32].map((size) => (
-            <div key={size} className="store-design-system-spacing__row">
+            <div key={size} className="sf-next-design-system-spacing__row">
               <span>{size}</span>
               <i style={{ width: `${size * 10}px` }} />
             </div>
@@ -179,9 +179,9 @@ function SystemDesignRoute() {
         </div>
       </section>
 
-      <section className="store-client-design-section" aria-labelledby="design-button-title">
+      <section className="sf-next-design-section" aria-labelledby="design-button-title">
         <h2 id="design-button-title">按钮层级</h2>
-        <div className="store-design-system-buttons">
+        <div className="sf-next-design-system-buttons">
           <UnifiedButton type="button" className="sf-next-button sf-next-button--primary">主操作</UnifiedButton>
           <UnifiedButton type="button" className="sf-next-button sf-next-button--secondary">次操作</UnifiedButton>
           <UnifiedButton type="button" className="sf-next-button sf-next-button--quiet">弱操作</UnifiedButton>
@@ -197,7 +197,7 @@ function CouponDetailDesignRoute() {
 
   return (
     <DesignShell kind="coupon-detail">
-      <div className="store-client-design-coupon-list">
+      <div className="sf-next-design-coupon-list">
         {liveCoupons.length > 0 ? liveCoupons.map((coupon) => {
           const display = userCouponToPremiumDisplay(coupon);
           return (
@@ -231,9 +231,9 @@ function CouponDetailDesignRoute() {
         ))}
       </div>
 
-      <section className="store-client-design-section" aria-labelledby="coupon-rule-title">
+      <section className="sf-next-design-section" aria-labelledby="coupon-rule-title">
         <h2 id="coupon-rule-title">状态原则</h2>
-        <ul className="store-client-design-rule-list">
+        <ul className="sf-next-design-rule-list">
           <li>价值区只承载面额或权益</li>
           <li>门槛、范围、有效期必须可读</li>
           <li>不可用原因比装饰更重要</li>
@@ -307,11 +307,11 @@ function ShareDetailDesignRoute() {
         )}
       />
 
-      <section className="store-client-design-section" aria-labelledby="share-feedback-title">
+      <section className="sf-next-design-section" aria-labelledby="share-feedback-title">
         <h2 id="share-feedback-title">交互反馈</h2>
-        <div className="store-share-detail-feedback">
+        <div className="sf-next-share-detail-feedback">
           {feedback.map((item) => (
-            <article key={item.id} className="store-share-detail-feedback__row">
+            <article key={item.id} className="sf-next-share-detail-feedback__row">
               <span>{item.id}</span>
               <div>
                 <h3>{item.title}</h3>
@@ -322,9 +322,9 @@ function ShareDetailDesignRoute() {
         </div>
       </section>
 
-      <section className="store-client-design-section" aria-labelledby="share-data-title">
+      <section className="sf-next-design-section" aria-labelledby="share-data-title">
         <h2 id="share-data-title">真实数据</h2>
-        <div className="store-share-detail-stats">
+        <div className="sf-next-share-detail-stats">
           <span><strong>{recordCount}</strong><em>已邀请</em></span>
           <span><strong>RM {rewardTotal.toFixed(0)}</strong><em>已获得</em></span>
         </div>
@@ -336,15 +336,15 @@ function ShareDetailDesignRoute() {
 function StatesDesignRoute() {
   return (
     <DesignShell kind="states">
-      <section className="store-client-design-section" aria-labelledby="state-loading-title">
+      <section className="sf-next-design-section" aria-labelledby="state-loading-title">
         <h2 id="state-loading-title">加载态</h2>
-        <div className="store-design-state-skeleton" aria-hidden>
+        <div className="sf-next-design-state-skeleton" aria-hidden>
           <div><i /><b /><em /></div>
           <div><i /><b /><em /></div>
         </div>
       </section>
 
-      <section className="store-client-design-section" aria-labelledby="state-empty-title">
+      <section className="sf-next-design-section" aria-labelledby="state-empty-title">
         <h2 id="state-empty-title">空状态</h2>
         <RouteStatePanel
           icon={<Box size={34} aria-hidden />}
@@ -354,9 +354,9 @@ function StatesDesignRoute() {
         />
       </section>
 
-      <section className="store-client-design-section" aria-labelledby="state-error-title">
+      <section className="sf-next-design-section" aria-labelledby="state-error-title">
         <h2 id="state-error-title">错误态</h2>
-        <div className="store-design-state-error" role="alert">
+        <div className="sf-next-design-state-error" role="alert">
           <WifiOff size={22} aria-hidden />
           <strong>网络连接失败</strong>
           <UnifiedButton type="button" className="sf-next-button sf-next-button--quiet">
@@ -366,7 +366,7 @@ function StatesDesignRoute() {
         </div>
       </section>
 
-      <section className="store-client-design-section" aria-labelledby="state-timeline-title">
+      <section className="sf-next-design-section" aria-labelledby="state-timeline-title">
         <h2 id="state-timeline-title">进度状态</h2>
         <StatusTimeline
           items={[
@@ -377,7 +377,7 @@ function StatesDesignRoute() {
         />
       </section>
 
-      <section className="store-client-design-section" aria-labelledby="state-success-title">
+      <section className="sf-next-design-section" aria-labelledby="state-success-title">
         <h2 id="state-success-title">完成态</h2>
         <RouteStatePanel
           tone="success"

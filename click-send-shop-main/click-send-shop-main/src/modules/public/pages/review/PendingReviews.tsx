@@ -51,14 +51,14 @@ export default function PendingReviews() {
     <StoreAccountLayout
       title="待评价"
       backFallback="/profile"
-      className="sf-next-page store-v12-page store-pending-reviews-v12-page store-account-subpage-v12-page"
+      className="sf-next-page sf-next-route-page sf-next-pending-reviews-page sf-next-account-route-page"
       mainClassName="sf-next-account-main sm:px-4 xl:py-6"
       rightSlot={
         <UnifiedButton
           type="button"
           onClick={() => void load()}
           disabled={loading}
-          className="store-pending-reviews-v12-refresh"
+          className="sf-next-pending-reviews-refresh"
           aria-label="刷新待评价商品"
         >
           <RefreshCw size={15} className={loading ? "animate-spin" : ""} aria-hidden />
@@ -66,8 +66,8 @@ export default function PendingReviews() {
       }
     >
       <div className="mx-auto w-full max-w-3xl space-y-4">
-        <section className="store-pending-reviews-v12-hero">
-          <span className="store-pending-reviews-v12-hero__icon" aria-hidden>
+        <section className="sf-next-pending-reviews-hero">
+          <span className="sf-next-pending-reviews-hero__icon" aria-hidden>
             <Star size={22} />
           </span>
           <div className="min-w-0">
@@ -77,8 +77,8 @@ export default function PendingReviews() {
         </section>
 
         {loading ? (
-          <section className="store-pending-reviews-v12-loading" aria-busy="true" aria-live="polite">
-            <div className="store-pending-reviews-v12-loading__head">
+          <section className="sf-next-pending-reviews-loading" aria-busy="true" aria-live="polite">
+            <div className="sf-next-pending-reviews-loading__head">
               <span aria-hidden>
                 <MessageSquareText size={18} />
               </span>
@@ -88,7 +88,7 @@ export default function PendingReviews() {
               </div>
             </div>
             {Array.from({ length: 3 }).map((_, index) => (
-              <div key={index} className="store-pending-reviews-v12-skeleton">
+              <div key={index} className="sf-next-pending-reviews-skeleton">
                 <span />
                 <div>
                   <i />
@@ -100,13 +100,13 @@ export default function PendingReviews() {
         ) : null}
 
         {!loading && error ? (
-          <section className="store-account-v12-empty-panel store-pending-reviews-v12-state" role="alert">
-            <span className="store-account-v12-empty-panel__icon" aria-hidden>
+          <section className="sf-next-state-panel sf-next-pending-reviews-state" role="alert">
+            <span className="sf-next-state-panel__icon" aria-hidden>
               <MessageSquareText size={28} />
             </span>
             <h2>待评价商品加载失败</h2>
             <p>{error}</p>
-            <UnifiedButton type="button" onClick={() => void load()} className="store-account-v12-empty-panel__action">
+            <UnifiedButton type="button" onClick={() => void load()} className="sf-next-state-panel__primary">
               <RefreshCw size={17} aria-hidden />
               重试
             </UnifiedButton>
@@ -114,8 +114,8 @@ export default function PendingReviews() {
         ) : null}
 
         {!loading && !error && items.length === 0 ? (
-          <section className="store-account-v12-empty-panel store-pending-reviews-v12-state">
-            <span className="store-account-v12-empty-panel__icon" aria-hidden>
+          <section className="sf-next-state-panel sf-next-pending-reviews-state">
+            <span className="sf-next-state-panel__icon" aria-hidden>
               <PackageCheck size={28} />
             </span>
             <h2>暂无待评价商品</h2>
@@ -123,7 +123,7 @@ export default function PendingReviews() {
             <UnifiedButton
               type="button"
               onClick={() => navigate(localizedPath("/orders?tab=pending_review"))}
-              className="store-account-v12-empty-panel__action"
+              className="sf-next-state-panel__primary"
             >
               <PackageCheck size={17} aria-hidden />
               查看订单
@@ -132,19 +132,19 @@ export default function PendingReviews() {
         ) : null}
 
         {!loading && !error && grouped.length ? (
-          <div className="store-pending-reviews-v12-stack">
+          <div className="sf-next-pending-reviews-stack">
             {grouped.map(([orderId, list]) => (
-              <section key={orderId} className="store-pending-reviews-v12-card">
-                <div className="store-pending-reviews-v12-card__head">
+              <section key={orderId} className="sf-next-pending-reviews-card">
+                <div className="sf-next-pending-reviews-card__head">
                   <span aria-hidden><PackageCheck size={16} /></span>
                   <p>订单号：{list[0].order_no}</p>
                 </div>
-                <div className="store-pending-reviews-v12-items">
+                <div className="sf-next-pending-reviews-items">
                   {list.map((it) => (
-                    <article key={it.order_item_id} className="store-pending-reviews-v12-item">
+                    <article key={it.order_item_id} className="sf-next-pending-reviews-item">
                       <UnifiedButton
                         type="button"
-                        className="store-pending-reviews-v12-cover"
+                        className="sf-next-pending-reviews-cover"
                         style={THEME_PRODUCT_MEDIA_ASPECT_STYLE}
                         onClick={() => navigate(localizedPath(`/product/${it.product_id}`))}
                         aria-label={`查看 ${it.product_name}`}
@@ -156,13 +156,13 @@ export default function PendingReviews() {
                           alt={it.product_name}
                         />
                       </UnifiedButton>
-                      <div className="store-pending-reviews-v12-copy">
+                      <div className="sf-next-pending-reviews-copy">
                         <p>{it.product_name}</p>
                         <span>{it.variant_name || it.sku_code || "默认规格"}</span>
                       </div>
                       <UnifiedButton
                         type="button"
-                        className="store-pending-reviews-v12-action"
+                        className="sf-next-pending-reviews-action"
                         onClick={() => setOrderItemId(it.order_item_id)}
                       >
                         写评价
@@ -176,7 +176,7 @@ export default function PendingReviews() {
         ) : null}
 
         {!loading && !error ? (
-          <section className="store-pending-reviews-v12-guide" aria-label="评价说明">
+          <section className="sf-next-pending-reviews-guide" aria-label="评价说明">
             <h2>评价规范</h2>
             <ul>
               <li>

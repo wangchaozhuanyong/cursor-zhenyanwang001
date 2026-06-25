@@ -58,7 +58,7 @@ describe("PageHeader", () => {
     await renderHeader();
 
     const headerClassName = container?.querySelector("header")?.className ?? "";
-    expect(headerClassName).toContain("store-glass-surface");
+    expect(headerClassName).toContain("sf-next-glass-surface");
     expect(headerClassName).not.toContain("bg-background/95");
   });
 

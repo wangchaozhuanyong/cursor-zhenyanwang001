@@ -69,7 +69,7 @@ function formatGrowthValue(value: number) {
 
 function ProfileAuthLoadingCard() {
   return (
-    <section className={`${PROFILE_CARD_CLASS} px-[var(--store-card-x)] py-[var(--store-card-y)]`} aria-busy="true">
+    <section className={`${PROFILE_CARD_CLASS} px-[var(--sf-card-x)] py-[var(--sf-card-y)]`} aria-busy="true">
       <div className="flex items-center gap-3">
         <span className="h-12 w-12 rounded-full bg-[color-mix(in_srgb,var(--theme-primary)_10%,var(--theme-surface))]" />
         <span className="grid min-w-0 flex-1 gap-2">
@@ -374,18 +374,18 @@ export default function Profile() {
   ], []);
 
   return (
-    <div className="store-page store-page-shell store-v12-page store-profile-v12-page store-profile-page client-profile-page store-bottom-safe text-[var(--theme-text)]">
+    <div className="sf-next-page sf-next-profile-page sf-next-page-shell sf-next-bottom-safe text-[var(--theme-text)]">
       <SeoHead
         title={`我的｜${siteInfo.siteName || "大马通"}`}
         description="查看订单、购物服务、会员权益和账户功能。"
       />
-      <main className="client-profile-layout mx-auto grid w-full max-w-screen-xl gap-4 px-[var(--store-page-x)] pb-5 pt-2 sm:px-4 sm:pt-3 md:max-w-5xl md:gap-5 md:px-6 md:pb-8 md:pt-4 lg:max-w-6xl lg:grid-cols-[220px_minmax(0,1fr)] lg:items-start lg:gap-6 xl:max-w-screen-xl xl:grid-cols-[240px_minmax(0,1fr)] xl:gap-8 xl:px-8 xl:pb-12 xl:pt-4">
-        <aside className="client-profile-sidebar hidden lg:block">
-          <StoreAccountNav className="sticky top-[var(--store-tablet-sticky-top)] xl:top-[var(--store-desktop-sticky-top)]" />
+      <main className="sf-next-profile-layout mx-auto grid w-full max-w-screen-xl gap-4 px-[var(--store-page-x)] pb-5 pt-2 sm:px-4 sm:pt-3 md:max-w-5xl md:gap-5 md:px-6 md:pb-8 md:pt-4 lg:max-w-6xl lg:grid-cols-[220px_minmax(0,1fr)] lg:items-start lg:gap-6 xl:max-w-screen-xl xl:grid-cols-[240px_minmax(0,1fr)] xl:gap-8 xl:px-8 xl:pb-12 xl:pt-4">
+        <aside className="sf-next-profile-sidebar hidden lg:block">
+          <StoreAccountNav className="sticky top-[var(--sf-next-header-tablet-sticky-top)] xl:top-[var(--sf-next-header-desktop-sticky-top)]" />
         </aside>
 
-        <div className="store-profile-stack client-profile-stack min-w-0 space-y-3 sm:space-y-4 xl:max-w-4xl">
-          <header className="client-profile-titlebar">
+        <div className="sf-next-profile-stack min-w-0 space-y-3 sm:space-y-4 xl:max-w-4xl">
+          <header className="sf-next-profile-titlebar">
             <h1>我的</h1>
           </header>
           {authPending ? (
@@ -435,8 +435,8 @@ export default function Profile() {
             </>
           )}
 
-          {!authPending ? <div className="client-profile-dashboard-grid">
-            <div className="client-profile-dashboard-main">
+          {!authPending ? <div className="sf-next-profile-dashboard-grid">
+            <div className="sf-next-profile-dashboard-main">
               {loggedIn ? (
                 <>
                   <ProfileOrderPanel
@@ -478,7 +478,7 @@ export default function Profile() {
               />
             </div>
 
-            <aside className="client-profile-dashboard-rail" aria-label="账户状态与更多功能">
+            <aside className="sf-next-profile-dashboard-rail" aria-label="账户状态与更多功能">
               <ProfileSecondaryLinkPanel
                 items={secondaryItems}
                 onNavigate={(item) => handleFeatureNavigate(item.key, item.path, item.auth)}

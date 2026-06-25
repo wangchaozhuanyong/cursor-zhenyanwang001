@@ -97,7 +97,7 @@ export function CheckoutPaymentMethod({
       : null;
 
   return (
-    <div className="store-checkout-card rounded-[20px] border border-[color-mix(in_srgb,var(--theme-border)_70%,transparent)] bg-[var(--theme-surface)] p-4 shadow-[0_14px_38px_rgba(65,45,28,0.08)] md:p-5">
+    <div className="sf-next-checkout-card rounded-[20px] border border-[color-mix(in_srgb,var(--theme-border)_70%,transparent)] bg-[var(--theme-surface)] p-4 shadow-[0_14px_38px_rgba(65,45,28,0.08)] md:p-5">
       <div className="mb-3 flex items-center justify-between gap-3">
         <div>
           <h3 className="text-[15px] font-bold text-foreground md:text-base">{copy.title}</h3>

@@ -1,10 +1,8 @@
 import { Link } from "react-router-dom";
 import { ArrowUpRight, Plus } from "lucide-react";
 import ProductCoverImage from "@/components/ProductCoverImage";
-import { THEME_PRODUCT_MEDIA_ASPECT_STYLE } from "@/constants/productMediaAspect";
 import { cn } from "@/lib/utils";
 import { appendThemePreviewParams } from "@/utils/themePreviewParams";
-import { storefrontCardClassName } from "../design/classes";
 import { storefrontV2Tokens as t } from "../design/tokens";
 import { useClientDesignStyle } from "../design/useClientDesignStyle";
 import StorefrontBadge from "../components/StorefrontBadge";
@@ -32,23 +30,7 @@ export default function ProductCardV2({
   const vm = buildProductCardV2Model(product);
   const href = appendThemePreviewParams(vm.href);
   const clientStyle = useClientDesignStyle();
-  const cardToneClassName = cn(
-    clientStyle === "black_gold" && "border-[color-mix(in_srgb,var(--theme-primary)_22%,var(--theme-border))] bg-[var(--theme-surface)] shadow-[0_14px_38px_color-mix(in_srgb,var(--theme-primary)_10%,transparent)]",
-    clientStyle === "deep_enterprise" && "rounded-[0.875rem] shadow-[0_10px_28px_rgba(15,23,42,0.07)]",
-    clientStyle === "blue_portal" && "shadow-[0_12px_34px_rgba(37,99,235,0.08)]",
-  );
-  const imageClassName = cn(
-    "relative overflow-hidden bg-[color-mix(in_srgb,var(--theme-primary)_5%,var(--theme-bg))]",
-    clientStyle === "deep_enterprise" ? "rounded-[0.75rem]" : "rounded-[0.95rem]",
-    clientStyle === "black_gold" && "bg-[linear-gradient(145deg,#F8F5EA,#FFFFFF)]",
-  );
-  const actionClassName = cn(
-    "grid h-7 w-7 shrink-0 place-items-center rounded-full text-[var(--theme-primary)] transition group-hover:bg-[var(--theme-primary)] group-hover:text-[var(--theme-primary-foreground)]",
-    clientStyle === "black_gold"
-      ? "bg-[color-mix(in_srgb,var(--theme-primary)_16%,var(--theme-surface))] ring-1 ring-[color-mix(in_srgb,var(--theme-primary)_28%,transparent)]"
-      : "bg-[color-mix(in_srgb,var(--theme-primary)_8%,var(--theme-surface))]",
-  );
-  const loading = index < 4 ? "eager" : "lazy";
+  const loading = index < 8 ? "eager" : "lazy";
   const fetchPriority = index === 0 ? "high" : undefined;
 
   if (variant === "list") {
@@ -58,22 +40,21 @@ export default function ProductCardV2({
         onClick={onClick}
         data-product-card-variant={variant}
         className={cn(
-          storefrontCardClassName(),
-          "store-product-card-v2 sf-next-product-card sf-next-product-card--list store-product-card-v2--list store-skin-product-card",
-          "group grid min-w-0 grid-cols-[5.75rem_minmax(0,1fr)] items-stretch gap-3 p-2.5 hover:-translate-y-0.5 sm:grid-cols-[6rem_minmax(0,1fr)] sm:p-3",
-          cardToneClassName,
+          "sf-next-product-card sf-next-product-card--list",
+          "group grid min-w-0 grid-cols-[5.75rem_minmax(0,1fr)] items-stretch gap-3",
           className,
         )}
         aria-label={`查看 ${vm.name}`}
       >
         <div
-          className={cn(imageClassName, "store-skin-product-card__media h-full min-h-[5.75rem] w-full self-stretch sm:min-h-24")}
+          className="sf-next-product-card__media h-full min-h-[5.75rem] w-full self-stretch sm:min-h-24"
         >
           <ProductCoverImage
             url={vm.imageUrl}
             alt={vm.imageAlt}
             className="h-full w-full"
-            imgClassName="h-full w-full object-cover"
+            imgClassName="h-full w-full"
+            fit="cover"
             loading={loading}
             fetchPriority={fetchPriority}
             sizes="96px"
@@ -81,7 +62,7 @@ export default function ProductCardV2({
           {vm.soldOut ? <SoldOutMask /> : null}
         </div>
 
-        <div className="store-skin-product-card__info flex min-h-[5.75rem] min-w-0 flex-col py-1 sm:min-h-24">
+        <div className="sf-next-product-card__info flex min-h-[5.75rem] min-w-0 flex-col sm:min-h-24">
           <h3 className={t.text.productTitle}>{vm.name}</h3>
           <BadgeRow badges={vm.badges} subtle />
           <DecisionMetaRow items={vm.decisionTexts} />
@@ -90,8 +71,8 @@ export default function ProductCardV2({
             <div className="mt-auto flex items-end justify-between gap-2 pt-2">
               <StorefrontPrice amount={vm.priceText} originalAmount={vm.originalPriceText} />
               <span className={cn(
-                "store-skin-product-card__action-hint hidden h-7 shrink-0 items-center gap-1 rounded-full px-2.5 text-[11px] font-black text-[var(--theme-primary)] sm:inline-flex",
-                clientStyle === "black_gold" ? "bg-[color-mix(in_srgb,var(--theme-primary)_15%,var(--theme-surface))]" : "bg-[color-mix(in_srgb,var(--theme-primary)_8%,var(--theme-surface))]",
+                "sf-next-product-card__open hidden shrink-0 items-center gap-1 sm:inline-flex",
+                clientStyle === "black_gold" && "sf-next-product-card__open--warm",
               )}>
                 查看
                 <ArrowUpRight size={12} />
@@ -109,24 +90,22 @@ export default function ProductCardV2({
       onClick={onClick}
       data-product-card-variant={variant}
       className={cn(
-        storefrontCardClassName(),
-        "store-product-card-v2 sf-next-product-card sf-next-product-card--grid store-skin-product-card",
-        "group flex min-w-0 flex-col overflow-hidden p-1.5 hover:-translate-y-0.5",
-        cardToneClassName,
-        variant === "compact" && "max-w-[13rem]",
+        "sf-next-product-card sf-next-product-card--grid",
+        "group flex min-w-0 flex-col",
+        variant === "compact" && "sf-next-product-card--compact",
         className,
       )}
       aria-label={`查看 ${vm.name}`}
     >
       <div
-        className={cn(imageClassName, "store-skin-product-card__media w-full")}
-        style={THEME_PRODUCT_MEDIA_ASPECT_STYLE}
+        className="sf-next-product-card__media"
       >
-        <ProductCoverImage
-          url={vm.imageUrl}
-          alt={vm.imageAlt}
-          className="h-full w-full"
-          imgClassName="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
+          <ProductCoverImage
+            url={vm.imageUrl}
+            alt={vm.imageAlt}
+            className="h-full w-full"
+          imgClassName="h-full w-full transition duration-300 group-hover:scale-[1.025]"
+          fit="cover"
           loading={loading}
           fetchPriority={fetchPriority}
           sizes="(max-width: 768px) 50vw, 260px"
@@ -143,12 +122,12 @@ export default function ProductCardV2({
         {vm.soldOut ? <SoldOutMask /> : null}
       </div>
 
-      <div className="store-skin-product-card__info sf-next-product-card__info flex min-h-[104px] flex-1 flex-col px-1.5 pb-2 pt-2.5 sm:px-2">
+      <div className="sf-next-product-card__info flex flex-col">
         <h3 className={cn(t.text.productTitle, "sf-next-product-card__title")}>{vm.name}</h3>
         {showPrice ? (
-          <div className="sf-next-product-card__footer mt-auto flex items-end justify-between gap-2 pt-2.5">
+          <div className="sf-next-product-card__footer flex items-end justify-between gap-2 pt-2.5">
             <StorefrontPrice className="sf-next-product-card__price" amount={vm.priceText} originalAmount={vm.originalPriceText} />
-            <span className={cn("store-product-card-v2__action store-skin-product-card__action-hint", actionClassName)}>
+            <span className="sf-next-product-card__cart" aria-hidden="true">
               <Plus size={17} strokeWidth={2.4} />
             </span>
           </div>

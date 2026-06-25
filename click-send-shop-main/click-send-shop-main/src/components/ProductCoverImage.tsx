@@ -48,7 +48,7 @@ export default function ProductCoverImage({
       sizes={sizes}
       fetchPriority={fetchPriority}
       loading={loading}
-      placeholderClassName={withBlurPlaceholder ? undefined : "bg-[var(--store-product-media-bg)]"}
+      placeholderClassName={withBlurPlaceholder ? undefined : "bg-[var(--sf-product-media-bg)]"}
     />
   );
 }

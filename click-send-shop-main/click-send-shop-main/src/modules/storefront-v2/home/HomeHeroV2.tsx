@@ -56,10 +56,10 @@ export default function HomeHeroV2({
 
   return (
     <section
-      data-store-skin-showcase
+      data-storefront-home-hero
       data-hero-layout={themeConfig.homeLayout}
       data-hero-banner-style={themeConfig.bannerStyle}
-      className="sf-next-home-hero store-skin-hero"
+      className="sf-next-home-hero"
     >
       <HeroChrome
         siteName={siteName}
@@ -82,9 +82,9 @@ export default function HomeHeroV2({
           <ChevronDown size={14} aria-hidden />
         </button>
         <Search size={18} className="sf-next-home-hero__search-icon" aria-hidden />
-        <label className="sr-only" htmlFor="home-v4-search">{t("hero.searchLabel")}</label>
+        <label className="sr-only" htmlFor="home-next-search">{t("hero.searchLabel")}</label>
         <input
-          id="home-v4-search"
+          id="home-next-search"
           type="search"
           value={keyword}
           onChange={(event) => setKeyword(event.target.value)}
@@ -211,14 +211,6 @@ function HeroChrome({
           <span className="sf-next-home-hero__brand-meta">{STORE_COPY.siteSlogan}</span>
         </span>
       </UnifiedButton>
-      <nav className="sf-next-home-hero__links" aria-label={t("hero.quickNav")}>
-        <UnifiedButton type="button" onClick={() => onNavigate(localizedPath("/"))}>{t("common.home")}</UnifiedButton>
-        <UnifiedButton type="button" onClick={() => onNavigate(localizedPath("/categories"))}>{t("common.categories")}</UnifiedButton>
-        <UnifiedButton type="button" onClick={() => onNavigate(localizedPath("/categories?sort=sales_desc"))}>{t("common.flashSale")}</UnifiedButton>
-        <UnifiedButton type="button" onClick={() => onNavigate(localizedPath("/coupons"))}>{t("common.coupons")}</UnifiedButton>
-        <UnifiedButton type="button" onClick={() => onNavigate(localizedPath("/cart"))}>{t("common.cart")}</UnifiedButton>
-        <UnifiedButton type="button" onClick={() => onNavigate(localizedPath("/profile"))}>{t("common.member")}</UnifiedButton>
-      </nav>
       <div className="sf-next-home-hero__actions">
         <NotificationIconButton
           unreadCount={unreadCount}

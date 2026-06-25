@@ -89,7 +89,7 @@ export default function Delivery() {
       title="配送方式"
       onBack={goBack}
       backFallback="/"
-      className="sf-next-page store-v12-page store-delivery-v12-page"
+      className="sf-next-page sf-next-route-page sf-next-delivery-page"
       contentClassName="sf-next-account-main md:max-w-5xl xl:max-w-6xl"
     >
       <SeoHead
@@ -99,9 +99,9 @@ export default function Delivery() {
         robots="index,follow"
       />
 
-      <div className="store-delivery-v12-lead">
-        <section className="store-v12-info-hero">
-          <span className="store-v12-eyebrow">
+      <div className="sf-next-delivery-lead">
+        <section className="sf-next-info-hero">
+          <span className="sf-next-eyebrow">
             <Truck size={15} aria-hidden />
             配送规则
           </span>
@@ -109,48 +109,48 @@ export default function Delivery() {
           <p>
             {hasCmsDelivery ? "配送说明由后台内容页维护；实际运费、不可配送原因和物流进度会随订单更新。" : "这里展示配送说明和地址准备状态；实际运费、不可配送原因和物流进度会随订单更新。"}
           </p>
-          <div className="store-v12-hero-actions">
-            <UnifiedButton type="button" onClick={() => navigate(localizedPath("/address"))} className="store-v12-primary-action">
+          <div className="sf-next-hero-actions">
+            <UnifiedButton type="button" onClick={() => navigate(localizedPath("/address"))} className="sf-next-primary-action">
               管理收货地址
             </UnifiedButton>
-            <UnifiedButton type="button" onClick={() => navigate(localizedPath("/help"))} className="store-v12-secondary-action">
+            <UnifiedButton type="button" onClick={() => navigate(localizedPath("/help"))} className="sf-next-secondary-action">
               查看帮助
             </UnifiedButton>
           </div>
         </section>
 
-        <aside className="store-v12-info-card">
-          <div className="store-v12-card-title">
+        <aside className="sf-next-info-card">
+          <div className="sf-next-card-title">
             <ShieldCheck size={18} aria-hidden />
             结算安全规则
           </div>
-          <p className="store-v12-muted">
+          <p className="sf-next-muted">
             商品页、购物车展示的配送信息只是提示；创建订单前会确认地址、库存、活动和运费。
           </p>
         </aside>
       </div>
 
       {hasCmsDelivery ? (
-        <section className="store-v12-info-card mt-4" aria-labelledby="delivery-cms-title">
-          <div className="store-v12-card-title" id="delivery-cms-title">
+        <section className="sf-next-info-card mt-4" aria-labelledby="delivery-cms-title">
+          <div className="sf-next-card-title" id="delivery-cms-title">
             <PackageCheck size={18} aria-hidden />
             配送政策正文
           </div>
           <article
-            className="store-body-text store-content-v12-article"
+            className="sf-next-body-text sf-next-content-article"
             dangerouslySetInnerHTML={{ __html: sanitizeCmsHtml(cmsDeliveryBody) }}
           />
         </section>
       ) : null}
 
-      <section className="store-delivery-v12-section mt-4" aria-labelledby="delivery-zone-title">
-        <h2 className="store-v12-section-title" id="delivery-zone-title">配送范围</h2>
-        <div className="store-v12-grid">
+      <section className="sf-next-delivery-section mt-4" aria-labelledby="delivery-zone-title">
+        <h2 className="sf-next-section-title" id="delivery-zone-title">配送范围</h2>
+        <div className="sf-next-info-grid">
           {deliveryZones.map((item) => {
             const Icon = item.icon;
             return (
-              <article key={item.title} className="store-v12-info-card">
-                <span className="store-v12-card-icon" aria-hidden>
+              <article key={item.title} className="sf-next-info-card">
+                <span className="sf-next-card-icon" aria-hidden>
                   <Icon size={20} />
                 </span>
                 <h3>{item.title}</h3>
@@ -162,12 +162,12 @@ export default function Delivery() {
         </div>
       </section>
 
-      <section className="store-delivery-v12-section mt-4" aria-labelledby="delivery-ready-title">
-        <h2 className="store-v12-section-title" id="delivery-ready-title">准备地址</h2>
-        <div className="store-delivery-v12-checklist">
+      <section className="sf-next-delivery-section mt-4" aria-labelledby="delivery-ready-title">
+        <h2 className="sf-next-section-title" id="delivery-ready-title">准备地址</h2>
+        <div className="sf-next-delivery-checklist">
           {ruleItems.map((item) => (
-            <div key={item} className="store-v12-list-row">
-              <span className="store-v12-dot" aria-hidden />
+            <div key={item} className="sf-next-list-row">
+              <span className="sf-next-dot" aria-hidden />
               <span>{item}</span>
             </div>
           ))}

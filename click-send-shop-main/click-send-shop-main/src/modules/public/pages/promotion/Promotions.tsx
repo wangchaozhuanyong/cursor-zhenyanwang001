@@ -17,7 +17,6 @@ import {
 import SeoHead from "@/components/SeoHead";
 import StorePageHeader from "@/components/store/StorePageHeader";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
-import { STORE_MOBILE_PAGE_HEADER_CLASS } from "@/constants/storeLayout";
 import * as marketingService from "@/services/marketingService";
 import { buildCanonical } from "@/utils/seo";
 import { cn } from "@/lib/utils";
@@ -74,21 +73,21 @@ const FILTERS: Array<{ type: PromotionFilter; icon: typeof Gift; fallbackLabel: 
 
 function typeTone(type: PromotionType) {
   if (type === "flash_sale" || type === "limited_time_discount") {
-    return "border-rose-100 bg-rose-50 text-rose-700";
+    return "sf-next-promo-card__type--hot";
   }
   if (type === "coupon" || type === "full_reduction" || type === "full_discount") {
-    return "border-amber-100 bg-amber-50 text-amber-700";
+    return "sf-next-promo-card__type--coupon";
   }
   if (type === "member_price" || type === "points_reward" || type === "checkin_reward") {
-    return "border-emerald-100 bg-emerald-50 text-emerald-700";
+    return "sf-next-promo-card__type--member";
   }
-  return "border-[var(--theme-border)] bg-[var(--theme-muted)] text-[var(--theme-text)]";
+  return "sf-next-promo-card__type--default";
 }
 
 function statusTone(status: StorefrontPromotion["runtime_status"]) {
-  if (status === "scheduled") return "bg-sky-50 text-sky-700";
-  if (status === "ended") return "bg-[var(--theme-muted)] text-[var(--theme-text-muted)]";
-  return "bg-[color-mix(in_srgb,var(--theme-success)_12%,var(--theme-surface))] text-[var(--theme-success)]";
+  if (status === "scheduled") return "sf-next-promo-card__runtime--scheduled";
+  if (status === "ended") return "sf-next-promo-card__runtime--ended";
+  return "sf-next-promo-card__runtime--active";
 }
 
 function runtimeStatusLabel(status: StorefrontPromotion["runtime_status"], t: (key: string) => string) {
@@ -253,42 +252,42 @@ function PromotionCard({ promotion }: { promotion: StorefrontPromotion }) {
 
   return (
     <article
-      className="store-promotions-v12-card store-promotions-v12-card--poster group flex h-full min-w-0 flex-col overflow-hidden rounded-[1.1rem] border border-[var(--theme-border)] bg-[var(--theme-surface)] shadow-sm transition hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--theme-primary)_28%,var(--theme-border))]"
+      className="sf-next-promo-card group"
       data-promotion-type={promotion.type}
     >
       {promotion.cover_image ? (
-        <Link to={detailPath} className="store-promotions-v12-card__media block aspect-[16/9] overflow-hidden bg-[color-mix(in_srgb,var(--theme-primary)_7%,var(--theme-bg))]">
+        <Link to={detailPath} className="sf-next-promo-card__media">
           <img
             src={promotion.cover_image}
             alt={displayTitle}
-            className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
+            className="sf-next-promo-card__image"
             loading="lazy"
           />
         </Link>
       ) : null}
 
-      <div className="store-promotions-v12-card__body flex min-h-0 flex-1 flex-col p-3.5 sm:p-4">
-        <div className="store-promotions-v12-card__ribbon flex min-w-0 items-start justify-between gap-2">
-          <span className={cn("store-promotions-v12-card__type inline-flex shrink-0 items-center rounded-full border px-2.5 py-1 text-[11px] font-black", typeTone(promotion.type))}>
+      <div className="sf-next-promo-card__body">
+        <div className="sf-next-promo-card__ribbon">
+          <span className={cn("sf-next-promo-card__type", typeTone(promotion.type))}>
             {typeLabel}
           </span>
-          <span className={cn("store-promotions-v12-card__runtime inline-flex shrink-0 rounded-full px-2 py-1 text-[11px] font-semibold", statusTone(promotion.runtime_status))}>
+          <span className={cn("sf-next-promo-card__runtime", statusTone(promotion.runtime_status))}>
             {runtimeStatusLabel(promotion.runtime_status, t)}
           </span>
         </div>
 
-        <div className="store-promotions-v12-card__headline mt-3 min-w-0">
+        <div className="sf-next-promo-card__headline">
           <Link to={detailPath} className="block min-w-0">
-            <h2 className="store-promotions-v12-card__title line-clamp-2 text-base font-black leading-6 text-[var(--theme-text)] sm:text-lg">
+            <h2 className="sf-next-promo-card__title">
               {displayTitle}
             </h2>
-            {showBenefit ? <p className="store-promotions-v12-card__benefit">{benefitLabel}</p> : null}
-            <p className="store-promotions-v12-card__subtitle line-clamp-2">{displaySubtitle}</p>
+            {showBenefit ? <p className="sf-next-promo-card__benefit">{benefitLabel}</p> : null}
+            <p className="sf-next-promo-card__subtitle">{displaySubtitle}</p>
           </Link>
         </div>
 
-        <div className="store-promotions-v12-card__facts mt-3 grid gap-2 text-xs text-[var(--theme-text-muted)]">
-          <span className="store-promotions-v12-card__status-hint">
+        <div className="sf-next-promo-card__facts">
+          <span>
             <Clock3 size={15} className="shrink-0" />
             <span className="truncate">{runtimeStatusHint(promotion, t)}</span>
           </span>
@@ -302,12 +301,12 @@ function PromotionCard({ promotion }: { promotion: StorefrontPromotion }) {
           </span>
         </div>
 
-        <div className="store-promotions-v12-card__footer mt-4 flex items-center justify-between gap-3">
-          <span className="min-w-0 truncate text-[11px] font-medium text-[var(--theme-text-muted)]">
+        <div className="sf-next-promo-card__footer">
+          <span className="sf-next-promo-card__count">
             {itemCount ? `${itemCount} 件商品参与` : couponCount ? `${couponCount} 张券可用` : "限时福利"}
           </span>
           <Link
-            className="store-v12-compact-cta store-promotions-v12-card__cta inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--theme-primary)] px-3 py-2 text-xs font-black text-[var(--theme-primary-foreground)]"
+            className="sf-next-promo-card__cta"
             to={detailPath}
           >
             {actionLabel}
@@ -330,26 +329,26 @@ function PromotionStatePanel({
   const isError = kind === "error";
 
   return (
-    <section className={cn("store-promotions-v12-state-panel", isError && "is-error")}>
-      <span className="store-promotions-v12-state-panel__icon">
+    <section className={cn("sf-next-state-panel sf-next-promo-state", isError && "is-error")}>
+      <span className="sf-next-state-panel__icon">
         {isError ? <Timer size={24} aria-hidden /> : <PackageSearch size={24} aria-hidden />}
       </span>
-      <div className="store-promotions-v12-state-panel__copy">
+      <div className="sf-next-state-panel__copy">
         <h2>{isError ? t("promotion.errorFallback") : t("promotion.emptyTitle")}</h2>
         <p>{isError ? t("promotion.errorActionHint") : t("promotion.emptyHint")}</p>
       </div>
-      <div className="store-promotions-v12-state-panel__actions">
+      <div className="sf-next-state-panel__actions">
         {isError ? (
-          <UnifiedButton type="button" onClick={onRetry} className="store-promotions-v12-state-panel__primary">
+          <UnifiedButton type="button" onClick={onRetry} className="sf-next-state-panel__primary">
             <RefreshCw size={16} aria-hidden />
             {t("common.retry")}
           </UnifiedButton>
         ) : null}
-        <Link className="store-promotions-v12-state-panel__primary" to={localizedPath("/categories")}>
+        <Link className="sf-next-state-panel__primary" to={localizedPath("/categories")}>
           <PackageSearch size={16} aria-hidden />
           {t("common.browseProducts")}
         </Link>
-        <Link className="store-promotions-v12-state-panel__secondary" to={localizedPath("/coupons")}>
+        <Link className="sf-next-state-panel__secondary" to={localizedPath("/coupons")}>
           <TicketPercent size={16} aria-hidden />
           {t("promotion.goCoupons")}
         </Link>
@@ -360,8 +359,8 @@ function PromotionStatePanel({
 
 function PromotionSkeleton({ className = "" }: { className?: string }) {
   return (
-    <div className={cn("store-promotions-v12-card store-promotions-v12-card--poster rounded-[1.1rem] border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3.5", className)}>
-      <div className="store-promotions-v12-card__media skeleton-base skeleton-shimmer block aspect-[16/9] overflow-hidden rounded-[14px]" />
+    <div className={cn("sf-next-promo-card sf-next-promo-card--skeleton", className)}>
+      <div className="sf-next-promo-card__media skeleton-base skeleton-shimmer" />
       <div className="mt-3">
         <div className="flex items-center justify-between gap-3">
           <div className="skeleton-base skeleton-shimmer h-6 w-20 rounded-full" />
@@ -399,9 +398,9 @@ function PromotionsFolio({
   const actionLabel = featured ? promotionActionLabel(featured.type) : t("promotion.goCoupons");
 
   return (
-    <section className="store-promotions-v12-folio" aria-label="活动概览">
-      <div className="store-promotions-v12-folio__copy">
-        <span className="store-promotions-v12-folio__eyebrow">
+    <section className="sf-next-promo-folio" aria-label="活动概览">
+      <div className="sf-next-promo-folio__copy">
+        <span className="sf-next-promo-folio__eyebrow">
           <Gift size={15} aria-hidden />
           {label}
         </span>
@@ -409,7 +408,7 @@ function PromotionsFolio({
         <p>{description}</p>
       </div>
 
-      <div className="store-promotions-v12-folio__stats" aria-label="活动数据">
+      <div className="sf-next-promo-folio__stats" aria-label="活动数据">
         <span>
           <Gift size={15} aria-hidden />
           <strong>{list.length}</strong>
@@ -427,7 +426,7 @@ function PromotionsFolio({
         </span>
       </div>
 
-      <Link className="store-promotions-v12-folio__action" to={actionHref}>
+      <Link className="sf-next-promo-folio__action" to={actionHref}>
         {actionLabel}
         <ArrowRight size={16} aria-hidden />
       </Link>
@@ -437,13 +436,13 @@ function PromotionsFolio({
 
 function PromotionsFolioSkeleton() {
   return (
-    <section className="store-promotions-v12-folio store-promotions-v12-folio--loading" aria-busy="true" aria-label="活动概览加载中">
-      <div className="store-promotions-v12-folio__copy">
-        <span className="store-promotions-v12-folio__eyebrow skeleton-base skeleton-shimmer" />
-        <span className="store-promotions-v12-folio__title-skeleton skeleton-base skeleton-shimmer" />
-        <span className="store-promotions-v12-folio__text-skeleton skeleton-base skeleton-shimmer" />
+    <section className="sf-next-promo-folio sf-next-promo-folio--loading" aria-busy="true" aria-label="活动概览加载中">
+      <div className="sf-next-promo-folio__copy">
+        <span className="sf-next-promo-folio__eyebrow skeleton-base skeleton-shimmer" />
+        <span className="sf-next-promo-folio__title-skeleton skeleton-base skeleton-shimmer" />
+        <span className="sf-next-promo-folio__text-skeleton skeleton-base skeleton-shimmer" />
       </div>
-      <div className="store-promotions-v12-folio__stats" aria-hidden="true">
+      <div className="sf-next-promo-folio__stats" aria-hidden="true">
         {Array.from({ length: 3 }).map((_, index) => (
           <span key={index}>
             <i className="skeleton-base skeleton-shimmer" />
@@ -452,7 +451,7 @@ function PromotionsFolioSkeleton() {
           </span>
         ))}
       </div>
-      <span className="store-promotions-v12-folio__action skeleton-base skeleton-shimmer" aria-hidden="true" />
+      <span className="sf-next-promo-folio__action skeleton-base skeleton-shimmer" aria-hidden="true" />
     </section>
   );
 }
@@ -501,7 +500,7 @@ export default function Promotions() {
   const showFullSkeleton = loading && list.length === 0;
 
   return (
-    <div className="store-page-shell store-v12-page store-promotions-v12-page store-bottom-safe min-h-[100dvh] bg-[var(--theme-bg)] text-[var(--theme-text)]">
+    <div className="sf-next-page sf-next-promotions-page">
       <SeoHead
         title={t("promotion.headerTitle")}
         description={t("promotion.headerSubtitle")}
@@ -509,13 +508,13 @@ export default function Promotions() {
         robots="index,follow"
       />
       <StorePageHeader
-        className={STORE_MOBILE_PAGE_HEADER_CLASS}
+        className="sf-next-route-header"
         matchTabHeaderHeight
         centerTitle
         title={t("common.promotions")}
       />
 
-      <main className="mx-auto w-full max-w-6xl px-[var(--store-page-x)] pb-6 pt-3 md:px-6 md:py-8 lg:px-8">
+      <main className="sf-next-container sf-next-promotions-main">
         {showFullSkeleton ? (
           <PromotionsFolioSkeleton />
         ) : list.length ? (
@@ -524,7 +523,7 @@ export default function Promotions() {
 
         <nav
           ref={filtersRef}
-          className="store-promotions-v12-filters no-scrollbar flex gap-2 overflow-x-auto overflow-y-hidden scroll-smooth pb-1 [-webkit-overflow-scrolling:touch] sm:grid sm:grid-cols-5 sm:overflow-visible sm:pb-0 lg:grid-cols-10"
+          className="sf-next-promo-filters no-scrollbar"
           aria-label={t("promotion.quickNav")}
         >
           {FILTERS.map((filter) => {
@@ -541,10 +540,8 @@ export default function Promotions() {
                 aria-current={active ? "page" : undefined}
                 onClick={() => scrollFilterToKey(scrollKey)}
                 className={cn(
-                  "store-promotions-v12-filter inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-full border px-3 text-xs font-black transition",
-                  active
-                    ? "border-[var(--theme-primary)] bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]"
-                    : "border-[var(--theme-border)] bg-[var(--theme-surface)] text-[var(--theme-text)]",
+                  "sf-next-promo-filter",
+                  active && "is-active",
                 )}
               >
                 <Icon size={15} className="shrink-0" />
@@ -564,8 +561,8 @@ export default function Promotions() {
         ) : list.length ? (
           <section
             className={cn(
-              "store-promotions-v12-list mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3",
-              list.length === 1 && "store-promotions-v12-list--single",
+              "sf-next-promo-list",
+              list.length === 1 && "sf-next-promo-list--single",
             )}
             aria-label={t("common.promotions")}
           >

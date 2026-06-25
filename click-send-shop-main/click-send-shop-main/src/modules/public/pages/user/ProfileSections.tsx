@@ -17,9 +17,9 @@ import { formatProfileHeroName } from "./profileHeroName";
 import InviteRewardCard from "./InviteRewardCard.final.jsx";
 import profileVipAvatarImage from "@/assets/profile-vip-avatar-medallion.svg";
 
-export const PROFILE_CARD_CLASS = "store-profile-card client-profile-card rounded-[1.35rem] bg-[var(--theme-surface)]";
-export const PROFILE_MENU_TAP = "store-profile-tap transition-transform active:scale-[0.98]";
-const PROFILE_SECTION_PADDING = "px-[var(--store-card-x)] py-[var(--store-card-y)]";
+export const PROFILE_CARD_CLASS = "sf-next-profile-card rounded-[1.35rem] bg-[var(--theme-surface)]";
+export const PROFILE_MENU_TAP = "sf-next-profile-tap transition-transform active:scale-[0.98]";
+const PROFILE_SECTION_PADDING = "px-[var(--sf-card-x)] py-[var(--sf-card-y)]";
 
 export type ProfileOrderAction = {
   key?: string;
@@ -87,7 +87,7 @@ function ProfileSectionTitle({
   onRightClick?: () => void;
 }) {
   return (
-    <div className="profile-section-title client-profile-section-title">
+    <div className="profile-section-title sf-next-profile-section-title">
       <h3>{title}</h3>
       {rightLabel ? (
         <UnifiedButton type="button" onClick={onRightClick} className="profile-section-more">
@@ -120,30 +120,30 @@ export function ProfileIdentityHeader({
   const avatarSrc = avatar || profileVipAvatarImage || logoSrc;
 
   return (
-    <section className="client-profile-identity" aria-label="账户资料">
-      <UnifiedButton type="button" onClick={onAvatarClick} className="client-profile-identity__avatar" aria-label="更换头像">
+    <section className="sf-next-profile-identity" aria-label="账户资料">
+      <UnifiedButton type="button" onClick={onAvatarClick} className="sf-next-profile-identity__avatar" aria-label="更换头像">
         {avatarSrc ? (
           <StableImage
             src={avatarSrc}
             alt={userName}
-            className="client-profile-identity__avatar-image"
+            className="sf-next-profile-identity__avatar-image"
             imgClassName="object-cover"
           />
         ) : (
           <span>{userName.slice(0, 1)}</span>
         )}
       </UnifiedButton>
-      <button type="button" onClick={onProfileClick} className="client-profile-identity__copy">
+      <button type="button" onClick={onProfileClick} className="sf-next-profile-identity__copy">
         <strong title={userName} aria-label={userName}>{displayName}</strong>
         <span>查看账户资料</span>
       </button>
-      <div className="client-profile-identity__actions">
+      <div className="sf-next-profile-identity__actions">
         <NotificationIconButton
           unreadCount={unreadCount}
           onClick={onMessageClick}
-          className="client-profile-identity__icon-button"
+          className="sf-next-profile-identity__icon-button"
         />
-        <UnifiedButton type="button" onClick={onProfileClick} className="client-profile-identity__icon-button" aria-label="编辑资料">
+        <UnifiedButton type="button" onClick={onProfileClick} className="sf-next-profile-identity__icon-button" aria-label="编辑资料">
           <Pencil size={21} aria-hidden />
         </UnifiedButton>
       </div>
@@ -174,7 +174,7 @@ export function ProfileHeroCard({
   const folioAssets = (assets || []).slice(0, 3);
 
   return (
-    <section className="store-profile-vip-card client-profile-hero-card" onClick={onMemberLevelClick}>
+    <section className="sf-next-profile-hero-card" onClick={onMemberLevelClick}>
       <span className="profile-vip-watermark" aria-hidden="true" />
       <div className="profile-vip-folio-head">
         <span>MEMBER FOLIO</span>
@@ -223,7 +223,7 @@ export function ProfileGuestCard({
   ];
 
   return (
-    <section className="store-profile-vip-card profile-guest-card client-profile-hero-card client-profile-guest-card">
+    <section className="sf-next-profile-hero-card sf-next-profile-guest-card">
       <span className="profile-vip-watermark" aria-hidden="true" />
       <div className="profile-vip-header">
         <span className="profile-guest-avatar" aria-hidden="true">
@@ -266,7 +266,7 @@ export function ProfileOrderPanel({
   onViewAll: () => void;
 }) {
   return (
-    <section className={cn(PROFILE_CARD_CLASS, "client-profile-order-panel", PROFILE_SECTION_PADDING)}>
+    <section className={cn(PROFILE_CARD_CLASS, "sf-next-profile-order-panel", PROFILE_SECTION_PADDING)}>
       <ProfileSectionTitle title="我的订单" rightLabel="全部订单" onRightClick={onViewAll} />
       <div className="profile-order-grid">
         {items.map((item) => {
@@ -302,7 +302,7 @@ export function ProfileAssetPanel({
   if (!items.length) return null;
 
   return (
-    <section className={cn(PROFILE_CARD_CLASS, "client-profile-asset-panel", PROFILE_SECTION_PADDING)}>
+    <section className={cn(PROFILE_CARD_CLASS, "sf-next-profile-asset-panel", PROFILE_SECTION_PADDING)}>
       <ProfileSectionTitle title="我的资产" />
       <div className="profile-asset-grid">
         {items.map((item) => (
@@ -341,29 +341,29 @@ export function ProfileSnapshotPanel({
   if (!items.length) return null;
 
   return (
-    <section className={cn(PROFILE_CARD_CLASS, "client-profile-snapshot-panel", className)}>
-      <div className="client-profile-snapshot-head">
+    <section className={cn(PROFILE_CARD_CLASS, "sf-next-profile-snapshot-panel", className)}>
+      <div className="sf-next-profile-snapshot-head">
         <h3>{title}</h3>
         {subtitle ? <p>{subtitle}</p> : null}
       </div>
-      <div className="client-profile-snapshot-grid">
+      <div className="sf-next-profile-snapshot-grid">
         {items.map((item) => (
           <UnifiedButton
             key={item.key}
             type="button"
             data-feature-key={item.key}
             onClick={() => onNavigate(item)}
-            className={cn("client-profile-snapshot-card", item.tone && `is-${item.tone}`)}
+            className={cn("sf-next-profile-snapshot-card", item.tone && `is-${item.tone}`)}
           >
-            <span className="client-profile-snapshot-card__icon" aria-hidden>
+            <span className="sf-next-profile-snapshot-card__icon" aria-hidden>
               <item.icon size={18} strokeWidth={2.1} />
             </span>
-            <span className="client-profile-snapshot-card__copy">
+            <span className="sf-next-profile-snapshot-card__copy">
               <small>{item.label}</small>
               <strong>{item.value}</strong>
               <em>{item.hint}</em>
             </span>
-            <ChevronRight size={16} className="client-profile-snapshot-card__arrow" aria-hidden />
+            <ChevronRight size={16} className="sf-next-profile-snapshot-card__arrow" aria-hidden />
           </UnifiedButton>
         ))}
       </div>
@@ -397,7 +397,7 @@ export function ProfileInviteRewardCard({
   const cashbackAmount = "RM " + safeRewardBalance.toFixed(2);
 
   return (
-    <div className="profile-invite-reward-card client-profile-invite-panel">
+    <div className="profile-invite-reward-card sf-next-profile-invite-panel">
       <InviteRewardCard
         invitedCount={safeInviteCount}
         cashbackAmount={cashbackAmount}
@@ -434,7 +434,7 @@ export function ProfileServiceGrid({
   onRightClick?: () => void;
 }) {
   return (
-    <section className={cn(PROFILE_CARD_CLASS, "client-profile-service-panel", PROFILE_SECTION_PADDING)}>
+    <section className={cn(PROFILE_CARD_CLASS, "sf-next-profile-service-panel", PROFILE_SECTION_PADDING)}>
       <ProfileSectionTitle title={title} rightLabel={rightLabel} onRightClick={onRightClick} />
       <div className="profile-service-grid">
         {items.map((item) => (
@@ -469,7 +469,7 @@ export function ProfileSecondaryLinkPanel({
   if (!items.length) return null;
 
   return (
-    <section className={cn(PROFILE_CARD_CLASS, "client-profile-more-panel", PROFILE_SECTION_PADDING)}>
+    <section className={cn(PROFILE_CARD_CLASS, "sf-next-profile-more-panel", PROFILE_SECTION_PADDING)}>
       <ProfileSectionTitle title="更多功能" rightLabel="联系客服" onRightClick={onSupportClick} />
       <div className="profile-secondary-list">
         {items.map((item) => (
@@ -503,7 +503,7 @@ export function ProfileInstallShortcut({
   onNavigate: (item: ProfileServiceItem) => void;
 }) {
   return (
-    <section className="profile-install-shortcut client-profile-install-shortcut">
+    <section className="profile-install-shortcut sf-next-profile-install-shortcut">
       <span className="profile-install-icon">
         <item.icon size={19} strokeWidth={2.1} />
       </span>
@@ -520,7 +520,7 @@ export function ProfileInstallShortcut({
 
 export function ProfileTrustStrip({ items }: { items: ProfileTrustItem[] }) {
   return (
-    <section className="profile-trust-strip client-profile-trust-strip">
+    <section className="profile-trust-strip sf-next-profile-trust-strip">
       {items.map((item) => (
         <div key={item.title} className="profile-trust-entry">
           <span className="profile-trust-icon">
@@ -538,7 +538,7 @@ export function ProfileTrustStrip({ items }: { items: ProfileTrustItem[] }) {
 
 export function ProfileLogoutButton({ onClick }: { onClick: () => void }) {
   return (
-    <UnifiedButton type="button" onClick={onClick} className="profile-logout-button client-profile-logout-button">
+    <UnifiedButton type="button" onClick={onClick} className="profile-logout-button sf-next-profile-logout-button">
       <LogOut size={19} />
       退出登录
     </UnifiedButton>

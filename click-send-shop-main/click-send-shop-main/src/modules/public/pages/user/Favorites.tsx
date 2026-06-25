@@ -33,13 +33,13 @@ export default function Favorites() {
       title="我的收藏"
       backFallback="/profile"
       desktopBackLabel="返回我的"
-      className="sf-next-page store-v12-page store-account-subpage-v12-page store-favorites-v12-page"
+      className="sf-next-page sf-next-route-page sf-next-account-route-page sf-next-favorites-page"
       mainClassName="sf-next-account-main sm:px-4 xl:py-6"
     >
       <div className="mx-auto w-full max-w-lg space-y-3 md:max-w-5xl">
         {!isLoggedIn() && (
-          <div className="store-account-v12-notice store-account-v12-sync-notice">
-            <span className="store-v12-card-icon"><Heart size={16} aria-hidden /></span>
+          <div className="sf-next-notice sf-next-sync-notice">
+            <span className="sf-next-card-icon"><Heart size={16} aria-hidden /></span>
             <div>
               <strong>本机收藏夹</strong>
               <p>未登录时收藏只保存在当前设备，登录后可同步到账号。</p>
@@ -47,7 +47,7 @@ export default function Favorites() {
             <UnifiedButton
               type="button"
               onClick={() => navigate(localizedPath("/login"), { state: { from: localizedPath("/favorites") } })}
-              className="store-account-v12-notice-action"
+              className="sf-next-notice-action"
             >
               <LogIn size={15} aria-hidden />
               <span>登录同步</span>
@@ -68,8 +68,8 @@ export default function Favorites() {
         ) : favoriteProducts.length === 0 ? (
           <>
             <FavoriteListHeader count={0} />
-            <section className="store-account-v12-empty-panel store-favorites-v12-empty">
-              <div className="store-favorites-v12-empty-preview" aria-hidden>
+            <section className="sf-next-state-panel sf-next-favorites-empty">
+              <div className="sf-next-favorites-empty-preview" aria-hidden>
                 {Array.from({ length: 4 }).map((_, index) => (
                   <span key={index}>
                     <i />
@@ -77,7 +77,7 @@ export default function Favorites() {
                   </span>
                 ))}
               </div>
-              <span className="store-account-v12-empty-panel__icon" aria-hidden>
+              <span className="sf-next-state-panel__icon" aria-hidden>
                 <Heart size={24} />
               </span>
               <h2>收藏夹还是空的</h2>
@@ -85,7 +85,7 @@ export default function Favorites() {
               <UnifiedButton
                 type="button"
                 onClick={() => navigate(localizedPath("/categories"))}
-                className="store-account-v12-empty-panel__action"
+                className="sf-next-state-panel__primary"
               >
                 <Store size={16} aria-hidden />
                 <span>浏览商品</span>
@@ -133,7 +133,7 @@ export default function Favorites() {
 
 function FavoriteListHeader({ count }: { count: number }) {
   return (
-    <div className="store-favorites-v12-toolbar" aria-label="收藏列表状态">
+    <div className="sf-next-favorites-toolbar" aria-label="收藏列表状态">
       <p>共 {count} 件</p>
       <span>最近收藏</span>
     </div>

@@ -47,7 +47,7 @@ export default function CheckoutPromotionExplanation({
 
   return (
     <section
-      className={`store-checkout-v12-promotion-panel rounded-2xl border border-[color-mix(in_srgb,var(--theme-success)_24%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-success)_8%,var(--theme-surface))] px-3 py-3 ${className}`}
+      className={`sf-next-checkout-promotion-panel rounded-2xl border border-[color-mix(in_srgb,var(--theme-success)_24%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-success)_8%,var(--theme-surface))] px-3 py-3 ${className}`}
       aria-label="优惠说明"
     >
       <div className="flex items-start gap-2.5">
@@ -103,7 +103,7 @@ export default function CheckoutPromotionExplanation({
             {discountLines.length || pointsBonusLines.length ? (
               <p>优惠券、积分和活动优惠会自动计算。</p>
             ) : null}
-            <div className="store-checkout-v12-promotion-panel__rules">
+            <div className="sf-next-checkout-promotion-panel__rules">
               <span>活动适用范围会自动确认</span>
               <span>优惠券、积分和返现按当前订单展示</span>
               <span>提交订单前会确认库存、运费和金额</span>

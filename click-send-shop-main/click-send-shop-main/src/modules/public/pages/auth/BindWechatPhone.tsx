@@ -99,8 +99,8 @@ export default function BindWechatPhone() {
   };
 
   return (
-    <div className="auth-page-shell sf-next-page store-v12-page auth-v12-page auth-next-page auth-bind-phone-page">
-      <main className="auth-page-main auth-v12-main auth-next-main">
+    <div className="auth-page-shell sf-next-page sf-next-route-page auth-next-page auth-bind-phone-page">
+      <main className="auth-page-main auth-next-main">
         <div className="auth-login-topbar">
           <button type="button" onClick={() => navigate("/login", { replace: true })} aria-label="返回登录" className="auth-login-back-btn">
             <ArrowLeft size={19} aria-hidden />

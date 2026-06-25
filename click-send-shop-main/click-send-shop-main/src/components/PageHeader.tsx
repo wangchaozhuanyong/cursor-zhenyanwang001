@@ -47,20 +47,20 @@ export default function PageHeader({
   );
 
   return (
-    <header className={cn("store-mobile-page-header header-safe-top store-glass-surface sticky top-0 z-header border-b backdrop-blur-xl", className)}>
-      <div className={cn("store-mobile-page-header__inner relative mx-auto flex h-11 w-full max-w-screen-xl items-center justify-between gap-2 px-[var(--store-header-x)]", contentClassName)}>
+    <header className={cn("sf-next-page-header header-safe-top sf-next-glass-surface sticky top-0 z-header border-b backdrop-blur-xl", className)}>
+      <div className={cn("sf-next-page-header__inner relative mx-auto flex h-11 w-full max-w-screen-xl items-center justify-between gap-2 px-[var(--store-header-x)]", contentClassName)}>
         {hasRightSlot ? (
           <>
             <div className="flex min-w-0 flex-1 items-center gap-2">
               {backButton}
-              <h1 className="store-page-title min-w-0 truncate">{title}</h1>
+              <h1 className="sf-next-page-title min-w-0 truncate">{title}</h1>
             </div>
             <div className="shrink-0">{rightSlot}</div>
           </>
         ) : (
           <>
             {backButton}
-            <h1 className="store-page-title mx-auto max-w-[calc(100%-7rem)] truncate text-center">{title}</h1>
+            <h1 className="sf-next-page-title mx-auto max-w-[calc(100%-7rem)] truncate text-center">{title}</h1>
           </>
         )}
       </div>

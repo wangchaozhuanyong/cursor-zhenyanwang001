@@ -25,7 +25,7 @@ export function CheckoutSubmitBar({
   const blocked = disabled && Boolean(disabledHint);
 
   return (
-    <div className="store-mobile-submit-bar fixed bottom-0 left-0 right-0 z-checkout-bar border-t border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md pb-safe safe-bottom-bar md:hidden">
+    <div className="sf-next-checkout-submit-bar fixed bottom-0 left-0 right-0 z-checkout-bar border-t border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md pb-safe safe-bottom-bar md:hidden">
       <div className="mx-auto flex max-w-lg items-center gap-3 px-4 py-3.5">
         {blocked ? (
           <span className="flex min-w-0 flex-1 flex-col gap-1 rounded-2xl border border-[color-mix(in_srgb,var(--theme-warning)_28%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-warning)_8%,var(--theme-surface))] px-3.5 py-2.5">
@@ -50,7 +50,7 @@ export function CheckoutSubmitBar({
           onClick={onSubmit}
           disabled={submitting || disabled}
           variant="solid"
-          className="min-h-12 w-[9.75rem] shrink-0 rounded-2xl px-3 py-2 text-sm font-bold btn-theme-gradient theme-shadow disabled:opacity-60"
+          className="min-h-12 w-[9.75rem] shrink-0 rounded-2xl px-3 py-2 text-sm font-bold btn-theme-gradient sf-next-theme-shadow disabled:opacity-60"
           loadingText={submitCtaLabel(paymentMethod, true)}
         >
           <span className="inline-flex min-w-0 items-center justify-center gap-1.5">

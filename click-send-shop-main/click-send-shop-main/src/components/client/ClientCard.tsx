@@ -12,9 +12,9 @@ const ClientCard = forwardRef<HTMLDivElement, ClientCardProps>(
       <div
         ref={ref}
         className={cn(
-          "client-card",
-          interactive && "client-card--interactive",
-          padded && "client-card--padded",
+          "sf-next-card",
+          interactive && "sf-next-card--interactive",
+          padded && "sf-next-card--padded",
           className,
         )}
         {...props}

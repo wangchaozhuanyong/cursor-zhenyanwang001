@@ -26,7 +26,7 @@ export default function SilkRefreshOverlay({
       aria-live="polite"
       aria-label={label}
     >
-      <div className="theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)]/90 px-3 py-2 text-xs text-[var(--theme-text-muted)] shadow-sm backdrop-blur-md">
+      <div className="sf-next-theme-radius border border-[var(--theme-border)] bg-[var(--theme-surface)]/90 px-3 py-2 text-xs text-[var(--theme-text-muted)] shadow-sm backdrop-blur-md">
         <span className="mr-2 inline-block h-1.5 w-10 overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--theme-border)_60%,var(--theme-bg))] align-middle">
           <span className="silk-refresh-line block h-full w-1/2 rounded-full bg-[var(--theme-primary)]" />
         </span>

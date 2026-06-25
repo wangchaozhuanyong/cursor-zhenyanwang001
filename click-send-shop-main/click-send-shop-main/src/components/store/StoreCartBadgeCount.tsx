@@ -23,7 +23,7 @@ export default function StoreCartBadgeCount({
   if (totalItems <= 0) return null;
 
   return (
-    <span className={cn(BADGE_CLASS_BY_VARIANT[variant], bumped && "store-bottom-nav-badge-bump", className)}>
+    <span className={cn(BADGE_CLASS_BY_VARIANT[variant], bumped && "sf-next-bottom-nav-badge-bump", className)}>
       {totalItems > 99 ? "99+" : totalItems}
     </span>
   );

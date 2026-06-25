@@ -99,8 +99,8 @@ export default function Checkout() {
         onBack={checkout.goBack}
         backFallback={localizedPath("/cart")}
         desktopBackLabel={t("checkout.backCart")}
-        className="store-conversion-page store-v12-page store-checkout-v12-page store-checkout-page store-checkout-v12-empty-page"
-        contentClassName="store-checkout-v12-empty-main"
+        className="sf-next-conversion-page sf-next-route-page sf-next-checkout-page sf-next-checkout-empty-page"
+        contentClassName="sf-next-checkout-empty-main"
         rightSlot={<NotificationIconButton unreadCount={checkout.unreadCount} onClick={checkout.goNotifications} />}
       >
         <RouteStatePanel
@@ -159,7 +159,7 @@ export default function Checkout() {
       onBack={checkout.goBack}
       backFallback={localizedPath("/cart")}
       desktopBackLabel={t("checkout.backCart")}
-      className="store-conversion-page store-v12-page store-checkout-v12-page store-checkout-page store-bottom-action-space bg-[color-mix(in_srgb,var(--theme-bg)_82%,#f7f1e8)] md:pb-0"
+      className="sf-next-conversion-page sf-next-route-page sf-next-checkout-page sf-next-checkout-action-space bg-[color-mix(in_srgb,var(--theme-bg)_82%,var(--sf-canvas))] md:pb-0"
       contentClassName="xl:max-w-screen-xl"
       rightSlot={<NotificationIconButton unreadCount={checkout.unreadCount} onClick={checkout.goNotifications} />}
     >
@@ -169,7 +169,7 @@ export default function Checkout() {
           aside={
             <DesktopPurchaseCard
               title={t("checkout.orderSummary")}
-              className="store-checkout-card store-checkout-summary rounded-[22px] border-[color-mix(in_srgb,var(--theme-border)_75%,transparent)] shadow-[0_18px_46px_rgba(65,45,28,0.12)]"
+              className="sf-next-checkout-card sf-next-checkout-summary rounded-[22px] border-[color-mix(in_srgb,var(--theme-border)_75%,transparent)] shadow-[0_18px_46px_rgba(65,45,28,0.12)]"
               bodyClassName="space-y-4"
             >
               <div className="flex items-center justify-between border-b border-[var(--theme-border)] pb-3 text-sm">
@@ -207,7 +207,7 @@ export default function Checkout() {
                 onClick={checkout.handleSubmit}
                 disabled={submitDisabled}
                 variant="solid"
-                className="mt-1 min-h-12 w-full rounded-full py-3 text-sm font-bold btn-theme-gradient theme-shadow disabled:opacity-60"
+                className="mt-1 min-h-12 w-full rounded-full py-3 text-sm font-bold btn-theme-gradient sf-next-theme-shadow disabled:opacity-60"
                 loadingText={submitCtaLabel(checkout.paymentMethod, true)}
               >
                 {submitDisabled && submitDisabledHint ? submitDisabledHint : submitCtaLabel(checkout.paymentMethod, false)}
@@ -275,7 +275,7 @@ export default function Checkout() {
               showCustomerService={checkout.showCustomerService}
             />
 
-            <div className="store-checkout-card store-checkout-summary rounded-[20px] border border-[color-mix(in_srgb,var(--theme-border)_70%,transparent)] bg-[var(--theme-surface)] p-4 shadow-[0_14px_38px_rgba(65,45,28,0.08)] md:hidden">
+            <div className="sf-next-checkout-card sf-next-checkout-summary rounded-[20px] border border-[color-mix(in_srgb,var(--theme-border)_70%,transparent)] bg-[var(--theme-surface)] p-4 shadow-[0_14px_38px_rgba(65,45,28,0.08)] md:hidden">
               <h3 className="mb-3 text-[15px] font-bold text-foreground">{t("checkout.amountDetail")}</h3>
               <CheckoutPriceSummary
                 rawTotal={checkout.rawTotal}

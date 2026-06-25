@@ -29,8 +29,8 @@ export default function CategoryNavTile({
   const isPlain = variant === "plain";
   const resolvedIconValue = resolveCategoryTileIconValue({ id, label, iconValue });
   const tileClassName = cn(
-    "store-category-tile group flex h-[4.85rem] w-[5.05rem] shrink-0 snap-start flex-col items-center justify-center gap-1 rounded-[0.875rem] border text-center transition duration-200 active:scale-[0.98]",
-    isPlain && "store-category-tile--plain h-auto rounded-none border-0 bg-transparent shadow-none active:scale-100",
+    "sf-next-category-tile group flex h-[4.85rem] w-[5.05rem] shrink-0 snap-start flex-col items-center justify-center gap-1 rounded-[0.875rem] border text-center transition duration-200 active:scale-[0.98]",
+    isPlain && "sf-next-category-tile--plain h-auto rounded-none border-0 bg-transparent shadow-none active:scale-100",
     active ? "is-active" : "opacity-95",
     className,
   );
@@ -45,20 +45,20 @@ export default function CategoryNavTile({
     >
       <span
         className={cn(
-          "store-category-tile-icon flex h-10 w-10 shrink-0 items-center justify-center",
-          isPlain && "store-category-tile-icon--plain",
+          "sf-next-category-tile-icon flex h-10 w-10 shrink-0 items-center justify-center",
+          isPlain && "sf-next-category-tile-icon--plain",
         )}
       >
         <HomeNavIcon
           value={resolvedIconValue}
-          className={isPlain ? "store-category-icon-renderer--plain" : undefined}
-          imageClassName={isPlain ? "store-category-tile-image--plain" : undefined}
+          className={isPlain ? "sf-next-category-icon-renderer--plain" : undefined}
+          imageClassName={isPlain ? "sf-next-category-tile-image--plain" : undefined}
         />
       </span>
       <span
         className={cn(
-          "store-category-tile-label w-full truncate px-1 text-xs font-medium leading-tight",
-          isPlain && "store-category-tile-label--plain",
+          "sf-next-category-tile-label w-full truncate px-1 text-xs font-medium leading-tight",
+          isPlain && "sf-next-category-tile-label--plain",
           active && "font-semibold",
         )}
       >

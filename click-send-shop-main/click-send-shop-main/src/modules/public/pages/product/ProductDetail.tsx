@@ -176,7 +176,7 @@ export default function ProductDetail() {
 
   if (loading) {
     return (
-      <div className={cn("store-bottom-action-space min-h-screen md:pb-0", pageBgClass)} data-storefront-client-style={clientStyle}>
+      <div className={cn("sf-next-product-action-space min-h-screen md:pb-0", pageBgClass)} data-storefront-client-style={clientStyle}>
         <ProductDetailStickyHeader
           solid={false}
           onBack={goBack}
@@ -251,7 +251,7 @@ export default function ProductDetail() {
     statusBadges.push({
       key: "hot",
       label: "热销",
-      className: "theme-rounded bg-[var(--theme-price)] px-2 py-0.5 text-[10px] font-bold leading-none text-[var(--theme-price-foreground)]",
+      className: "sf-next-theme-radius bg-[var(--theme-price)] px-2 py-0.5 text-[10px] font-bold leading-none text-[var(--theme-price-foreground)]",
     });
   }
   if (product.is_new) {
@@ -259,7 +259,7 @@ export default function ProductDetail() {
       key: "new",
       label: "新品",
       className:
-        "theme-rounded bg-[var(--theme-primary)] px-2 py-0.5 text-[10px] font-bold leading-none text-[var(--theme-primary-foreground)]",
+        "sf-next-theme-radius bg-[var(--theme-primary)] px-2 py-0.5 text-[10px] font-bold leading-none text-[var(--theme-primary-foreground)]",
     });
   }
   const showPriceMeta = salesCount !== null || statusBadges.length > 0;
@@ -448,7 +448,7 @@ export default function ProductDetail() {
   };
 
   return (
-    <div className={cn("store-conversion-page store-v12-page sf-next-product-detail-page store-product-detail-page store-bottom-action-space min-h-screen text-[var(--theme-text)] md:pb-0 lg:pb-0", pageBgClass)} data-storefront-client-style={clientStyle}>
+    <div className={cn("sf-next-conversion-page sf-next-route-page sf-next-product-detail-page sf-next-product-action-space min-h-screen text-[var(--theme-text)] md:pb-0 lg:pb-0", pageBgClass)} data-storefront-client-style={clientStyle}>
       <SeoHead
         title={`${displayProductName}｜${siteName}`}
         description={productDescription}
@@ -476,9 +476,9 @@ export default function ProductDetail() {
           <ArrowLeft size={16} />
           返回
         </UnifiedButton>
-        <div className="store-detail-layout sf-next-product-detail-layout md:grid md:grid-cols-2 md:gap-10 md:items-start md:py-6 lg:gap-12 lg:py-8">
+        <div className="sf-next-product-detail-layout md:grid md:grid-cols-2 md:gap-10 md:items-start md:py-6 lg:gap-12 lg:py-8">
           <div className={cn("md:sticky md:self-start", STORE_DETAIL_STICKY_TOP_CLASS)}>
-            <div className="store-detail-gallery sf-next-product-gallery relative overflow-hidden md:theme-rounded md:border md:border-[var(--theme-border)]">
+            <div className="sf-next-product-gallery relative overflow-hidden md:rounded-[var(--theme-radius)] md:border md:border-[var(--theme-border)]">
               <ProductImageGallery
                 images={galleryImages}
                 imageAlts={galleryImageAlts}
@@ -497,7 +497,7 @@ export default function ProductDetail() {
                 aria-hidden
               />
               <div
-                className="store-detail-info-card sf-next-product-summary px-[var(--store-page-x)] pt-5 md:px-0 md:pt-0"
+                className="sf-next-product-summary px-[var(--store-page-x)] pt-5 md:px-0 md:pt-0"
                 style={
                   headerSolid
                     ? { scrollMarginTop: "calc(var(--store-tab-header-height, 3.5rem) + env(safe-area-inset-top, 0px))" }
@@ -509,12 +509,12 @@ export default function ProductDetail() {
                   <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
                     <StorePriceAmount
                       amount={displayPrice}
-                      amountClassName="store-price-detail"
+                      amountClassName="sf-next-product-price"
                       currencyClassName="mr-1 text-[13px] font-bold leading-none sm:text-sm"
                     />
                     {typeof displayOriginalPrice === "number" &&
                       displayOriginalPrice > Number(displayPriceForCompare) && (
-                        <span className="store-body-small text-muted-foreground line-through">
+                        <span className="sf-next-body-small text-muted-foreground line-through">
                           RM {displayOriginalPrice}
                         </span>
                       )}
@@ -573,7 +573,7 @@ export default function ProductDetail() {
             </div>
 
             {/* TrustInfo - 信任三件套（详情页使用 card 强转化样式） */}
-            <div className="store-trust-card mt-6 px-[var(--store-page-x)] md:px-0">
+            <div className="sf-next-product-trust-card mt-6 px-[var(--store-page-x)] md:px-0">
               <TrustInfo variant="card" />
             </div>
 
@@ -588,8 +588,8 @@ export default function ProductDetail() {
 
         {/* 推荐商品 */}
         {(relatedProductsLoading || relatedProducts.length > 0) && (
-          <section className="store-product-v12-related" aria-label="推荐商品">
-            <div className="store-product-v12-related__head">
+          <section className="sf-next-product-related" aria-label="推荐商品">
+            <div className="sf-next-product-related__head">
               <span>
                 <PackageCheck size={15} aria-hidden />
                 推荐商品
@@ -618,7 +618,7 @@ export default function ProductDetail() {
         )}
       </main>
       {/* 底部固定操作栏 - 仅移动端 */}
-      <div className="store-mobile-submit-bar fixed bottom-0 left-0 right-0 z-checkout-bar border-t border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md pb-safe safe-bottom-bar md:hidden">
+      <div className="sf-next-product-submit-bar fixed bottom-0 left-0 right-0 z-checkout-bar border-t border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md pb-safe safe-bottom-bar md:hidden">
         <div className="mx-auto w-full px-[var(--store-page-x)] py-3 sm:max-w-lg sm:px-4">
           <DetailPurchaseBar
             mode="mobile"
@@ -707,15 +707,15 @@ function ProductDetailContentPanel({
   sections: string[];
 }) {
   return (
-    <section className="store-product-v12-content-panel" aria-labelledby="product-detail-content-heading">
-      <div className="store-product-v12-content-panel__head">
+    <section className="sf-next-product-content-panel" aria-labelledby="product-detail-content-heading">
+      <div className="sf-next-product-content-panel__head">
         <span>
           <ShieldCheck size={15} aria-hidden />
           商品详情
         </span>
         <h2 id="product-detail-content-heading">商品详情</h2>
       </div>
-      <div className="store-product-v12-content-panel__list">
+      <div className="sf-next-product-content-panel__list">
         {sections.map((section, idx) => (
           <article key={`${section.slice(0, 16)}-${idx}`}>
             <span aria-hidden>{String(idx + 1).padStart(2, "0")}</span>
@@ -821,13 +821,13 @@ function DetailPurchaseBar({
 }) {
   const disabled = soldOut;
   return (
-    <div className="store-detail-purchase-bar flex items-stretch gap-3" data-mode={mode}>
-      <div className="store-detail-purchase-bar__utility flex shrink-0 items-center gap-4 pr-1">
+    <div className="sf-next-product-purchase-bar flex items-stretch gap-3" data-mode={mode}>
+      <div className="sf-next-product-purchase-bar__utility flex shrink-0 items-center gap-4 pr-1">
         <div className="flex min-w-[2.75rem] flex-col items-center gap-0.5 text-[var(--theme-text-muted)]">
           <FavoriteMotionButton
             active={isFavorite}
             onClick={onFavorite}
-            className="store-detail-mini-action-icon !h-9 !w-9"
+            className="sf-next-product-mini-action-icon !h-9 !w-9"
             size={18}
           />
           <span className="text-[10px]">{isFavorite ? "已收藏" : "收藏"}</span>
@@ -839,21 +839,21 @@ function DetailPurchaseBar({
             className="flex min-w-[2.75rem] flex-col items-center gap-0.5 text-[var(--theme-text-muted)]"
             aria-label="联系客服"
           >
-            <span className="store-detail-mini-action-icon flex h-9 w-9 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)]">
+            <span className="sf-next-product-mini-action-icon flex h-9 w-9 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)]">
               <Headphones size={18} strokeWidth={2} aria-hidden="true" />
             </span>
             <span className="text-[10px]">客服</span>
           </UnifiedButton>
         ) : null}
       </div>
-      {mode === "desktop" ? <div className="store-detail-purchase-bar__divider w-px shrink-0 self-stretch bg-[var(--theme-border)]" aria-hidden /> : null}
-      <div className="store-detail-purchase-bar__primary flex min-w-0 flex-1 overflow-hidden rounded-full shadow-sm">
+      {mode === "desktop" ? <div className="sf-next-product-purchase-bar__divider w-px shrink-0 self-stretch bg-[var(--theme-border)]" aria-hidden /> : null}
+      <div className="sf-next-product-purchase-bar__primary flex min-w-0 flex-1 overflow-hidden rounded-full shadow-sm">
         <UnifiedButton
           type="button"
           disabled={disabled}
           onClick={onAddToCart}
           className={cn(
-            "store-detail-add-cart min-h-11 flex-1 px-2 text-sm font-semibold transition-opacity",
+            "sf-next-product-add-cart min-h-11 flex-1 px-2 text-sm font-semibold transition-opacity",
             THEME_BTN_ACCENT_SOLID,
             "disabled:cursor-not-allowed disabled:opacity-50",
           )}
@@ -865,7 +865,7 @@ function DetailPurchaseBar({
           disabled={disabled}
           onClick={onBuyNow}
           className={cn(
-            "store-detail-buy-now min-h-11 flex-1 px-2 text-sm font-semibold transition-opacity",
+            "sf-next-product-buy-now min-h-11 flex-1 px-2 text-sm font-semibold transition-opacity",
             "bg-[var(--theme-price)] text-[var(--theme-price-foreground)]",
             "disabled:cursor-not-allowed disabled:opacity-50",
           )}
@@ -922,16 +922,16 @@ function ProductDetailErrorPanel({
   ];
 
   return (
-    <section className="store-product-v12-error-panel" aria-labelledby="product-detail-error-heading">
-      <div className="store-product-v12-error-panel__badge">
+    <section className="sf-next-product-error-panel" aria-labelledby="product-detail-error-heading">
+      <div className="sf-next-product-error-panel__badge">
         <ShieldCheck size={15} aria-hidden />
         商品详情
       </div>
-      <div className="store-product-v12-error-panel__copy">
+      <div className="sf-next-product-error-panel__copy">
         <h1 id="product-detail-error-heading">{title}</h1>
         <p>{description}</p>
       </div>
-      <div className="store-product-v12-error-panel__guards">
+      <div className="sf-next-product-error-panel__guards">
         {guards.map((item) => {
           const Icon = item.icon;
           return (
@@ -946,7 +946,7 @@ function ProductDetailErrorPanel({
           );
         })}
       </div>
-      <div className="store-product-v12-error-panel__actions">
+      <div className="sf-next-product-error-panel__actions">
         <UnifiedButton type="button" onClick={onRetry}>
           重试
         </UnifiedButton>

@@ -21,7 +21,7 @@ type StoreSearchFieldProps = {
 };
 
 const baseFieldClass =
-  "store-search-field w-full rounded-full border border-[var(--store-border)] bg-[color-mix(in_srgb,var(--store-surface-raised)_88%,transparent)] py-0 text-sm leading-none shadow-[inset_0_1px_0_color-mix(in_srgb,white_42%,transparent)] focus:border-[var(--theme-price)] focus:outline-none";
+  "sf-next-search-field w-full rounded-full border border-[var(--store-border)] bg-[color-mix(in_srgb,var(--store-surface-raised)_88%,transparent)] py-0 text-sm leading-none shadow-[inset_0_1px_0_color-mix(in_srgb,white_42%,transparent)] focus:border-[var(--theme-price)] focus:outline-none";
 
 const fieldSizeClass = {
   default: "h-[2.625rem] min-h-[2.625rem] pl-9 pr-3.5",
@@ -99,7 +99,7 @@ export default function StoreSearchField({
         className={cn(
           baseFieldClass,
           fieldSizeClass[size],
-          showSubmitButton && "store-search-field--with-submit",
+          showSubmitButton && "sf-next-search-field--with-submit",
           showSubmitButton && fieldWithButtonSizeClass[size],
           mode === "navigate" && !submitOnly && "cursor-pointer",
         )}
@@ -111,7 +111,7 @@ export default function StoreSearchField({
           onClick={handleSubmit}
           aria-label={submitButtonLabel}
           className={cn(
-            "store-search-submit-button absolute right-1 top-1/2 inline-flex shrink-0 -translate-y-1/2 items-center justify-center rounded-full border border-transparent bg-[var(--theme-price)] text-[var(--theme-price-foreground)] shadow-sm transition active:scale-95",
+            "sf-next-search-submit-button absolute right-1 top-1/2 inline-flex shrink-0 -translate-y-1/2 items-center justify-center rounded-full border border-transparent bg-[var(--theme-price)] text-[var(--theme-price-foreground)] shadow-sm transition active:scale-95",
             size === "compact" ? "h-7 w-7" : "h-8 w-8",
           )}
         >

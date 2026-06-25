@@ -18,17 +18,17 @@ export default function StoreShell({ children }: StoreShellProps) {
   const hideChrome = canonicalPathname.startsWith("/checkout");
   const isDesktop = useMediaQuery("(min-width: 1280px)");
   const isTablet = useMediaQuery("(min-width: 768px) and (max-width: 1279px)");
-  const fixedHeaderClassName = "store-fixed-header";
+  const fixedHeaderClassName = "sf-next-fixed-header";
 
   return (
-    <div className="store-shell relative min-h-[100dvh] min-w-0 overflow-x-clip">
+    <div className="sf-next-store-shell relative min-h-[100dvh] min-w-0 overflow-x-clip">
       {!hideChrome && isDesktop ? (
         <StoreDesktopHeader className={fixedHeaderClassName} />
       ) : null}
       {!hideChrome && isTab && isTablet ? (
         <StoreTabletBar className={fixedHeaderClassName} />
       ) : null}
-      <div className="store-shell__body min-w-0">{children}</div>
+      <div className="sf-next-store-shell__body min-w-0">{children}</div>
     </div>
   );
 }

@@ -61,7 +61,7 @@ export default function ProductActivityPanel({ activity, className = "" }: Produ
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <StorefrontBadge tone="sale">{badgeLabel}</StorefrontBadge>
-            <span className="store-product-v12-activity-status">{statusText}</span>
+            <span className="sf-next-product-activity-status">{statusText}</span>
             <p className="min-w-0 text-sm font-bold leading-5 text-[var(--theme-text)]">{displayTitle}</p>
           </div>
           {displayDescription ? (
@@ -93,12 +93,12 @@ export default function ProductActivityPanel({ activity, className = "" }: Produ
       </div>
 
       {progressPercent != null ? (
-        <div className="store-product-v12-activity-progress">
-          <div className="store-product-v12-activity-progress__meta">
+        <div className="sf-next-product-activity-progress">
+          <div className="sf-next-product-activity-progress__meta">
             <span>库存进度</span>
             <strong>{isActivityPrice ? `已抢 ${progressPercent}%` : `剩余 ${remaining} 件`}</strong>
           </div>
-          <div className="store-product-v12-activity-progress__track" aria-hidden>
+          <div className="sf-next-product-activity-progress__track" aria-hidden>
             <span style={{ width: `${progressPercent}%` }} />
           </div>
           <p>
@@ -108,7 +108,7 @@ export default function ProductActivityPanel({ activity, className = "" }: Produ
         </div>
       ) : null}
 
-      <p className="store-product-v12-activity-safe-copy">
+      <p className="sf-next-product-activity-safe-copy">
         活动价、限购、库存和优惠叠加会在结算页确认。
       </p>
     </section>

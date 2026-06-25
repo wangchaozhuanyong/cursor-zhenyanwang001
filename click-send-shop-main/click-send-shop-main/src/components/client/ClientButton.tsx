@@ -32,9 +32,9 @@ const ClientButton = forwardRef<HTMLButtonElement, ClientButtonProps>(
         ref={ref}
         type={type}
         className={cn(
-          "client-button",
-          `client-button--${variant}`,
-          `client-button--${size}`,
+          "sf-next-button",
+          `sf-next-button--${variant}`,
+          `sf-next-button--${size}`,
           loading && "is-loading",
           className,
         )}
@@ -42,8 +42,8 @@ const ClientButton = forwardRef<HTMLButtonElement, ClientButtonProps>(
         aria-busy={loading || undefined}
         {...props}
       >
-        {loading ? <LoaderCircle size={16} className="client-button__spinner" aria-hidden /> : icon}
-        {children ? <span className="client-button__label">{children}</span> : null}
+        {loading ? <LoaderCircle size={16} className="sf-next-button__spinner" aria-hidden /> : icon}
+        {children ? <span className="sf-next-button__label">{children}</span> : null}
       </button>
     );
   },

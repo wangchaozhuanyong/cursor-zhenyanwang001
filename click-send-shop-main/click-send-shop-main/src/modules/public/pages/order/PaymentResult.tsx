@@ -132,25 +132,25 @@ export default function PaymentResult() {
   }, [error, refreshing, state, t]);
 
   return (
-    <main className="store-page-shell store-v12-page store-payment-result-v12-page store-bottom-safe mx-auto flex min-h-[70vh] max-w-2xl flex-col px-4 py-6 text-center sm:py-10">
-      <section className="store-payment-result-v12-card w-full" data-state={resultTone(state)}>
-        <div className="store-payment-result-v12-status">
-          <div className="store-payment-result-v12-icon" aria-hidden="true">
+    <main className="sf-next-page-shell sf-next-route-page sf-next-payment-result-page sf-next-bottom-safe mx-auto flex min-h-[70vh] max-w-2xl flex-col px-4 py-6 text-center sm:py-10">
+      <section className="sf-next-payment-result-card w-full" data-state={resultTone(state)}>
+        <div className="sf-next-payment-result-status">
+          <div className="sf-next-payment-result-icon" aria-hidden="true">
             {view.icon}
           </div>
-          <div className="store-payment-result-v12-copy">
+          <div className="sf-next-payment-result-copy">
             <h1>{view.title}</h1>
             <p>{view.description}</p>
           </div>
         </div>
 
         {order ? (
-          <div className="store-payment-result-v12-receipt" aria-label={t("payment.viewOrder")}>
-            <div className="store-payment-result-v12-amount">
+          <div className="sf-next-payment-result-receipt" aria-label={t("payment.viewOrder")}>
+            <div className="sf-next-payment-result-amount">
               <span>{t("payment.amountDue")}</span>
               <strong>RM {Number(order.total_amount || 0).toFixed(2)}</strong>
             </div>
-            <dl className="store-payment-result-v12-lines">
+            <dl className="sf-next-payment-result-lines">
               <div>
                 <dt>{t("payment.orderNo")}</dt>
                 <dd>{order.order_no}</dd>
@@ -163,18 +163,18 @@ export default function PaymentResult() {
           </div>
         ) : null}
 
-        <div className="store-payment-result-v12-actions">
-          <UnifiedButton type="button" onClick={load} disabled={refreshing} className="store-payment-result-v12-action store-payment-result-v12-action--primary">
+        <div className="sf-next-payment-result-actions">
+          <UnifiedButton type="button" onClick={load} disabled={refreshing} className="sf-next-payment-result-action sf-next-payment-result-action--primary">
             {refreshing ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
             {t("payment.refresh")}
           </UnifiedButton>
-          <Link className="store-payment-result-v12-action" to={localizedPath(order ? `/orders/${order.id}` : "/orders")}>
+          <Link className="sf-next-payment-result-action" to={localizedPath(order ? `/orders/${order.id}` : "/orders")}>
             <ShoppingBag size={16} />
             {t("payment.viewOrder")}
           </Link>
           {authRequired ? (
             <Link
-              className="store-payment-result-v12-action"
+              className="sf-next-payment-result-action"
               to={localizedPath("/login")}
               state={{ from: `${location.pathname}${location.search}` }}
             >
@@ -182,7 +182,7 @@ export default function PaymentResult() {
               {t("payment.loginToView")}
             </Link>
           ) : null}
-          <Link className="store-payment-result-v12-action" to={localizedPath(SUPPORT_PAGE_PATH)}>
+          <Link className="sf-next-payment-result-action" to={localizedPath(SUPPORT_PAGE_PATH)}>
             <MessageCircle size={16} />
             {t("payment.contactSupport")}
           </Link>

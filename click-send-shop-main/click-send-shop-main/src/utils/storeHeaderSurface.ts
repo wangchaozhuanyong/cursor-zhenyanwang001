@@ -10,7 +10,7 @@ export function getStoreHeaderSurfaceClass(themeConfig: ThemeConfig): string {
     return "bg-transparent border-transparent";
   }
   if (headerStyle === "premium") {
-    return "store-glass-surface";
+    return "sf-next-glass-surface";
   }
-  return "store-glass-surface";
+  return "sf-next-glass-surface";
 }

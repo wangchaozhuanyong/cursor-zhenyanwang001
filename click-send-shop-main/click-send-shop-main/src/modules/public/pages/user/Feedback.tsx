@@ -93,15 +93,15 @@ function FeedbackRecordsState({
   action?: ReactNode;
 }) {
   return (
-    <div className="store-feedback-v12-record-state">
-      <span className="store-feedback-v12-record-state__icon" aria-hidden="true">
+    <div className="sf-next-feedback-record-state">
+      <span className="sf-next-feedback-record-state__icon" aria-hidden="true">
         {icon}
       </span>
       <div>
         <strong>{title}</strong>
         <p>{text}</p>
       </div>
-      {action ? <div className="store-feedback-v12-record-state__action">{action}</div> : null}
+      {action ? <div className="sf-next-feedback-record-state__action">{action}</div> : null}
     </div>
   );
 }
@@ -136,8 +136,8 @@ function FeedbackRecordList({ items }: { items: UserFeedback[] }) {
   }
 
   return (
-    <div className="store-feedback-v12-records">
-      <div ref={filterRailRef} className="store-feedback-v12-record-filter no-scrollbar">
+    <div className="sf-next-feedback-records">
+      <div ref={filterRailRef} className="sf-next-feedback-record-filter no-scrollbar">
         {RECORD_FILTERS.map((item) => {
           const active = filter === item.key;
           return (
@@ -149,7 +149,7 @@ function FeedbackRecordList({ items }: { items: UserFeedback[] }) {
                 scrollFilterToKey(item.key);
                 setFilter(item.key);
               }}
-              className={`store-feedback-v12-record-filter__button${active ? " is-active" : ""}`}
+              className={`sf-next-feedback-record-filter__button${active ? " is-active" : ""}`}
             >
               <span>{item.label}</span>
               <span>{counts[item.key]}</span>
@@ -167,25 +167,25 @@ function FeedbackRecordList({ items }: { items: UserFeedback[] }) {
       ) : null}
 
       {filteredItems.map((item) => (
-        <article key={item.id} className="store-feedback-v12-record-card">
-          <div className="store-feedback-v12-record-card__head">
+        <article key={item.id} className="sf-next-feedback-record-card">
+          <div className="sf-next-feedback-record-card__head">
             <div>
               <p>
                 {item.title || feedbackTypeLabel(item.type)}
               </p>
               <small>{item.content}</small>
             </div>
-            <span className={`store-feedback-v12-status store-feedback-v12-status--${item.status}`}>
+            <span className={`sf-next-feedback-status sf-next-feedback-status--${item.status}`}>
               {STATUS_LABEL[item.status]}
             </span>
           </div>
-          <div className="store-feedback-v12-record-card__meta">
+          <div className="sf-next-feedback-record-card__meta">
             <span>{feedbackTypeLabel(item.type)}</span>
             <span>{formatDateTime(item.created_at)}</span>
             {item.order_no ? <span>订单 {item.order_no}</span> : null}
           </div>
           {item.handler_note ? (
-            <p className="store-feedback-v12-record-card__note">
+            <p className="sf-next-feedback-record-card__note">
               处理备注：{item.handler_note}
             </p>
           ) : null}
@@ -265,7 +265,7 @@ export default function Feedback() {
     <UnifiedButton
       type="button"
       onClick={() => navigate(localizedPath("/login"), { state: { from: localizedPath("/feedback") } })}
-      className="store-feedback-v12-login-action"
+      className="sf-next-feedback-login-action"
     >
       <LogIn size={16} aria-hidden="true" />
       <span>登录查看</span>
@@ -313,7 +313,7 @@ export default function Feedback() {
         title="意见反馈"
         backFallback="/profile"
         contentClassName="sf-next-account-main md:max-w-3xl xl:max-w-4xl"
-        className="sf-next-page store-v12-page store-feedback-v12-page pb-8 text-[var(--theme-text)]"
+        className="sf-next-page sf-next-route-page sf-next-feedback-page pb-8 text-[var(--theme-text)]"
       >
         <SeoHead
           title={`意见反馈｜${siteName}`}
@@ -322,7 +322,7 @@ export default function Feedback() {
           robots="noindex,follow"
         />
         <div className="mx-auto w-full max-w-lg md:max-w-none">
-          <section className="store-feedback-v12-success">
+          <section className="sf-next-feedback-success">
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-success)_12%,var(--theme-surface))] text-[var(--theme-success)]">
               <CheckCircle2 size={30} />
             </div>
@@ -348,7 +348,7 @@ export default function Feedback() {
             </div>
         </section>
 
-          <section className="store-feedback-v12-panel mt-3">
+          <section className="sf-next-feedback-panel mt-3">
             <h2 className="text-base font-semibold text-[var(--theme-text)]">我的反馈记录</h2>
             <div className="mt-3">{renderRecordsPanel()}</div>
           </section>
@@ -362,7 +362,7 @@ export default function Feedback() {
       title="意见反馈"
       backFallback="/profile"
       contentClassName="sf-next-account-main md:max-w-3xl xl:max-w-4xl"
-      className="sf-next-page store-v12-page store-feedback-v12-page pb-8 text-[var(--theme-text)]"
+      className="sf-next-page sf-next-route-page sf-next-feedback-page pb-8 text-[var(--theme-text)]"
     >
       <SeoHead
         title={`意见反馈｜${siteName}`}
@@ -371,8 +371,8 @@ export default function Feedback() {
         robots="noindex,follow"
       />
 
-      <div className="store-feedback-v12-main mx-auto w-full max-w-lg md:max-w-none">
-        <div className="store-feedback-v12-segmented" role="tablist" aria-label="反馈视图">
+      <div className="sf-next-feedback-main mx-auto w-full max-w-lg md:max-w-none">
+        <div className="sf-next-feedback-segmented" role="tablist" aria-label="反馈视图">
           <button
             type="button"
             role="tab"
@@ -393,8 +393,8 @@ export default function Feedback() {
 
         {activeView === "submit" ? (
           <>
-            <section className="store-feedback-v12-panel">
-              <div className="store-feedback-v12-type-grid">
+            <section className="sf-next-feedback-panel">
+              <div className="sf-next-feedback-type-grid">
                 {TYPE_OPTIONS.map((item) => {
                   const active = form.type === item.value;
                   return (
@@ -402,7 +402,7 @@ export default function Feedback() {
                       key={item.value}
                       type="button"
                       onClick={() => updateForm({ type: item.value })}
-                      className={`store-feedback-v12-type-option ${active ? "is-active" : ""}`}
+                      className={`sf-next-feedback-type-option ${active ? "is-active" : ""}`}
                     >
                       <item.icon size={16} />
                       <span>{item.label}</span>
@@ -412,7 +412,7 @@ export default function Feedback() {
               </div>
             </section>
 
-            <section className="store-feedback-v12-panel store-feedback-v12-form">
+            <section className="sf-next-feedback-panel sf-next-feedback-form">
               <label className="block text-sm font-semibold">
                 标题
                 <input
@@ -474,7 +474,7 @@ export default function Feedback() {
         ) : null}
 
         {activeView === "records" ? (
-          <section className="store-feedback-v12-panel">
+          <section className="sf-next-feedback-panel">
             <h2 className="text-base font-semibold text-[var(--theme-text)]">我的反馈记录</h2>
             <div className="mt-3">{renderRecordsPanel()}</div>
           </section>

@@ -92,7 +92,7 @@ export default function Help() {
       onBack={goBack}
       backFallback="/profile"
       contentClassName="sf-next-account-main md:max-w-3xl xl:max-w-4xl"
-      className="sf-next-page store-v12-page store-help-v12-page"
+      className="sf-next-page sf-next-route-page sf-next-help-page"
     >
       <SeoHead
         title={`帮助中心｜${siteName}`}
@@ -102,30 +102,30 @@ export default function Help() {
         jsonLd={[{ id: "faq-help", data: faqJsonLd }]}
       />
 
-      <div className="store-help-v12-stack">
-        <div className="store-help-v12-search">
+      <div className="sf-next-help-stack">
+        <div className="sf-next-help-search">
           <Search size={15} aria-hidden />
           <input
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
             placeholder="搜索常见问题..."
-            className="store-help-v12-search__input"
+            className="sf-next-help-search__input"
           />
         </div>
-        <section className="store-help-v12-quick" aria-labelledby="store-help-quick-title">
-          <div className="store-help-v12-section-head">
+        <section className="sf-next-help-quick" aria-labelledby="store-help-quick-title">
+          <div className="sf-next-help-section-head">
             <h2 id="store-help-quick-title">常用帮助</h2>
             {activeCategory ? (
               <UnifiedButton
                 type="button"
                 onClick={() => setActiveCategory(null)}
-                className="store-help-v12-clear"
+                className="sf-next-help-clear"
               >
                 全部问题
               </UnifiedButton>
             ) : null}
           </div>
-          <div className="store-help-v12-quick-grid">
+          <div className="sf-next-help-quick-grid">
             {quickCategories.map(({ category, count }, index) => {
               const Icon = HELP_QUICK_ICONS[index] || HelpCircle;
               const active = activeCategory === category;
@@ -134,7 +134,7 @@ export default function Help() {
                   key={category}
                   type="button"
                   onClick={() => setActiveCategory(active ? null : category)}
-                  className={`store-help-v12-quick-card ${active ? "is-active" : ""}`}
+                  className={`sf-next-help-quick-card ${active ? "is-active" : ""}`}
                   aria-pressed={active}
                 >
                   <Icon size={22} aria-hidden />
@@ -146,35 +146,35 @@ export default function Help() {
           </div>
         </section>
 
-        <section className="store-help-v12-faq-section" aria-labelledby="store-help-faq-title">
-          <div className="store-help-v12-section-head">
+        <section className="sf-next-help-faq-section" aria-labelledby="store-help-faq-title">
+          <div className="sf-next-help-section-head">
             <h2 id="store-help-faq-title">{showingFocusedList ? "筛选结果" : "常见问题"}</h2>
             {showingFocusedList ? (
               <span>{filtered.length} 条</span>
             ) : null}
           </div>
           {filtered.length === 0 ? (
-            <div className="store-help-v12-empty">
+            <div className="sf-next-help-empty">
               <p className="text-sm font-semibold text-[var(--theme-text)]">没有找到匹配的问题</p>
               <p className="mt-1 text-xs leading-5 text-[var(--theme-muted)]">换个关键词，或直接提交反馈。</p>
             </div>
           ) : null}
-          <div className="store-help-v12-list">
+          <div className="sf-next-help-list">
             {visibleFaqs.map((faq) => (
-              <div key={faq.id} className="store-help-v12-faq">
-                <UnifiedButton type="button" onClick={() => setOpenId(openId === faq.id ? null : faq.id)} className="store-help-v12-faq__trigger">
+              <div key={faq.id} className="sf-next-help-faq">
+                <UnifiedButton type="button" onClick={() => setOpenId(openId === faq.id ? null : faq.id)} className="sf-next-help-faq__trigger">
                   <span>{faq.question}</span>
                   {openId === faq.id ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
                 </UnifiedButton>
-                {openId === faq.id ? <div className="store-help-v12-faq__answer">{faq.answer}</div> : null}
+                {openId === faq.id ? <div className="sf-next-help-faq__answer">{faq.answer}</div> : null}
               </div>
             ))}
           </div>
         </section>
 
-        <section className="store-help-v12-feedback" aria-labelledby="store-help-feedback-title">
+        <section className="sf-next-help-feedback" aria-labelledby="store-help-feedback-title">
           <h2 id="store-help-feedback-title">联系与反馈</h2>
-          <Link to="/feedback" className="store-help-v12-feedback-link">
+          <Link to="/feedback" className="sf-next-help-feedback-link">
             <span>提交反馈</span>
             <ChevronRight size={18} aria-hidden />
           </Link>

@@ -37,12 +37,12 @@ export type RatioImageProps = {
 };
 
 const roundedClass: Record<NonNullable<RatioImageProps["rounded"]>, string> = {
-  none: "client-ratio-image--rounded-none",
-  sm: "client-ratio-image--rounded-sm",
-  md: "client-ratio-image--rounded-md",
-  lg: "client-ratio-image--rounded-lg",
-  xl: "client-ratio-image--rounded-xl",
-  full: "client-ratio-image--rounded-full",
+  none: "sf-next-ratio-image--rounded-none",
+  sm: "sf-next-ratio-image--rounded-sm",
+  md: "sf-next-ratio-image--rounded-md",
+  lg: "sf-next-ratio-image--rounded-lg",
+  xl: "sf-next-ratio-image--rounded-xl",
+  full: "sf-next-ratio-image--rounded-full",
 };
 
 export default function RatioImage({
@@ -77,10 +77,12 @@ export default function RatioImage({
   );
   const [displaySrc, setDisplaySrc] = useState(initialDisplaySrc);
   const [hasError, setHasError] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
     setDisplaySrc(initialDisplaySrc);
     setHasError(false);
+    setIsLoaded(false);
   }, [initialDisplaySrc]);
 
   const shouldShowImage = Boolean(displaySrc) && !hasError;
@@ -91,14 +93,18 @@ export default function RatioImage({
 
   return (
     <div
-      className={cn("client-ratio-image", roundedClass[rounded], className)}
+      className={cn("sf-next-ratio-image", roundedClass[rounded], className)}
       style={{ aspectRatio: ratio }}
       role={!shouldShowImage ? "img" : undefined}
       aria-label={!shouldShowImage ? alt : undefined}
       aria-hidden={ariaHidden || undefined}
       data-ratio={ratio}
       data-active={dataActive}
+      data-loaded={shouldShowImage && isLoaded ? "true" : "false"}
     >
+      {shouldShowImage && !isLoaded ? (
+        <div className={cn("sf-next-ratio-image__loading", placeholderClassName)} aria-hidden="true" />
+      ) : null}
       {shouldShowImage ? (
         <img
           ref={imgRef}
@@ -112,26 +118,32 @@ export default function RatioImage({
           draggable={false}
           sizes={sizes}
           {...fetchPriorityProps}
-          className={cn("client-ratio-image__img", imgClassName)}
+          className={cn("sf-next-ratio-image__img", imgClassName)}
           style={imageStyle}
-          onLoad={onLoad}
+          onLoad={(event) => {
+            setIsLoaded(true);
+            onLoad?.(event);
+          }}
           onError={(event) => {
             if (normalizedFallbackSrc && displaySrc !== normalizedFallbackSrc) {
               setDisplaySrc(normalizedFallbackSrc);
               setHasError(false);
+              setIsLoaded(false);
               return;
             }
             if (normalizedFinalFallbackSrc && displaySrc !== normalizedFinalFallbackSrc) {
               setDisplaySrc(normalizedFinalFallbackSrc);
               setHasError(false);
+              setIsLoaded(false);
               return;
             }
             setHasError(true);
+            setIsLoaded(false);
             onError?.(event);
           }}
         />
       ) : (
-        <div className={cn("client-ratio-image__placeholder", placeholderClassName)}>
+        <div className={cn("sf-next-ratio-image__placeholder", placeholderClassName)}>
           <ImageOff size={18} aria-hidden />
           <span>暂无图片</span>
         </div>

@@ -117,7 +117,7 @@ export default function PaymentMethodPicker({
         return (
           <div
             key={opt.id}
-            className={`store-payment-option rounded-xl border transition-colors ${
+            className={`sf-next-payment-option rounded-xl border transition-colors ${
               isActive
                 ? "border-[var(--theme-price)] bg-[color-mix(in_srgb,var(--theme-price)_7%,var(--theme-surface))]"
                 : "border-border hover:border-[color-mix(in_srgb,var(--theme-price)_40%,var(--theme-border))]"
@@ -173,7 +173,7 @@ export default function PaymentMethodPicker({
                         key={channel.code}
                         type="button"
                         onClick={() => onOnlineChannelChange?.(channel.code)}
-                        className={`store-payment-channel flex items-center gap-2 rounded-lg border px-3 py-2 text-left text-xs transition-colors ${
+                        className={`sf-next-payment-channel flex items-center gap-2 rounded-lg border px-3 py-2 text-left text-xs transition-colors ${
                           selected
                             ? "border-[var(--theme-price)] bg-[color-mix(in_srgb,var(--theme-price)_10%,var(--theme-surface))] text-foreground"
                             : "border-border bg-background text-muted-foreground"

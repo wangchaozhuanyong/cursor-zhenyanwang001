@@ -6,8 +6,8 @@ export default function FeatureUnavailable() {
   const navigate = useNavigate();
 
   return (
-    <div className="store-page-shell store-bottom-safe sf-next-page store-v12-page flex min-h-[60vh] items-center justify-center bg-[var(--theme-bg)] px-4 py-10 text-[var(--theme-text)]">
-      <div className="store-card w-full max-w-md px-6 py-8 text-center">
+    <div className="sf-next-page-shell sf-next-bottom-safe sf-next-page sf-next-route-page flex min-h-[60vh] items-center justify-center bg-[var(--theme-bg)] px-4 py-10 text-[var(--theme-text)]">
+      <div className="sf-next-surface-card w-full max-w-md px-6 py-8 text-center">
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[color-mix(in_srgb,var(--theme-primary)_12%,var(--theme-surface))] text-[var(--theme-primary)]">
           <Settings size={26} />
         </div>

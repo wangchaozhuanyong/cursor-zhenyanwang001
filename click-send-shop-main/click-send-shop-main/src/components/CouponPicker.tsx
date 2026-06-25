@@ -149,7 +149,7 @@ export default function CouponPicker({ totalAmount, shippingFee = 0, selectedCou
   const statusLabel = loading ? "同步可用优惠" : selected ? `-RM ${getDiscountAmount(selected)}` : usableCount > 0 ? `${usableCount} 张可用` : "暂无可用";
 
   return (
-    <div className={embedded ? "" : "store-card overflow-hidden rounded-2xl border border-[var(--theme-border)]"}>
+    <div className={embedded ? "" : "sf-next-surface-card overflow-hidden rounded-2xl border border-[var(--theme-border)]"}>
       <UnifiedButton
         type="button"
         aria-busy={loading}
@@ -163,7 +163,7 @@ export default function CouponPicker({ totalAmount, shippingFee = 0, selectedCou
               <p className="text-sm font-medium text-[var(--theme-text-on-surface)]">{selected ? selected.title : "选择优惠券"}</p>
               <p className="mt-0.5 text-xs text-[var(--theme-text-muted-on-surface)]">{statusLabel}</p>
             </div>
-            {loading ? <span className="store-checkout-coupon-loading-pill" aria-hidden /> : <ChevronRight size={18} className="shrink-0 text-[var(--theme-text-muted-on-surface)]" />}
+            {loading ? <span className="sf-next-checkout-coupon-loading-pill" aria-hidden /> : <ChevronRight size={18} className="shrink-0 text-[var(--theme-text-muted-on-surface)]" />}
           </>
         ) : (
           <>

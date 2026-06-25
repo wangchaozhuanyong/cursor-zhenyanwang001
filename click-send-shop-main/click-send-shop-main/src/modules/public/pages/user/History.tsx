@@ -34,13 +34,13 @@ export default function History() {
             </UnifiedButton>
           ) : undefined
         }
-        className="sf-next-page store-v12-page store-account-subpage-v12-page store-history-v12-page pb-6"
+        className="sf-next-page sf-next-route-page sf-next-account-route-page sf-next-history-page pb-6"
         mainClassName="sf-next-account-main sm:px-4 xl:py-6"
       >
         <div className="mx-auto w-full max-w-lg space-y-3 md:max-w-none">
         {!isLoggedIn() && (
-          <div className="store-account-v12-notice store-account-v12-sync-notice">
-            <span className="store-v12-card-icon"><Clock size={16} aria-hidden /></span>
+          <div className="sf-next-notice sf-next-sync-notice">
+            <span className="sf-next-card-icon"><Clock size={16} aria-hidden /></span>
             <div>
               <strong>本机浏览记录</strong>
               <p>未登录时只保存在当前设备，登录后可同步到账号。</p>
@@ -48,7 +48,7 @@ export default function History() {
             <UnifiedButton
               type="button"
               onClick={() => navigate(localizedPath("/login"), { state: { from: localizedPath("/history") } })}
-              className="store-account-v12-notice-action"
+              className="sf-next-notice-action"
             >
               <LogIn size={15} aria-hidden />
               <span>登录同步</span>
@@ -56,24 +56,24 @@ export default function History() {
           </div>
         )}
         {history.length > 0 ? (
-          <section className="store-account-v12-summary store-orders-v12-stat-grid store-history-v12-summary">
-            <div className="store-orders-v12-stat">
-              <span className="store-orders-v12-stat__icon"><Clock size={17} aria-hidden /></span>
+          <section className="sf-next-summary sf-next-stats-grid sf-next-history-summary">
+            <div className="sf-next-stat">
+              <span className="sf-next-stat__icon"><Clock size={17} aria-hidden /></span>
               <strong>{history.length}</strong>
               <span>最近浏览</span>
             </div>
-            <div className="store-orders-v12-stat">
-              <span className="store-orders-v12-stat__icon"><PackageCheck size={17} aria-hidden /></span>
+            <div className="sf-next-stat">
+              <span className="sf-next-stat__icon"><PackageCheck size={17} aria-hidden /></span>
               <strong>{saleableCount}</strong>
               <span>可售商品</span>
             </div>
-            <div className="store-orders-v12-stat">
-              <span className="store-orders-v12-stat__icon"><BadgePercent size={17} aria-hidden /></span>
+            <div className="sf-next-stat">
+              <span className="sf-next-stat__icon"><BadgePercent size={17} aria-hidden /></span>
               <strong>{activityCount}</strong>
               <span>活动商品</span>
             </div>
-            <div className="store-orders-v12-stat">
-              <span className="store-orders-v12-stat__icon"><HistoryIcon size={17} aria-hidden /></span>
+            <div className="sf-next-stat">
+              <span className="sf-next-stat__icon"><HistoryIcon size={17} aria-hidden /></span>
               <strong>{Math.min(history.length, 12)}</strong>
               <span>快速回看</span>
             </div>
@@ -87,8 +87,8 @@ export default function History() {
             <AccountProductCardSkeleton variant="history" />
           </div>
         ) : history.length === 0 ? (
-          <section className="store-account-v12-empty-panel">
-            <span className="store-account-v12-empty-panel__icon" aria-hidden>
+          <section className="sf-next-state-panel">
+            <span className="sf-next-state-panel__icon" aria-hidden>
               <Clock size={24} />
             </span>
             <h2>暂无浏览记录</h2>
@@ -96,22 +96,22 @@ export default function History() {
             <UnifiedButton
               type="button"
               onClick={() => navigate(localizedPath("/categories"))}
-              className="store-account-v12-empty-panel__action"
+              className="sf-next-state-panel__primary"
             >
               <Search size={16} aria-hidden />
               <span>去逛商品</span>
             </UnifiedButton>
           </section>
         ) : (
-          <section className="store-history-v12-group" aria-label="最近浏览商品">
-            <div className="store-history-v12-group__head">
+          <section className="sf-next-history-group" aria-label="最近浏览商品">
+            <div className="sf-next-history-group__head">
               <div>
                 <span>History</span>
                 <h2>最近浏览</h2>
               </div>
               <small>按最近访问顺序展示</small>
             </div>
-            <div className="store-account-v12-product-grid">
+            <div className="sf-next-account-product-grid">
               <AnimatePresence>
                 {history.map((product, i) => (
                   <motion.div

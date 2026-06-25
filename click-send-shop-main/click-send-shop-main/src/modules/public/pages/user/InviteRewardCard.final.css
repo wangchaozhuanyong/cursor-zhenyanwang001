@@ -296,7 +296,7 @@
   margin: 0 auto;
 }
 
-html[data-app-scope="store"] .profile-invite-reward-card.client-profile-invite-panel > .ir-stage {
+html[data-app-scope="store"] .profile-invite-reward-card.sf-next-profile-invite-panel > .ir-stage {
   width: min(100%, 600px) !important;
   max-width: 600px !important;
   margin: 0 auto !important;
@@ -452,7 +452,7 @@ html[data-app-scope="store"] .profile-invite-reward-card.client-profile-invite-p
 
 @media (max-width: 520px) {
   .profile-invite-reward-card > .ir-stage,
-  html[data-app-scope="store"] .profile-invite-reward-card.client-profile-invite-panel > .ir-stage {
+  html[data-app-scope="store"] .profile-invite-reward-card.sf-next-profile-invite-panel > .ir-stage {
     width: 100% !important;
     max-width: 100% !important;
     aspect-ratio: 390 / 240;

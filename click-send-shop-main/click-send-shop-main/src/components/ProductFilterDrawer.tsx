@@ -18,7 +18,7 @@ export default function ProductFilterDrawer({ activeFilterCount, onReset, onConf
       <UnifiedButton
         type="button"
         onClick={onReset}
-        className="store-filter-reset-button w-full rounded-xl border px-3 py-3 text-sm font-semibold transition active:scale-[0.98]"
+        className="sf-next-filter-reset-button w-full rounded-xl border px-3 py-3 text-sm font-semibold transition active:scale-[0.98]"
       >
         清空筛选
       </UnifiedButton>
@@ -29,7 +29,7 @@ export default function ProductFilterDrawer({ activeFilterCount, onReset, onConf
           if (ok === false) return;
           setOpen(false);
         }}
-        className="store-filter-confirm-button w-full rounded-xl px-3 py-3 text-sm font-semibold transition active:scale-[0.98]"
+        className="sf-next-filter-confirm-button w-full rounded-xl px-3 py-3 text-sm font-semibold transition active:scale-[0.98]"
       >
         确认筛选
       </UnifiedButton>
@@ -41,7 +41,7 @@ export default function ProductFilterDrawer({ activeFilterCount, onReset, onConf
       <UnifiedButton
         type="button"
         onClick={() => setOpen(true)}
-        className="store-category-filter-button inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs font-semibold transition duration-200 hover:-translate-y-0.5 active:scale-[0.97]"
+        className="sf-next-filter-button inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs font-semibold transition duration-200 hover:-translate-y-0.5 active:scale-[0.97]"
       >
         <Filter size={14} />
         筛选

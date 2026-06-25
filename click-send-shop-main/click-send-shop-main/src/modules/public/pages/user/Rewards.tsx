@@ -132,17 +132,17 @@ export default function Rewards() {
       <StoreAccountLayout
         title="返现记录"
         onBack={goBack}
-        className="sf-next-page store-v12-page store-account-subpage-v12-page store-rewards-v12-page pb-8"
+        className="sf-next-page sf-next-route-page sf-next-account-route-page sf-next-rewards-page pb-8"
         mainClassName="sf-next-account-main sm:px-4 xl:py-6"
       >
       <motion.div
         initial={false}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.18, ease: "easeOut" }}
-        className="sf-next-folio store-rewards-v12-folio"
+        className="sf-next-folio sf-next-rewards-folio"
       >
         <div className="sf-next-folio__topline">
-          <div className="store-rewards-v12-folio__label">
+          <div className="sf-next-rewards-folio__label">
             <p className="sf-next-folio__eyebrow">{balanceLabel}</p>
             <Tooltip open={usageHelpOpen} onOpenChange={setUsageHelpOpen}>
               <TooltipTrigger asChild>
@@ -166,12 +166,12 @@ export default function Rewards() {
           <span className="sf-next-folio__unit">RM</span>
           <strong className="sf-next-folio__value">{money(config?.balance ?? 0)}</strong>
         </div>
-        <div className="sf-next-folio__meta store-rewards-v12-folio__meta">
+        <div className="sf-next-folio__meta sf-next-rewards-folio__meta">
           {summaryItems.map((item) => {
             const Icon = item.icon;
             return (
               <span key={item.label} className="sf-next-folio__meta-item">
-                <span className="store-rewards-v12-folio__meta-label">
+                <span className="sf-next-rewards-folio__meta-label">
                   <Icon size={14} aria-hidden />
                   {item.label}
                 </span>
@@ -182,42 +182,42 @@ export default function Rewards() {
         </div>
       </motion.div>
 
-      <section className="store-rewards-v12-actions" aria-label="返现操作">
-        <div className={cn("store-rewards-v12-actions__grid", inviteEnabled ? "is-two" : "is-one")}>
+      <section className="sf-next-rewards-actions" aria-label="返现操作">
+        <div className={cn("sf-next-rewards-actions__grid", inviteEnabled ? "is-two" : "is-one")}>
           <UnifiedButton
             type="button"
             onClick={() => navigate("/")}
-            className="store-rewards-v12-action"
+            className="sf-next-rewards-action"
           >
-            <span className="store-rewards-v12-action__icon">
+            <span className="sf-next-rewards-action__icon">
               <ShoppingBag size={23} />
             </span>
-            <span className="store-rewards-v12-action__copy">
+            <span className="sf-next-rewards-action__copy">
               <strong>去购物</strong>
               <small>使用返现抵扣</small>
             </span>
-            <ArrowRight size={15} className="store-rewards-v12-action__arrow" aria-hidden />
+            <ArrowRight size={15} className="sf-next-rewards-action__arrow" aria-hidden />
           </UnifiedButton>
           {inviteEnabled ? (
             <UnifiedButton
               type="button"
               onClick={() => navigate("/invite")}
-              className="store-rewards-v12-action"
+              className="sf-next-rewards-action"
             >
-              <span className="store-rewards-v12-action__icon">
+              <span className="sf-next-rewards-action__icon">
                 <Users size={23} />
               </span>
-              <span className="store-rewards-v12-action__copy">
+              <span className="sf-next-rewards-action__copy">
                 <strong>邀请返现</strong>
                 <small>好友下单后记录</small>
               </span>
-              <ArrowRight size={15} className="store-rewards-v12-action__arrow" aria-hidden />
+              <ArrowRight size={15} className="sf-next-rewards-action__arrow" aria-hidden />
             </UnifiedButton>
           ) : null}
         </div>
       </section>
 
-      <div className="store-rewards-v12-tabs" role="tablist" aria-label="返现记录筛选">
+      <div className="sf-next-rewards-tabs" role="tablist" aria-label="返现记录筛选">
         {TABS.map((item) => (
           <UnifiedButton
             key={item.key}
@@ -226,7 +226,7 @@ export default function Rewards() {
             aria-selected={tab === item.key}
             onClick={() => void handleTabChange(item.key)}
             className={cn(
-              "store-rewards-v12-tab",
+              "sf-next-rewards-tab",
               tab === item.key && "is-active",
             )}
           >
@@ -235,48 +235,48 @@ export default function Rewards() {
         ))}
       </div>
 
-      <section className="store-rewards-v12-ledger" aria-label="返现明细">
-        <h3 className="store-rewards-v12-ledger__title">返现明细</h3>
+      <section className="sf-next-rewards-ledger" aria-label="返现明细">
+        <h3 className="sf-next-rewards-ledger__title">返现明细</h3>
         {loading && records.length === 0 ? (
-          <div className="store-rewards-v12-state" aria-busy="true">
+          <div className="sf-next-rewards-state" aria-busy="true">
             <Loader2 size={20} className="animate-spin" />
             <p>正在同步返现记录</p>
           </div>
         ) : error ? (
-          <div className="store-account-v12-empty-panel store-rewards-v12-state" role="alert">
-            <span className="store-account-v12-empty-panel__icon" aria-hidden>
+          <div className="sf-next-state-panel sf-next-rewards-state" role="alert">
+            <span className="sf-next-state-panel__icon" aria-hidden>
               <CircleHelp size={21} />
             </span>
             <h2>{error}</h2>
             <p>请重新加载返现记录。</p>
-            <UnifiedButton type="button" onClick={() => void loadInitial()} className="store-account-v12-empty-panel__action">
+            <UnifiedButton type="button" onClick={() => void loadInitial()} className="sf-next-state-panel__primary">
               重试
             </UnifiedButton>
           </div>
         ) : records.length === 0 ? (
-          <div className="store-account-v12-empty-panel store-rewards-v12-state">
-            <span className="store-account-v12-empty-panel__icon" aria-hidden>
+          <div className="sf-next-state-panel sf-next-rewards-state">
+            <span className="sf-next-state-panel__icon" aria-hidden>
               <Gift size={21} />
             </span>
             <h2>暂无返现记录</h2>
             <p>邀请好友付款成功或购物抵扣后，会在这里显示。</p>
-            <div className="store-rewards-v12-empty-actions">
+            <div className="sf-next-rewards-empty-actions">
               {inviteEnabled ? (
-                <UnifiedButton type="button" onClick={() => navigate("/invite")} className="store-account-v12-empty-panel__action">
+                <UnifiedButton type="button" onClick={() => navigate("/invite")} className="sf-next-state-panel__primary">
                   去邀请好友
                 </UnifiedButton>
               ) : null}
-              <UnifiedButton type="button" onClick={() => navigate("/")} className="store-account-v12-empty-panel__action is-secondary">
+              <UnifiedButton type="button" onClick={() => navigate("/")} className="sf-next-state-panel__primary is-secondary">
                 去购物
               </UnifiedButton>
             </div>
           </div>
         ) : (
-          <div className="store-rewards-v12-record-groups">
+          <div className="sf-next-rewards-record-groups">
             {groupedRecords.map(([monthLabel, monthRecords]) => (
-              <div key={monthLabel} className="store-rewards-v12-record-group">
-                <p className="store-rewards-v12-record-group__label">{monthLabel}</p>
-                <div className="store-rewards-v12-record-list">
+              <div key={monthLabel} className="sf-next-rewards-record-group">
+                <p className="sf-next-rewards-record-group__label">{monthLabel}</p>
+                <div className="sf-next-rewards-record-list">
                   {monthRecords.map((record) => {
                     const positive = Number(record.amount) >= 0;
                     const orderPath = record.order_id ? `/orders/${record.order_id}` : null;
@@ -287,14 +287,14 @@ export default function Rewards() {
                         disabled={!orderPath}
                         onClick={() => orderPath && navigate(orderPath)}
                         className={cn(
-                          "store-rewards-v12-record",
+                          "sf-next-rewards-record",
                           orderPath ? "is-clickable" : "is-static",
                         )}
                       >
-                        <div className={cn("store-rewards-v12-record__icon", positive ? THEME_ROW_ICON_POSITIVE : THEME_ROW_ICON_NEGATIVE)}>
+                        <div className={cn("sf-next-rewards-record__icon", positive ? THEME_ROW_ICON_POSITIVE : THEME_ROW_ICON_NEGATIVE)}>
                           {positive ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
                         </div>
-                        <div className="store-rewards-v12-record__copy">
+                        <div className="sf-next-rewards-record__copy">
                           <p>
                             {formatRewardTransactionLabel(record.type, record.reason)}
                           </p>
@@ -303,7 +303,7 @@ export default function Rewards() {
                             {formatDateTime(record.created_at)}
                           </small>
                         </div>
-                        <span className={cn("store-rewards-v12-record__amount", positive ? THEME_TEXT_SUCCESS : THEME_TEXT_DANGER)}>
+                        <span className={cn("sf-next-rewards-record__amount", positive ? THEME_TEXT_SUCCESS : THEME_TEXT_DANGER)}>
                           {Number(record.amount) > 0 ? "+" : ""}
                           {money(record.amount)}
                         </span>
@@ -318,7 +318,7 @@ export default function Rewards() {
                 type="button"
                 onClick={() => void loadMore()}
                 disabled={loadingMore}
-                className="store-rewards-v12-load-more"
+                className="sf-next-rewards-load-more"
               >
                 {loadingMore ? "加载中..." : "加载更多"}
               </UnifiedButton>

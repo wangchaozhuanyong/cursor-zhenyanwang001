@@ -53,7 +53,7 @@ export default function StoreHomePreview({ config }: { config: ThemeConfig }) {
         actionLabel="立即领取"
       />
       <div
-        className={`store-card rounded-xl p-3 ${THEME_MEMBER_CARD_SHELL}`}
+        className={`sf-next-surface-card rounded-xl p-3 ${THEME_MEMBER_CARD_SHELL}`}
         data-theme-member-card-style={config.memberCardStyle}
       >
         <p className="text-sm font-semibold"><Tx>会员卡 · 金卡会员</Tx></p>

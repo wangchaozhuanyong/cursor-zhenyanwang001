@@ -15,11 +15,11 @@ export default function NotFound() {
   }, []);
 
   return (
-    <div className="store-page-shell store-bottom-safe sf-next-page store-v12-page flex min-h-screen items-center justify-center bg-[var(--theme-bg)] px-4 py-12 text-[var(--theme-text)]">
+    <div className="sf-next-page-shell sf-next-bottom-safe sf-next-page sf-next-route-page flex min-h-screen items-center justify-center bg-[var(--theme-bg)] px-4 py-12 text-[var(--theme-text)]">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="store-card w-full max-w-md px-6 py-9 text-center"
+        className="sf-next-surface-card w-full max-w-md px-6 py-9 text-center"
       >
         <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-bg)] text-[var(--theme-primary)] shadow-sm">
           <SearchX size={32} aria-hidden />

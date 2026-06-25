@@ -1,6 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import {
-  PackageSearch,
   RefreshCw,
   Users,
 } from "lucide-react";
@@ -232,9 +231,9 @@ export default function StoreHomeV2() {
   return (
     <div
       className={cn(
-        "store-page-shell store-bottom-safe sf-next-page sf-next-home-page store-home-v12-page text-[var(--sf-ink)]",
+        "sf-next-page sf-next-storefront-root sf-next-home-page text-[var(--sf-ink)]",
       )}
-      data-store-home-version="v2"
+      data-storefront-layout="silent-commerce"
       data-storefront-client-style={clientStyle}
     >
       <SeoHead
@@ -288,7 +287,7 @@ export default function StoreHomeV2() {
           onCampaignClick={handleCampaignClick}
         />
 
-        {showTrustBar ? <HomeTrustBar className="store-home-trust-compact" /> : null}
+        {showTrustBar ? <HomeTrustBar className="sf-next-home-trust-compact" /> : null}
 
         {siteCapabilities.mallEnabled && showNewArrivals ? (
           <HomeProductSectionV2
@@ -302,7 +301,6 @@ export default function StoreHomeV2() {
             emptyActionLabel="去分类"
             showPrice={siteInfo.newArrivalShowPrice !== "0"}
             previewLimit={4}
-            className="store-home-v12-shelf--new-arrivals"
             onNavigate={navigatePath}
           />
         ) : null}
@@ -337,7 +335,6 @@ export default function StoreHomeV2() {
             emptyText="热销榜暂时没有数据，可以先看全部商品。"
             emptyActionLabel="全部商品"
             previewLimit={4}
-            className="store-home-v12-shelf--hot-sales"
             onNavigate={navigatePath}
           />
         ) : null}
@@ -352,7 +349,6 @@ export default function StoreHomeV2() {
             emptyText="还没有足够的浏览记录生成推荐，可以先看看热销商品。"
             emptyActionLabel="看热销"
             previewLimit={4}
-            className="store-home-v12-shelf--recommend"
             onNavigate={navigatePath}
           />
         ) : null}
@@ -419,29 +415,20 @@ function HomeQuickEntryPanel({
 
   return (
     <section
-      className="store-home-command-panel store-home-command-panel--silent"
+      className="sf-next-quick-entry"
       aria-label="快捷入口"
+      data-home-nav-source="admin-home-ops"
       data-command-count={ready ? actions.length : 10}
-      data-has-more="false"
     >
-      <div className="store-home-command-panel__intro">
+      <div className="sf-next-quick-entry__header">
         <h2>快捷入口</h2>
-        <UnifiedButton
-          type="button"
-          className="store-home-command-panel__shop"
-          onClick={() => onNavigate("/categories")}
-          aria-label="去选购，进入分类页面"
-        >
-          <PackageSearch size={14} aria-hidden />
-          <span>去选购</span>
-        </UnifiedButton>
       </div>
-      <div className="store-home-command-panel__actions">
+      <div className="sf-next-quick-entry__grid">
         {!ready
           ? Array.from({ length: 10 }).map((_, index) => (
-              <div key={index} className="store-home-command-card store-home-command-card--loading" aria-hidden>
-                <span className="store-home-command-card__icon skeleton-base skeleton-shimmer" />
-                <span className="store-home-command-card__copy">
+              <div key={index} className="sf-next-quick-entry__item sf-next-quick-entry__item--loading" aria-hidden>
+                <span className="sf-next-quick-entry__icon skeleton-base skeleton-shimmer" />
+                <span className="sf-next-quick-entry__copy">
                   <span className="skeleton-base skeleton-shimmer h-3 w-14 rounded-full" />
                 </span>
               </div>
@@ -451,16 +438,16 @@ function HomeQuickEntryPanel({
                 key={action.id}
                 type="button"
                 onClick={() => openHomeNavItemTarget(action, capabilities, onNavigate, toast.error)}
-                className="store-home-command-card"
+                className="sf-next-quick-entry__item"
               >
-                <span className="store-home-command-card__icon">
+                <span className="sf-next-quick-entry__icon">
                   <HomeNavIcon
                     value={action.icon_url}
-                    className="store-home-command-card__icon-media"
-                    imageClassName="store-home-command-card__icon-image"
+                    className="sf-next-quick-entry__icon-media"
+                    imageClassName="sf-next-quick-entry__icon-image"
                   />
                 </span>
-                <span className="store-home-command-card__copy">
+                <span className="sf-next-quick-entry__copy">
                   <strong>{normalizeHomeNavText(action.title, "分类")}</strong>
                 </span>
               </UnifiedButton>

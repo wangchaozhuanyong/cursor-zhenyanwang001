@@ -28,8 +28,8 @@ export default function StoreBrandLogo({
   return (
     <span
       className={cn(
-        "store-brand-logo flex shrink-0 items-center justify-center",
-        variant !== "nav" && `store-brand-logo--${variant}`,
+        "sf-next-brand-logo flex shrink-0 items-center justify-center",
+        variant !== "nav" && `sf-next-brand-logo--${variant}`,
         className,
       )}
       aria-hidden={!hasVisual}
@@ -40,14 +40,14 @@ export default function StoreBrandLogo({
           alt={`${siteName} Logo`}
           width={width}
           height={height}
-          className="store-brand-logo-image"
+          className="sf-next-brand-logo__image"
           imgClassName="object-contain"
           loading="eager"
           fetchPriority="high"
           objectFit="contain"
         />
       ) : fallback ? (
-        <span className="store-brand-logo-fallback">{fallback}</span>
+        <span className="sf-next-brand-logo__fallback">{fallback}</span>
       ) : null}
     </span>
   );

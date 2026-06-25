@@ -182,8 +182,8 @@ export default function BottomNav() {
   return (
     <nav
       className={cn(
-        "store-bottom-nav store-bottom-nav--stable",
-        getBottomNavShellClassName(navStyle, "fixed"),
+        "sf-next-bottom-nav sf-next-bottom-nav--stable",
+        getBottomNavShellClassName(navStyle, "sticky"),
         "md:hidden translate-y-0 opacity-100",
       )}
       data-theme-nav-style={navStyle}
@@ -193,8 +193,8 @@ export default function BottomNav() {
         WebkitTapHighlightColor: "transparent",
       }}
     >
-      <div className={cn("store-bottom-nav-inner store-bottom-nav__inner", getBottomNavInnerClassName(navStyle))} style={{ touchAction: "manipulation" }}>
-        <div className="store-bottom-nav__grid grid h-[68px] items-center px-1" style={{ gridTemplateColumns: `repeat(${visibleTabs.length}, minmax(0, 1fr))` }}>
+      <div className={cn("sf-next-bottom-nav-inner sf-next-bottom-nav__inner", getBottomNavInnerClassName(navStyle))} style={{ touchAction: "manipulation" }}>
+        <div className="sf-next-bottom-nav__grid grid h-[68px] items-center px-1" style={{ gridTemplateColumns: `repeat(${visibleTabs.length}, minmax(0, 1fr))` }}>
           {visibleTabs.map((tab) => {
             const isCurrent = isTabActive(tab.path);
             const isActive = isCurrent || isTabPending(tab.path);
@@ -213,10 +213,10 @@ export default function BottomNav() {
                 onMouseEnter={() => preloadIdleTabRoute(tab.path)}
                 onFocus={() => preloadIdleTabRoute(tab.path)}
                 onClick={() => activateTab(tab.path)}
-                className="store-bottom-nav-item relative flex min-h-0 w-full cursor-pointer select-none flex-col items-center justify-center gap-1 border-0 bg-transparent px-1 py-2"
+                className="sf-next-bottom-nav-item relative flex min-h-0 w-full cursor-pointer select-none flex-col items-center justify-center gap-1 border-0 bg-transparent px-1 py-2"
               >
                 <span
-                  className={`store-bottom-nav-icon relative flex h-8 min-w-8 items-center justify-center rounded-full px-2 transition-transform duration-150 ${
+                  className={`sf-next-bottom-nav-icon relative flex h-8 min-w-8 items-center justify-center rounded-full px-2 transition-transform duration-150 ${
                     isActive
                       ? "scale-105 bg-[var(--store-icon-bg)] shadow-[inset_0_0_0_1px_var(--store-icon-border)]"
                       : "bg-transparent"
@@ -230,7 +230,7 @@ export default function BottomNav() {
                   {tab.path.startsWith("/cart") ? <DeferredStoreCartBadge bumped={badgeBump} variant="bottom" /> : null}
                 </span>
                 <span
-                  className={`store-bottom-nav-label text-xs leading-tight ${
+                  className={`sf-next-bottom-nav-label text-xs leading-tight ${
                     isActive
                       ? "font-bold text-[var(--theme-primary)]"
                       : "font-medium text-[var(--theme-text-muted)]"

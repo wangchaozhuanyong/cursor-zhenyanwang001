@@ -93,15 +93,15 @@ export default function CategorySideTree({
   };
 
   return (
-    <aside className="store-category-side hidden md:block md:w-64 lg:w-72">
-      <div className="store-category-side-panel sticky top-20 rounded-3xl border p-3">
+    <aside className="sf-next-category-side hidden md:block md:w-64 lg:w-72">
+      <div className="sf-next-category-side-panel sticky top-20 rounded-3xl border p-3">
         <SideNavButton
           active={activeCat === "all"}
           onClick={onSelectAll}
           layoutId="category-side-nav"
-          activeClassName="store-category-side-indicator-primary"
+          activeClassName="sf-next-category-side-indicator-primary"
           activeTextClass="font-semibold text-[var(--theme-text)]"
-          className="store-category-side-button mb-2 rounded-2xl px-3 py-2.5 text-sm"
+          className="sf-next-category-side-button mb-2 rounded-2xl px-3 py-2.5 text-sm"
         >
           分类
         </SideNavButton>
@@ -117,9 +117,9 @@ export default function CategorySideTree({
                   active={isActive}
                   onClick={() => onRootClick(category)}
                   layoutId="category-side-nav"
-                  activeClassName="store-category-side-indicator-soft"
+                  activeClassName="sf-next-category-side-indicator-soft"
                   activeTextClass="font-medium text-[var(--theme-text)]"
-                  className="store-category-side-button rounded-2xl px-3 py-2 text-sm"
+                  className="sf-next-category-side-button rounded-2xl px-3 py-2 text-sm"
                 >
                   <span className="truncate">
                     {renderCategoryMark(category)}
@@ -135,9 +135,9 @@ export default function CategorySideTree({
                         active={activeCat === child.id}
                         onClick={() => onChildClick(child.id)}
                         layoutId="category-side-subnav"
-                        activeClassName="store-category-side-indicator-child"
-                        activeTextClass="text-xs font-medium text-[var(--store-category-gold-dark,var(--theme-price))]"
-                        className="store-category-side-subbutton rounded-xl px-3 py-1.5"
+                        activeClassName="sf-next-category-side-indicator-child"
+                        activeTextClass="text-xs font-medium text-[var(--sf-price,var(--theme-price))]"
+                        className="sf-next-category-side-subbutton rounded-xl px-3 py-1.5"
                       >
                         {renderCategoryMark(child)}
                         {storefrontCategoryName(child.name)}

@@ -9,7 +9,7 @@ interface CheckoutShippingSectionProps {
 }
 
 const SECTION_SHELL =
-  "store-checkout-card rounded-[20px] border border-[color-mix(in_srgb,var(--theme-border)_70%,transparent)] bg-[var(--theme-surface)] p-4 shadow-[0_14px_38px_rgba(65,45,28,0.08)] md:p-5";
+  "sf-next-checkout-card rounded-[20px] border border-[color-mix(in_srgb,var(--theme-border)_70%,transparent)] bg-[var(--theme-surface)] p-4 shadow-[0_14px_38px_rgba(65,45,28,0.08)] md:p-5";
 
 export function CheckoutShippingSection({
   shippingName,

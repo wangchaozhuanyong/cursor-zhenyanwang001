@@ -148,7 +148,7 @@ export default function ForgotPassword() {
           </section>
 
           {devResetToken ? (
-            <div className="auth-v12-token auth-next-token">
+            <div className="auth-next-token">
               <span>开发重置口令</span>
               <code>{devResetToken}</code>
             </div>

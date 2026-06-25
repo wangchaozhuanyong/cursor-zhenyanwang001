@@ -100,7 +100,7 @@ describe("BottomNav", () => {
   it("keeps the main tab bar visible and clickable on scrolled tab pages", async () => {
     await renderBottomNav();
 
-    const navClassName = container?.querySelector(".store-bottom-nav")?.className ?? "";
+    const navClassName = container?.querySelector(".sf-next-bottom-nav")?.className ?? "";
     expect(navClassName).toContain("translate-y-0");
     expect(navClassName).toContain("opacity-100");
     expect(navClassName).not.toContain("pointer-events-none");

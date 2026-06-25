@@ -81,7 +81,7 @@ export default function Search() {
   const clientStyle = useClientDesignStyle();
   const siteInfo = useSiteInfo();
   const siteCapabilities = useSiteCapabilities();
-  const productGridClass = "sf-next-product-grid store-product-grid grid grid-cols-2 gap-x-5 gap-y-8 pt-1 md:grid-cols-3 xl:grid-cols-4";
+  const productGridClass = "sf-next-product-grid grid grid-cols-2 gap-x-5 gap-y-8 pt-1 md:grid-cols-3 xl:grid-cols-4";
   const productCardSiteContext = useMemo(
     () => ({
       restrictedComplianceEnabled: siteCapabilities.restrictedProductComplianceEnabled,
@@ -269,7 +269,7 @@ export default function Search() {
 
   return (
     <div
-      className="store-page-shell store-v12-page store-search-v12-page store-search-page store-client-search-page sf-next-search-page store-bottom-safe text-[var(--theme-text)]"
+      className="sf-next-page-shell sf-next-route-page sf-next-search-page sf-next-bottom-safe text-[var(--theme-text)]"
       data-storefront-client-style={clientStyle}
     >
       <SeoHead
@@ -278,13 +278,13 @@ export default function Search() {
         canonical={buildCanonical("/search")}
         robots="noindex,follow"
       />
-      <header className="store-client-search-header sf-next-search-header sticky top-0 z-header pt-[env(safe-area-inset-top,0px)]">
+      <header className="sf-next-search-header sticky top-0 z-header pt-[env(safe-area-inset-top,0px)]">
         <form className="sf-next-search-bar mx-auto w-full max-w-screen-xl" onSubmit={handleFormSubmit} role="search">
           <UnifiedButton type="button" onClick={goBack} className="sf-next-search-nav-button" aria-label="返回">
             <ArrowLeft size={22} aria-hidden />
           </UnifiedButton>
           <label className="sr-only" htmlFor="store-search-input">搜索商品</label>
-          <div className="store-client-search-input sf-next-search-input">
+          <div className="sf-next-search-input">
             <SearchIcon size={19} aria-hidden />
             <input
               id="store-search-input"
@@ -296,7 +296,7 @@ export default function Search() {
               aria-label={STORE_COPY.searchPlaceholder}
             />
             {query ? (
-              <UnifiedButton type="button" onClick={clearSearch} className="store-client-search-clear" aria-label="清空搜索">
+              <UnifiedButton type="button" onClick={clearSearch} className="sf-next-search-clear" aria-label="清空搜索">
                 <X size={14} aria-hidden />
               </UnifiedButton>
             ) : null}
@@ -307,7 +307,7 @@ export default function Search() {
         </form>
       </header>
 
-      <main className="store-client-search-body sf-next-search-body mx-auto w-full max-w-screen-xl">
+      <main className="sf-next-search-body mx-auto w-full max-w-screen-xl">
         {shouldShowSuggestions ? (
           <SearchListSection title="搜索建议">
             {suggestions.map((item) => (
@@ -356,7 +356,7 @@ export default function Search() {
           </>
         ) : (
           <>
-            <div className="store-client-search-results-head sf-next-search-results-head">
+            <div className="sf-next-search-results-head">
               <div>
                 <span>搜索结果</span>
                 <h1>{submittedQuery}</h1>
@@ -381,13 +381,13 @@ export default function Search() {
               showFullSkeleton={showFullSkeleton}
               showSoftRefreshing={showSoftRefreshing}
               emptyState={
-                <section className="store-account-v12-empty-panel store-search-empty">
-                  <span className="store-account-v12-empty-panel__icon" aria-hidden>
+                <section className="sf-next-state-panel sf-next-search-empty">
+                  <span className="sf-next-state-panel__icon" aria-hidden>
                     <SearchIcon size={28} />
                   </span>
                   <h2>没有找到相关商品</h2>
                   <p>可以换个关键词，或清空搜索后查看热门搜索。</p>
-                  <UnifiedButton type="button" onClick={clearSearch} className="store-account-v12-empty-panel__action">
+                  <UnifiedButton type="button" onClick={clearSearch} className="sf-next-state-panel__primary">
                     <X size={17} aria-hidden />
                     清空搜索
                   </UnifiedButton>
@@ -412,16 +412,16 @@ function SearchHistorySection({
 }) {
   if (!items.length) return null;
   return (
-    <section className="store-client-search-section sf-next-search-section" aria-labelledby="client-search-history-title">
-      <div className="store-client-search-section-head">
-        <h2 id="client-search-history-title" className="store-client-search-group-label">搜索历史</h2>
-        <UnifiedButton type="button" onClick={onClear} className="store-client-search-section-action">
+    <section className="sf-next-search-section" aria-labelledby="client-search-history-title">
+      <div className="sf-next-search-section-head">
+        <h2 id="client-search-history-title" className="sf-next-search-group-label">搜索历史</h2>
+        <UnifiedButton type="button" onClick={onClear} className="sf-next-search-section-action">
           清空
         </UnifiedButton>
       </div>
       <div className="sf-next-search-history-chips">
         {items.slice(0, 4).map((term) => (
-          <UnifiedButton key={term} type="button" onClick={() => onSelect(term)} className="store-client-search-chip">
+          <UnifiedButton key={term} type="button" onClick={() => onSelect(term)} className="sf-next-search-chip">
             {term}
           </UnifiedButton>
         ))}
@@ -432,12 +432,12 @@ function SearchHistorySection({
 
 function SearchListSection({ title, action, children }: { title: string; action?: ReactNode; children: ReactNode }) {
   return (
-    <section className="store-client-search-section sf-next-search-section" aria-labelledby={`client-search-section-${title}`}>
-      <div className="store-client-search-section-head">
-        <h2 id={`client-search-section-${title}`} className="store-client-search-group-label">{title}</h2>
+    <section className="sf-next-search-section" aria-labelledby={`client-search-section-${title}`}>
+      <div className="sf-next-search-section-head">
+        <h2 id={`client-search-section-${title}`} className="sf-next-search-group-label">{title}</h2>
         {action}
       </div>
-      <div className="store-client-search-list sf-next-search-list">{children}</div>
+      <div className="sf-next-search-list">{children}</div>
     </section>
   );
 }
@@ -454,10 +454,10 @@ function SearchSuggestionRow({
   onClick: () => void;
 }) {
   return (
-    <UnifiedButton type="button" onClick={onClick} className="store-client-search-row sf-next-search-row">
+    <UnifiedButton type="button" onClick={onClick} className="sf-next-search-row">
       <span className="sf-next-search-row-rank">{index ? String(index).padStart(2, "0") : <SearchIcon size={18} aria-hidden />}</span>
-      <span className={cn("store-client-search-row-text", index && index <= 2 && "is-emphasis")}>{label}</span>
-      <span className="store-client-search-row-side">
+      <span className={cn("sf-next-search-row-text", index && index <= 2 && "is-emphasis")}>{label}</span>
+      <span className="sf-next-search-row-side">
         {meta || <ChevronRight size={18} aria-hidden />}
       </span>
     </UnifiedButton>
@@ -473,9 +473,9 @@ function RecentBrowseSection({
 }) {
   if (products.length === 0) return null;
   return (
-    <section className="store-client-search-section sf-next-search-section" aria-labelledby="client-search-recent-title">
-      <div className="store-client-search-section-head">
-        <h2 id="client-search-recent-title" className="store-client-search-group-label">最近浏览</h2>
+    <section className="sf-next-search-section" aria-labelledby="client-search-recent-title">
+      <div className="sf-next-search-section-head">
+        <h2 id="client-search-recent-title" className="sf-next-search-group-label">最近浏览</h2>
       </div>
       <div className="sf-next-search-recent-grid">
         {products.map((product) => (
@@ -499,9 +499,9 @@ function SearchProductStripSection({
 }) {
   if (products.length === 0 && !loading) return null;
   return (
-    <section className="store-client-search-section sf-next-search-section" aria-labelledby={`client-search-product-strip-${title}`}>
-      <div className="store-client-search-section-head">
-        <h2 id={`client-search-product-strip-${title}`} className="store-client-search-group-label">{title}</h2>
+    <section className="sf-next-search-section" aria-labelledby={`client-search-product-strip-${title}`}>
+      <div className="sf-next-search-section-head">
+        <h2 id={`client-search-product-strip-${title}`} className="sf-next-search-group-label">{title}</h2>
       </div>
       <div className="sf-next-search-recent-grid" aria-busy={loading || undefined}>
         {products.length > 0

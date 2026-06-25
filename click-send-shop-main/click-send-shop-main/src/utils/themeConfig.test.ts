@@ -169,7 +169,15 @@ describe("themeConfig", () => {
   });
 
   it("keeps structural theme CSS wired to core storefront pages", () => {
-    const css = readFileSync(join(process.cwd(), "src/styles/client-redesign.css"), "utf8");
+    const css = [
+      "client-redesign.css",
+      "storefront-foundation.css",
+      "storefront-next.tokens.css",
+      "storefront-next.primitives.css",
+      "storefront-next.extended-routes.css",
+    ]
+      .map((file) => readFileSync(join(process.cwd(), "src/styles", file), "utf8"))
+      .join("\n");
 
     [
       "data-theme-button-style",
@@ -190,12 +198,12 @@ describe("themeConfig", () => {
       "data-product-card",
       "data-texture",
       "var(--mall-surface)",
-      ".store-home-v12-page",
-      ".store-category-page",
-      ".store-promotions-v12-card",
-      ".store-cart-page .store-cart-item",
-      ".store-product-detail-page .store-detail-gallery",
-      ".store-account-v12-hero",
+      ".sf-next-home-page",
+      ".sf-next-category-page",
+      ".sf-next-promotions-card",
+      ".sf-next-cart-page .sf-next-cart-item",
+      ".sf-next-product-detail-page .sf-next-product-gallery",
+      ".sf-next-account-hero",
     ].forEach((needle) => {
       expect(css).toContain(needle);
     });

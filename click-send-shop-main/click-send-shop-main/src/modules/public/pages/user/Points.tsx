@@ -109,7 +109,7 @@ function PointsHeroCard({
   const rewardText = signInHintText(signInConfig, configReady);
 
   return (
-    <section className="sf-next-folio store-points-v12-folio" aria-label="当前积分">
+    <section className="sf-next-folio sf-next-points-folio" aria-label="当前积分">
       <div className="sf-next-folio__topline">
         <p className="sf-next-folio__eyebrow">当前积分</p>
         <span className="sf-next-folio__status">
@@ -123,10 +123,10 @@ function PointsHeroCard({
       </div>
       <p className="sf-next-folio__caption">{rewardText}</p>
       {!signedInToday ? (
-        <p className="sf-next-folio__caption store-points-v12-folio__hint">每天一次，签到后积分会自动入账。</p>
+        <p className="sf-next-folio__caption sf-next-points-folio__hint">每天一次，签到后积分会自动入账。</p>
       ) : null}
 
-      <div className="store-points-v12-folio__actions">
+      <div className="sf-next-points-folio__actions">
         <UnifiedButton
           type="button"
           onClick={onSignIn}
@@ -143,15 +143,15 @@ function PointsHeroCard({
 
 function PointsRecordsLoading() {
   return (
-    <div className="store-points-v12-loading-list" aria-label="积分明细加载中" aria-busy="true">
+    <div className="sf-next-points-loading-list" aria-label="积分明细加载中" aria-busy="true">
       {Array.from({ length: 4 }).map((_, index) => (
-        <article key={`points-record-loading-${index}`} className="store-points-v12-loading-row" aria-hidden>
-          <span className="store-points-v12-loading-row__icon" />
-          <span className="store-points-v12-loading-row__body">
-            <span className="store-points-v12-loading-row__line" />
-            <span className="store-points-v12-loading-row__line is-short" />
+        <article key={`points-record-loading-${index}`} className="sf-next-points-loading-row" aria-hidden>
+          <span className="sf-next-points-loading-row__icon" />
+          <span className="sf-next-points-loading-row__body">
+            <span className="sf-next-points-loading-row__line" />
+            <span className="sf-next-points-loading-row__line is-short" />
           </span>
-          <span className="store-points-v12-loading-row__amount" />
+          <span className="sf-next-points-loading-row__amount" />
         </article>
       ))}
     </div>
@@ -160,13 +160,13 @@ function PointsRecordsLoading() {
 
 function PointsRecordsError({ error, onRetry }: { error: string; onRetry: () => void }) {
   return (
-    <section className="store-account-v12-empty-panel store-points-v12-state" role="alert">
-      <span className="store-account-v12-empty-panel__icon" aria-hidden>
+    <section className="sf-next-state-panel sf-next-points-state" role="alert">
+      <span className="sf-next-state-panel__icon" aria-hidden>
         <Star size={28} />
       </span>
       <h2>积分记录加载失败</h2>
       <p>{error}</p>
-      <UnifiedButton type="button" onClick={onRetry} className="store-account-v12-empty-panel__action">
+      <UnifiedButton type="button" onClick={onRetry} className="sf-next-state-panel__primary">
         <RefreshCw size={17} aria-hidden />
         重试
       </UnifiedButton>
@@ -176,8 +176,8 @@ function PointsRecordsError({ error, onRetry }: { error: string; onRetry: () => 
 
 function PointsRecordsEmpty() {
   return (
-    <section className="store-account-v12-empty-panel store-points-v12-state">
-      <span className="store-account-v12-empty-panel__icon" aria-hidden>
+    <section className="sf-next-state-panel sf-next-points-state">
+      <span className="sf-next-state-panel__icon" aria-hidden>
         <Star size={28} />
       </span>
       <h2>暂无积分记录</h2>
@@ -281,7 +281,7 @@ function PointsRecordRow({
   const label = normalizePointsText(description, action) || "积分变动";
 
   return (
-    <article className="flex items-start gap-3 rounded-xl border border-border bg-card px-[var(--store-card-x)] py-[var(--store-card-y)] sm:p-4">
+    <article className="flex items-start gap-3 rounded-xl border border-border bg-card px-[var(--sf-card-x)] py-[var(--sf-card-y)] sm:p-4">
       <div
         className={cn(
           "mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
@@ -370,10 +370,10 @@ export default function Points() {
     <StoreAccountLayout
       title="我的积分"
       onBack={goBack}
-      className="sf-next-page store-v12-page store-account-subpage-v12-page store-points-v12-page"
+      className="sf-next-page sf-next-route-page sf-next-account-route-page sf-next-points-page"
       mainClassName="sf-next-account-main sm:py-6 xl:py-6"
     >
-      <div className="store-points-v12-stack flex flex-col gap-6">
+      <div className="sf-next-points-stack flex flex-col gap-6">
         <PointsHeroCard
           balance={displayBalance}
           signInConfig={signInConfig}

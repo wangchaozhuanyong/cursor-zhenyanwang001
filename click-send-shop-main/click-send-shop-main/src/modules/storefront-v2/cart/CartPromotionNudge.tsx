@@ -17,7 +17,7 @@ export default function CartPromotionNudge({ campaign, amount, evaluation, class
   if (engineMessage) {
     return (
       <section
-        className={`store-cart-v12-promotion-nudge rounded-2xl border border-[color-mix(in_srgb,var(--theme-price)_22%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-price)_7%,var(--theme-surface))] px-3 py-3 ${className}`}
+        className={`sf-next-cart-promotion-nudge rounded-2xl border border-[color-mix(in_srgb,var(--theme-price)_22%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-price)_7%,var(--theme-surface))] px-3 py-3 ${className}`}
         aria-label="购物车活动提示"
       >
         <div className="flex items-start justify-between gap-3">
@@ -50,7 +50,7 @@ export default function CartPromotionNudge({ campaign, amount, evaluation, class
           </div>
         ) : null}
         {evaluation.unavailable_reasons?.length ? (
-          <div className="store-cart-v12-promotion-nudge__reasons">
+          <div className="sf-next-cart-promotion-nudge__reasons">
             {evaluation.unavailable_reasons.slice(0, 3).map((reason) => (
               <span key={`${reason.promotion_id || reason.type}-${reason.title || reason.reason}`}>
                 {reason.title || reason.type}：{reason.shortfall_amount
@@ -60,7 +60,7 @@ export default function CartPromotionNudge({ campaign, amount, evaluation, class
             ))}
           </div>
         ) : null}
-        <p className="store-cart-v12-promotion-nudge__safe-copy">
+        <p className="sf-next-cart-promotion-nudge__safe-copy">
           可用优惠会在结算页自动更新。
         </p>
       </section>
@@ -75,7 +75,7 @@ export default function CartPromotionNudge({ campaign, amount, evaluation, class
 
   return (
     <section
-      className={`store-cart-v12-promotion-nudge rounded-2xl border border-[color-mix(in_srgb,var(--theme-price)_22%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-price)_7%,var(--theme-surface))] px-3 py-3 ${className}`}
+      className={`sf-next-cart-promotion-nudge rounded-2xl border border-[color-mix(in_srgb,var(--theme-price)_22%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-price)_7%,var(--theme-surface))] px-3 py-3 ${className}`}
       aria-label="购物车活动提示"
     >
       <div className="flex items-start justify-between gap-3">
@@ -111,7 +111,7 @@ export default function CartPromotionNudge({ campaign, amount, evaluation, class
           style={{ width: `${percent}%` }}
         />
       </div>
-      <p className="store-cart-v12-promotion-nudge__safe-copy">
+      <p className="sf-next-cart-promotion-nudge__safe-copy">
         结算页会展示最终优惠和不可用原因。
       </p>
     </section>

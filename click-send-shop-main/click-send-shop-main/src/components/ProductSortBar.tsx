@@ -47,7 +47,7 @@ export default function ProductSortBar({ value, onChange, hideNewest = false, cl
     <div
       ref={sortBarRef}
       className={cn(
-        "store-category-sortbar no-scrollbar flex min-w-0 items-center gap-1.5 overflow-x-auto overflow-y-hidden scroll-smooth rounded-full border px-1 py-1 [-webkit-overflow-scrolling:touch] sm:gap-2 sm:px-1.5",
+        "sf-next-sortbar no-scrollbar flex min-w-0 items-center gap-1.5 overflow-x-auto overflow-y-hidden scroll-smooth rounded-full border px-1 py-1 [-webkit-overflow-scrolling:touch] sm:gap-2 sm:px-1.5",
         className,
       )}
     >
@@ -97,7 +97,7 @@ export default function ProductSortBar({ value, onChange, hideNewest = false, cl
 
 function sortPillClass(active: boolean) {
   return cn(
-    "store-category-sort-pill inline-flex min-h-8 shrink-0 items-center justify-center gap-0.5 rounded-full px-3 py-1 text-xs font-medium transition duration-200",
+    "sf-next-sort-pill inline-flex min-h-8 shrink-0 items-center justify-center gap-0.5 rounded-full px-3 py-1 text-xs font-medium transition duration-200",
     active
       ? "is-active"
       : "text-[var(--theme-text-muted)] hover:text-[var(--theme-text)]",

@@ -299,7 +299,7 @@ export function CheckoutOrderSuccess({
   })();
   const statusBadge = isPaid ? copy.paidBadge : isPending ? copy.pendingBadge : copy.processingBadge;
   const primaryActionClass = isPaid
-    ? "btn-theme-gradient shadow-lg theme-shadow"
+    ? "btn-theme-gradient shadow-lg sf-next-theme-shadow"
     : "btn-theme-price shadow-[0_18px_34px_-26px_var(--theme-price)]";
   const onlineNote = sanitizeClientInstructions(postSubmitOnlineNote);
   const paymentHint =
@@ -314,16 +314,16 @@ export function CheckoutOrderSuccess({
       title={headerTitle}
       onBack={onHome}
       backFallback="/"
-      className="store-v12-page store-checkout-success-v12-page"
+      className="sf-next-route-page sf-next-checkout-success-page"
       contentClassName="md:max-w-3xl xl:max-w-4xl"
     >
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        className="store-checkout-success-v12-stack mx-auto w-full max-w-lg space-y-3 pb-8 md:max-w-none"
+        className="sf-next-checkout-success-stack mx-auto w-full max-w-lg space-y-3 pb-8 md:max-w-none"
       >
         {/* 状态摘要：横向紧凑，避免上半区过高 */}
-        <div className="store-checkout-success-v12-status-card overflow-hidden rounded-2xl border border-border bg-card">
+        <div className="sf-next-checkout-success-status-card overflow-hidden rounded-2xl border border-border bg-card">
           <div className="flex items-start gap-3 p-4">
             <motion.div
               initial={{ scale: 0.85, opacity: 0 }}
@@ -369,7 +369,7 @@ export function CheckoutOrderSuccess({
           ) : null}
         </div>
 
-        <div className="store-checkout-success-v12-info-card rounded-2xl border border-border bg-card p-4">
+        <div className="sf-next-checkout-success-info-card rounded-2xl border border-border bg-card p-4">
           <h3 className="mb-3 text-sm font-semibold text-foreground">{copy.keyInfo}</h3>
           <div className="space-y-2 text-sm">
             <div className="flex items-center justify-between">
@@ -396,7 +396,7 @@ export function CheckoutOrderSuccess({
         </div>
 
         {/* 下一步操作 */}
-        <div className="store-checkout-success-v12-actions space-y-2.5">
+        <div className="sf-next-checkout-success-actions space-y-2.5">
           <p className="px-0.5 text-xs font-semibold text-muted-foreground">{copy.nextActions}</p>
           {isOnlinePending && (
             <>
@@ -425,7 +425,7 @@ export function CheckoutOrderSuccess({
                 {alternatePayOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
               </UnifiedButton>
               {alternatePayOpen && (
-                <div className="store-checkout-success-v12-alt-actions space-y-2 rounded-xl border border-border bg-card p-3">
+                <div className="sf-next-checkout-success-alt-actions space-y-2 rounded-xl border border-border bg-card p-3">
                   <p className="px-1 text-center text-[11px] text-muted-foreground">{copy.alternatePaymentWarning}</p>
                   <UnifiedButton
                     type="button"
@@ -438,7 +438,7 @@ export function CheckoutOrderSuccess({
                   <UnifiedButton
                     type="button"
                     onClick={onWhatsApp}
-                    className="flex w-full items-center justify-center gap-2 rounded-full py-3 text-sm font-semibold text-[var(--theme-gradient-foreground)] theme-shadow"
+                    className="flex w-full items-center justify-center gap-2 rounded-full py-3 text-sm font-semibold text-[var(--theme-gradient-foreground)] sf-next-theme-shadow"
                    
                   >
                     <Phone size={16} /> {copy.support}
@@ -503,7 +503,7 @@ export function CheckoutOrderSuccess({
               <UnifiedButton
                 type="button"
                 onClick={onWhatsApp}
-                className="flex w-full items-center justify-center gap-2.5 rounded-full py-4 text-sm font-bold text-[var(--theme-gradient-foreground)] theme-shadow transition-all active:scale-[0.98]"
+                className="flex w-full items-center justify-center gap-2.5 rounded-full py-4 text-sm font-bold text-[var(--theme-gradient-foreground)] sf-next-theme-shadow transition-all active:scale-[0.98]"
                
               >
                 <Phone size={18} /> {copy.sendWhatsapp}
@@ -511,7 +511,7 @@ export function CheckoutOrderSuccess({
               <UnifiedButton
                 type="button"
                 onClick={onWeChat}
-                className="flex w-full items-center justify-center gap-2.5 rounded-full bg-[var(--theme-price)] py-4 text-sm font-bold text-[var(--theme-price-foreground)] theme-shadow transition-all active:scale-[0.98]"
+                className="flex w-full items-center justify-center gap-2.5 rounded-full bg-[var(--theme-price)] py-4 text-sm font-bold text-[var(--theme-price-foreground)] sf-next-theme-shadow transition-all active:scale-[0.98]"
               >
                 <MessageCircle size={18} /> {copy.sendWechat}
               </UnifiedButton>
@@ -531,7 +531,7 @@ export function CheckoutOrderSuccess({
                 {moreWaysOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
               </UnifiedButton>
               {moreWaysOpen && (
-                <div className="store-checkout-success-v12-alt-actions space-y-2 rounded-xl border border-border bg-card p-3">
+                <div className="sf-next-checkout-success-alt-actions space-y-2 rounded-xl border border-border bg-card p-3">
                   {onlinePaymentEnabled ? (
                     <UnifiedButton
                       type="button"
@@ -595,7 +595,7 @@ export function CheckoutOrderSuccess({
         </div>
 
         {/* 订单详情 */}
-        <div className="store-checkout-success-v12-products-card rounded-2xl border border-border bg-card p-4">
+        <div className="sf-next-checkout-success-products-card rounded-2xl border border-border bg-card p-4">
           <h3 className="mb-4 text-sm font-semibold text-foreground">{copy.orderDetails}</h3>
           {order.items.map((item) => (
             <div key={item.product.id} className="flex items-center gap-3 border-b border-border py-3 last:border-0">
@@ -640,7 +640,7 @@ export function CheckoutOrderSuccess({
           </div>
         </div>
 
-        <div className="store-checkout-success-v12-footer-actions space-y-2.5 pt-1">
+        <div className="sf-next-checkout-success-footer-actions space-y-2.5 pt-1">
           <UnifiedButton
             onClick={onViewOrders}
             className="w-full rounded-full border-2 border-border py-3.5 text-center text-sm font-semibold text-foreground transition-all active:scale-[0.98] hover:bg-secondary"

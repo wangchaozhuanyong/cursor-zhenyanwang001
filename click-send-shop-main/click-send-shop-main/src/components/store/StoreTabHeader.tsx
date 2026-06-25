@@ -124,7 +124,7 @@ export default function StoreTabHeader({
             ) : (
               <UnifiedButton
                 type="button"
-                className="store-notification-button relative flex h-[2.625rem] w-[2.625rem] overflow-visible items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)]/50"
+                className="sf-next-notification-button relative flex h-[2.625rem] w-[2.625rem] overflow-visible items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)]/50"
                 onClick={goNotifications}
                 aria-label="消息通知"
               >

@@ -36,8 +36,8 @@ function GiftCard({
   const disabled = redeeming || Boolean(blockReason);
 
   return (
-    <article className="store-points-gifts-v12-card">
-      <div className="store-points-gifts-v12-card__media">
+    <article className="sf-next-points-gifts-card">
+      <div className="sf-next-points-gifts-card__media">
         {gift.image ? (
           <RatioImage
             src={gift.image}
@@ -49,30 +49,30 @@ function GiftCard({
             loading="lazy"
           />
         ) : (
-          <div className="store-points-gifts-v12-card__placeholder" style={THEME_PRODUCT_MEDIA_ASPECT_STYLE}>
+          <div className="sf-next-points-gifts-card__placeholder" style={THEME_PRODUCT_MEDIA_ASPECT_STYLE}>
             <Gift size={24} aria-hidden />
           </div>
         )}
       </div>
-      <div className="store-points-gifts-v12-card__body">
+      <div className="sf-next-points-gifts-card__body">
         <div className="min-w-0">
-          <p className="store-points-gifts-v12-card__title">{gift.title}</p>
-          <div className="store-points-gifts-v12-card__price">
+          <p className="sf-next-points-gifts-card__title">{gift.title}</p>
+          <div className="sf-next-points-gifts-card__price">
             <strong>{gift.required_points}</strong>
             <span>积分</span>
           </div>
-          <div className="store-points-gifts-v12-card__meta">
+          <div className="sf-next-points-gifts-card__meta">
             {gift.cash_amount > 0 ? <span>+ RM {gift.cash_amount}</span> : <span>纯积分</span>}
             {gift.remaining_stock != null ? <span>剩余 {gift.remaining_stock}</span> : <span>不限库存</span>}
             {gift.limit_per_user > 0 ? <span>限兑 {gift.limit_per_user}</span> : null}
           </div>
-          {cashHint ? <p className="store-points-gifts-v12-card__hint">{cashHint}</p> : null}
+          {cashHint ? <p className="sf-next-points-gifts-card__hint">{cashHint}</p> : null}
         </div>
         <UnifiedButton
           type="button"
           disabled={disabled}
           onClick={() => onRedeem(gift)}
-          className="store-points-gifts-v12-card__button"
+          className="sf-next-points-gifts-card__button"
         >
           {redeeming ? "兑换中…" : blockReason || "立即兑换"}
         </UnifiedButton>
@@ -217,20 +217,20 @@ export default function PointsGiftShop() {
     <StoreAccountLayout
       title="积分兑换"
       backFallback="/points"
-      className="sf-next-page store-v12-page store-account-subpage-v12-page store-points-gifts-v12-page"
+      className="sf-next-page sf-next-route-page sf-next-account-route-page sf-next-points-gifts-page"
       mainClassName="sf-next-account-main sm:py-6 xl:py-6"
     >
-      <div className="store-points-gifts-v12-stack">
-        <section className="sf-next-folio store-points-gifts-v12-folio">
+      <div className="sf-next-points-gifts-stack">
+        <section className="sf-next-folio sf-next-points-gifts-folio">
           <div className="sf-next-folio__topline">
             <p className="sf-next-folio__eyebrow">可用积分</p>
             <span className="sf-next-folio__status">{redeemableCount} 可兑换</span>
           </div>
           <div className="sf-next-folio__value-row">
-            <strong className="sf-next-folio__value store-points-gifts-v12-balance">{pointsBalance}</strong>
+            <strong className="sf-next-folio__value sf-next-points-gifts-balance">{pointsBalance}</strong>
             <span className="sf-next-folio__unit">PTS</span>
           </div>
-          <div className="sf-next-folio__meta store-points-gifts-v12-folio__stats">
+          <div className="sf-next-folio__meta sf-next-points-gifts-folio__stats">
             <span className="sf-next-folio__meta-item">
               <strong className="sf-next-folio__meta-value">{gifts.length}</strong>
               <small className="sf-next-folio__meta-label">礼品</small>
@@ -246,17 +246,17 @@ export default function PointsGiftShop() {
           </div>
         </section>
 
-        <section className="store-points-gifts-v12-filter" aria-label="积分礼品筛选">
-          <div className="store-points-gifts-v12-filter__title">
+        <section className="sf-next-points-gifts-filter" aria-label="积分礼品筛选">
+          <div className="sf-next-points-gifts-filter__title">
             <SlidersHorizontal size={16} aria-hidden />
             <span>筛选礼品</span>
           </div>
-          <div className="store-points-gifts-v12-filter__chips">
+          <div className="sf-next-points-gifts-filter__chips">
             {filters.map((item) => (
               <UnifiedButton
                 key={item.key}
                 type="button"
-                className={cn("store-points-gifts-v12-filter__chip", filter === item.key && "is-active")}
+                className={cn("sf-next-points-gifts-filter__chip", filter === item.key && "is-active")}
                 aria-pressed={filter === item.key}
                 onClick={() => setFilter(item.key)}
               >
@@ -267,8 +267,8 @@ export default function PointsGiftShop() {
           </div>
         </section>
 
-        <section className="store-points-gifts-v12-catalog" aria-labelledby="points-gifts-heading">
-          <div className="store-points-gifts-v12-section-head">
+        <section className="sf-next-points-gifts-catalog" aria-labelledby="points-gifts-heading">
+          <div className="sf-next-points-gifts-section-head">
             <div>
               <p>礼品中心</p>
               <h2 id="points-gifts-heading">积分礼品</h2>
@@ -277,15 +277,15 @@ export default function PointsGiftShop() {
           </div>
 
           {loading ? (
-            <div className="store-points-gifts-v12-state">
+            <div className="sf-next-points-gifts-state">
               <Loader2 className="animate-spin text-muted-foreground" aria-label="加载中" />
             </div>
           ) : filteredGifts.length === 0 ? (
-            <div className="store-points-gifts-v12-state">
+            <div className="sf-next-points-gifts-state">
               暂无可兑换礼品
             </div>
           ) : (
-            <div className="store-points-gifts-v12-grid">
+            <div className="sf-next-points-gifts-grid">
               {filteredGifts.map((gift) => (
                 <GiftCard
                   key={gift.id}
@@ -300,7 +300,7 @@ export default function PointsGiftShop() {
           )}
         </section>
 
-        <section className="store-points-gifts-v12-rules">
+        <section className="sf-next-points-gifts-rules">
           <div>
             <span><CheckCircle2 size={16} aria-hidden /></span>
             <p>兑换将使用默认收货地址，缺少地址时会先跳转到地址管理。</p>

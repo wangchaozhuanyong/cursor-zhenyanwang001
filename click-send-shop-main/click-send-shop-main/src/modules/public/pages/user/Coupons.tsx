@@ -353,8 +353,8 @@ export default function Coupons() {
   if (loading && rawCoupons.length === 0) {
     return (
       <StoreAccountLayout title="优惠券" onBack={goBack} className="sf-next-page sf-next-coupons-page-shell" mainClassName="sf-next-account-main">
-        <section className="store-account-v12-empty-panel store-account-v12-status-panel store-coupons-v12-state" aria-live="polite">
-          <span className="store-account-v12-empty-panel__icon" aria-hidden>
+        <section className="sf-next-state-panel sf-next-coupon-state" aria-live="polite">
+          <span className="sf-next-state-panel__icon" aria-hidden>
             <Loader2 size={28} className="animate-spin" />
           </span>
           <h2>{t("coupon.loading")}</h2>
@@ -447,13 +447,13 @@ export default function Coupons() {
               exit={{ opacity: 0 }}
               className="xl:col-span-2"
             >
-              <section className="store-account-v12-empty-panel store-coupons-v12-state" role="alert">
-                <span className="store-account-v12-empty-panel__icon" aria-hidden>
+              <section className="sf-next-state-panel sf-next-coupon-state is-error" role="alert">
+                <span className="sf-next-state-panel__icon" aria-hidden>
                   <Ticket size={28} />
                 </span>
                 <h2>{t("coupon.loadFailed")}</h2>
                 <p>{error || "优惠券暂时无法加载，请稍后再试。"}</p>
-                <UnifiedButton type="button" onClick={handleRetry} className="store-account-v12-empty-panel__action">
+                <UnifiedButton type="button" onClick={handleRetry} className="sf-next-state-panel__primary">
                   <RefreshCw size={17} aria-hidden />
                   {isSessionExpired ? t("coupon.goLogin") : t("common.retry")}
                 </UnifiedButton>
@@ -711,13 +711,13 @@ function CouponCategoryRail({
   return (
     <motion.div
       ref={categoryRailRef}
-      className="no-scrollbar mt-4 overflow-x-auto scroll-smooth [-webkit-overflow-scrolling:touch]"
+      className="sf-next-coupon-category-rail no-scrollbar mt-4 scroll-smooth"
       role="tablist"
       aria-label="优惠分类"
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
     >
-      <div className="flex min-w-max gap-2">
+      <div className="sf-next-coupon-category-rail__inner">
         {COUPON_CATEGORY_ITEMS.map((item) => {
           const Icon = item.icon;
           const count = filterByCategory(coupons, item.key).length;

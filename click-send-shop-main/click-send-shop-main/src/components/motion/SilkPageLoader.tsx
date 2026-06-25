@@ -8,7 +8,7 @@ type SilkPageLoaderProps = {
 export default function SilkPageLoader({ variant = "home" }: SilkPageLoaderProps) {
   return (
     <div
-      className="store-page-shell store-bottom-safe bg-[var(--theme-bg)] text-[var(--theme-text)]"
+      className="sf-next-page-shell sf-next-bottom-safe bg-[var(--theme-bg)] text-[var(--theme-text)]"
       aria-busy="true"
       aria-label="页面加载中"
     >

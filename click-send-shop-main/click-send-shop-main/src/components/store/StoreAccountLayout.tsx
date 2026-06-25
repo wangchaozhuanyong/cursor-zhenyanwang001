@@ -42,12 +42,12 @@ export default function StoreAccountLayout({
   const handleBack = onBack ?? defaultBack;
 
   return (
-    <div className={cn("store-page-shell store-bottom-safe min-h-screen bg-background text-foreground", className)}>
+    <div className={cn("sf-next-page-shell sf-next-bottom-safe min-h-screen bg-background text-foreground", className)}>
       <div className="md:hidden">
         <PageHeader className={STORE_MOBILE_PAGE_HEADER_CLASS} title={title} onBack={handleBack} rightSlot={rightSlot} />
       </div>
-      <StoreTabletBar className="store-fixed-header" />
-      <StoreDesktopHeader className="store-fixed-header" />
+      <StoreTabletBar className="sf-next-fixed-header" />
+      <StoreDesktopHeader className="sf-next-fixed-header" />
 
       <main
         className={cn(
@@ -57,7 +57,7 @@ export default function StoreAccountLayout({
         )}
       >
         <aside className="hidden lg:block">
-          <StoreAccountNav className="sticky top-[var(--store-tablet-sticky-top)] xl:top-[var(--store-desktop-sticky-top)]" />
+          <StoreAccountNav className="sticky top-[var(--sf-next-header-tablet-sticky-top)] xl:top-[var(--sf-next-header-desktop-sticky-top)]" />
         </aside>
         <section className="min-w-0">
           <div className="mb-5 hidden items-start justify-between gap-4 md:flex">

@@ -79,7 +79,7 @@ html[data-app-scope="store"][data-storefront-ui="next"] {
   --sf-page-gutter: 1rem;
   --sf-content-max: 80rem;
   --sf-header-height: 3.25rem;
-  --sf-bottom-nav-content-height: 4.25rem;
+  --sf-bottom-nav-content-height: 3.75rem;
   --sf-bottom-nav-safe-area: env(safe-area-inset-bottom, 0px);
   --sf-bottom-nav-total-height: calc(
     var(--sf-bottom-nav-content-height) + var(--sf-bottom-nav-safe-area)

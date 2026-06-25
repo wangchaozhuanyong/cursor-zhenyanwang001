@@ -73,31 +73,31 @@ export default function StoreTabletBar({ className }: { className?: string }) {
 
   return (
     <header
-      data-store-tablet-bar
+      data-sf-next-header-tablet
       className={cn(
-        "store-tablet-bar store-tablet-header store-glass-surface sticky top-0 z-header hidden border-b backdrop-blur-xl md:flex xl:hidden",
+        "sf-next-header-tablet sf-next-glass-surface sticky top-0 z-header hidden border-b backdrop-blur-xl md:flex xl:hidden",
         surfaceClass,
         className,
       )}
-      style={{ height: "var(--store-tablet-header-height, 3.25rem)" }}
+      style={{ height: "var(--sf-next-header-tablet-height, 3.25rem)" }}
     >
-      <div className="store-tablet-bar-inner store-tablet-header-inner mx-auto flex h-full w-full max-w-7xl min-w-0 items-center gap-2 px-4 sm:px-5 md:px-6">
+      <div className="sf-next-header-tablet__inner mx-auto flex h-full w-full max-w-7xl min-w-0 items-center gap-2 px-4 sm:px-5 md:px-6">
         <Link
           to={localizedPath("/")}
           onClick={(event) => handleRouteLink(event, "/")}
           onMouseEnter={() => preloadTabletRoute("/")}
           onFocus={() => preloadTabletRoute("/")}
-          className="store-tablet-brand store-header-brand flex min-w-0 shrink-0 items-center gap-2"
+          className="sf-next-header-tablet__brand sf-next-header-brand flex min-w-0 shrink-0 items-center gap-2"
           aria-label={`${siteName} ${t("common.home")}`}
         >
           {shouldReserveLogoSpace ? <StoreBrandLogo src={logoSrc} siteName={siteName} fallbackText="" /> : null}
-          <span className="store-tablet-brand-name hidden max-w-[7rem] truncate text-sm font-semibold text-[var(--theme-text-on-surface)] sm:inline md:max-w-[8rem]">
+          <span className="sf-next-header-tablet__brand-name hidden max-w-[7rem] truncate text-sm font-semibold text-[var(--theme-text-on-surface)] sm:inline md:max-w-[8rem]">
             {siteName}
           </span>
         </Link>
 
         <nav
-          className="store-tablet-nav grid min-w-0 flex-1 items-center gap-1 overflow-hidden"
+          className="sf-next-header-tablet__nav grid min-w-0 flex-1 items-center gap-1 overflow-hidden"
           aria-label="\u4e3b\u5bfc\u822a"
           style={{ gridTemplateColumns: `repeat(${navItems.length}, minmax(0, 1fr))` }}
         >
@@ -112,26 +112,26 @@ export default function StoreTabletBar({ className }: { className?: string }) {
                 onMouseEnter={() => preloadTabletRoute(item.path)}
                 onFocus={() => preloadTabletRoute(item.path)}
                 aria-current={active ? "page" : undefined}
-                className={cn("store-tablet-nav-link store-tablet-nav-item", active && "is-active")}
+                className={cn("sf-next-header-tablet__nav-link sf-next-header-tablet__nav-item", active && "is-active")}
               >
-                <span className="store-tablet-nav-icon">
+                <span className="sf-next-header-tablet__nav-icon">
                   <Icon size={17} strokeWidth={active ? 2.35 : 1.9} />
                   {item.badge === "cart" ? <DeferredStoreCartBadge /> : null}
                 </span>
-                <span className="store-tablet-nav-label truncate">{item.label}</span>
+                <span className="sf-next-header-tablet__nav-label truncate">{item.label}</span>
               </Link>
             );
           })}
         </nav>
 
-        <div className="store-tablet-actions flex shrink-0 items-center gap-1.5">
+        <div className="sf-next-header-tablet__actions flex shrink-0 items-center gap-1.5">
           {capabilities.mallEnabled ? (
             <UnifiedButton
               type="button"
               onMouseEnter={() => preloadTabletRoute("/search")}
               onFocus={() => preloadTabletRoute("/search")}
               onClick={() => openRoute("/search")}
-              className="store-tablet-search-button store-header-icon-button flex h-10 w-10 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] text-[var(--theme-text)]"
+              className="sf-next-header-search-button sf-next-header-icon-button flex h-10 w-10 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] text-[var(--theme-text)]"
               aria-label={t("common.search")}
             >
               <Search size={18} />

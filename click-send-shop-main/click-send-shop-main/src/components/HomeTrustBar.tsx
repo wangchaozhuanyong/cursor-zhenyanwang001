@@ -19,26 +19,26 @@ export default function HomeTrustBar({ className }: HomeTrustBarProps) {
 
   return (
     <section
-      className={cn("store-trust-bar", className)}
+      className={cn("sf-next-trust-bar", className)}
       aria-label={t("trust.label")}
     >
       {TRUST_ITEMS.map(({ icon: Icon, labelKey, tone }) => (
         <div
           key={labelKey}
-          className="store-trust-item"
+          className="sf-next-trust-item"
           data-trust-tone={tone}
         >
           <span
-            className="store-trust-icon"
+            className="sf-next-trust-icon"
             aria-hidden
           >
             <Icon
               size={17}
               strokeWidth={2}
-              className="store-trust-icon__glyph"
+              className="sf-next-trust-icon__glyph"
             />
           </span>
-          <span className="store-trust-label">
+          <span className="sf-next-trust-label">
             {t(labelKey)}
           </span>
         </div>

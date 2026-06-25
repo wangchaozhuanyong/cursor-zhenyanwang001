@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 export function getProductGridClassName(variant: ProductCardVariant | undefined) {
   const isCompact = variant === "compact";
   return cn(
-    "store-product-grid grid gap-3 pt-1 sm:gap-4",
+    "sf-next-product-grid grid gap-3 pt-1 sm:gap-4",
     isCompact
       ? "grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3"
       : "grid-cols-2 md:grid-cols-3 xl:grid-cols-4",

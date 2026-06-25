@@ -97,10 +97,10 @@ function buildRepurchaseProduct(item: Order["items"][number]) {
 }
 
 function getStatusTone(order: Order) {
-  if (order.status === "pending") return "text-[var(--theme-danger)]";
-  if (order.status === "completed" && !orderInAfterSaleTab(order)) return "text-[var(--theme-primary)]";
-  if (orderInAfterSaleTab(order)) return "text-[var(--theme-danger)]";
-  return "text-[var(--theme-text-muted)]";
+  if (order.status === "pending") return "is-danger";
+  if (order.status === "completed" && !orderInAfterSaleTab(order)) return "is-primary";
+  if (orderInAfterSaleTab(order)) return "is-danger";
+  return "is-muted";
 }
 
 function canBuyerDeleteOrder(order: Order) {
@@ -119,27 +119,27 @@ function money(value: unknown) {
 
 function OrdersLoadingSkeleton() {
   return (
-    <div className="store-orders-v12-loading-stack" aria-busy="true" aria-label="订单加载中">
+    <div className="sf-next-orders-loading-stack" aria-busy="true" aria-label="订单加载中">
       {Array.from({ length: 2 }).map((_, index) => (
-        <article key={index} className="store-orders-v12-card store-orders-v12-skeleton-card">
-          <div className="store-orders-v12-card-head">
+        <article key={index} className="sf-next-order-card sf-next-order-card--skeleton">
+          <div className="sf-next-order-card__head">
             <div className="min-w-0">
-              <div className="sf-next-skeleton store-orders-v12-skeleton-line is-order" />
-              <div className="sf-next-skeleton store-orders-v12-skeleton-line is-date" />
+              <div className="sf-next-skeleton sf-next-order-skeleton-line is-order" />
+              <div className="sf-next-skeleton sf-next-order-skeleton-line is-date" />
             </div>
-            <div className="sf-next-skeleton store-orders-v12-skeleton-pill" />
+            <div className="sf-next-skeleton sf-next-order-skeleton-pill" />
           </div>
-          <div className="store-orders-v12-product-row">
-            <div className="sf-next-skeleton store-orders-v12-product-media" />
-            <div className="store-orders-v12-product-content">
-              <div className="sf-next-skeleton store-orders-v12-skeleton-line is-title" />
-              <div className="sf-next-skeleton store-orders-v12-skeleton-line is-variant" />
-              <div className="sf-next-skeleton store-orders-v12-skeleton-line is-price" />
+          <div className="sf-next-order-product-row">
+            <div className="sf-next-skeleton sf-next-order-product-media" />
+            <div className="sf-next-order-product-content">
+              <div className="sf-next-skeleton sf-next-order-skeleton-line is-title" />
+              <div className="sf-next-skeleton sf-next-order-skeleton-line is-variant" />
+              <div className="sf-next-skeleton sf-next-order-skeleton-line is-price" />
             </div>
           </div>
-          <div className="store-orders-v12-skeleton-actions">
-            <div className="sf-next-skeleton store-orders-v12-skeleton-button" />
-            <div className="sf-next-skeleton store-orders-v12-skeleton-button is-primary" />
+          <div className="sf-next-order-skeleton-actions">
+            <div className="sf-next-skeleton sf-next-order-skeleton-button" />
+            <div className="sf-next-skeleton sf-next-order-skeleton-button is-primary" />
           </div>
         </article>
       ))}
@@ -300,11 +300,11 @@ export default function Orders() {
   return (
     <StoreAccountLayout
       title={copy.accountTitle}
-      className="store-v12-page store-orders-v12-page"
+      className="sf-next-page sf-next-orders-page"
       mainClassName="sm:p-0 xl:py-6"
-      rightSlot={renderOrderSearchField("store-order-header-search-field w-[9.5rem] max-w-[44vw] flex-none sm:w-44 xl:hidden")}
+      rightSlot={renderOrderSearchField("sf-next-order-header-search-field w-[9.5rem] max-w-[44vw] flex-none sm:w-44 xl:hidden")}
     >
-        <div className="store-glass-surface sticky top-0 z-10 -mx-[var(--store-page-x)] mb-3 border-b py-2 backdrop-blur-xl sm:-mx-4 md:top-[var(--store-tablet-sticky-top)] md:mx-0 md:rounded-xl md:border md:px-3 xl:top-[var(--store-desktop-sticky-top)]">
+        <div className="sf-next-glass-surface sticky top-0 z-10 -mx-[var(--store-page-x)] mb-3 border-b py-2 backdrop-blur-xl sm:-mx-4 md:top-[var(--sf-next-header-tablet-sticky-top)] md:mx-0 md:rounded-xl md:border md:px-3 xl:top-[var(--sf-next-header-desktop-sticky-top)]">
           <div className="flex flex-col gap-2 md:gap-3 xl:flex-row xl:items-center">
             <div className="relative min-w-0 overflow-hidden md:flex-1 md:overflow-visible">
               <div
@@ -343,13 +343,13 @@ export default function Orders() {
 
         {loading ? <OrdersLoadingSkeleton /> : null}
         {error ? (
-          <section className="store-account-v12-empty-panel store-orders-v12-state" role="alert">
-            <span className="store-account-v12-empty-panel__icon" aria-hidden>
+          <section className="sf-next-state-panel sf-next-orders-state" role="alert">
+            <span className="sf-next-state-panel__icon" aria-hidden>
               <RefreshCw size={28} />
             </span>
             <h2>{copy.loadFailed}</h2>
             <p>{error}</p>
-            <UnifiedButton type="button" onClick={() => void loadCurrentOrders({ force: true })} className="store-account-v12-empty-panel__action">
+            <UnifiedButton type="button" onClick={() => void loadCurrentOrders({ force: true })} className="sf-next-state-panel__primary">
               <RefreshCw size={17} aria-hidden />
               {copy.retry}
             </UnifiedButton>
@@ -357,8 +357,8 @@ export default function Orders() {
         ) : null}
 
         {!loading && !error && displayOrders.length === 0 ? (
-          <section className="store-account-v12-empty-panel store-orders-v12-state">
-            <span className="store-account-v12-empty-panel__icon" aria-hidden>
+          <section className="sf-next-state-panel sf-next-orders-state">
+            <span className="sf-next-state-panel__icon" aria-hidden>
               {keyword ? <SearchX size={28} /> : <ShoppingBag size={28} />}
             </span>
             <h2>{emptyOrderText}</h2>
@@ -370,13 +370,13 @@ export default function Orders() {
                     setSearchText("");
                     updateKeywordParam("");
                   }}
-                  className="store-account-v12-empty-panel__action"
+                  className="sf-next-state-panel__secondary"
                 >
                   <SearchX size={17} aria-hidden />
                   {copy.clearSearch}
                 </UnifiedButton>
               ) : (
-                <UnifiedButton type="button" onClick={() => navigate(localizedPath("/categories"))} className="store-account-v12-empty-panel__action">
+                <UnifiedButton type="button" onClick={() => navigate(localizedPath("/categories"))} className="sf-next-state-panel__primary">
                   <ShoppingBag size={17} aria-hidden />
                   {copy.browse}
                 </UnifiedButton>
@@ -389,15 +389,15 @@ export default function Orders() {
             const shownItems = order.items.slice(0, 3);
             const totalItems = order.items.reduce((s, i) => s + i.qty, 0);
             return (
-              <article key={order.id} className="store-orders-v12-card rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3" onClick={() => openDetail(order)}>
-                <div className="store-orders-v12-card-head">
+              <article key={order.id} className="sf-next-order-card" onClick={() => openDetail(order)}>
+                <div className="sf-next-order-card__head">
                   <div className="min-w-0">
-                    <span className="store-orders-v12-order-no">{order.order_no}</span>
-                    <span className="store-orders-v12-date">{formatDateTime(order.created_at)}</span>
+                    <span className="sf-next-order-card__number">{order.order_no}</span>
+                    <span className="sf-next-order-card__date">{formatDateTime(order.created_at)}</span>
                   </div>
-                  <span className={`store-orders-v12-status ${getStatusTone(order)}`}>{getBuyerOrderStatusTextLocalized(order, locale)}</span>
+                  <span className={`sf-next-order-card__status ${getStatusTone(order)}`}>{getBuyerOrderStatusTextLocalized(order, locale)}</span>
                 </div>
-                <div className="store-orders-v12-products-label">
+                <div className="sf-next-order-card__products-label">
                   <span>
                     {isGiftOrder(order.order_type) ? copy.giftOrder : copy.orderProducts}
                   </span>
@@ -423,24 +423,24 @@ export default function Orders() {
                   </div>
                 ) : null}
 
-                <div className="store-orders-v12-products">
+                <div className="sf-next-order-products">
                   {shownItems.map((item, itemIndex) => (
-                    <div key={item.order_item_id || item.id || item.product.id} className="store-orders-v12-product-row">
+                    <div key={item.order_item_id || item.id || item.product.id} className="sf-next-order-product-row">
                       <ProductCoverImage
                         url={item.product.cover_image}
                         alt={item.product.name}
-                        className="store-orders-v12-product-media"
+                        className="sf-next-order-product-media"
                         imgClassName="object-cover"
                         sizes="88px"
                         loading={orderIndex === 0 && itemIndex === 0 ? "eager" : "lazy"}
                         fetchPriority={orderIndex === 0 && itemIndex === 0 ? "high" : "low"}
                       />
-                      <div className="store-orders-v12-product-content">
-                        <div className="store-orders-v12-product-copy">
-                          <p className="store-orders-v12-product-title">{item.product.name}</p>
-                          <p className="store-orders-v12-product-variant">{item.variant_name || item.sku_code || copy.defaultVariant}</p>
+                      <div className="sf-next-order-product-content">
+                        <div className="sf-next-order-product-copy">
+                          <p className="sf-next-order-product-title">{item.product.name}</p>
+                          <p className="sf-next-order-product-variant">{item.variant_name || item.sku_code || copy.defaultVariant}</p>
                         </div>
-                        <div className="store-orders-v12-product-price">
+                        <div className="sf-next-order-product-price">
                           <p>RM {money(item.unit_price ?? item.product.price ?? 0)}</p>
                           <span>x{item.qty}</span>
                         </div>
@@ -452,7 +452,7 @@ export default function Orders() {
                 {order.items.length > 3 ? <p className="mt-2 text-xs text-[var(--theme-text-muted)]">{copy.itemCount(totalItems)}</p> : null}
 
                 <div className="mt-3 flex justify-end text-sm">
-                  <span className="store-body-small">{copy.itemCount(totalItems)}，{copy.paidTotal} <span className="text-[15px] font-semibold text-[var(--theme-price)]">RM {money(order.total_amount || 0)}</span></span>
+                  <span className="sf-next-body-small">{copy.itemCount(totalItems)}，{copy.paidTotal} <span className="text-[15px] font-semibold text-[var(--theme-price)]">RM {money(order.total_amount || 0)}</span></span>
                 </div>
 
                 <div className="mt-3 flex items-center justify-between gap-2">

@@ -40,8 +40,8 @@ export default function HomeProductSectionV2({
   const effectiveSkeletonCount = previewLimit && previewLimit > 0 ? Math.min(skeletonCount, previewLimit) : skeletonCount;
 
   return (
-    <section className={["store-home-product-shelf store-home-v12-shelf min-w-0", className].filter(Boolean).join(" ")}>
-      <div className="store-home-v12-shelf__head">
+    <section className={["sf-next-product-shelf min-w-0", className].filter(Boolean).join(" ")}>
+      <div className="sf-next-product-shelf__header">
         <StorefrontTitleRow
           title={title}
           subtitle={subtitle}
@@ -50,7 +50,7 @@ export default function HomeProductSectionV2({
             <UnifiedButton
               type="button"
               onClick={() => onNavigate(actionPath)}
-              className="store-home-v12-shelf__action"
+              className="sf-next-product-shelf__action"
             >
               <PackageSearch size={14} aria-hidden />
               <span>{actionLabel}</span>
@@ -58,7 +58,7 @@ export default function HomeProductSectionV2({
           )}
         />
       </div>
-      <div className="store-home-product-shelf__grid grid grid-cols-2 gap-2.5 sm:gap-4 md:grid-cols-3 xl:grid-cols-4">
+      <div className="sf-next-product-grid sf-next-product-shelf__grid">
         {loading
           ? Array.from({ length: effectiveSkeletonCount }).map((_, index) => (
               <ProductCardV2Skeleton key={`home-v2-skeleton-${title}-${index}`} />
@@ -70,15 +70,15 @@ export default function HomeProductSectionV2({
                 index={index}
                 showPrice={showPrice}
               />
-            ))}
+          ))}
       </div>
       {!loading && products.length === 0 ? (
-        <div className="store-home-v12-shelf__empty rounded-[1.125rem] border border-dashed border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-8 text-center">
-          <p className="text-sm font-medium text-[var(--theme-text-muted)]">{emptyText}</p>
+        <div className="sf-next-product-shelf__empty">
+          <p>{emptyText}</p>
           <UnifiedButton
             type="button"
             onClick={() => onNavigate(actionPath)}
-            className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-[color-mix(in_srgb,var(--theme-primary)_8%,var(--theme-surface))] px-3 py-2 text-xs font-black text-[var(--theme-primary)]"
+            className="sf-next-product-shelf__empty-action"
           >
             <PackageSearch size={14} aria-hidden />
             <span>{emptyActionLabel}</span>

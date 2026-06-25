@@ -66,7 +66,7 @@ export default function FeatureStatus() {
       title="功能状态"
       onBack={goBack}
       backFallback="/profile"
-      className="sf-next-page store-v12-page store-feature-status-v12-page"
+      className="sf-next-page sf-next-route-page sf-next-feature-status-page"
       contentClassName="sf-next-account-main md:max-w-4xl xl:max-w-5xl"
     >
       <SeoHead
@@ -76,7 +76,7 @@ export default function FeatureStatus() {
         robots="noindex,follow"
       />
 
-      <div className="store-feature-status-v12-stack">
+      <div className="sf-next-feature-status-stack">
         <BalanceFolio
           eyebrow="FEATURE STATUS"
           value={ready ? enabledCount : "同步中"}
@@ -87,10 +87,10 @@ export default function FeatureStatus() {
             { label: "筛选开启", value: `${filteredEnabledCount}/${filteredCapabilities.length}` },
             { label: "状态来源", value: ready ? "Bootstrap" : "默认配置" },
           ]}
-          className="store-feature-status-v12-folio"
+          className="sf-next-feature-status-folio"
         />
 
-        <div className="store-feature-status-v12-filter" role="tablist" aria-label="功能类型">
+        <div className="sf-next-feature-status-filter" role="tablist" aria-label="功能类型">
           {filters.map((item) => {
             const Icon = item.icon;
             const active = activeFilter === item.key;
@@ -100,7 +100,7 @@ export default function FeatureStatus() {
                 type="button"
                 role="tab"
                 aria-selected={active}
-                className="store-feature-status-v12-filter-button"
+                className="sf-next-feature-status-filter-button"
                 onClick={() => setActiveFilter(item.key)}
               >
                 <Icon size={16} aria-hidden />
@@ -110,20 +110,20 @@ export default function FeatureStatus() {
           })}
         </div>
 
-        <section className="store-v12-list">
+        <section className="sf-next-list">
           {filteredCapabilities.map((item) => {
             const enabled = capabilities[item.key];
             const Icon = enabled ? BadgeCheck : BadgeX;
             return (
-              <article key={item.key} className="store-v12-status-row">
-                <span className={enabled ? "store-v12-status-icon is-on" : "store-v12-status-icon is-off"} aria-hidden>
+              <article key={item.key} className="sf-next-status-row">
+                <span className={enabled ? "sf-next-status-icon is-on" : "sf-next-status-icon is-off"} aria-hidden>
                   <Icon size={18} />
                 </span>
                 <div>
                   <h3>{item.label}</h3>
                   <p>{enabled ? item.on : item.off}</p>
                 </div>
-                <span className={enabled ? "store-v12-pill is-on" : "store-v12-pill is-off"}>
+                <span className={enabled ? "sf-next-pill is-on" : "sf-next-pill is-off"}>
                   {enabled ? "开启" : "关闭"}
                 </span>
               </article>
@@ -131,12 +131,12 @@ export default function FeatureStatus() {
           })}
         </section>
 
-        <section className="store-v12-info-card">
-          <div className="store-v12-card-title">
+        <section className="sf-next-info-card">
+          <div className="sf-next-card-title">
             <ShieldCheck size={18} aria-hidden />
             说明
           </div>
-          <p className="store-v12-muted">
+          <p className="sf-next-muted">
             功能开关只控制入口和交互可用性；支付、库存、配送和活动结果以实际订单链路返回为准。
           </p>
         </section>

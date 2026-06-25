@@ -44,12 +44,12 @@ export default function StorePageHeader({
     <header
       className={cn(
         sticky ? "sticky top-0" : "relative",
-        "store-page-header z-header border-b backdrop-blur-xl pt-[env(safe-area-inset-top,0px)]",
+        "sf-next-store-page-header z-header border-b backdrop-blur-xl pt-[env(safe-area-inset-top,0px)]",
         transparent ? "bg-transparent" : surfaceClass,
         className,
       )}
     >
-      <div className="store-page-header__inner mx-auto w-full max-w-screen-xl px-[var(--store-header-x)]">
+      <div className="sf-next-store-page-header__inner mx-auto w-full max-w-screen-xl px-[var(--store-header-x)]">
         <div
           className={cn(
             "flex items-center gap-3",
@@ -79,7 +79,7 @@ export default function StorePageHeader({
           >
             {titleInlineSlot ? (
               <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-                <h1 className="store-page-title shrink-0 tracking-tight text-[var(--theme-text)]">{title}</h1>
+                <h1 className="sf-next-page-title shrink-0 tracking-tight text-[var(--theme-text)]">{title}</h1>
                 <div className="min-w-0 flex-1 overflow-hidden">{titleInlineSlot}</div>
               </div>
             ) : centerTitle ? (
@@ -87,11 +87,11 @@ export default function StorePageHeader({
                 {eyebrow ? (
                   <p className="text-xs font-medium leading-none text-[var(--theme-text-muted)]">{eyebrow}</p>
                 ) : null}
-                <h1 className="store-page-title leading-tight tracking-tight text-[var(--theme-text)]">{title}</h1>
+                <h1 className="sf-next-page-title leading-tight tracking-tight text-[var(--theme-text)]">{title}</h1>
               </div>
             ) : (
               <>
-                <h1 className="store-page-title flex min-w-0 items-baseline gap-0 truncate tracking-tight text-[var(--theme-text)]">
+                <h1 className="sf-next-page-title flex min-w-0 items-baseline gap-0 truncate tracking-tight text-[var(--theme-text)]">
                   {title}
                 </h1>
                 {subtitle ? (

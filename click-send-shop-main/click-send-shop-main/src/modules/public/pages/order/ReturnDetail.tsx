@@ -374,12 +374,12 @@ export default function ReturnDetail() {
   }));
 
   return (
-    <StoreAccountLayout title={copy.title} onBack={goBack} backFallback={localizedPath("/returns")} desktopBackLabel={copy.backToProgress} className="store-v12-page store-return-detail-v12-page" mainClassName="sm:px-4 xl:py-6">
+    <StoreAccountLayout title={copy.title} onBack={goBack} backFallback={localizedPath("/returns")} desktopBackLabel={copy.backToProgress} className="sf-next-route-page sf-next-return-detail-page" mainClassName="sm:px-4 xl:py-6">
       <main className="mx-auto w-full max-w-3xl space-y-4 text-sm">
         {loading ? <p className="rounded-xl border border-border bg-card p-4 text-muted-foreground">{copy.loading}</p> : null}
         {!loading && !detail && errorMessage ? (
-          <section className="store-account-v12-empty-panel store-return-detail-v12-state" role="status">
-            <span className="store-account-v12-empty-panel__icon" aria-hidden>
+          <section className="sf-next-state-panel sf-next-return-detail-state" role="status">
+            <span className="sf-next-state-panel__icon" aria-hidden>
               <AlertTriangle size={20} />
             </span>
             <h2>{copy.unavailableTitle}</h2>
@@ -387,7 +387,7 @@ export default function ReturnDetail() {
             <UnifiedButton
               type="button"
               onClick={goBack}
-              className="store-account-v12-empty-panel__action"
+              className="sf-next-state-panel__primary"
             >
               {copy.backToProgress}
             </UnifiedButton>
@@ -395,19 +395,19 @@ export default function ReturnDetail() {
         ) : null}
         {detail ? (
           <>
-            <section className="store-return-detail-v12-hero">
-              <div className="store-return-detail-v12-hero__icon">
+            <section className="sf-next-return-detail-hero">
+              <div className="sf-next-return-detail-hero__icon">
                 <RotateCcw size={24} aria-hidden />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="store-return-detail-v12-eyebrow">{returnTypeLabel}</p>
-                <h1 className="store-return-detail-v12-title">{returnStatusLabel}</h1>
-                <p className="store-return-detail-v12-subtitle">
+                <p className="sf-next-return-detail-eyebrow">{returnTypeLabel}</p>
+                <h1 className="sf-next-return-detail-title">{returnStatusLabel}</h1>
+                <p className="sf-next-return-detail-subtitle">
                   {copy.order} {detail.order_no} · {getReturnItemName(detail, locale)}
                 </p>
               </div>
               {action ? (
-                <div className="store-return-detail-v12-next">
+                <div className="sf-next-return-detail-next">
                   <span>{copy.nextStep}</span>
                   <strong>{action.label}</strong>
                   <small>{action.description}</small>
@@ -415,34 +415,34 @@ export default function ReturnDetail() {
               ) : null}
             </section>
 
-            <section className="store-return-detail-v12-summary store-orders-v12-stat-grid">
-              <div className="store-orders-v12-stat">
-                <span className="store-orders-v12-stat__icon"><PackageCheck size={17} aria-hidden /></span>
+            <section className="sf-next-return-detail-summary sf-next-stats-grid">
+              <div className="sf-next-stat">
+                <span className="sf-next-stat__icon"><PackageCheck size={17} aria-hidden /></span>
                 <strong>{returnQuantity}</strong>
                 <span>{copy.quantity}</span>
                 <small>{returnTypeLabel}</small>
               </div>
-              <div className="store-orders-v12-stat">
-                <span className="store-orders-v12-stat__icon"><CreditCard size={17} aria-hidden /></span>
+              <div className="sf-next-stat">
+                <span className="sf-next-stat__icon"><CreditCard size={17} aria-hidden /></span>
                 <strong>{returnRefundAmount > 0 ? money(returnRefundAmount) : copy.noRefund}</strong>
                 <span>{copy.currentRefund}</span>
                 <small>{refundStatusLabel}</small>
               </div>
-              <div className="store-orders-v12-stat">
-                <span className="store-orders-v12-stat__icon"><Truck size={17} aria-hidden /></span>
+              <div className="sf-next-stat">
+                <span className="sf-next-stat__icon"><Truck size={17} aria-hidden /></span>
                 <strong>{detail.shipments?.length || 0}</strong>
                 <span>{copy.returnShipments}</span>
                 <small>{detail.logistics_tracks?.length || 0} 条轨迹</small>
               </div>
-              <div className="store-orders-v12-stat">
-                <span className="store-orders-v12-stat__icon"><RotateCcw size={17} aria-hidden /></span>
+              <div className="sf-next-stat">
+                <span className="sf-next-stat__icon"><RotateCcw size={17} aria-hidden /></span>
                 <strong>{orderRefundedAmount > 0 ? money(orderRefundedAmount) : "-"}</strong>
                 <span>{copy.orderRefunded}</span>
                 <small>{formatDateTime(detail.updated_at)}</small>
               </div>
             </section>
 
-            <section className="store-return-detail-v12-product-card rounded-2xl border border-border bg-card p-4 shadow-sm">
+            <section className="sf-next-return-detail-product-card rounded-2xl border border-border bg-card p-4 shadow-sm">
               <div className="flex items-start gap-3">
                 <div className="w-14 shrink-0 overflow-hidden rounded-xl bg-secondary" style={THEME_PRODUCT_MEDIA_ASPECT_STYLE}>
                   {image ? (
@@ -474,7 +474,7 @@ export default function ReturnDetail() {
 
             <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
               <h2 className="font-semibold text-foreground">{copy.progress}</h2>
-              <StatusTimeline items={progressItems} className="mt-4 store-return-detail-v12-timeline" />
+              <StatusTimeline items={progressItems} className="mt-4 sf-next-return-detail-timeline" />
             </section>
 
             {action?.key === "evidence" ? (
@@ -630,7 +630,7 @@ export default function ReturnDetail() {
               <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
                 <h2 className="flex items-center gap-2 font-semibold text-foreground"><Truck size={16} />{copy.logisticsTracks}</h2>
                 {detail.logistics_tracks?.length ? (
-                  <StatusTimeline items={logisticsTrackItems} className="mt-3 store-return-detail-v12-timeline" />
+                  <StatusTimeline items={logisticsTrackItems} className="mt-3 sf-next-return-detail-timeline" />
                 ) : (
                   <p className="mt-3 rounded-xl border border-dashed border-border p-3 text-xs text-muted-foreground">
                     {copy.noCarrierTracks}

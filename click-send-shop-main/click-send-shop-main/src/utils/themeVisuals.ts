@@ -181,19 +181,19 @@ export function getBottomNavShellClassName(
     case "glassLine":
       return `${base} border-0 bg-transparent px-[var(--store-page-x)] pb-2 pt-1 shadow-none`;
     case "glass":
-      return `${base} border-t border-[var(--store-bottom-nav-border)] bg-[var(--store-bottom-nav-bg)] shadow-[0_-14px_34px_-26px_var(--shadow-color)] backdrop-blur-xl`;
+      return `${base} border-t border-[var(--sf-bottom-nav-border)] bg-[var(--sf-bottom-nav-bg)] shadow-[0_-14px_34px_-26px_var(--shadow-color)] backdrop-blur-xl`;
     case "clean":
     default:
-      return `${base} border-t border-[var(--store-bottom-nav-border)] bg-[var(--store-bottom-nav-bg)] shadow-[0_-14px_34px_-26px_var(--shadow-color)] backdrop-blur-xl`;
+      return `${base} border-t border-[var(--sf-bottom-nav-border)] bg-[var(--sf-bottom-nav-bg)] shadow-[0_-14px_34px_-26px_var(--shadow-color)] backdrop-blur-xl`;
   }
 }
 
 export function getBottomNavInnerClassName(navStyle: ThemeConfig["navStyle"]): string {
   if (navStyle === "floating") {
-    return "w-full overflow-hidden rounded-2xl border border-[var(--store-bottom-nav-border)] bg-[var(--store-bottom-nav-bg)] shadow-[0_16px_42px_-24px_var(--shadow-color)] backdrop-blur-xl md:mx-auto md:max-w-lg";
+    return "w-full overflow-hidden rounded-2xl border border-[var(--sf-bottom-nav-border)] bg-[var(--sf-bottom-nav-bg)] shadow-[0_16px_42px_-24px_var(--shadow-color)] backdrop-blur-xl md:mx-auto md:max-w-lg";
   }
   if (navStyle === "glassLine") {
-    return "w-full overflow-hidden rounded-[1.35rem] border bg-[var(--store-bottom-nav-bg)] backdrop-blur-xl md:mx-auto md:max-w-lg";
+    return "w-full overflow-hidden rounded-[1.35rem] border bg-[var(--sf-bottom-nav-bg)] backdrop-blur-xl md:mx-auto md:max-w-lg";
   }
   return "w-full md:mx-auto md:max-w-lg";
 }
@@ -201,26 +201,26 @@ export function getBottomNavInnerClassName(navStyle: ThemeConfig["navStyle"]): s
 export function getBannerContainerClassName(bannerStyle: ThemeConfig["bannerStyle"]): string {
   switch (bannerStyle) {
     case "panoramicLight":
-      return "store-hero-frame store-skin-banner-frame rounded-[1.35rem]";
+      return "sf-next-banner-frame rounded-[1.35rem]";
     case "naturalWindow":
-      return "store-hero-frame store-skin-banner-frame rounded-[1.15rem]";
+      return "sf-next-banner-frame rounded-[1.15rem]";
     case "archedMirror":
-      return "store-hero-frame store-skin-banner-frame rounded-[2.25rem_2.25rem_1.1rem_1.1rem]";
+      return "sf-next-banner-frame rounded-[2.25rem_2.25rem_1.1rem_1.1rem]";
     case "lightLacquer":
-      return "store-hero-frame store-skin-banner-frame rounded-[1.1rem]";
+      return "sf-next-banner-frame rounded-[1.1rem]";
     case "moonHalo":
-      return "store-hero-frame store-skin-banner-frame rounded-[1.35rem]";
+      return "sf-next-banner-frame rounded-[1.35rem]";
     case "premium":
-      return "store-hero-frame rounded-2xl";
+      return "sf-next-banner-frame rounded-2xl";
     case "deal":
-      return "store-hero-frame rounded-xl ring-2 ring-[color-mix(in_srgb,var(--theme-price)_45%,transparent)]";
+      return "sf-next-banner-frame rounded-xl ring-2 ring-[color-mix(in_srgb,var(--theme-price)_45%,transparent)]";
     case "dark":
-      return "store-hero-frame rounded-xl shadow-inner";
+      return "sf-next-banner-frame rounded-xl shadow-inner";
     case "fresh":
-      return "store-hero-frame rounded-2xl";
+      return "sf-next-banner-frame rounded-2xl";
     case "clean":
     default:
-      return "store-hero-frame rounded-2xl";
+      return "sf-next-banner-frame rounded-2xl";
   }
 }
 

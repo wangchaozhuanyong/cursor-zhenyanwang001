@@ -85,9 +85,9 @@ export function getCouponCardPresentation(
   };
 
   const amountSizeByLayout: Record<CouponCardLayout, string> = {
-    home: "store-coupon-amount-home",
-    compact: "store-coupon-amount-list",
-    default: "store-coupon-amount-list",
+    home: "sf-next-coupon-amount-home",
+    compact: "sf-next-coupon-amount-list",
+    default: "sf-next-coupon-amount-list",
   };
 
   /** 首页横滑窄位保留竖排；列表页横排展示，避免「已失效」等状态被挤成竖排。 */

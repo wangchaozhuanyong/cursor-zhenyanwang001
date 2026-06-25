@@ -111,11 +111,11 @@ export default function Notifications() {
       <StoreAccountLayout
         title="消息通知"
         onBack={goBack}
-        className="sf-next-page store-v12-page store-account-subpage-v12-page store-notifications-v12-page"
+        className="sf-next-page sf-next-route-page sf-next-account-route-page sf-next-notifications-page"
         mainClassName="sf-next-account-main sm:px-4 xl:py-6"
       >
-        <section className="store-account-v12-empty-panel store-account-v12-status-panel" aria-live="polite">
-          <span className="store-account-v12-empty-panel__icon" aria-hidden>
+        <section className="sf-next-state-panel sf-next-account-status-panel" aria-live="polite">
+          <span className="sf-next-state-panel__icon" aria-hidden>
             <Loader2 size={28} className="animate-spin" />
           </span>
           <h2>正在加载消息</h2>
@@ -130,16 +130,16 @@ export default function Notifications() {
       <StoreAccountLayout
         title="消息通知"
         onBack={goBack}
-        className="sf-next-page store-v12-page store-account-subpage-v12-page store-notifications-v12-page"
+        className="sf-next-page sf-next-route-page sf-next-account-route-page sf-next-notifications-page"
         mainClassName="sf-next-account-main sm:px-4 xl:py-6"
       >
-        <section className="store-account-v12-empty-panel store-account-v12-status-panel" role="alert">
-          <span className="store-account-v12-empty-panel__icon" aria-hidden>
+        <section className="sf-next-state-panel sf-next-account-status-panel" role="alert">
+          <span className="sf-next-state-panel__icon" aria-hidden>
             <Bell size={28} />
           </span>
           <h2>消息加载失败</h2>
           <p>{error}</p>
-          <UnifiedButton type="button" onClick={() => loadNotifications()} className="store-account-v12-empty-panel__action">
+          <UnifiedButton type="button" onClick={() => loadNotifications()} className="sf-next-state-panel__primary">
             <RefreshCw size={17} aria-hidden />
             重试
           </UnifiedButton>
@@ -171,10 +171,10 @@ export default function Notifications() {
             </UnifiedButton>
           ) : undefined
         }
-        className="sf-next-page store-v12-page store-account-subpage-v12-page store-notifications-v12-page"
+        className="sf-next-page sf-next-route-page sf-next-account-route-page sf-next-notifications-page"
         mainClassName="sf-next-account-main sm:px-4 xl:py-6"
       >
-        <div ref={filtersRef} className="store-notifications-v12-filters no-scrollbar">
+        <div ref={filtersRef} className="sf-next-notifications-filters no-scrollbar">
           {NOTIFICATION_FILTERS.map((item) => {
             const Icon = item.icon;
             const activeFilter = filter === item.key;
@@ -187,7 +187,7 @@ export default function Notifications() {
                   scrollFilterToKey(item.key);
                   setFilter(item.key);
                 }}
-                className={`store-notifications-v12-filter ${activeFilter ? "is-active" : ""}`}
+                className={`sf-next-notifications-filter ${activeFilter ? "is-active" : ""}`}
               >
                 <span className="inline-flex min-w-0 items-center gap-1.5">
                   <Icon size={14} aria-hidden className="shrink-0" />
@@ -199,8 +199,8 @@ export default function Notifications() {
           })}
         </div>
         {!loading && notifications.length === 0 && (
-          <section className="store-account-v12-empty-panel store-account-v12-status-panel store-notifications-v12-empty">
-            <div className="store-notifications-v12-empty-lines" aria-hidden>
+          <section className="sf-next-state-panel sf-next-account-status-panel sf-next-notifications-empty">
+            <div className="sf-next-notifications-empty-lines" aria-hidden>
               {[
                 ["订单消息", "付款、发货、售后状态"],
                 ["优惠提醒", "优惠券、活动和积分更新"],
@@ -213,7 +213,7 @@ export default function Notifications() {
                 </span>
               ))}
             </div>
-            <span className="store-account-v12-empty-panel__icon" aria-hidden>
+            <span className="sf-next-state-panel__icon" aria-hidden>
               <Bell size={28} />
             </span>
             <h2>暂无消息通知</h2>
@@ -221,15 +221,15 @@ export default function Notifications() {
           </section>
         )}
         {notifications.length > 0 && filteredNotifications.length === 0 ? (
-          <section className="store-account-v12-empty-panel store-account-v12-status-panel">
-            <span className="store-account-v12-empty-panel__icon" aria-hidden>
+          <section className="sf-next-state-panel sf-next-account-status-panel">
+            <span className="sf-next-state-panel__icon" aria-hidden>
               <Bell size={28} />
             </span>
             <h2>当前分类暂无消息</h2>
             <p>切换到其他分类，或稍后再查看新的提醒。</p>
           </section>
         ) : null}
-        <div className="store-notifications-v12-list">
+        <div className="sf-next-notifications-list">
           <AnimatePresence>
             {filteredNotifications.map((n, i) => {
               const config = typeConfig[n.type] || fallbackConfig;
@@ -242,7 +242,7 @@ export default function Notifications() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.04 }}
                   onClick={() => handleOpenNotification(n.id, n.link_url)}
-                  className={`store-notifications-v12-card ${n.is_read ? "" : "is-unread"}`}
+                  className={`sf-next-notifications-card ${n.is_read ? "" : "is-unread"}`}
                 >
                   {!n.is_read && (
                     <div className="absolute right-4 top-4 h-2 w-2 rounded-full bg-[var(--theme-price)]" />

@@ -324,9 +324,9 @@ export default function Cart() {
   };
 
   return (
-    <div className="store-page-shell store-v12-page sf-next-cart-page store-cart-v12-page store-cart-page store-bottom-cart-space bg-[var(--theme-bg)] text-[var(--theme-text)] md:pb-0 lg:pb-0">
+    <div className="sf-next-page sf-next-page-shell sf-next-cart-page bg-[var(--theme-bg)] text-[var(--theme-text)] md:pb-0 lg:pb-0">
       <StorePageHeader
-        className={`${STORE_MOBILE_PAGE_HEADER_CLASS} store-cart-mobile-header sf-next-cart-header`}
+        className={`${STORE_MOBILE_PAGE_HEADER_CLASS} sf-next-cart-mobile-header sf-next-cart-header`}
         rightSlot={items.length > 0 ? (
           <UnifiedButton
             type="button"
@@ -346,9 +346,9 @@ export default function Cart() {
           <DesktopPurchaseTwoColumn
             className="xl:grid-cols-[minmax(0,1fr)_360px]"
             aside={
-              <DesktopPurchaseCard title={t("cart.summary")} className="store-checkout-summary">
+              <DesktopPurchaseCard title={t("cart.summary")} className="sf-next-cart-summary">
                 <div className="space-y-2.5 text-sm">
-                  <div className="store-cart-summary-discount-callout">
+                  <div className="sf-next-cart-summary-discount-callout">
                     <span>{estimatedDiscount > 0 ? t("cart.autoDiscountSaved") : t("cart.autoDiscountTitle")}</span>
                     <strong>{estimatedDiscount > 0 ? `RM ${formatCartMoney(estimatedDiscount)}` : t("cart.discountPending")}</strong>
                   </div>
@@ -446,7 +446,7 @@ export default function Cart() {
                 </UnifiedButton>
               </div>
               <div
-                className="store-cart-list"
+                className="sf-next-cart-list"
                 style={{ border: 0, borderRadius: 0, background: "transparent", boxShadow: "none" }}
               >
                 {/* 桌面：列表头 + 全选 */}
@@ -494,7 +494,7 @@ export default function Cart() {
                     ) : null}
                     <motion.div
                       exit={{ opacity: 0, x: -100 }}
-                      className="store-cart-item relative flex min-w-0 gap-2.5 py-4 sm:gap-3 md:py-5"
+                      className="sf-next-cart-item relative flex min-w-0 gap-2.5 py-4 sm:gap-3 md:py-5"
                       data-unavailable={unavailableReason ? "true" : undefined}
                     >
                       <SquishButton
@@ -582,7 +582,7 @@ export default function Cart() {
                           }}
                           animate={{ x: actionsOpen ? -CART_ACTION_WIDTH : 0 }}
                           transition={{ type: "spring", stiffness: 420, damping: 36 }}
-                          className="store-cart-item-row relative z-10 flex min-w-0 gap-2.5 bg-transparent py-0.5 sm:gap-3"
+                          className="sf-next-cart-item-row relative z-10 flex min-w-0 gap-2.5 bg-transparent py-0.5 sm:gap-3"
                         >
                           <UnifiedButton
                             type="button"
@@ -590,7 +590,7 @@ export default function Cart() {
                               closeItemActions();
                               navigate(localizedPath(`/product/${item.product.id}`), { state: { from: currentPath } });
                             }}
-                            className="store-cart-media store-cart-item-media w-14 flex-shrink-0 self-start cursor-pointer overflow-hidden rounded-xl border-0 bg-transparent p-0 sm:w-16 md:w-16 lg:w-20"
+                            className="sf-next-cart-media sf-next-cart-item-media w-14 flex-shrink-0 self-start cursor-pointer overflow-hidden rounded-xl border-0 bg-transparent p-0 sm:w-16 md:w-16 lg:w-20"
                             style={THEME_PRODUCT_MEDIA_ASPECT_STYLE}
                             aria-label={`${t("common.browseProducts")} ${item.product.name}`}
                           >
@@ -603,20 +603,20 @@ export default function Cart() {
                               fetchPriority={index === 0 ? "high" : "low"}
                             />
                           </UnifiedButton>
-                          <div className="store-cart-item-content flex min-w-0 flex-1 flex-col justify-between">
-                            <div className="store-cart-item-copy min-w-0">
+                          <div className="sf-next-cart-item-content flex min-w-0 flex-1 flex-col justify-between">
+                            <div className="sf-next-cart-item-copy min-w-0">
                               <h3
                                 onClick={() => {
                                   closeItemActions();
                                   navigate(localizedPath(`/product/${item.product.id}`), { state: { from: currentPath } });
                                 }}
-                                className="store-card-title store-cart-item-title cursor-pointer break-words leading-tight text-foreground line-clamp-2 hover:text-theme-price"
+                                className="sf-next-cart-item-title cursor-pointer break-words leading-tight text-foreground line-clamp-2 hover:text-theme-price"
                               >
                                 {item.product.name}
                               </h3>
-                              {item.variant_name ? <p className="store-caption store-cart-item-variant mt-1 truncate text-muted-foreground">规格：{item.variant_name}</p> : null}
+                              {item.variant_name ? <p className="sf-next-cart-item-variant mt-1 truncate text-muted-foreground">规格：{item.variant_name}</p> : null}
                               {getCartLineDealLabel(item, t) ? (
-                                <span className="store-cart-item-deal-badge">
+                                <span className="sf-next-cart-item-deal-badge">
                                   <BadgePercent size={12} aria-hidden />
                                   {getCartLineDealLabel(item, t)}
                                 </span>
@@ -625,12 +625,12 @@ export default function Cart() {
                                 <p className="sf-next-cart-line-unavailable">{unavailableReason}</p>
                               ) : null}
                             </div>
-                            <div className="store-cart-item-bottom mt-2 flex min-w-0 items-center justify-between gap-2">
+                            <div className="sf-next-cart-item-bottom mt-2 flex min-w-0 items-center justify-between gap-2">
                               <StorePriceAmount
                                 amount={item.product.price}
                                 amountClassName="text-[15px] font-extrabold leading-tight sm:text-base"
                               />
-                              <div className="store-cart-qty-control flex h-9 shrink-0 items-center overflow-hidden rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)]">
+                              <div className="sf-next-cart-qty-control flex h-9 shrink-0 items-center overflow-hidden rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)]">
                                 <SquishButton
                                   type="button"
                                   variant="ghost"
@@ -761,8 +761,8 @@ export default function Cart() {
                 <p className="text-sm">{t("cart.loading")}</p>
               </div>
             ) : (
-              <section className="store-account-v12-empty-panel store-cart-empty-card max-w-none">
-                <span className="store-account-v12-empty-panel__icon" aria-hidden>
+              <section className="sf-next-state-panel sf-next-cart-state max-w-none">
+                <span className="sf-next-state-panel__icon" aria-hidden>
                   <ShoppingBag size={28} />
                 </span>
                 <h2>{t("cart.emptyTitle")}</h2>
@@ -770,7 +770,7 @@ export default function Cart() {
                 <UnifiedButton
                   type="button"
                   onClick={() => navigate(localizedPath("/categories"))}
-                  className="store-account-v12-empty-panel__action"
+                  className="sf-next-state-panel__primary"
                 >
                   <ShoppingBag size={17} aria-hidden />
                   {t("cart.browseCategories")}
@@ -780,19 +780,19 @@ export default function Cart() {
           </div>
         )}
       </main>
-      {/* 移动端：底部固定结算栏 */}
+      {/* 移动端：结算操作块保持在内容流内，避免遮挡优惠券和商品信息。 */}
       {items.length > 0 && (
-        <div className="store-mobile-submit-bar store-cart-checkout-bar fixed bottom-[calc(var(--store-bottom-nav-height,78px)+env(safe-area-inset-bottom,0px))] left-0 right-0 z-checkout-bar border-t border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md md:hidden">
-          <div className="store-cart-checkout-bar__inner mx-auto flex w-full items-center gap-2 px-[var(--store-page-x)] sm:max-w-lg sm:px-4">
+        <div className="sf-next-cart-checkout-bar md:hidden">
+          <div className="sf-next-cart-checkout-bar__inner">
             <SquishButton
               type="button"
               variant="ghost"
               onClick={() => setSelectAll(!allSelected)}
               aria-pressed={allSelected}
-              className="store-cart-checkout-select flex shrink-0 items-center justify-center gap-1.5 rounded-none bg-transparent text-xs font-semibold text-[var(--theme-text-muted)] !min-h-0 !px-0 !py-0"
+              className="sf-next-cart-checkout-select flex shrink-0 items-center justify-center gap-1.5 rounded-none bg-transparent text-xs font-semibold text-[var(--theme-text-muted)] !min-h-0 !px-0 !py-0"
             >
               <span
-                className={`store-cart-checkout-select__box flex items-center justify-center rounded border-2 ${
+                className={`sf-next-cart-checkout-select__box flex items-center justify-center rounded border-2 ${
                   allSelected
                     ? "border-[var(--theme-price)] btn-theme-price"
                     : someSelected
@@ -805,13 +805,13 @@ export default function Cart() {
               </span>
               {t("cart.selectAll")}
             </SquishButton>
-            <div className="store-cart-checkout-total min-w-0 flex-1">
-              <span className="store-cart-checkout-total__label">{estimatedDiscount > 0 ? t("cart.estimatedPayable") : t("cart.total")}</span>
-              <span className="store-cart-checkout-total__price">
+            <div className="sf-next-cart-checkout-total min-w-0 flex-1">
+              <span className="sf-next-cart-checkout-total__label">{estimatedDiscount > 0 ? t("cart.estimatedPayable") : t("cart.total")}</span>
+              <span className="sf-next-cart-checkout-total__price">
                 <AnimatedNumber value={estimatedPayable} decimals={2} format={(n) => `RM ${n.toFixed(2)}`} />
               </span>
               {estimatedDiscount > 0 ? (
-                <span className="store-cart-checkout-total__discount">
+                <span className="sf-next-cart-checkout-total__discount">
                   {t("cart.savedAmount")} RM {formatCartMoney(estimatedDiscount)}
                 </span>
               ) : null}
@@ -821,7 +821,7 @@ export default function Cart() {
               variant="gold"
               onClick={handleCheckout}
               disabled={selectedQty === 0}
-              className="store-cart-checkout-button shrink-0 text-sm font-bold transition-all disabled:cursor-not-allowed disabled:opacity-50 !min-h-0"
+              className="sf-next-cart-checkout-button shrink-0 text-sm font-bold transition-all disabled:cursor-not-allowed disabled:opacity-50 !min-h-0"
             >
               {checkoutLabel}
             </SquishButton>
@@ -1028,12 +1028,12 @@ function CartDiscountPanel({
         : t("cart.noCouponMatched");
 
   return (
-    <section className="store-cart-discount-panel" aria-label={t("cart.discountDetails")}>
-      <div className="store-cart-discount-panel__head">
-        <span className="store-cart-discount-panel__icon" aria-hidden>
+    <section className="sf-next-cart-discount-panel" aria-label={t("cart.discountDetails")}>
+      <div className="sf-next-cart-discount-panel__head">
+        <span className="sf-next-cart-discount-panel__icon" aria-hidden>
           <Sparkles size={17} />
         </span>
-        <div className="store-cart-discount-panel__copy">
+        <div className="sf-next-cart-discount-panel__copy">
           <p>{t("cart.autoDiscountTitle")}</p>
           <strong>
             {loading && !hasDiscount
@@ -1044,13 +1044,13 @@ function CartDiscountPanel({
           </strong>
           <small>{selectedCouponLabel}</small>
         </div>
-        <div className="store-cart-discount-panel__total">
+        <div className="sf-next-cart-discount-panel__total">
           <small>{t("cart.estimatedPayable")}</small>
           <b>RM {formatCartMoney(estimatedPayable)}</b>
         </div>
       </div>
 
-      <div className="store-cart-discount-panel__rows">
+      <div className="sf-next-cart-discount-panel__rows">
         {activityDiscount > 0 ? (
           <div>
             <span>{t("cart.activityDiscount")}</span>
@@ -1087,7 +1087,7 @@ function CartDiscountPanel({
           campaign={null}
           amount={selectedAmount}
           evaluation={promotionEvaluation}
-          className="store-cart-discount-panel__nudge"
+          className="sf-next-cart-discount-panel__nudge"
           onBrowse={onBrowse}
         />
       ) : null}

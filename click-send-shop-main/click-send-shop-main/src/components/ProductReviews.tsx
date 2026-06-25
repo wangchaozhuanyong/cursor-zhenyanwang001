@@ -46,8 +46,8 @@ export default function ProductReviews({ vm }: ProductReviewsProps) {
       : "分享真实购买体验";
 
   return (
-    <section className="store-product-v12-reviews" aria-label="商品评价">
-      <div className="store-product-v12-reviews__head">
+    <section className="sf-next-product-reviews" aria-label="商品评价">
+      <div className="sf-next-product-reviews__head">
         <div>
           <span>
             <MessageSquareText size={15} aria-hidden />
@@ -56,21 +56,21 @@ export default function ProductReviews({ vm }: ProductReviewsProps) {
           <h2>真实购买反馈</h2>
           <p>{reviewActionHint}</p>
         </div>
-        <UnifiedButton type="button" onClick={openReview} className="store-product-v12-reviews__write">
+        <UnifiedButton type="button" onClick={openReview} className="sf-next-product-reviews__write">
           <PenLine size={14} aria-hidden />
           {reviewCtaText}
         </UnifiedButton>
       </div>
 
-      <div className="store-product-v12-reviews__summary">
-        <div className="store-product-v12-reviews__score">
+      <div className="sf-next-product-reviews__summary">
+        <div className="sf-next-product-reviews__score">
           <strong>{avgRating.toFixed(1)}</strong>
           <div>
             <RatingStars rating={Math.round(avgRating)} size={15} />
             <p>{reviewTotal} 条评价 · {imageReviewCount} 条带图</p>
           </div>
         </div>
-        <div className="store-product-v12-reviews__distribution" aria-label="评分分布">
+        <div className="sf-next-product-reviews__distribution" aria-label="评分分布">
           {distribution.map((item) => (
             <div key={item.rating}>
               <span>{item.rating} 星</span>
@@ -79,20 +79,20 @@ export default function ProductReviews({ vm }: ProductReviewsProps) {
             </div>
           ))}
         </div>
-        <div className="store-product-v12-reviews__guard">
+        <div className="sf-next-product-reviews__guard">
           <ShieldCheck size={16} aria-hidden />
           <p>评价资格来自订单状态，只有确认收货后的商品才允许提交评价。</p>
         </div>
       </div>
 
-      <div className="store-product-v12-reviews__list">
+      <div className="sf-next-product-reviews__list">
         {loading ? (
-          <div className="store-product-v12-reviews__loading">
+          <div className="sf-next-product-reviews__loading">
             <Loader2 size={18} className="animate-spin" />
             正在同步评价
           </div>
         ) : reviews.length === 0 ? (
-          <div className="store-product-v12-reviews__empty">
+          <div className="sf-next-product-reviews__empty">
             <MessageSquareText size={22} aria-hidden />
             <strong>暂无评价</strong>
             <p>确认收货后的真实反馈会展示在这里。</p>
@@ -100,12 +100,12 @@ export default function ProductReviews({ vm }: ProductReviewsProps) {
         ) : reviews.map((review, i) => (
           <motion.article
             key={review.id}
-            className="store-product-v12-review-card"
+            className="sf-next-product-review-card"
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05 }}
           >
-            <div className="store-product-v12-review-card__head">
+            <div className="sf-next-product-review-card__head">
               <ReviewAvatar avatar={review.avatar} nickname={review.nickname} />
               <div>
                 <p>{review.nickname || "用户"}</p>
@@ -113,7 +113,7 @@ export default function ProductReviews({ vm }: ProductReviewsProps) {
               </div>
               <time>{timeAgo(review.created_at)}</time>
             </div>
-            <div className="store-product-v12-review-card__meta">
+            <div className="sf-next-product-review-card__meta">
               {review.is_verified_purchase ? (
                 <span>
                   <CheckCircle2 size={12} aria-hidden />
@@ -128,16 +128,16 @@ export default function ProductReviews({ vm }: ProductReviewsProps) {
                 </span>
               ) : null}
             </div>
-            <p className="store-product-v12-review-card__content">{review.content}</p>
+            <p className="sf-next-product-review-card__content">{review.content}</p>
             {review.images?.length ? (
-              <div className="store-product-v12-review-card__images">
+              <div className="sf-next-product-review-card__images">
                 {review.images.slice(0, 4).map((url) => (
                   <StableImage key={url} src={url} alt={`${review.nickname || "用户"} 的评价图片`} />
                 ))}
               </div>
             ) : null}
             {review.admin_reply ? (
-              <div className="store-product-v12-review-card__reply">
+              <div className="sf-next-product-review-card__reply">
                 <strong>商家回复</strong>
                 <p>{review.admin_reply}</p>
               </div>
@@ -145,7 +145,7 @@ export default function ProductReviews({ vm }: ProductReviewsProps) {
             <UnifiedButton
               type="button"
               onClick={() => handleLike(review.id)}
-              className={`store-product-v12-review-card__like ${likedIds.has(review.id) ? "is-liked" : ""}`}
+              className={`sf-next-product-review-card__like ${likedIds.has(review.id) ? "is-liked" : ""}`}
             >
               <ThumbsUp size={13} className={likedIds.has(review.id) ? "fill-theme-price" : ""} />
               {review.likes_count || 0}
@@ -198,7 +198,7 @@ export default function ProductReviews({ vm }: ProductReviewsProps) {
 
 function RatingStars({ rating, size }: { rating: number; size: number }) {
   return (
-    <div className="store-product-v12-stars" aria-label={`${rating} 星`}>
+    <div className="sf-next-product-stars" aria-label={`${rating} 星`}>
       {[1, 2, 3, 4, 5].map((score) => (
         <Star
           key={score}
@@ -215,10 +215,10 @@ function ReviewAvatar({ avatar, nickname }: { avatar?: string | null; nickname?:
   const initial = displayName.slice(0, 1).toUpperCase();
   if (avatar && /^https?:\/\//i.test(avatar)) {
     return (
-      <span className="store-product-v12-review-card__avatar">
+      <span className="sf-next-product-review-card__avatar">
         <img src={avatar} alt={`${displayName} 头像`} loading="lazy" />
       </span>
     );
   }
-  return <span className="store-product-v12-review-card__avatar">{initial}</span>;
+  return <span className="sf-next-product-review-card__avatar">{initial}</span>;
 }

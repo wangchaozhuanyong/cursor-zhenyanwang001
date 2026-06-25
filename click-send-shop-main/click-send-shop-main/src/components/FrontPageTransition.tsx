@@ -15,7 +15,7 @@ export default function FrontPageTransition({ children }: { children: ReactNode 
 
   return (
     <AnimatedPage
-      className={isTabRoute ? "store-tab-route-transition" : undefined}
+      className={isTabRoute ? "sf-next-tab-route-transition" : undefined}
       disableAnimation={isTabRoute}
       disableTransform={disableTransform}
     >

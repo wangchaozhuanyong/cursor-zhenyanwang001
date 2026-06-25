@@ -225,7 +225,7 @@ function ProductCardInner({
   const nameRow = (
     <h3
       className={cn(
-        "store-product-card-title line-clamp-2 text-[13.5px] leading-snug",
+        "sf-next-product-card__title line-clamp-2 text-[13.5px] leading-snug",
         cardCenter && "text-center",
       )}
     >
@@ -243,24 +243,25 @@ function ProductCardInner({
   const originalPriceNum = Number(product.max_original_price ?? product.original_price ?? 0);
   const showOriginal = Number.isFinite(originalPriceNum) && originalPriceNum > (hasPriceRange ? maxPrice : Number(product.price || 0));
   const metaRow = (
-    <div className={cn("store-product-card-meta w-full min-w-0", cardCenter && !isHorizontal ? "text-center" : "")}>
+    <div className={cn("sf-next-product-card__meta w-full min-w-0", cardCenter && !isHorizontal ? "text-center" : "")}>
       {isHorizontal ? (
         <StorePriceAmount
           amount={priceDisplay}
-          amountClassName="store-price-card text-[15px] leading-tight sm:text-base"
-          currencyClassName="store-price-currency mr-0.5 text-[11px] leading-none sm:text-xs"
+          className="sf-next-product-card__price"
+          amountClassName="sf-next-price__amount text-[15px] leading-tight sm:text-base"
+          currencyClassName="sf-next-price__currency mr-0.5 text-[11px] leading-none sm:text-xs"
         />
       ) : (
-        <StorePriceAmount amount={priceDisplay} />
+        <StorePriceAmount className="sf-next-product-card__price" amount={priceDisplay} />
       )}
       <div className={cn("mt-1 flex min-w-0 items-center justify-between gap-2")}>
         {showOriginal ? (
-          <span className="store-caption truncate text-[var(--theme-muted)] line-through">
+          <span className="sf-next-product-card__caption truncate text-[var(--theme-muted)] line-through">
             RM {formatMoney(originalPriceNum)}
           </span>
         ) : <span />}
         {showSales ? (
-          <span className="store-caption shrink-0 tabular-nums text-[var(--theme-text-muted)]">
+          <span className="sf-next-product-card__caption shrink-0 tabular-nums text-[var(--theme-text-muted)]">
             {productSalesLabel(salesCount)}
           </span>
         ) : null}
@@ -273,13 +274,13 @@ function ProductCardInner({
       <ProductCardShell
         animate={animate}
         delay={revealDelay}
-        className="theme-product-card store-product-card group cursor-pointer overflow-hidden theme-rounded transform-gpu [content-visibility:auto] [contain-intrinsic-size:128px]"
+        className="sf-next-product-card sf-next-product-card--list group cursor-pointer overflow-hidden transform-gpu [content-visibility:auto] [contain-intrinsic-size:128px]"
         onClick={() => openDetail("categories")}
       >
-        <div ref={impressionRef} className={cn("flex", isListRow ? "gap-3 p-3" : "gap-2.5 p-2.5 sm:gap-3 sm:p-3")}>
+        <div ref={impressionRef} className={cn("flex", isListRow ? "gap-3" : "gap-2.5 sm:gap-3")}>
           <div
             className={cn(
-              "store-product-media theme-rounded relative shrink-0 overflow-hidden border border-[var(--theme-border)] bg-[var(--store-product-media-bg)]",
+              "sf-next-product-card__media relative shrink-0 overflow-hidden border border-[var(--theme-border)] bg-[var(--sf-product-media-bg)]",
               isListRow ? "w-20 self-start sm:w-[5.5rem]" : "w-16 self-start sm:w-20",
             )}
             style={THEME_PRODUCT_MEDIA_ASPECT_STYLE}
@@ -338,12 +339,12 @@ function ProductCardInner({
     <ProductCardShell
       animate={animate}
       delay={revealDelay}
-      className="theme-product-card store-product-card group cursor-pointer overflow-hidden theme-rounded transform-gpu [content-visibility:auto] [contain-intrinsic-size:320px]"
+      className="sf-next-product-card sf-next-product-card--grid group cursor-pointer overflow-hidden transform-gpu [content-visibility:auto] [contain-intrinsic-size:320px]"
       onClick={() => openDetail("product_grid")}
     >
       <div
         ref={impressionRef}
-        className="store-product-media theme-rounded relative overflow-hidden bg-[var(--store-product-media-bg)]"
+        className="sf-next-product-card__media relative overflow-hidden bg-[var(--sf-product-media-bg)]"
         style={THEME_PRODUCT_MEDIA_ASPECT_STYLE}
       >
         <ProductCoverImage
@@ -382,7 +383,7 @@ function ProductCardInner({
           </span>
         ) : null}
       </div>
-      <div className={`store-product-card-body flex flex-col gap-2 p-3 ${isPremium ? "gap-2.5 p-3.5" : ""}`}>
+      <div className={`sf-next-product-card__info flex flex-col gap-2 p-3 ${isPremium ? "gap-2.5 p-3.5" : ""}`}>
         {nameRow}
         {metaRow}
       </div>

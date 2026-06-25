@@ -60,7 +60,7 @@ import {
 } from "@/routes/publicLazyPages";
 import RouteStatePanel from "@/modules/storefront-v2/design/components/RouteStatePanel";
 
-const CARD_EQUAL_MOBILE_FIX_STYLE_ID = "store-card-equal-mobile-fix";
+const CARD_EQUAL_MOBILE_FIX_STYLE_ID = "sf-next-card-equal-mobile-fix";
 const GLOBAL_WIDGET_DELAY_MS = 9000;
 const PRIVACY_TRACKING_DELAY_MS = 1000;
 const ENABLE_LEGACY_CARD_OVERLAP_FIX = false;
@@ -457,7 +457,7 @@ function HomeRoute() {
 function LoyaltyFeatureLoadingState({ feature }: { feature: "points" | "reward" | "referral" }) {
   const label = feature === "points" ? "积分" : feature === "referral" ? "邀请奖励" : "返现奖励";
   return (
-    <main className="sf-next-page store-v12-page store-loyalty-route-loading" aria-busy="true">
+    <main className="sf-next-page sf-next-route-page sf-next-loyalty-route-loading" aria-busy="true">
       <RouteStatePanel
         title={`正在同步${label}`}
         description="系统正在读取后台会员功能配置，请稍候。"
@@ -468,7 +468,7 @@ function LoyaltyFeatureLoadingState({ feature }: { feature: "points" | "reward" 
 
 function CapabilityLoadingState() {
   return (
-    <main className="sf-next-page store-v12-page store-capability-route-loading" aria-busy="true">
+    <main className="sf-next-page sf-next-route-page sf-next-capability-route-loading" aria-busy="true">
       <RouteStatePanel
         title="正在准备页面"
         description="正在读取商城配置，请稍候。"

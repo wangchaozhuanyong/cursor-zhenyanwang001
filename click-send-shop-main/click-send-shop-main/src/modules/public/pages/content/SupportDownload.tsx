@@ -237,7 +237,7 @@ export default function SupportDownload({ installMode = false }: SupportDownload
 
   if (!config.enabled) {
     return (
-      <div className={`store-page-shell store-bottom-safe sf-next-page store-v12-page support-download-page support-download-v12-page${installMode ? " support-install-mode" : ""} support-download-page--empty`}>
+      <div className={`sf-next-page-shell sf-next-bottom-safe sf-next-page sf-next-route-page support-download-page sf-next-support-download-page${installMode ? " support-install-mode" : ""} support-download-page--empty`}>
         {mobileHeader}
         <main className="support-download-shell">
           <div className="support-empty-panel">客服中心暂未开放。</div>
@@ -247,7 +247,7 @@ export default function SupportDownload({ installMode = false }: SupportDownload
   }
 
   return (
-    <div className={`store-page-shell store-bottom-safe sf-next-page store-v12-page support-download-page support-download-v12-page${installMode ? " support-install-mode" : ""}`}>
+    <div className={`sf-next-page-shell sf-next-bottom-safe sf-next-page sf-next-route-page support-download-page sf-next-support-download-page${installMode ? " support-install-mode" : ""}`}>
       <SeoHead
         title={installMode ? `安装应用 - ${siteInfo.siteName || STORE_COPY.brandName}` : pageTitle ? `${pageTitle} - ${siteInfo.siteName || STORE_COPY.brandName}` : siteInfo.siteName || STORE_COPY.brandName}
         description={config.subtitle}

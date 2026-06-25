@@ -14,6 +14,7 @@ import AppVersionReadyMarker from "@/components/AppVersionReadyMarker";
 import AppBootReady from "@/components/AppBootReady";
 import { NavigationHistoryRecorder } from "@/components/NavigationHistoryRecorder";
 import { initPwaInstallPromptCapture } from "@/lib/pwaInstallPromptStore";
+import { HomeShellSkeleton } from "@/components/AppRouteFallback";
 
 const TikTokLanding = lazy(() => import("@/modules/public/pages/content/TikTokLanding"));
 
@@ -45,7 +46,7 @@ if (!isTikTokLanding) {
 }
 
 createRoot(document.getElementById("root")!).render(
-  <Suspense fallback={null}>
+  <Suspense fallback={isTikTokLanding ? null : <HomeShellSkeleton />}>
     {isTikTokLanding ? (
       <>
         <AppVersionReadyMarker appName="storefront" onReady={markStoreSpaReady} />

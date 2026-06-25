@@ -54,7 +54,7 @@ export default function ProductDetailPreview({ config }: { config: ThemeConfig }
             <StorePrice price={previewProduct.price} originalPrice={previewProduct.original_price} />
           </div>
         </div>
-        <div className="store-card space-y-2 p-3">
+        <div className="sf-next-surface-card space-y-2 p-3">
           <p className="text-xs font-medium text-[var(--theme-text)]"><Tx>规格</Tx></p>
           <div className="flex flex-wrap gap-2">
             {["标准装", "家庭装"].map((s, i) => (

@@ -467,21 +467,21 @@ async function waitForRouteReady(page, route) {
   const pathname = route.pathname.split("?")[0];
   const waits = [];
   if (pathname === "/") {
-    waits.push(".sf-next-home-hero, .store-home-command-panel");
+    waits.push(".sf-next-home-hero");
     await page.waitForFunction(
-      () => !document.querySelector(".store-home-command-card--loading"),
+      () => !document.querySelector(".sf-next-quick-entry__item--loading"),
       { timeout: 6500 },
     ).catch(() => undefined);
   } else if (pathname === "/categories") {
     waits.push(".sf-next-category-shell, .sf-next-listing-section");
     await page.waitForFunction(
-      () => !document.querySelector(".sf-next-product-card--skeleton, .store-product-card-v2--skeleton"),
+      () => !document.querySelector(".sf-next-product-card--skeleton"),
       { timeout: 6500 },
     ).catch(() => undefined);
   } else if (pathname === "/profile") {
-    waits.push(".client-profile-hero-card, .client-profile-guest-card");
+    waits.push(".sf-next-profile-hero-card, .sf-next-profile-guest-card");
   } else if (pathname === "/cart") {
-    waits.push(".store-cart-item, .store-cart-empty-card");
+    waits.push(".sf-next-cart-item, .sf-next-cart-empty-card");
     await page.waitForFunction(
       () => {
         const text = document.body?.innerText || "";
@@ -490,36 +490,36 @@ async function waitForRouteReady(page, route) {
       { timeout: 12000 },
     ).catch(() => undefined);
   } else if (pathname === "/coupons") {
-    waits.push(".sf-next-coupon-hero, .store-coupons-v12-state:not([aria-live='polite'])");
+    waits.push(".sf-next-coupon-hero, .sf-next-coupon-state:not([aria-live='polite'])");
     await page.waitForFunction(
       () => !(document.body?.innerText || "").includes("优惠券加载中"),
       { timeout: 6500 },
     ).catch(() => undefined);
   } else if (pathname.startsWith("/content/")) {
-    waits.push(".store-content-v12-article, .store-content-v12-meta, .store-contact-v12-panel, .sf-next-route-state");
+    waits.push(".sf-next-content-article, .sf-next-content-meta, .sf-next-contact-panel, .sf-next-route-state");
     await page.waitForFunction(
       () => {
         const text = document.body?.innerText || "";
-        return !document.querySelector(".store-content-v12-skeleton")
+        return !document.querySelector(".sf-next-content-skeleton")
           && !text.includes("加载中...");
       },
       { timeout: 12000 },
     ).catch(() => undefined);
   } else if (pathname === "/promotions") {
-    waits.push(".store-promotions-v12-card__title, .store-promotions-v12-state-panel");
+    waits.push(".sf-next-promo-card__title, .sf-next-promo-state");
   } else if (pathname === "/search") {
     await page.waitForFunction(
       () => !document.querySelector(".sf-next-search-recent-card--skeleton"),
       { timeout: 6500 },
     ).catch(() => undefined);
   } else if (pathname === "/address") {
-    waits.push(".store-address-v12-card, .store-address-v12-empty");
+    waits.push(".sf-next-address-card, .sf-next-address-empty");
     await page.waitForFunction(
       () => !(document.body?.innerText || "").includes("加载中"),
       { timeout: 6500 },
     ).catch(() => undefined);
   } else if (pathname === "/checkout") {
-    waits.push(".store-checkout-card");
+    waits.push(".sf-next-checkout-card");
     await page.waitForFunction(
       () => {
         const text = document.body?.innerText || "";
@@ -541,7 +541,7 @@ async function waitForRouteReady(page, route) {
   } else if (pathname === "/member/benefits") {
     waits.push(".sc-benefits__folio, .sc-benefits__message");
   } else if (pathname.startsWith("/client-design/")) {
-    waits.push(".store-client-design-page__main, .store-client-design-section");
+    waits.push(".sf-next-design-page__main, .sf-next-design-section");
     if (pathname === "/client-design/coupon-detail") {
       waits.push(".sf-next-value-vault");
     } else if (pathname === "/client-design/share-detail") {
@@ -554,30 +554,30 @@ async function waitForRouteReady(page, route) {
         { timeout: 12000 },
       ).catch(() => undefined);
     } else if (pathname === "/client-design/states") {
-      waits.push(".store-design-state-skeleton, .sf-next-route-state");
+      waits.push(".sf-next-design-state-skeleton, .sf-next-route-state");
     } else {
-      waits.push(".store-design-system-swatches");
+      waits.push(".sf-next-design-system-swatches");
     }
   } else if (pathname === "/notifications") {
-    waits.push(".store-account-v12-status-panel, .store-notifications-v12-card, .store-notifications-v12-filters");
+    waits.push(".sf-next-account-status-panel, .sf-next-notifications-card, .sf-next-notifications-filters");
     await page.waitForFunction(
       () => !(document.body?.innerText || "").includes("正在加载消息"),
       { timeout: 6500 },
     ).catch(() => undefined);
   } else if (pathname === "/reviews/pending") {
-    waits.push(".store-pending-reviews-v12-card, .store-pending-reviews-v12-state");
+    waits.push(".sf-next-pending-reviews-card, .sf-next-pending-reviews-state");
     await page.waitForFunction(
-      () => !document.querySelector(".store-pending-reviews-v12-skeleton"),
+      () => !document.querySelector(".sf-next-pending-reviews-skeleton"),
       { timeout: 6500 },
     ).catch(() => undefined);
   } else if (pathname === "/orders") {
-    waits.push(".store-orders-v12-card:not(.store-orders-v12-skeleton-card), .store-orders-v12-state");
+    waits.push(".sf-next-order-card:not(.sf-next-order-card--skeleton), .sf-next-orders-state");
   } else if (/^\/orders\/[^/]+$/.test(pathname)) {
-    waits.push(".store-order-detail-v12-hero:not(.store-order-detail-v12-loading-hero), .store-order-detail-v12-state");
+    waits.push(".sf-next-order-detail-hero:not(.sf-next-order-detail-loading-hero), .sf-next-order-detail-state");
   } else if (/^\/orders\/[^/]+\/logistics$/.test(pathname)) {
-    waits.push(".store-logistics-v12-hero, .store-logistics-v12-card:not(.store-logistics-v12-loading)");
+    waits.push(".sf-next-logistics-hero, .sf-next-logistics-card:not(.sf-next-logistics-loading)");
   } else if (pathname === "/payment/result") {
-    waits.push(".store-payment-result-v12-card");
+    waits.push(".sf-next-payment-result-card");
     await page.waitForFunction(
       () => {
         const text = document.body?.innerText || "";
@@ -586,7 +586,7 @@ async function waitForRouteReady(page, route) {
       { timeout: 12000 },
     ).catch(() => undefined);
   } else if (pathname === "/rewards") {
-    waits.push(".store-rewards-v12-folio, .store-rewards-v12-state");
+    waits.push(".sf-next-rewards-folio, .sf-next-rewards-state");
     await page.waitForFunction(
       () => {
         const text = document.body?.innerText || "";
@@ -595,7 +595,7 @@ async function waitForRouteReady(page, route) {
       { timeout: 12000 },
     ).catch(() => undefined);
   } else if (pathname === "/wallet") {
-    waits.push(".store-wallet-v12-hero");
+    waits.push(".sf-next-wallet-hero");
     await page.waitForFunction(
       () => {
         const text = document.body?.innerText || "";
@@ -605,7 +605,7 @@ async function waitForRouteReady(page, route) {
     ).catch(() => undefined);
   } else if (pathname === "/points" || pathname === "/points/gifts") {
     if (pathname === "/points") {
-      waits.push(".store-points-v12-folio, .store-points-v12-state");
+      waits.push(".sf-next-points-folio, .sf-next-points-state");
     }
     await page.waitForFunction(
       () => {
@@ -618,14 +618,14 @@ async function waitForRouteReady(page, route) {
       { timeout: 6500 },
     ).catch(() => undefined);
     if (pathname === "/points/gifts") {
-      waits.push(".store-points-gifts-v12-grid, .store-points-gifts-v12-state");
+      waits.push(".sf-next-points-gifts-grid, .sf-next-points-gifts-state");
       await page.waitForFunction(
-        () => !document.querySelector(".store-points-gifts-v12-state .animate-spin"),
+        () => !document.querySelector(".sf-next-points-gifts-state .animate-spin"),
         { timeout: 6500 },
       ).catch(() => undefined);
     }
   } else if (pathname === "/returns") {
-    waits.push(".store-returns-v12-hero");
+    waits.push(".sf-next-returns-hero");
     await page.waitForFunction(
       () => {
         const text = document.body?.innerText || "";
@@ -642,19 +642,19 @@ async function waitForRouteReady(page, route) {
         if (location.pathname !== targetPathname) {
           return !text.includes("正在同步退款") && !text.includes("加载中...");
         }
-        return Boolean(document.querySelector(".store-return-detail-v12-hero"))
+        return Boolean(document.querySelector(".sf-next-return-detail-hero"))
           || !text.includes("加载中...");
       },
       pathname,
       { timeout: 6500 },
     ).catch(() => undefined);
   } else if (pathname === "/history") {
-    waits.push(".store-history-v12-group, .store-account-v12-empty-panel");
+    waits.push(".sf-next-history-group, .sf-next-account-empty-panel");
     await page.waitForFunction(
       () => {
         const text = document.body?.innerText || "";
         return (text.includes("最近浏览") || text.includes("暂无浏览记录"))
-          && !document.querySelector(".store-history-v12-page .animate-pulse");
+          && !document.querySelector(".sf-next-history-page .animate-pulse");
       },
       { timeout: 12000 },
     ).catch(() => undefined);
@@ -673,6 +673,35 @@ async function waitForRouteReady(page, route) {
       { timeout: 6500 },
     ).catch(() => undefined);
   }
+}
+
+async function triggerLazyMedia(page) {
+  const viewport = page.viewportSize() || VIEWPORT;
+  const step = Math.max(240, Math.floor((viewport.height || 844) * 0.72));
+  const scrollHeight = await page.evaluate(() => {
+    const doc = document.documentElement;
+    return Math.max(doc.scrollHeight, document.body?.scrollHeight || 0, window.innerHeight);
+  }).catch(() => viewport.height || 844);
+
+  for (let y = 0; y <= scrollHeight + step; y += step) {
+    await page.evaluate((top) => window.scrollTo(0, top), y).catch(() => undefined);
+    await page.waitForTimeout(70);
+  }
+
+  await page.waitForLoadState("networkidle", { timeout: 2500 }).catch(() => undefined);
+  await page.evaluate(() => window.scrollTo(0, 0)).catch(() => undefined);
+  await page.waitForFunction(
+    () => {
+      const images = Array.from(document.querySelectorAll("#root img"));
+      const criticalImages = images.filter((image) => {
+        const rect = image.getBoundingClientRect();
+        return rect.width > 24 && rect.height > 24 && rect.top < window.innerHeight * 2.2;
+      });
+      return criticalImages.every((image) => image.complete && image.naturalWidth > 0);
+    },
+    { timeout: 3500 },
+  ).catch(() => undefined);
+  await page.waitForTimeout(240);
 }
 
 async function captureRoute(page, route, outDir, user) {
@@ -721,7 +750,7 @@ async function captureRoute(page, route, outDir, user) {
       { timeout: 6500 },
     ).catch(() => undefined);
   }
-  await page.evaluate(() => window.scrollTo(0, 0)).catch(() => undefined);
+  await triggerLazyMedia(page);
   const state = await page.evaluate(() => {
     const root = document.querySelector("#root");
     const bodyText = (document.body?.innerText || "").replace(/\s+/g, " ").trim();

@@ -23,9 +23,9 @@ export default function ContactUsContent({ intro }: { intro?: string }) {
   ].filter(Boolean) as Row[];
 
   return (
-    <div className="store-contact-v12-stack">
-      {intro ? <p className="store-contact-v12-intro">{intro}</p> : null}
-      <div className="store-contact-v12-panel">
+    <div className="sf-next-contact-stack">
+      {intro ? <p className="sf-next-contact-intro">{intro}</p> : null}
+      <div className="sf-next-contact-panel">
         <h2>联系方式</h2>
         <ul>
           {rows.map((row) => {
@@ -49,7 +49,7 @@ export default function ContactUsContent({ intro }: { intro?: string }) {
           })}
         </ul>
       </div>
-      <SupportContactSection className="store-contact-v12-support" />
+      <SupportContactSection className="sf-next-contact-support" />
     </div>
   );
 }

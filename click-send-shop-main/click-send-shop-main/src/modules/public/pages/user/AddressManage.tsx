@@ -13,8 +13,8 @@ import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { usePublicLocale } from "@/i18n/publicLocale";
 
 type AddressForm = Omit<Address, "id">;
-const CARD = "store-address-v12-card";
-const FORM_CONTROL = "store-address-v12-control";
+const CARD = "sf-next-address-card";
+const FORM_CONTROL = "sf-next-address-control";
 
 const EMPTY_FORM: AddressForm = {
   recipient_name: "",
@@ -104,7 +104,7 @@ export default function AddressManage() {
     <UnifiedButton
       type="button"
       onClick={openAdd}
-      className="store-address-v12-add-button"
+      className="sf-next-address-add-button"
     >
       <Plus size={14} aria-hidden />
       {t("address.add")}
@@ -116,32 +116,32 @@ export default function AddressManage() {
         title={t("address.title")}
         onBack={goBack}
         rightSlot={addAddressButton}
-        className="sf-next-page store-v12-page store-account-subpage-v12-page store-address-v12-page text-[var(--theme-text)]"
+        className="sf-next-page sf-next-route-page sf-next-account-route-page sf-next-address-page text-[var(--theme-text)]"
         mainClassName="sf-next-account-main pb-24 sm:py-4 md:pb-12"
       >
         {addressLoading && addresses.length === 0 ? (
-          <div className="store-address-v12-loading">
+          <div className="sf-next-address-loading">
             <Loader2 size={24} className="mb-3 animate-spin text-[var(--theme-price)]" aria-label={t("address.loading")} />
             <p className="text-sm">{t("address.loading")}</p>
           </div>
         ) : addresses.length === 0 ? (
-          <section className="store-account-v12-empty-panel store-address-v12-empty">
-            <span className="store-account-v12-empty-panel__icon" aria-hidden>
+          <section className="sf-next-state-panel sf-next-address-empty">
+            <span className="sf-next-state-panel__icon" aria-hidden>
               <MapPin size={28} />
             </span>
             <h2>{t("address.emptyTitle")}</h2>
             <p>{t("address.emptyDescription")}</p>
-            <UnifiedButton type="button" onClick={openAdd} className="store-account-v12-empty-panel__action">
+            <UnifiedButton type="button" onClick={openAdd} className="sf-next-state-panel__primary">
               <Plus size={17} aria-hidden />
               {t("address.addAddress")}
             </UnifiedButton>
           </section>
         ) : (
-          <div className="store-address-v12-list space-y-3 xl:grid xl:grid-cols-2 xl:gap-4 xl:space-y-0">
+          <div className="sf-next-address-list space-y-3 xl:grid xl:grid-cols-2 xl:gap-4 xl:space-y-0">
             {addresses.map((addr) => (
               <article key={addr.id} className={CARD}>
                 <div className="flex items-start gap-3">
-                  <div className="store-address-v12-pin">
+                  <div className="sf-next-address-pin">
                     <MapPin size={20} aria-hidden />
                   </div>
                   <div className="min-w-0 flex-1">
@@ -156,12 +156,12 @@ export default function AddressManage() {
                     <p className="mt-2 text-sm leading-6 text-[var(--theme-text-on-surface)]">{formatAddressForDisplay(addr)}</p>
                   </div>
                 </div>
-                <div className="store-address-v12-card__actions">
+                <div className="sf-next-address-card__actions">
                   <UnifiedButton
                     type="button"
                     onClick={() => setDefaultAddress(addr.id)}
                     disabled={addr.isDefault}
-                    className="store-address-v12-action store-address-v12-action--default"
+                    className="sf-next-address-action sf-next-address-action--default"
                   >
                     <span className={`flex h-4 w-4 items-center justify-center rounded-full border ${addr.isDefault ? "border-[var(--theme-primary)] bg-[var(--theme-primary)]" : "border-[var(--theme-border)]"}`}>
                       {addr.isDefault && <Check size={10} className="text-[var(--theme-primary-foreground)]" aria-hidden />}
@@ -169,7 +169,7 @@ export default function AddressManage() {
                     {addr.isDefault ? t("address.defaultAddress") : t("address.setDefault")}
                   </UnifiedButton>
                   <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
-                    <UnifiedButton type="button" onClick={() => openEdit(addr)} className="store-address-v12-action store-address-v12-action--edit">
+                    <UnifiedButton type="button" onClick={() => openEdit(addr)} className="sf-next-address-action sf-next-address-action--edit">
                       <Edit3 size={13} aria-hidden />
                       {t("address.edit")}
                     </UnifiedButton>
@@ -183,7 +183,7 @@ export default function AddressManage() {
                           toast.error(t("address.deleteFailed"));
                         }
                       }}
-                      className="store-address-v12-action store-address-v12-action--delete"
+                      className="sf-next-address-action sf-next-address-action--delete"
                     >
                       <Trash2 size={13} aria-hidden />
                       {t("address.delete")}
@@ -206,7 +206,7 @@ export default function AddressManage() {
         onSubmit={handleSave}
         height="90vh"
       >
-        <div className="store-address-v12-form">
+        <div className="sf-next-address-form">
           <AddressField label={t("address.recipient")}>
             <input aria-label={t("address.recipient")} value={form.recipient_name} onChange={(e) => setForm((f) => ({ ...f, recipient_name: e.target.value }))} placeholder={t("address.recipientPlaceholder")} className={FORM_CONTROL} />
           </AddressField>
@@ -219,7 +219,7 @@ export default function AddressManage() {
           <AddressField label={t("address.line2")}>
             <input aria-label={t("address.line2")} value={form.line2} onChange={(e) => setForm((f) => ({ ...f, line2: e.target.value }))} placeholder={t("address.line2Placeholder")} className={FORM_CONTROL} />
           </AddressField>
-          <div className="store-address-v12-form-grid">
+          <div className="sf-next-address-form-grid">
             <AddressField label={t("address.city")}>
               <input aria-label={t("address.city")} value={form.city} onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))} placeholder={t("address.cityPlaceholder")} className={FORM_CONTROL} />
             </AddressField>
@@ -236,7 +236,7 @@ export default function AddressManage() {
               ))}
             </select>
           </AddressField>
-          <label className="store-address-v12-default-toggle">
+          <label className="sf-next-address-default-toggle">
             <input type="checkbox" checked={form.isDefault} onChange={(e) => setForm((f) => ({ ...f, isDefault: e.target.checked }))} />
             {t("address.setDefaultAddress")}
           </label>
@@ -248,7 +248,7 @@ export default function AddressManage() {
 
 function AddressField({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <label className="store-address-v12-field">
+    <label className="sf-next-address-field">
       <span>{label}</span>
       {children}
     </label>

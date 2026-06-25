@@ -36,7 +36,7 @@ export function DesktopPurchaseTwoColumn({
       <div className={cn("mt-6 hidden md:block lg:hidden", asideClassName)}>{aside}</div>
       <aside
         className={cn(
-          "mt-6 hidden self-start lg:sticky lg:top-[var(--store-tablet-sticky-top)] lg:mt-0 lg:block xl:top-[var(--store-desktop-sticky-top)]",
+          "mt-6 hidden self-start lg:sticky lg:top-[var(--sf-next-header-tablet-sticky-top)] lg:mt-0 lg:block xl:top-[var(--sf-next-header-desktop-sticky-top)]",
           asideClassName,
         )}
       >
@@ -57,7 +57,7 @@ export function DesktopPurchaseCard({
   return (
     <section
       className={cn(
-        "theme-rounded border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 theme-shadow",
+        "sf-next-theme-radius border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 sf-next-theme-shadow",
         className,
       )}
     >

@@ -407,12 +407,12 @@ export default function PromotionDetail() {
 
   if (loading) {
     return (
-      <main className="store-page-shell sf-next-page store-v12-page store-promotion-detail-v12-page">
-        <div className="store-promotion-detail-v12-loading" role="status" aria-label={t("promotion.loading")}>
-          <span className="sf-next-skeleton store-promotion-detail-v12-loading__hero" />
-          <span className="sf-next-skeleton store-promotion-detail-v12-loading__line" />
-          <span className="sf-next-skeleton store-promotion-detail-v12-loading__line is-short" />
-          <Loader2 aria-hidden="true" className="store-promotion-detail-v12-loading__spinner" />
+      <main className="sf-next-page-shell sf-next-page sf-next-route-page sf-next-promotion-detail-page">
+        <div className="sf-next-promotion-detail-loading" role="status" aria-label={t("promotion.loading")}>
+          <span className="sf-next-skeleton sf-next-promotion-detail-loading__hero" />
+          <span className="sf-next-skeleton sf-next-promotion-detail-loading__line" />
+          <span className="sf-next-skeleton sf-next-promotion-detail-loading__line is-short" />
+          <Loader2 aria-hidden="true" className="sf-next-promotion-detail-loading__spinner" />
         </div>
       </main>
     );
@@ -420,7 +420,7 @@ export default function PromotionDetail() {
 
   if (error || !promotion) {
     return (
-      <main className="store-page-shell sf-next-page store-v12-page store-promotion-detail-v12-page">
+      <main className="sf-next-page-shell sf-next-page sf-next-route-page sf-next-promotion-detail-page">
         <PromotionDetailStatePanel
           title={t("promotion.detailUnavailable")}
           description={error || t("promotion.emptyDescription")}
@@ -444,11 +444,11 @@ export default function PromotionDetail() {
       canonical={buildCanonical(`${PROMOTIONS_BASE_PATH}/${promotion.slug || slug}`)}
       robots="index,follow"
     />
-    <main className="store-page-shell sf-next-page store-v12-page store-promotion-detail-v12-page">
-      <div className="store-promotion-detail-v12-topbar">
+    <main className="sf-next-page-shell sf-next-page sf-next-route-page sf-next-promotion-detail-page">
+      <div className="sf-next-promotion-detail-topbar">
         <button
           type="button"
-          className="store-promotion-detail-v12-icon-button"
+          className="sf-next-promotion-detail-icon-button"
           aria-label={t("common.back")}
           onClick={() => navigate(-1)}
         >
@@ -457,7 +457,7 @@ export default function PromotionDetail() {
         <h1>活动详情</h1>
         <button
           type="button"
-          className="store-promotion-detail-v12-icon-button"
+          className="sf-next-promotion-detail-icon-button"
           aria-label="分享活动"
           onClick={() => void handleShare()}
         >
@@ -465,13 +465,13 @@ export default function PromotionDetail() {
         </button>
       </div>
 
-      <section className="store-promotion-detail-v12-hero">
+      <section className="sf-next-promotion-detail-hero">
         {promotion.cover_image ? (
-          <div className="store-promotion-detail-v12-hero__media">
+          <div className="sf-next-promotion-detail-hero__media">
             <img src={promotion.cover_image} alt={displayPromotionTitle} />
           </div>
         ) : (
-          <div className="store-promotion-detail-v12-hero__media store-promotion-detail-v12-hero__media--placeholder" aria-hidden="true">
+          <div className="sf-next-promotion-detail-hero__media sf-next-promotion-detail-hero__media--placeholder" aria-hidden="true">
             <span />
             <i />
             <b />
@@ -479,8 +479,8 @@ export default function PromotionDetail() {
         )}
       </section>
 
-      <section className="store-promotion-detail-v12-intro">
-        <div className="store-promotion-detail-v12-hero__badges">
+      <section className="sf-next-promotion-detail-intro">
+        <div className="sf-next-promotion-detail-hero__badges">
           <span>{promotionTypeLabel(promotion.type)}</span>
           <b>{statusLabel}</b>
           {displayPromoLabel ? <em>{displayPromoLabel}</em> : null}
@@ -489,7 +489,7 @@ export default function PromotionDetail() {
         <p>{displayPromotionDescription || t("promotion.detailFallback")}</p>
       </section>
 
-      <section className="store-promotion-detail-v12-summary" aria-label="活动摘要">
+      <section className="sf-next-promotion-detail-summary" aria-label="活动摘要">
         {summaryItems.map((item) => (
           <div key={item.id}>
             <span>{item.label}</span>
@@ -499,19 +499,19 @@ export default function PromotionDetail() {
       </section>
 
       {coupons.length ? (
-        <section className="store-promotion-detail-v12-benefits">
-          <div className="store-promotion-detail-v12-section-head">
+        <section className="sf-next-promotion-detail-benefits">
+          <div className="sf-next-promotion-detail-section-head">
             <div>
               <h2>{t("promotion.couponRewards")}</h2>
               <p>{t("promotion.couponRewardsHint")}</p>
             </div>
-            <Link className="store-promotion-detail-v12-section-link" to={localizedPath("/coupons")}>
+            <Link className="sf-next-promotion-detail-section-link" to={localizedPath("/coupons")}>
               <TicketPercent size={16} />
               {t("promotion.goCoupons")}
             </Link>
           </div>
 
-          <div className="store-promotion-detail-v12-benefits__list">
+          <div className="sf-next-promotion-detail-benefits__list">
             {coupons.map((coupon) => {
               const actionState = getActionState(coupon);
               return (
@@ -536,46 +536,46 @@ export default function PromotionDetail() {
       ) : null}
 
       {promotion.items?.length ? (
-        <section className="store-promotion-detail-v12-products">
-          <div className="store-promotion-detail-v12-section-head">
+        <section className="sf-next-promotion-detail-products">
+          <div className="sf-next-promotion-detail-section-head">
             <div>
               <h2>{t("promotion.items")}</h2>
               <p>{itemCount} 件商品</p>
             </div>
           </div>
-          <div className="store-promotion-detail-v12-products__list">
+          <div className="sf-next-promotion-detail-products__list">
             {promotion.items.map((item) => (
-              <Link className="store-promotion-detail-v12-product-row" key={item.product_id} to={localizedPath(`/product/${item.product_id}`)}>
+              <Link className="sf-next-promotion-detail-product-row" key={item.product_id} to={localizedPath(`/product/${item.product_id}`)}>
                 {item.cover_image ? (
-                  <div className="store-promotion-detail-v12-product-row__media">
+                  <div className="sf-next-promotion-detail-product-row__media">
                     <img className="h-full w-full object-cover" src={item.cover_image} alt={storefrontDisplayText(item.product_name, "活动商品")} />
                   </div>
                 ) : null}
-                <div className="store-promotion-detail-v12-product-row__content">
+                <div className="sf-next-promotion-detail-product-row__content">
                   <h3 className="line-clamp-2 text-sm font-semibold text-[var(--theme-text)]">{storefrontDisplayText(item.product_name, "活动商品")}</h3>
-                  <div className="store-promotion-detail-v12-product-row__price">
+                  <div className="sf-next-promotion-detail-product-row__price">
                     {item.activity_price > 0 ? <strong className="text-[var(--theme-price)]">{money(item.activity_price)}</strong> : null}
                     {item.product_price > item.activity_price && item.activity_price > 0 ? (
                       <span className="text-[var(--theme-text-muted)] line-through">{money(item.product_price)}</span>
                     ) : null}
                     {item.saving_amount > 0 ? (
-                      <span className="store-promotion-detail-v12-product-row__save">
+                      <span className="sf-next-promotion-detail-product-row__save">
                         {t("promotion.save")} {money(item.saving_amount)}
                       </span>
                     ) : null}
                   </div>
-                  <div className="store-promotion-detail-v12-product-row__stock">
+                  <div className="sf-next-promotion-detail-product-row__stock">
                     <span>{t("promotion.sold")} {item.sold_count}</span>
                     <span>{item.sold_out ? t("promotion.soldOut") : `${t("promotion.stock")} ${item.remaining_stock}`}</span>
                   </div>
-                  <div className="store-promotion-detail-v12-product-row__progress">
+                  <div className="sf-next-promotion-detail-product-row__progress">
                     <div
-                      className="store-promotion-detail-v12-product-row__progress-fill"
+                      className="sf-next-promotion-detail-product-row__progress-fill"
                       style={{ width: `${clampPercent(item.stock_progress_percent)}%` }}
                     />
                   </div>
                   {item.limit_per_user > 0 ? (
-                    <p className="store-promotion-detail-v12-product-row__limit">{t("promotion.limitPerUser")} {item.limit_per_user}</p>
+                    <p className="sf-next-promotion-detail-product-row__limit">{t("promotion.limitPerUser")} {item.limit_per_user}</p>
                   ) : null}
                 </div>
               </Link>
@@ -585,7 +585,7 @@ export default function PromotionDetail() {
       ) : null}
 
       {displayRules.length ? (
-        <section className="store-promotion-detail-v12-rules">
+        <section className="sf-next-promotion-detail-rules">
           <h2>{t("promotion.ruleEntries")}</h2>
           <ol>
             {displayRules.map((rule, index) => (
@@ -629,17 +629,17 @@ function PromotionDetailStatePanel({
   title,
 }: PromotionDetailStatePanelProps) {
   return (
-    <section className="store-promotion-detail-v12-state-panel" aria-live="polite">
-      <div className="store-promotion-detail-v12-state-panel__icon">
+    <section className="sf-next-promotion-detail-state-panel" aria-live="polite">
+      <div className="sf-next-promotion-detail-state-panel__icon">
         <ShieldCheck size={22} aria-hidden />
       </div>
-      <div className="store-promotion-detail-v12-state-panel__copy">
-        <p className="store-promotion-detail-v12-state-panel__eyebrow">活动详情</p>
+      <div className="sf-next-promotion-detail-state-panel__copy">
+        <p className="sf-next-promotion-detail-state-panel__eyebrow">活动详情</p>
         <h1>{title}</h1>
         <p>{description}</p>
       </div>
 
-      <div className="store-promotion-detail-v12-state-panel__checks" aria-label="活动详情说明">
+      <div className="sf-next-promotion-detail-state-panel__checks" aria-label="活动详情说明">
         {[
           ["活动状态", "展示活动时间、状态和可用原因。"],
           ["优惠组合", "优惠资格、叠加互斥、限购和库存会在结算页确认。"],
@@ -655,20 +655,20 @@ function PromotionDetailStatePanel({
         ))}
       </div>
 
-      <div className="store-promotion-detail-v12-state-panel__actions">
-        <UnifiedButton type="button" onClick={onRetry} className="store-promotion-detail-v12-state-panel__primary">
+      <div className="sf-next-promotion-detail-state-panel__actions">
+        <UnifiedButton type="button" onClick={onRetry} className="sf-next-promotion-detail-state-panel__primary">
           <RefreshCw size={16} />
           重新加载
         </UnifiedButton>
-        <Link className="store-promotion-detail-v12-state-panel__secondary" to={promotionsHref}>
+        <Link className="sf-next-promotion-detail-state-panel__secondary" to={promotionsHref}>
           <BadgePercent size={16} />
           {allPromotionsLabel}
         </Link>
-        <Link className="store-promotion-detail-v12-state-panel__secondary" to={categoriesHref}>
+        <Link className="sf-next-promotion-detail-state-panel__secondary" to={categoriesHref}>
           <ShoppingBag size={16} />
           {browseLabel}
         </Link>
-        <UnifiedButton type="button" onClick={onBack} className="store-promotion-detail-v12-state-panel__ghost">
+        <UnifiedButton type="button" onClick={onBack} className="sf-next-promotion-detail-state-panel__ghost">
           <ArrowLeft size={16} />
           {backLabel}
         </UnifiedButton>

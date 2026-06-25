@@ -66,7 +66,7 @@ export default function ContentCmsPage() {
       onBack={goBack}
       backFallback="/profile"
       contentClassName="sf-next-account-main md:max-w-3xl xl:max-w-4xl"
-      className="sf-next-page store-v12-page store-content-v12-page pb-8"
+      className="sf-next-page sf-next-route-page sf-next-content-page pb-8"
     >
       <SeoHead
         title={title}
@@ -74,14 +74,14 @@ export default function ContentCmsPage() {
         canonical={buildCanonical(`/content/${slug}`)}
         robots={isNoindex ? "noindex,follow" : "index,follow"}
       />
-      <div className="store-content-v12-stack">
+      <div className="sf-next-content-stack">
         {loading ? (
-          <section className="store-content-v12-skeleton" aria-busy="true" aria-label="内容加载中">
-            <div className="sf-next-skeleton store-content-v12-skeleton__title" />
-            <div className="sf-next-skeleton store-content-v12-skeleton__meta" />
-            <div className="sf-next-skeleton store-content-v12-skeleton__line" />
-            <div className="sf-next-skeleton store-content-v12-skeleton__line" />
-            <div className="sf-next-skeleton store-content-v12-skeleton__line is-short" />
+          <section className="sf-next-content-skeleton" aria-busy="true" aria-label="内容加载中">
+            <div className="sf-next-skeleton sf-next-content-skeleton__title" />
+            <div className="sf-next-skeleton sf-next-content-skeleton__meta" />
+            <div className="sf-next-skeleton sf-next-content-skeleton__line" />
+            <div className="sf-next-skeleton sf-next-content-skeleton__line" />
+            <div className="sf-next-skeleton sf-next-content-skeleton__line is-short" />
           </section>
         ) : null}
 
@@ -106,7 +106,7 @@ export default function ContentCmsPage() {
         ) : null}
 
         {page && !loading && !error ? (
-          <div className="store-content-v12-meta" aria-label="内容信息">
+          <div className="sf-next-content-meta" aria-label="内容信息">
             <span>
               <FileText size={14} aria-hidden />
               CMS
@@ -115,7 +115,7 @@ export default function ContentCmsPage() {
           </div>
         ) : null}
 
-        {hasPageContent && !loading && !error ? <article className="store-body-text store-content-v12-article" dangerouslySetInnerHTML={{ __html: sanitizeCmsHtml(page?.content || "") }} /> : null}
+        {hasPageContent && !loading && !error ? <article className="sf-next-body-text sf-next-content-article" dangerouslySetInnerHTML={{ __html: sanitizeCmsHtml(page?.content || "") }} /> : null}
         {isContactUs && !loading && !error ? <ContactUsContent intro={!page?.content ? "如需订单、支付、物流、售后等协助，请通过以下方式联系我们。" : undefined} /> : null}
 
         {!hasPageContent && !isContactUs && page && !loading && !error ? (

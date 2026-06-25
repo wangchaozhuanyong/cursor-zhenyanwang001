@@ -28,15 +28,15 @@ import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import StableImage from "@/components/ui/StableImage";
 import { usePublicLocale } from "@/i18n/publicLocale";
 
-const CARD = "store-settings-v12-card";
-const SECTION_TITLE = "store-settings-v12-section-title";
-const SOFT_INPUT = "store-settings-v12-input";
-const FIELD_LABEL = "store-settings-v12-field-label";
-const DIVIDER = "store-settings-v12-divider";
+const CARD = "sf-next-settings-card";
+const SECTION_TITLE = "sf-next-settings-section-title";
+const SOFT_INPUT = "sf-next-settings-input";
+const FIELD_LABEL = "sf-next-settings-field-label";
+const DIVIDER = "sf-next-settings-divider";
 
 function SectionBlock({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="store-settings-v12-section">
+    <section className="sf-next-settings-section">
       <h2 className={SECTION_TITLE}>{title}</h2>
       <div className={CARD}>{children}</div>
     </section>
@@ -45,7 +45,7 @@ function SectionBlock({ title, children }: { title: string; children: ReactNode 
 
 function IconBubble({ children }: { children: ReactNode }) {
   return (
-    <span className="store-settings-v12-icon">
+    <span className="sf-next-settings-icon">
       {children}
     </span>
   );
@@ -211,27 +211,27 @@ export default function Settings() {
     <StoreAccountLayout
       title="账户设置"
       onBack={goBack}
-      className="sf-next-page store-v12-page store-account-subpage-v12-page store-settings-v12-page text-[var(--theme-text)]"
-      mainClassName="sf-next-account-main store-settings-v12-main pb-8 pt-3 sm:py-5 md:pb-12"
+      className="sf-next-page sf-next-route-page sf-next-account-route-page sf-next-settings-page text-[var(--theme-text)]"
+      mainClassName="sf-next-account-main sf-next-settings-main pb-8 pt-3 sm:py-5 md:pb-12"
     >
       <div className="space-y-4 sm:space-y-5">
-        <section className="store-account-v12-hero store-settings-v12-hero">
-          <div className="store-settings-v12-identity">
+        <section className="sf-next-account-hero sf-next-settings-hero">
+          <div className="sf-next-settings-identity">
             <UnifiedButton
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={profileSaving}
-              className="store-settings-v12-avatar disabled:cursor-not-allowed disabled:opacity-70"
+              className="sf-next-settings-avatar disabled:cursor-not-allowed disabled:opacity-70"
               aria-label="更换头像"
             >
-              <span className="store-settings-v12-avatar__media">
+              <span className="sf-next-settings-avatar__media">
                 {avatar ? (
                   <StableImage src={avatar} alt="头像" className="h-full w-full" imgClassName="object-cover" />
                 ) : (
-                  <span className="store-settings-v12-avatar__initial">{avatarInitial}</span>
+                  <span className="sf-next-settings-avatar__initial">{avatarInitial}</span>
                 )}
               </span>
-              <span className="store-settings-v12-avatar__camera">
+              <span className="sf-next-settings-avatar__camera">
                 <Camera size={15} aria-hidden />
               </span>
             </UnifiedButton>
@@ -240,7 +240,7 @@ export default function Settings() {
               <p>个人资料</p>
             </div>
           </div>
-          <div className="store-v12-status-strip store-settings-v12-status-strip" aria-label="账户状态">
+          <div className="sf-next-status-strip sf-next-settings-status-strip" aria-label="账户状态">
             <span>
               <b>联系方式</b>
               <strong>{contactItemsReady}/3</strong>
@@ -285,12 +285,12 @@ export default function Settings() {
                   value={birthday}
                   readOnly={birthdayReadOnly}
                   onChange={setBirthday}
-                  controlClassName="store-settings-v12-date-input"
+                  controlClassName="sf-next-settings-date-input"
                 />
                 {birthdayReadOnly ? (
-                  <p className="store-settings-v12-field-hint">生日已保存，如需修改请联系客服</p>
+                  <p className="sf-next-settings-field-hint">生日已保存，如需修改请联系客服</p>
                 ) : birthday ? (
-                  <p className="store-settings-v12-field-hint">生日保存后不可自行修改</p>
+                  <p className="sf-next-settings-field-hint">生日保存后不可自行修改</p>
                 ) : null}
               </div>
             </div>
@@ -314,7 +314,7 @@ export default function Settings() {
                 readOnly
                 variant="joined"
                 showErrorText={false}
-                className="store-settings-v12-phone-input"
+                className="sf-next-settings-phone-input"
               />
             </div>
           </div>
@@ -357,14 +357,14 @@ export default function Settings() {
                   errorText={fieldErrors.whatsapp}
                   phonePlaceholder="WhatsApp 号码"
                   variant="joined"
-                  className="store-settings-v12-phone-input"
+                  className="sf-next-settings-phone-input"
                   autoDetectCountryCode
                 />
               </div>
             </div>
           </div>
 
-          <p className="store-settings-v12-help-note">
+          <p className="sf-next-settings-help-note">
             手机号用于登录，如需修改请联系客服。
           </p>
         </div>
@@ -407,7 +407,7 @@ export default function Settings() {
                 type="button"
                 onClick={handleUnbindWechat}
                 disabled={wechatActionLoading}
-                className="store-settings-v12-oauth-button store-settings-v12-oauth-button--danger"
+                className="sf-next-settings-oauth-button sf-next-settings-oauth-button--danger"
               >
                 {wechatActionLoading ? "处理中..." : "解绑微信"}
               </UnifiedButton>
@@ -416,14 +416,14 @@ export default function Settings() {
                 type="button"
                 onClick={handleBindWechat}
                 disabled={wechatActionLoading}
-                className="store-settings-v12-oauth-button store-settings-v12-oauth-button--wechat"
+                className="sf-next-settings-oauth-button sf-next-settings-oauth-button--wechat"
               >
                 <WeChatIcon size={20} />
                 {wechatActionLoading ? "跳转中..." : "绑定微信"}
               </UnifiedButton>
             )}
           </div>
-          <p className="store-settings-v12-field-hint">
+          <p className="sf-next-settings-field-hint">
             解绑前请确保已绑定手机号或设置密码，否则可能无法登录。
           </p>
         </SectionBlock>
@@ -432,12 +432,12 @@ export default function Settings() {
       <SettingsSecuritySection />
       </div>
 
-      <div className="store-settings-v12-save-bar">
-        <div className="store-settings-v12-save-bar__inner">
+      <div className="sf-next-settings-save-bar">
+        <div className="sf-next-settings-save-bar__inner">
           <UnifiedButton
             onClick={handleSave}
             disabled={profileSaving}
-            className="store-settings-v12-save-button"
+            className="sf-next-settings-save-button"
           >
             {profileSaving ? "保存中..." : "保存修改"}
           </UnifiedButton>

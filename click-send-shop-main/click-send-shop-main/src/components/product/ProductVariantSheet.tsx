@@ -462,17 +462,17 @@ export default function ProductVariantSheet({
   ) : null;
 
   const activityRuleCard = activeActivity ? (
-    <section className="store-variant-v12-activity" aria-label="当前活动规则">
-      <div className="store-variant-v12-activity__head">
+    <section className="sf-next-variant-activity" aria-label="当前活动规则">
+      <div className="sf-next-variant-activity__head">
         <div className="min-w-0">
-          <div className="store-variant-v12-activity__kicker">
+          <div className="sf-next-variant-activity__kicker">
             <span>{activityTypeLabel(activeActivity.type)}</span>
             <b>{activityStatusLabel(activeActivity)}</b>
           </div>
           <h3>{activeActivity.title}</h3>
           {activeActivity.description ? <p>{activeActivity.description}</p> : null}
         </div>
-        <div className="store-variant-v12-activity__amount">
+        <div className="sf-next-variant-activity__amount">
           {activityPrice > 0 && isActivityPriceDeal ? (
             <>
               <span>活动价</span>
@@ -492,7 +492,7 @@ export default function ProductVariantSheet({
         </div>
       </div>
 
-      <div className="store-variant-v12-activity__facts">
+      <div className="sf-next-variant-activity__facts">
         <span>
           <Clock3 size={14} aria-hidden />
           {formatActivityDateTime(activeActivity.start_at)} - {formatActivityDateTime(activeActivity.end_at)}
@@ -504,8 +504,8 @@ export default function ProductVariantSheet({
       </div>
 
       {activityProgressPercent != null ? (
-        <div className="store-variant-v12-activity__progress">
-          <div className="store-variant-v12-activity__progress-meta">
+        <div className="sf-next-variant-activity__progress">
+          <div className="sf-next-variant-activity__progress-meta">
             <span>活动库存</span>
             <strong>
               {activityStockTotal > 0
@@ -513,7 +513,7 @@ export default function ProductVariantSheet({
                 : `剩余 ${activityRemaining}`}
             </strong>
           </div>
-          <div className="store-variant-v12-activity__track" aria-hidden>
+          <div className="sf-next-variant-activity__track" aria-hidden>
             <span style={{ width: `${activityProgressPercent}%` }} />
           </div>
           {activitySavingAmount > 0 ? (
@@ -522,7 +522,7 @@ export default function ProductVariantSheet({
         </div>
       ) : null}
 
-      <p className="store-variant-v12-activity__safe">
+      <p className="sf-next-variant-activity__safe">
         活动价、库存、限购、优惠券和叠加关系会在结算页确认。
       </p>
     </section>

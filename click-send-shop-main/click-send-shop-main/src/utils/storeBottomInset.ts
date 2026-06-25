@@ -24,7 +24,7 @@ export function isStoreTabPath(pathname: string): boolean {
 export function getStoreFixedBottomOffset(pathname: string): string {
   const canonicalPathname = stripPublicLocaleFromPathname(pathname);
   const safe = "env(safe-area-inset-bottom, 0px)";
-  const nav = "var(--store-bottom-nav-height, 78px)";
+  const nav = "var(--sf-bottom-nav-height, 78px)";
   const action = "var(--store-action-bar-height, 4.75rem)";
   const bannerExtra = "5.25rem";
 

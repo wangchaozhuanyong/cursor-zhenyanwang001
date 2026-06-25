@@ -14,8 +14,8 @@ const ADMIN_CSRF_TOKEN = String(process.env.ADMIN_CSRF_TOKEN || "").trim();
 const REQUIRE_ADMIN_SCAN = process.env.REQUIRE_ADMIN_SCAN === "1";
 const MAX_LAYOUT_SHIFT = Number(process.env.ROUTE_AUDIT_MAX_CLS || "0.05");
 const MAX_PREHEATED_FALLBACK_MS = Number(process.env.ROUTE_AUDIT_MAX_FALLBACK_MS || "80");
-const SAMPLE_INTERVAL_MS = Number(process.env.ROUTE_AUDIT_SAMPLE_INTERVAL_MS || "40");
-const SAMPLE_WINDOW_MS = Number(process.env.ROUTE_AUDIT_SAMPLE_WINDOW_MS || "920");
+const SAMPLE_INTERVAL_MS = Number(process.env.ROUTE_AUDIT_SAMPLE_INTERVAL_MS || "80");
+const SAMPLE_WINDOW_MS = Number(process.env.ROUTE_AUDIT_SAMPLE_WINDOW_MS || "1200");
 const NEW_ARRIVAL_CATEGORY_PATH = "/categories?is_new=1&home_new_arrivals_rule=1";
 const BLOCK_SERVICE_WORKERS = process.env.ROUTE_AUDIT_ALLOW_SERVICE_WORKER !== "1";
 
@@ -36,7 +36,10 @@ function addWarning(area, message, extra = {}) {
 function isStoreBottomNavHiddenPath(pathname) {
   return (
     pathname === "/search" ||
+    pathname === "/support-download" ||
+    pathname === "/cart" ||
     pathname.startsWith("/checkout") ||
+    pathname.startsWith("/orders/") ||
     pathname.startsWith("/product/") ||
     pathname.startsWith("/promotions/")
   );
@@ -279,7 +282,7 @@ async function addLayoutShiftObserver(context) {
           if (node.closest("[data-admin-shell] aside")) return "admin-sidebar";
           if (node.closest(".admin-chrome")) return "admin-chrome";
           if (node.closest("[data-admin-shell]")) return "admin-shell";
-          if (node.closest(".store-shell")) return "store-shell";
+          if (node.closest(".sf-next-store-shell")) return "sf-next-store-shell";
           return "document";
         } catch {
           return "unknown";
@@ -364,9 +367,9 @@ async function inspectViewportBlankness(page) {
 async function readFrameState(page) {
   return page.evaluate(() => {
     const fallback = document.querySelector("[data-route-fallback]");
-    const storeShell = document.querySelector(".store-shell");
-    const storeBottomNav = document.querySelector(".store-bottom-nav");
-    const storeHeader = document.querySelector(".store-header-brand");
+    const storeShell = document.querySelector(".sf-next-store-shell");
+    const storeBottomNav = document.querySelector(".sf-next-bottom-nav");
+    const storeHeader = document.querySelector(".sf-next-header-brand");
     const adminShell = document.querySelector("[data-admin-shell]");
     const adminChrome = document.querySelector(".admin-chrome");
     const adminSidebar = document.querySelector("[data-admin-shell] aside");

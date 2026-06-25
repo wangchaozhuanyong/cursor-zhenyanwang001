@@ -148,11 +148,11 @@ export default function Returns() {
     <StoreAccountLayout
       title={copy.title}
       onBack={goBack}
-      className="sf-next-page store-v12-page store-returns-v12-page"
+      className="sf-next-page sf-next-route-page sf-next-returns-page"
       mainClassName="sf-next-account-main sm:px-4 xl:py-6"
     >
       <main className="mx-auto w-full max-w-3xl space-y-4 text-sm">
-        <section className="store-returns-v12-hero relative overflow-hidden rounded-[28px] border border-[color-mix(in_srgb,var(--theme-primary)_14%,var(--theme-border))] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--theme-primary)_10%,var(--theme-surface))_0%,var(--theme-surface)_56%,color-mix(in_srgb,var(--theme-primary)_7%,var(--theme-surface))_100%)] p-5 shadow-[0_18px_45px_rgba(15,23,42,0.08)] sm:p-6">
+        <section className="sf-next-returns-hero relative overflow-hidden rounded-[28px] border border-[color-mix(in_srgb,var(--theme-primary)_14%,var(--theme-border))] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--theme-primary)_10%,var(--theme-surface))_0%,var(--theme-surface)_56%,color-mix(in_srgb,var(--theme-primary)_7%,var(--theme-surface))_100%)] p-5 shadow-[0_18px_45px_rgba(15,23,42,0.08)] sm:p-6">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_82%_36%,color-mix(in_srgb,var(--theme-primary)_18%,transparent),transparent_34%),radial-gradient(circle_at_18%_16%,rgba(255,255,255,0.9),transparent_34%)]" aria-hidden />
           <img
             src={afterSaleProgressHero}
@@ -185,12 +185,12 @@ export default function Returns() {
           </div>
         </section>
 
-        <section className="store-returns-v12-summary store-orders-v12-stat-grid" aria-label="售后统计">
+        <section className="sf-next-returns-summary sf-next-stats-grid" aria-label="售后统计">
           {returnStats.map((item) => {
             const Icon = item.icon;
             return (
-              <div key={item.label} className="store-orders-v12-stat">
-                <span className="store-orders-v12-stat__icon" aria-hidden>
+              <div key={item.label} className="sf-next-stat">
+                <span className="sf-next-stat__icon" aria-hidden>
                   <Icon size={17} />
                 </span>
                 <strong>{item.value}</strong>
@@ -238,8 +238,8 @@ export default function Returns() {
         </section>
 
         {loading ? (
-          <section className="store-account-v12-empty-panel store-returns-v12-state" aria-live="polite">
-            <span className="store-account-v12-empty-panel__icon" aria-hidden>
+          <section className="sf-next-state-panel sf-next-returns-state" aria-live="polite">
+            <span className="sf-next-state-panel__icon" aria-hidden>
               <RefreshCw size={28} className="animate-spin" />
             </span>
             <h2>{copy.loading}</h2>
@@ -247,13 +247,13 @@ export default function Returns() {
           </section>
         ) : null}
         {!loading && filteredList.length === 0 ? (
-          <section className="store-account-v12-empty-panel store-returns-v12-state">
-            <span className="store-account-v12-empty-panel__icon" aria-hidden>
+          <section className="sf-next-state-panel sf-next-returns-state">
+            <span className="sf-next-state-panel__icon" aria-hidden>
               <FileText size={28} strokeWidth={1.8} />
             </span>
             <h2>{copy.emptyTitle}</h2>
             <p>{copy.emptyDescription}</p>
-            <UnifiedButton type="button" onClick={() => setApplyOpen(true)} className="store-account-v12-empty-panel__action">
+            <UnifiedButton type="button" onClick={() => setApplyOpen(true)} className="sf-next-state-panel__primary">
               <Plus size={17} aria-hidden />
               {copy.apply}
             </UnifiedButton>
@@ -265,7 +265,7 @@ export default function Returns() {
             const action = getBuyerReturnAction(item, locale);
             const image = getReturnItemImage(item);
             return (
-              <article key={item.id} className="store-returns-v12-card rounded-2xl border border-border bg-card p-3 shadow-sm">
+              <article key={item.id} className="sf-next-returns-card rounded-2xl border border-border bg-card p-3 shadow-sm">
                 <UnifiedButton
                   type="button"
                   onClick={() => navigate(localizedPath(`/returns/${item.id}`))}

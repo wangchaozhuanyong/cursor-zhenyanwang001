@@ -277,7 +277,7 @@ html[data-app-scope="admin"] .admin-tech-path {
         --admin-mobile-card-x: 0.75rem;
       }
 
-      html[data-app-scope="store"] .store-page-shell,
+      html[data-app-scope="store"] .sf-next-page-shell,
       html[data-app-scope="admin"] [data-admin-shell] {
         font-size: 15px;
       }

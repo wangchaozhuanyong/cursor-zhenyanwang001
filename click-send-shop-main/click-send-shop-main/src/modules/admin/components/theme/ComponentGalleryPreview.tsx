@@ -64,7 +64,7 @@ export default function ComponentGalleryPreview({ config: _config }: { config: T
         scopeText="适用范围：全场商品"
         actionLabel="立即领取"
       />
-      <div className="store-card p-2 text-xs"><Tx>会员卡骨架预览</Tx></div>
+      <div className="sf-next-surface-card p-2 text-xs"><Tx>会员卡骨架预览</Tx></div>
       <ProductCardV2 product={previewProduct} />
       <div className="rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] p-2 text-xs"><Tx>Toast / 提示样式区域</Tx></div>
       <div className="rounded-t-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 text-xs shadow-lg">

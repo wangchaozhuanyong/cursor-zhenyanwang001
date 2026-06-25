@@ -28,9 +28,9 @@ function LoadingSlots({ count, variant }: { count: number; variant: CategoryKing
         <div
           key={i}
           className={cn(
-            "store-category-tile-skeleton flex shrink-0 animate-pulse flex-col items-center justify-center gap-1.5",
+            "sf-next-category-tile-skeleton flex shrink-0 animate-pulse flex-col items-center justify-center gap-1.5",
             variant === "plain"
-              ? "store-category-tile-skeleton--plain w-[4.95rem]"
+              ? "sf-next-category-tile-skeleton--plain w-[4.95rem]"
               : "h-[4.85rem] w-[5.05rem] rounded-[0.875rem]",
           )}
           aria-hidden
@@ -56,9 +56,9 @@ export default function CategoryKingkongRow({
   return (
     <section
       className={cn(
-        "store-category-rail relative min-w-0 max-w-full bg-[var(--theme-surface)]",
+        "sf-next-category-rail relative min-w-0 max-w-full bg-[var(--theme-surface)]",
         variant === "standard" && "border-y border-[color-mix(in_srgb,var(--theme-border)_80%,transparent)]",
-        variant === "plain" && "store-category-rail--plain bg-transparent",
+        variant === "plain" && "sf-next-category-rail--plain bg-transparent",
         className,
       )}
       data-category-kingkong-variant={variant}
@@ -66,8 +66,8 @@ export default function CategoryKingkongRow({
       <div
         ref={railRef}
         className={cn(
-          "store-category-rail-scroll no-scrollbar flex min-w-0 max-w-full snap-x snap-mandatory gap-2.5 overflow-x-auto overflow-y-hidden scroll-smooth px-3 py-3 pr-10 [-webkit-overflow-scrolling:touch] sm:gap-3 sm:px-4 sm:pr-12",
-          variant === "plain" && "store-category-rail-scroll--plain",
+          "sf-next-category-rail-scroll no-scrollbar flex min-w-0 max-w-full snap-x snap-mandatory gap-2.5 overflow-x-auto overflow-y-hidden scroll-smooth px-3 py-3 pr-10 [-webkit-overflow-scrolling:touch] sm:gap-3 sm:px-4 sm:pr-12",
+          variant === "plain" && "sf-next-category-rail-scroll--plain",
         )}
         role="tablist"
         aria-label="商品分类"

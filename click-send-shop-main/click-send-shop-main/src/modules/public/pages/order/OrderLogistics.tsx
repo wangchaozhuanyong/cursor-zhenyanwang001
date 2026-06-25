@@ -155,14 +155,14 @@ export default function OrderLogistics() {
       title={copy.title}
       backFallback={pageBackFallback}
       desktopBackLabel={copy.backOrder}
-      className="store-v12-page store-logistics-v12-page"
-      mainClassName="store-logistics-v12-main"
+      className="sf-next-route-page sf-next-logistics-page"
+      mainClassName="sf-next-logistics-main"
     >
       {loading ? (
-        <section className="store-logistics-v12-card store-logistics-v12-loading" aria-busy="true" aria-label={copy.loading}>
-          <div className="sf-next-skeleton store-logistics-v12-loading__hero" />
-          <div className="sf-next-skeleton store-logistics-v12-loading__line" />
-          <div className="sf-next-skeleton store-logistics-v12-loading__line is-short" />
+        <section className="sf-next-logistics-card sf-next-logistics-loading" aria-busy="true" aria-label={copy.loading}>
+          <div className="sf-next-skeleton sf-next-logistics-loading__hero" />
+          <div className="sf-next-skeleton sf-next-logistics-loading__line" />
+          <div className="sf-next-skeleton sf-next-logistics-loading__line is-short" />
         </section>
       ) : null}
 
@@ -183,22 +183,22 @@ export default function OrderLogistics() {
 
       {!loading && !error && order ? (
         <div className="space-y-4">
-          <section className={`store-logistics-v12-hero ${snapshot?.hasException ? "is-exception" : ""}`}>
-            <div className="store-logistics-v12-hero__icon">
+          <section className={`sf-next-logistics-hero ${snapshot?.hasException ? "is-exception" : ""}`}>
+            <div className="sf-next-logistics-hero__icon">
               {snapshot?.hasException ? <AlertTriangle size={24} aria-hidden /> : <PackageCheck size={24} aria-hidden />}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="store-logistics-v12-eyebrow">{copy.currentStatus}</p>
-              <h1 className="store-logistics-v12-title">
+              <p className="sf-next-logistics-eyebrow">{copy.currentStatus}</p>
+              <h1 className="sf-next-logistics-title">
                 {snapshot?.statusLabel || getBuyerOrderStatusTextLocalized(order, locale)}
               </h1>
-              <p className="store-logistics-v12-subtitle">
+              <p className="sf-next-logistics-subtitle">
                 {snapshot?.exceptionMessage || copy.subtitle}
               </p>
             </div>
             <UnifiedButton
               type="button"
-              className="store-logistics-v12-refresh"
+              className="sf-next-logistics-refresh"
               disabled={refreshing}
               onClick={() => void load()}
             >
@@ -207,8 +207,8 @@ export default function OrderLogistics() {
             </UnifiedButton>
           </section>
 
-          <section className="store-logistics-v12-card">
-            <div className="store-logistics-v12-grid">
+          <section className="sf-next-logistics-card">
+            <div className="sf-next-logistics-grid">
               <LogisticsMeta label={copy.orderNo} value={order.order_no} icon={<ClipboardList size={17} aria-hidden />} />
               <LogisticsMeta label={copy.orderStatus} value={getBuyerOrderStatusTextLocalized(order, locale)} icon={<PackageCheck size={17} aria-hidden />} />
               <LogisticsMeta label={copy.courier} value={snapshot?.carrier || "-"} icon={<Truck size={17} aria-hidden />} />
@@ -219,7 +219,7 @@ export default function OrderLogistics() {
                 action={snapshot?.trackingNo ? (
                   <UnifiedButton
                     type="button"
-                    className="store-logistics-v12-inline-action"
+                    className="sf-next-logistics-inline-action"
                     onClick={async () => {
                       const trackingNo = snapshot?.trackingNo.trim() || "";
                       if (!trackingNo) return;
@@ -238,7 +238,7 @@ export default function OrderLogistics() {
               <div className="mt-4 flex justify-end">
                 <UnifiedButton
                   type="button"
-                  className="store-logistics-v12-external"
+                  className="sf-next-logistics-external"
                   onClick={() => safeOpenExternal(trackingUrl)}
                 >
                   <ExternalLink size={15} aria-hidden />
@@ -248,17 +248,17 @@ export default function OrderLogistics() {
             ) : null}
           </section>
 
-          <section className="store-logistics-v12-card">
+          <section className="sf-next-logistics-card">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
-                <p className="store-logistics-v12-eyebrow">{copy.latestUpdate}</p>
-                <h2 className="store-logistics-v12-section-title">{copy.timeline}</h2>
+                <p className="sf-next-logistics-eyebrow">{copy.latestUpdate}</p>
+                <h2 className="sf-next-logistics-section-title">{copy.timeline}</h2>
               </div>
-              <span className="store-logistics-v12-count">{timeline.length}</span>
+              <span className="sf-next-logistics-count">{timeline.length}</span>
             </div>
 
             {hasLogistics && timeline.length ? (
-              <StatusTimeline items={timelineItems} className="store-logistics-v12-next-timeline" />
+              <StatusTimeline items={timelineItems} className="sf-next-logistics-next-timeline" />
             ) : (
               <RouteStatePanel
                 icon={<Truck size={28} aria-hidden />}
@@ -285,8 +285,8 @@ function LogisticsMeta({
   action?: ReactNode;
 }) {
   return (
-    <div className="store-logistics-v12-meta">
-      <span className="store-logistics-v12-meta__icon">{icon}</span>
+    <div className="sf-next-logistics-meta">
+      <span className="sf-next-logistics-meta__icon">{icon}</span>
       <div className="min-w-0 flex-1">
         <p>{label}</p>
         <strong>{value}</strong>

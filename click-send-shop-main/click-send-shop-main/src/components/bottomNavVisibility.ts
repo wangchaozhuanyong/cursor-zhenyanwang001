@@ -7,6 +7,7 @@ export function shouldHideBottomNav(pathname: string): boolean {
     canonicalPathname === "/search" ||
     canonicalPathname === "/support-download" ||
     canonicalPathname.startsWith("/checkout") ||
+    canonicalPathname.startsWith("/orders/") ||
     canonicalPathname.startsWith("/product/") ||
     canonicalPathname.startsWith("/promotions/")
   );

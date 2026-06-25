@@ -55,7 +55,7 @@ export default function About() {
       onBack={goBack}
       backFallback="/profile"
       contentClassName="sf-next-account-main md:max-w-3xl xl:max-w-4xl"
-      className="sf-next-page store-v12-page store-content-v12-page store-about-v12-page"
+      className="sf-next-page sf-next-route-page sf-next-content-page sf-next-about-page"
     >
       <SeoHead
         title={title}
@@ -64,7 +64,7 @@ export default function About() {
         robots="index,follow"
       />
 
-      <div className="store-content-v12-stack">
+      <div className="sf-next-content-stack">
         <BalanceFolio
           eyebrow="SILENT COMMERCE"
           value={siteName}
@@ -74,14 +74,14 @@ export default function About() {
             { label: "页面状态", value: "公开" },
             { label: "服务范围", value: "商城" },
           ]}
-          className="store-about-v12-folio"
+          className="sf-next-about-folio"
         />
 
         {cmsBody ? (
-          <article className="store-body-text store-content-v12-article" dangerouslySetInnerHTML={{ __html: sanitizeCmsHtml(cmsBody) }} />
+          <article className="sf-next-body-text sf-next-content-article" dangerouslySetInnerHTML={{ __html: sanitizeCmsHtml(cmsBody) }} />
         ) : (
-          <section className="store-content-v12-article">
-            <div className="store-v12-card-title">
+          <section className="sf-next-content-article">
+            <div className="sf-next-card-title">
               <FileText size={18} aria-hidden />
               平台说明
             </div>
@@ -89,14 +89,14 @@ export default function About() {
           </section>
         )}
 
-        <section className="store-about-v12-info-section" aria-labelledby="about-info-title">
-          <h2 className="store-v12-section-title" id="about-info-title">信息结构</h2>
-          <div className="store-about-v12-info-list">
+        <section className="sf-next-about-info-section" aria-labelledby="about-info-title">
+          <h2 className="sf-next-section-title" id="about-info-title">信息结构</h2>
+          <div className="sf-next-about-info-list">
             {informationItems.map((item) => {
               const Icon = item.icon;
               return (
-                <article key={item.title} className="store-about-v12-info-row">
-                  <span className="store-v12-card-icon" aria-hidden>
+                <article key={item.title} className="sf-next-about-info-row">
+                  <span className="sf-next-card-icon" aria-hidden>
                     <Icon size={20} />
                   </span>
                   <div>
@@ -109,12 +109,12 @@ export default function About() {
           </div>
         </section>
 
-        <section className="store-v12-info-card">
-          <div className="store-v12-card-title">
+        <section className="sf-next-info-card">
+          <div className="sf-next-card-title">
             <ShieldCheck size={18} aria-hidden />
             合规与安全
           </div>
-          <p className="store-v12-muted">
+          <p className="sf-next-muted">
             {siteInfo.complianceNotice || "所有订单、支付、配送和售后状态以系统记录为准；涉及账号与交易安全的问题请通过客服或帮助中心处理。"}
           </p>
         </section>

@@ -21,15 +21,15 @@ type Props = {
 function MobileProfilePreview({ config }: { config: ThemeConfig }) {
   return (
     <div className="space-y-3 pb-16">
-      <div className="store-card p-4">
+      <div className="sf-next-surface-card p-4">
         <p className="text-sm font-semibold"><Tx>我的</Tx></p>
         <p className="text-xs text-[var(--theme-text-muted)]"><Tx>会员 · 订单 · 设置</Tx></p>
       </div>
-      <div className="store-card overflow-hidden p-0">
+      <div className="sf-next-surface-card overflow-hidden p-0">
         <InvitePromoCard loggedIn inviteCount={0} rewardBalance={0} />
       </div>
       <div
-        className={`store-card rounded-xl p-3 ${THEME_MEMBER_CARD_SHELL}`}
+        className={`sf-next-surface-card rounded-xl p-3 ${THEME_MEMBER_CARD_SHELL}`}
         data-theme-member-card-style={config.memberCardStyle}
       >
         <p className="text-sm font-semibold"><Tx>会员卡 · 金卡会员</Tx></p>

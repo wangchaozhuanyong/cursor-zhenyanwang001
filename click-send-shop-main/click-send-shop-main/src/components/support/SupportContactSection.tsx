@@ -23,7 +23,7 @@ function SupportChannelIcon({ type }: { type: SupportChannelType }) {
 }
 
 function channelButtonSpanClass(index: number, total: number): string {
-  if (total > 1 && total % 2 === 1 && index === total - 1) return "support-contact-v12__channel--wide";
+  if (total > 1 && total % 2 === 1 && index === total - 1) return "sf-next-support-contact__channel--wide";
   return "";
 }
 
@@ -65,15 +65,15 @@ export default function SupportContactSection({ className, hideDescription = fal
 
   const compact = variant === "compact";
   const rootClassName = [
-    "support-contact-v12",
-    compact ? "support-contact-v12--compact" : "",
+    "sf-next-support-contact",
+    compact ? "sf-next-support-contact--compact" : "",
     className,
   ].filter(Boolean).join(" ");
 
   if (!isAvailable) {
     return (
       <div className={rootClassName}>
-        <p className="support-contact-v12__empty">客服中心暂未开放，请稍后再试或通过站内电话/邮箱联系我们。</p>
+        <p className="sf-next-support-contact__empty">客服中心暂未开放，请稍后再试或通过站内电话/邮箱联系我们。</p>
       </div>
     );
   }
@@ -82,19 +82,19 @@ export default function SupportContactSection({ className, hideDescription = fal
 
   return (
     <div className={rootClassName}>
-      <div className="support-contact-v12__head">
-        <Headphones size={18} className="support-contact-v12__head-icon" />
-        <h3 className="support-contact-v12__title">联系客服</h3>
+      <div className="sf-next-support-contact__head">
+        <Headphones size={18} className="sf-next-support-contact__head-icon" />
+        <h3 className="sf-next-support-contact__title">联系客服</h3>
       </div>
 
       {!hideDescription && description ? (
-        <p className="support-contact-v12__description">{description}</p>
+        <p className="sf-next-support-contact__description">{description}</p>
       ) : null}
 
       {displayWorkingHours ? (
-        <div className="support-contact-v12__hours">
-          <Clock size={14} className="support-contact-v12__hours-icon" />
-          <p className="support-contact-v12__hours-text">
+        <div className="sf-next-support-contact__hours">
+          <Clock size={14} className="sf-next-support-contact__hours-icon" />
+          <p className="sf-next-support-contact__hours-text">
             <span>服务时间</span>
             <strong>{displayWorkingHours}</strong>
           </p>
@@ -102,23 +102,23 @@ export default function SupportContactSection({ className, hideDescription = fal
       ) : null}
 
       {channels.length > 0 ? (
-        <div className="support-contact-v12__channels">
+        <div className="sf-next-support-contact__channels">
           {channels.map((channel, index) => (
             <UnifiedButton
               key={channel.id}
               type="button"
               onClick={() => { void handleChannelClick(channel.id); }}
-              className={`support-contact-v12__channel ${channelButtonSpanClass(index, channels.length)}`}
+              className={`sf-next-support-contact__channel ${channelButtonSpanClass(index, channels.length)}`}
             >
-              <span className="support-contact-v12__channel-icon">
+              <span className="sf-next-support-contact__channel-icon">
                 <SupportChannelIcon type={channel.type} />
               </span>
-              <span className="support-contact-v12__channel-copy">
-                <span className="support-contact-v12__channel-title">
+              <span className="sf-next-support-contact__channel-copy">
+                <span className="sf-next-support-contact__channel-title">
                   {getChannelTitle(channel)}
                 </span>
                 {!compact ? (
-                  <span className="support-contact-v12__channel-hint">点击联系</span>
+                  <span className="sf-next-support-contact__channel-hint">点击联系</span>
                 ) : null}
               </span>
             </UnifiedButton>
@@ -128,9 +128,9 @@ export default function SupportContactSection({ className, hideDescription = fal
 
       <Link
         to={buildSupportPageUrl()}
-        className="support-contact-v12__link"
+        className="sf-next-support-contact__link"
       >
-        <span className="support-contact-v12__link-copy">
+        <span className="sf-next-support-contact__link-copy">
           <Headphones size={15} />
           <span>前往客服中心</span>
         </span>

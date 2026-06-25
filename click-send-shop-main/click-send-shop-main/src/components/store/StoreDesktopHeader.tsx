@@ -83,11 +83,11 @@ export default function StoreDesktopHeader({ className }: { className?: string }
   return (
     <header
       className={cn(
-        "store-desktop-header store-glass-surface sticky top-0 z-header hidden border-b backdrop-blur-xl xl:flex",
+        "sf-next-header-desktop sf-next-glass-surface sticky top-0 z-header hidden border-b backdrop-blur-xl xl:flex",
         surfaceClass,
         className,
       )}
-      style={{ height: "var(--store-desktop-header-height, 4rem)" }}
+      style={{ height: "var(--sf-next-header-desktop-height, 4rem)" }}
     >
       <div className="mx-auto flex h-full w-full max-w-7xl min-w-0 items-center gap-4 px-6 xl:px-8">
         <Link
@@ -95,7 +95,7 @@ export default function StoreDesktopHeader({ className }: { className?: string }
           onClick={(event) => handleRouteLink(event, "/")}
           onMouseEnter={() => preloadHeaderRoute("/")}
           onFocus={() => preloadHeaderRoute("/")}
-          className="store-header-brand flex shrink-0 items-center gap-2.5"
+          className="sf-next-header-brand flex shrink-0 items-center gap-2.5"
           aria-label={`${siteName} ${t("common.home")}`}
         >
           {shouldReserveLogoSpace ? <StoreBrandLogo src={logoSrc} siteName={siteName} width={40} height={40} fallbackText="" /> : null}
@@ -116,7 +116,7 @@ export default function StoreDesktopHeader({ className }: { className?: string }
                 onMouseEnter={() => preloadHeaderRoute(item.path)}
                 onFocus={() => preloadHeaderRoute(item.path)}
                 className={cn(
-                  "store-header-nav-link inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium transition-colors",
+                  "sf-next-header-nav-link inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium transition-colors",
                   active
                     ? "bg-[color-mix(in_srgb,var(--theme-primary)_14%,var(--theme-surface))] text-[var(--theme-primary)]"
                     : "text-[var(--theme-text-muted)] hover:bg-[var(--theme-bg)] hover:text-[var(--theme-text)]",
@@ -145,7 +145,7 @@ export default function StoreDesktopHeader({ className }: { className?: string }
               onMouseEnter={() => preloadHeaderRoute("/cart")}
               onFocus={() => preloadHeaderRoute("/cart")}
               onClick={() => openRoute("/cart")}
-              className="store-header-icon-button relative flex h-10 w-10 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] text-[var(--theme-text)]"
+              className="sf-next-header-icon-button relative flex h-10 w-10 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] text-[var(--theme-text)]"
               aria-label={t("common.cart")}
             >
               <ShoppingCart size={18} />
@@ -160,7 +160,7 @@ export default function StoreDesktopHeader({ className }: { className?: string }
               onFocus={() => preloadHeaderRoute("/profile")}
               onClick={() => openRoute("/profile")}
               className={cn(
-                "store-header-account-button inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-sm font-medium",
+                "sf-next-header-account-button inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-sm font-medium",
                 isActive("/profile")
                   ? "border-[var(--theme-primary)] bg-[color-mix(in_srgb,var(--theme-primary)_12%,var(--theme-surface))] text-[var(--theme-primary)]"
                   : "border-[var(--theme-border)] text-[var(--theme-text)]",
@@ -173,7 +173,7 @@ export default function StoreDesktopHeader({ className }: { className?: string }
             <UnifiedButton
               type="button"
               onClick={() => navigateWithStoreTransition(navigate, localizedPath("/login"), { state: { from: `${location.pathname}${location.search}` } })}
-              className="store-header-login-button rounded-full bg-[var(--theme-primary)] px-4 py-2 text-sm font-semibold text-[var(--theme-primary-foreground)]"
+              className="sf-next-header-login-button rounded-full bg-[var(--theme-primary)] px-4 py-2 text-sm font-semibold text-[var(--theme-primary-foreground)]"
             >
               {t("common.loginRegister")}
             </UnifiedButton>

@@ -57,7 +57,7 @@ export function CheckoutPriceSummary({
       {sstShowInCatalog && sstCustomerNote ? (
         <p className="mb-3 text-[11px] leading-relaxed text-muted-foreground">{sstCustomerNote}</p>
       ) : null}
-      <div className="store-body-small flex justify-between gap-4">
+      <div className="sf-next-body-small flex justify-between gap-4">
         <span className="text-muted-foreground">{sstShowInCatalog ? "商品总额（含税）" : "商品总额"}</span>
         <span className="font-medium text-foreground">RM {rawTotal}</span>
       </div>

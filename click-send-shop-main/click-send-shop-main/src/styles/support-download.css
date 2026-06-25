@@ -101,23 +101,23 @@ html[data-app-scope="store"] .support-download-hero p {
     display: none;
   }
 
-  html[data-app-scope="store"] .support-download-v12-page .support-download-hero {
+  html[data-app-scope="store"] .sf-next-support-download-page .support-download-hero {
     display: grid;
     gap: 0.58rem;
     margin-bottom: 0.9rem;
     text-align: left;
   }
 
-  html[data-app-scope="store"] .support-download-v12-page .support-download-eyebrow {
+  html[data-app-scope="store"] .sf-next-support-download-page .support-download-eyebrow {
     justify-self: start;
   }
 
-  html[data-app-scope="store"] .support-download-v12-page .support-download-hero h1 {
+  html[data-app-scope="store"] .sf-next-support-download-page .support-download-hero h1 {
     font-size: 1.56rem;
     line-height: 1.14;
   }
 
-  html[data-app-scope="store"] .support-download-v12-page .support-download-hero p {
+  html[data-app-scope="store"] .sf-next-support-download-page .support-download-hero p {
     margin-left: 0;
   }
 }

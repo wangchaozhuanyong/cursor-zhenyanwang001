@@ -147,35 +147,35 @@ function canViewLogistics(order: Order) {
 
 function OrderDetailLoadingSkeleton() {
   return (
-    <div className="store-order-detail-v12-loading" aria-busy="true" aria-label="订单详情加载中">
-      <section className="store-order-detail-v12-hero store-order-detail-v12-loading-hero">
-        <div className="sf-next-skeleton store-order-detail-v12-loading-icon" />
+    <div className="sf-next-order-detail-loading" aria-busy="true" aria-label="订单详情加载中">
+      <section className="sf-next-order-detail-hero sf-next-order-detail-loading-hero">
+        <div className="sf-next-skeleton sf-next-order-detail-loading-icon" />
         <div className="min-w-0 flex-1">
-          <div className="sf-next-skeleton store-order-detail-v12-loading-line is-eyebrow" />
-          <div className="sf-next-skeleton store-order-detail-v12-loading-line is-title" />
-          <div className="sf-next-skeleton store-order-detail-v12-loading-line is-subtitle" />
+          <div className="sf-next-skeleton sf-next-order-detail-loading-line is-eyebrow" />
+          <div className="sf-next-skeleton sf-next-order-detail-loading-line is-title" />
+          <div className="sf-next-skeleton sf-next-order-detail-loading-line is-subtitle" />
         </div>
       </section>
 
-      <section className="store-order-detail-v12-products store-order-detail-v12-loading-card">
-        <div className="store-order-detail-v12-section-head">
-          <div className="sf-next-skeleton store-order-detail-v12-loading-line is-section" />
+      <section className="sf-next-order-detail-products sf-next-order-detail-loading-card">
+        <div className="sf-next-order-detail-section-head">
+          <div className="sf-next-skeleton sf-next-order-detail-loading-line is-section" />
         </div>
-        <div className="store-order-detail-v12-product-row">
-          <div className="sf-next-skeleton store-order-detail-v12-product-media" />
+        <div className="sf-next-order-detail-product-row">
+          <div className="sf-next-skeleton sf-next-order-detail-product-media" />
           <div className="min-w-0 flex-1">
-            <div className="sf-next-skeleton store-order-detail-v12-loading-line is-product-title" />
-            <div className="sf-next-skeleton store-order-detail-v12-loading-line is-product-meta" />
+            <div className="sf-next-skeleton sf-next-order-detail-loading-line is-product-title" />
+            <div className="sf-next-skeleton sf-next-order-detail-loading-line is-product-meta" />
           </div>
-          <div className="sf-next-skeleton store-order-detail-v12-loading-line is-product-price" />
+          <div className="sf-next-skeleton sf-next-order-detail-loading-line is-product-price" />
         </div>
       </section>
 
-      <section className="store-order-detail-v12-price-card store-order-detail-v12-loading-card">
-        <div className="sf-next-skeleton store-order-detail-v12-loading-line is-section" />
-        <div className="sf-next-skeleton store-order-detail-v12-loading-line is-row" />
-        <div className="sf-next-skeleton store-order-detail-v12-loading-line is-row" />
-        <div className="sf-next-skeleton store-order-detail-v12-loading-line is-total" />
+      <section className="sf-next-order-detail-price-card sf-next-order-detail-loading-card">
+        <div className="sf-next-skeleton sf-next-order-detail-loading-line is-section" />
+        <div className="sf-next-skeleton sf-next-order-detail-loading-line is-row" />
+        <div className="sf-next-skeleton sf-next-order-detail-loading-line is-row" />
+        <div className="sf-next-skeleton sf-next-order-detail-loading-line is-total" />
       </section>
     </div>
   );
@@ -418,7 +418,7 @@ export default function OrderDetail() {
       <StoreAccountLayout
         title={copy.detailTitle}
         onBack={handleBack}
-        className="store-v12-page store-order-detail-v12-page"
+        className="sf-next-page sf-next-order-detail-page"
         mainClassName="pb-[calc(88px+env(safe-area-inset-bottom,0px))] md:pb-0 xl:pb-12"
       >
         <OrderDetailLoadingSkeleton />
@@ -428,14 +428,14 @@ export default function OrderDetail() {
 
   if (error || !order) {
     return (
-      <StoreAccountLayout title={copy.detailTitle} onBack={handleBack} className="store-v12-page store-order-detail-v12-page">
-        <section className="store-account-v12-empty-panel store-order-detail-v12-state" role={error ? "alert" : "status"}>
-          <span className="store-account-v12-empty-panel__icon" aria-hidden>
+      <StoreAccountLayout title={copy.detailTitle} onBack={handleBack} className="sf-next-page sf-next-order-detail-page">
+        <section className="sf-next-state-panel sf-next-order-detail-state" role={error ? "alert" : "status"}>
+          <span className="sf-next-state-panel__icon" aria-hidden>
             <ClipboardList size={28} />
           </span>
           <h2>{error ? copy.loadFailed : copy.notFound}</h2>
           <p>{error || copy.unavailable}</p>
-          <UnifiedButton type="button" onClick={() => id && loadOrderDetail(id)} className="store-account-v12-empty-panel__action">
+          <UnifiedButton type="button" onClick={() => id && loadOrderDetail(id)} className="sf-next-state-panel__primary">
             <RefreshCw size={17} aria-hidden />
             {copy.retry}
           </UnifiedButton>
@@ -489,24 +489,24 @@ export default function OrderDetail() {
     <StoreAccountLayout
       title={pageTitle}
       onBack={handleBack}
-      className="store-v12-page store-order-detail-v12-page"
+      className="sf-next-page sf-next-order-detail-page"
       mainClassName="pb-[calc(88px+env(safe-area-inset-bottom,0px))] md:pb-0 xl:pb-12"
     >
       <div className="space-y-3 text-sm">
-        <section className="store-order-detail-v12-hero">
-          <div className="store-order-detail-v12-hero__icon">
+        <section className="sf-next-order-detail-hero">
+          <div className="sf-next-order-detail-hero__icon">
             <PackageCheck size={24} aria-hidden />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="store-order-detail-v12-eyebrow">{copy.currentStatus}</p>
-            <h1 className="store-order-detail-v12-title">{pageTitle}</h1>
-            <p className="store-order-detail-v12-subtitle">{logisticsText}</p>
+            <p className="sf-next-order-detail-eyebrow">{copy.currentStatus}</p>
+            <h1 className="sf-next-order-detail-title">{pageTitle}</h1>
+            <p className="sf-next-order-detail-subtitle">{logisticsText}</p>
           </div>
-          <div className="store-order-detail-v12-hero__actions">
+          <div className="sf-next-order-detail-hero__actions">
             {canViewLogistics(order) ? (
               <UnifiedButton
                 type="button"
-                className="store-order-detail-v12-ghost-action"
+                className="sf-next-order-detail-ghost-action"
                 onClick={() => viewLogistics(order)}
               >
                 <Truck size={15} aria-hidden />
@@ -517,7 +517,7 @@ export default function OrderDetail() {
               <UnifiedButton
                 type="button"
                 disabled={paying}
-                className="store-order-detail-v12-primary-action disabled:opacity-60"
+                className="sf-next-order-detail-primary-action disabled:opacity-60"
                 onClick={() => {
                   void payPendingOrder(order, reload);
                 }}
@@ -528,34 +528,34 @@ export default function OrderDetail() {
           </div>
         </section>
 
-        <section className="store-order-detail-v12-summary" aria-label="订单概览">
-          <div className="store-order-detail-v12-fact">
-            <span className="store-order-detail-v12-fact__icon"><WalletCards size={16} aria-hidden /></span>
-            <div className="store-order-detail-v12-fact__copy">
+        <section className="sf-next-order-detail-summary" aria-label="订单概览">
+          <div className="sf-next-order-detail-fact">
+            <span className="sf-next-order-detail-fact__icon"><WalletCards size={16} aria-hidden /></span>
+            <div className="sf-next-order-detail-fact__copy">
               <span>{copy.paidAmount}</span>
               <strong>{money(order.total_amount)}</strong>
               <small>{Number(order.shipping_fee || 0) === 0 ? copy.freeShipping : `${copy.shippingFee} ${money(order.shipping_fee)}`}</small>
             </div>
           </div>
-          <div className="store-order-detail-v12-fact">
-            <span className="store-order-detail-v12-fact__icon"><CreditCard size={16} aria-hidden /></span>
-            <div className="store-order-detail-v12-fact__copy">
+          <div className="sf-next-order-detail-fact">
+            <span className="sf-next-order-detail-fact__icon"><CreditCard size={16} aria-hidden /></span>
+            <div className="sf-next-order-detail-fact__copy">
               <span>{copy.paymentMethod}</span>
               <strong>{paymentMethodLabel}</strong>
               <small>{paidAtLabel}</small>
             </div>
           </div>
-          <div className="store-order-detail-v12-fact">
-            <span className="store-order-detail-v12-fact__icon"><Truck size={16} aria-hidden /></span>
-            <div className="store-order-detail-v12-fact__copy">
+          <div className="sf-next-order-detail-fact">
+            <span className="sf-next-order-detail-fact__icon"><Truck size={16} aria-hidden /></span>
+            <div className="sf-next-order-detail-fact__copy">
               <span>{copy.logistics}</span>
               <strong>{logisticsStatus}</strong>
               <small>{logisticsText}</small>
             </div>
           </div>
-          <div className="store-order-detail-v12-fact">
-            <span className="store-order-detail-v12-fact__icon"><ClipboardList size={16} aria-hidden /></span>
-            <div className="store-order-detail-v12-fact__copy">
+          <div className="sf-next-order-detail-fact">
+            <span className="sf-next-order-detail-fact__icon"><ClipboardList size={16} aria-hidden /></span>
+            <div className="sf-next-order-detail-fact__copy">
               <span>{copy.productInfo}</span>
               <strong>{order.items.length} SKU</strong>
               <small>{itemQuantity} 件商品</small>
@@ -563,10 +563,10 @@ export default function OrderDetail() {
           </div>
         </section>
 
-        <section className="store-order-detail-v12-progress rounded-2xl border border-border bg-card p-3">
-          <div className="store-order-detail-v12-section-head">
+        <section className="sf-next-order-detail-progress rounded-2xl border border-border bg-card p-3">
+          <div className="sf-next-order-detail-section-head">
             <div>
-              <p className="store-order-detail-v12-section-kicker">{copy.currentStatus}</p>
+              <p className="sf-next-order-detail-section-kicker">{copy.currentStatus}</p>
               <h2>{pageTitle}</h2>
             </div>
             <span>{formatDateTime(order.created_at)}</span>
@@ -591,7 +591,7 @@ export default function OrderDetail() {
               {order.shortage_notice || copy.shortageFallback}
             </p>
           ) : null}
-          <div className="store-order-detail-v12-step-grid mt-3">
+          <div className="sf-next-order-detail-step-grid mt-3">
             {getOrderStepLabels(locale).map((s, i) => (
               <div key={s}>
                 <div className={`mx-auto mb-1 h-2 w-2 rounded-full ${i <= step ? "bg-[var(--theme-primary)]" : "bg-[var(--theme-border)]"}`} />
@@ -601,37 +601,37 @@ export default function OrderDetail() {
           </div>
         </section>
 
-        <section className="store-order-detail-v12-products rounded-2xl border border-border bg-card p-3 space-y-3">
-          <div className="store-order-detail-v12-section-head">
+        <section className="sf-next-order-detail-products rounded-2xl border border-border bg-card p-3 space-y-3">
+          <div className="sf-next-order-detail-section-head">
             <div>
-              <p className="store-order-detail-v12-section-kicker">{copy.productInfo}</p>
+              <p className="sf-next-order-detail-section-kicker">{copy.productInfo}</p>
               <h2>{order.items.length} SKU · {itemQuantity} 件</h2>
             </div>
           </div>
           {order.items.map((item) => {
             const lineTotal = Number(item.subtotal ?? Number(item.unit_price || 0) * Number(item.qty || 0));
             return (
-              <div key={item.order_item_id || item.id || `${item.product.id}-${item.variant_id}`} className="store-order-detail-v12-product-row">
+              <div key={item.order_item_id || item.id || `${item.product.id}-${item.variant_id}`} className="sf-next-order-detail-product-row">
                 <ProductCoverImage
                   url={item.product.cover_image}
                   alt={item.product.name}
-                  className="store-order-detail-v12-product-media self-start object-cover"
+                  className="sf-next-order-detail-product-media self-start object-cover"
                   imgClassName="object-cover"
                 />
                 <div className="min-w-0 flex-1">
-                  <p className="store-card-title line-clamp-2">{item.product.name}</p>
-                  <p className="store-caption mt-1 truncate text-muted-foreground">{item.variant_name || item.sku_code || copy.defaultVariant}</p>
-                  <p className="store-caption mt-1 text-muted-foreground">
+                  <p className="sf-next-order-detail-product-title line-clamp-2">{item.product.name}</p>
+                  <p className="sf-next-order-detail-product-meta mt-1 truncate text-muted-foreground">{item.variant_name || item.sku_code || copy.defaultVariant}</p>
+                  <p className="sf-next-order-detail-product-meta mt-1 text-muted-foreground">
                     {money(item.unit_price ?? item.product.price ?? 0)} x {item.qty}
                   </p>
                 </div>
-                <div className="store-body-small shrink-0 text-right font-semibold">{money(lineTotal)}</div>
+                <div className="sf-next-body-small shrink-0 text-right font-semibold">{money(lineTotal)}</div>
               </div>
             );
           })}
         </section>
 
-        <div className="store-order-detail-v12-price-card rounded-2xl border border-border bg-card p-3">
+        <div className="sf-next-order-detail-price-card rounded-2xl border border-border bg-card p-3">
           <p className="text-sm font-medium">{copy.priceDetail}</p>
           <div className="mt-2 flex justify-between text-sm">
             <span className="text-muted-foreground">{copy.productAmount}</span>
@@ -663,14 +663,14 @@ export default function OrderDetail() {
             </span>
           </div>
           <div className="mt-3 flex items-baseline justify-between font-semibold">
-            <span className="store-body-small">{copy.paidAmount}</span>
+            <span className="sf-next-body-small">{copy.paidAmount}</span>
             <span className="text-[18px] font-extrabold text-[var(--theme-price)] sm:text-xl">
               RM {Number(order.total_amount || 0).toFixed(2)}
             </span>
           </div>
         </div>
 
-        <div className="store-order-detail-v12-info-card rounded-2xl border border-border bg-card p-3">
+        <div className="sf-next-order-detail-info-card rounded-2xl border border-border bg-card p-3">
           <p className="text-sm font-medium">{copy.orderInfo}</p>
           <div className="mt-2 flex items-center justify-between gap-3 text-sm">
             <span className="text-muted-foreground">{copy.orderNo}</span>
@@ -732,7 +732,7 @@ export default function OrderDetail() {
           ) : null}
         </div>
 
-        <div className="store-order-detail-v12-actions-card hidden rounded-2xl border border-border bg-card p-3 md:flex md:flex-wrap md:justify-end md:gap-2">
+        <div className="sf-next-order-detail-actions-card hidden rounded-2xl border border-border bg-card p-3 md:flex md:flex-wrap md:justify-end md:gap-2">
           {canUserCancelOrder(order) ? (
             <UnifiedButton type="button" className="rounded-full border px-3 py-1 text-xs" onClick={() => setCancelConfirmOpen(true)}>
               {copy.cancelOrder}
@@ -793,7 +793,7 @@ export default function OrderDetail() {
       </div>
 
       {showMobileBar ? (
-        <div className="store-order-detail-v12-mobile-bar fixed bottom-0 left-0 right-0 z-checkout-bar border-t border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md pb-safe safe-bottom-bar md:hidden">
+        <div className="sf-next-order-detail-mobile-bar fixed bottom-0 left-0 right-0 z-checkout-bar border-t border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md pb-safe safe-bottom-bar md:hidden">
           <div className="mx-auto flex max-w-lg items-center gap-2 px-4 py-3">
             <UnifiedButton
               type="button"

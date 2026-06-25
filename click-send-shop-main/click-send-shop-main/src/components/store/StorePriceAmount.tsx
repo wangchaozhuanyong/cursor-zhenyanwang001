@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 
 type Props = {
   amount: ReactNode;
-  /** store-price-card | store-price-detail | custom */
+  /** sf-next-price__amount | sf-next-product-price | custom */
   amountClassName?: string;
   currencyClassName?: string;
   className?: string;
@@ -12,14 +12,14 @@ type Props = {
 /** RM + amount with smaller currency symbol for storefront price hierarchy */
 export default function StorePriceAmount({
   amount,
-  amountClassName = "store-price-card",
-  currencyClassName = "store-price-currency mr-0.5 text-[11px] leading-none sm:text-xs",
+  amountClassName = "sf-next-price__amount",
+  currencyClassName = "sf-next-price__currency mr-0.5 text-[11px] leading-none sm:text-xs",
   className,
 }: Props) {
   return (
     <span
       className={cn(
-        "inline-flex items-baseline whitespace-nowrap text-[var(--theme-price)]",
+        "sf-next-price inline-flex items-baseline whitespace-nowrap text-[var(--theme-price)]",
         className,
       )}
     >

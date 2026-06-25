@@ -18,13 +18,13 @@ export default function EmptyState({
   className,
 }: ClientEmptyStateProps) {
   return (
-    <div className={cn("client-empty-state client-card", className)} role="status">
-      <div className="client-empty-state__icon" aria-hidden>
+    <div className={cn("sf-next-empty-state sf-next-card", className)} role="status">
+      <div className="sf-next-empty-state__icon" aria-hidden>
         {icon ?? <SearchX size={30} />}
       </div>
-      <h3 className="client-empty-state__title">{title}</h3>
-      {description ? <p className="client-empty-state__desc">{description}</p> : null}
-      {action ? <div className="client-empty-state__action">{action}</div> : null}
+      <h3 className="sf-next-empty-state__title">{title}</h3>
+      {description ? <p className="sf-next-empty-state__desc">{description}</p> : null}
+      {action ? <div className="sf-next-empty-state__action">{action}</div> : null}
     </div>
   );
 }

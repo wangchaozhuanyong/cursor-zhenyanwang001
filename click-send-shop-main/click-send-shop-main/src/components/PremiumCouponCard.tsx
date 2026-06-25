@@ -54,7 +54,7 @@ function resolveCouponTemplate(input: {
 function VerticalActionLabel({ label }: { label: string }) {
   const chars = Array.from(label);
   return (
-    <span className="store-coupon-card__action-label store-coupon-card__action-label--vertical inline-flex flex-col items-center justify-center gap-0 leading-none tracking-tight">
+    <span className="sf-next-coupon-card__action-label sf-next-coupon-card__action-label--vertical inline-flex flex-col items-center justify-center gap-0 leading-none tracking-tight">
       {chars.map((ch, i) => (
         <span key={`${ch}-${i}`} className="block text-[11px] font-semibold leading-[1.15]">
           {ch}
@@ -66,7 +66,7 @@ function VerticalActionLabel({ label }: { label: string }) {
 
 function HorizontalActionLabel({ label }: { label: string }) {
   return (
-    <span className="store-coupon-card__action-label store-coupon-card__action-label--horizontal block max-w-full text-center text-[11px] font-bold leading-tight sm:text-xs">
+    <span className="sf-next-coupon-card__action-label sf-next-coupon-card__action-label--horizontal block max-w-full text-center text-[11px] font-bold leading-tight sm:text-xs">
       {label}
     </span>
   );
@@ -79,7 +79,7 @@ function RoundActionLabel({ label }: { label: string }) {
     : [text];
 
   return (
-    <span className="store-coupon-card__round-action-label">
+    <span className="sf-next-coupon-card__round-action-label">
       {lines.map((line, index) => (
         <span key={`${line}-${index}`}>{line}</span>
       ))}
@@ -103,24 +103,24 @@ function CouponValueFace({
   const note = layout === "home" ? (percentMatch ? "DISCOUNT" : "COUPON") : percentMatch ? "专属折扣" : "购物优惠";
 
   return (
-    <div className="store-coupon-card__value-face" aria-label={leftValue}>
-      <span className="store-coupon-card__value-kicker">{kicker}</span>
-      <p className="store-coupon-card__value-main">
+    <div className="sf-next-coupon-card__value-face" aria-label={leftValue}>
+      <span className="sf-next-coupon-card__value-kicker">{kicker}</span>
+      <p className="sf-next-coupon-card__value-main">
         {percentMatch ? (
           <>
-            <span className={cn("store-coupon-card__value-number", amountSize)}>{percentMatch[1]}</span>
-            <span className="store-coupon-card__value-unit">%</span>
+            <span className={cn("sf-next-coupon-card__value-number", amountSize)}>{percentMatch[1]}</span>
+            <span className="sf-next-coupon-card__value-unit">%</span>
           </>
         ) : amountRmMatch ? (
           <>
-            <span className="store-coupon-card__value-currency">{amountRmMatch[1].toUpperCase()}</span>
-            <span className={cn("store-coupon-card__value-number", amountSize)}>{amountRmMatch[2]}</span>
+            <span className="sf-next-coupon-card__value-currency">{amountRmMatch[1].toUpperCase()}</span>
+            <span className={cn("sf-next-coupon-card__value-number", amountSize)}>{amountRmMatch[2]}</span>
           </>
         ) : (
-          <span className={cn("store-coupon-card__value-number", amountSize)}>{leftValue}</span>
+          <span className={cn("sf-next-coupon-card__value-number", amountSize)}>{leftValue}</span>
         )}
       </p>
-      <span className="store-coupon-card__value-note">{note}</span>
+      <span className="sf-next-coupon-card__value-note">{note}</span>
     </div>
   );
 }
@@ -143,22 +143,22 @@ function CouponInfoRow({
   return (
     <div
       className={cn(
-        "store-coupon-card__info-row flex min-w-0 items-center gap-1",
-        prominent ? "store-coupon-card__info-row--title" : "store-coupon-card__info-row--meta",
+        "sf-next-coupon-card__info-row flex min-w-0 items-center gap-1",
+        prominent ? "sf-next-coupon-card__info-row--title" : "sf-next-coupon-card__info-row--meta",
       )}
     >
       <span
-        className="store-coupon-card__info-icon flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded border border-[var(--theme-border)] bg-[var(--theme-bg)]"
+        className="sf-next-coupon-card__info-icon flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded border border-[var(--theme-border)] bg-[var(--theme-bg)]"
         aria-hidden
       >
         <Icon size={10} className={iconClass} strokeWidth={1.75} />
       </span>
       <p
         className={cn(
-          "store-coupon-card__info-text min-w-0 flex-1 leading-snug",
+          "sf-next-coupon-card__info-text min-w-0 flex-1 leading-snug",
           prominent
-            ? cn("store-card-title line-clamp-2 font-bold", titleClass)
-            : cn("store-micro truncate", mutedClass),
+            ? cn("sf-next-coupon-card__title line-clamp-2 font-bold", titleClass)
+            : cn("sf-next-coupon-card__meta truncate", mutedClass),
         )}
       >
         {children}
@@ -244,7 +244,7 @@ export default function PremiumCouponCard({
           onAction?.();
         }}
         className={cn(
-          "store-coupon-card__action-button",
+          "sf-next-coupon-card__action-button",
           skin.actionButtonClass,
           actionHasStatus && "!h-auto !min-h-[2.45rem] flex-1 !rounded-md !py-1",
         )}
@@ -263,7 +263,7 @@ export default function PremiumCouponCard({
           onAction?.();
         }}
         className={cn(
-          "store-coupon-card__action-button",
+          "sf-next-coupon-card__action-button",
           skin.actionButtonClass,
           actionHasStatus && "!h-auto !min-h-[2.45rem] flex-1 !rounded-md !py-1",
         )}
@@ -280,7 +280,7 @@ export default function PremiumCouponCard({
       data-coupon-template={couponTemplate}
       data-coupon-state={couponState}
       className={cn(
-        "store-coupon-card store-coupon-card--template relative grid w-full min-w-0 items-stretch gap-0 overflow-hidden rounded-xl border",
+        "sf-next-coupon-card sf-next-coupon-card--template relative grid w-full min-w-0 items-stretch gap-0 overflow-hidden rounded-xl border",
         skin.useThemedMarketingShell ? "border-[var(--theme-coupon-card-shell-border)]" : "border-[var(--theme-border)]",
         skin.cardPadding,
         skin.gridClass,
@@ -289,12 +289,12 @@ export default function PremiumCouponCard({
         className,
       )}
     >
-      <span aria-hidden className="store-coupon-card__template-chrome store-coupon-card__template-sheen" />
-      <span aria-hidden className="store-coupon-card__template-chrome store-coupon-card__template-fiber" />
-      <span aria-hidden className="store-coupon-card__template-chrome store-coupon-card__template-edge store-coupon-card__template-edge--left" />
-      <span aria-hidden className="store-coupon-card__template-chrome store-coupon-card__template-edge store-coupon-card__template-edge--right" />
-      <span aria-hidden className="store-coupon-card__template-chrome store-coupon-card__state-rail" />
-      <div className={cn("store-coupon-card__value-pane flex min-h-[3.25rem] flex-col items-center justify-center rounded-lg px-1.5 py-1 text-center", skin.valuePaneClass)}>
+      <span aria-hidden className="sf-next-coupon-card__template-chrome sf-next-coupon-card__template-sheen" />
+      <span aria-hidden className="sf-next-coupon-card__template-chrome sf-next-coupon-card__template-fiber" />
+      <span aria-hidden className="sf-next-coupon-card__template-chrome sf-next-coupon-card__template-edge sf-next-coupon-card__template-edge--left" />
+      <span aria-hidden className="sf-next-coupon-card__template-chrome sf-next-coupon-card__template-edge sf-next-coupon-card__template-edge--right" />
+      <span aria-hidden className="sf-next-coupon-card__template-chrome sf-next-coupon-card__state-rail" />
+      <div className={cn("sf-next-coupon-card__value-pane flex min-h-[3.25rem] flex-col items-center justify-center rounded-lg px-1.5 py-1 text-center", skin.valuePaneClass)}>
         <CouponValueFace
           leftValue={leftValue}
           amountRmMatch={amountRmMatch}
@@ -306,7 +306,7 @@ export default function PremiumCouponCard({
       <div
         className={cn(
           "relative flex min-w-0 flex-col justify-center",
-          "store-coupon-card__info-pane",
+          "sf-next-coupon-card__info-pane",
           skin.infoGap,
           skin.infoPadding,
         )}
@@ -332,7 +332,7 @@ export default function PremiumCouponCard({
       {actionButton ? (
         <div
           className={cn(
-            "store-coupon-card__action-pane flex w-full min-w-0 items-stretch justify-center",
+            "sf-next-coupon-card__action-pane flex w-full min-w-0 items-stretch justify-center",
             actionHasStatus && "flex-col items-center gap-1 py-0.5",
           )}
         >

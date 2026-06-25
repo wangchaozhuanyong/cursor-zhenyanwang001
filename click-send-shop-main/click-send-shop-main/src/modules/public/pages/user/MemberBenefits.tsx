@@ -203,8 +203,8 @@ export default function MemberBenefits() {
     <StoreAccountLayout
       title="会员权益"
       onBack={goBack}
-      className="sf-next-page store-v12-page store-account-subpage-v12-page store-member-benefits-v12-page"
-      mainClassName="sf-next-account-main store-member-benefits-v12-main"
+      className="sf-next-page sf-next-route-page sf-next-account-route-page sf-next-member-benefits-page"
+      mainClassName="sf-next-account-main sf-next-member-benefits-main"
     >
       <MemberBenefitsView
         state={state}

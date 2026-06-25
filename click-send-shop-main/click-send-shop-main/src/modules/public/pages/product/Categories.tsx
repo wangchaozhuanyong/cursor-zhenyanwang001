@@ -7,7 +7,6 @@ import { cn } from "@/lib/utils";
 import ProductFilterDrawer from "@/components/ProductFilterDrawer";
 import ProductSortBar from "@/components/ProductSortBar";
 import type { CategoryKingkongItem } from "@/components/CategoryKingkongRow";
-import CategoryNavTile from "@/components/store/CategoryNavTile";
 import { getCategoryNavIconValue } from "@/utils/categoryNavIcon";
 import * as productService from "@/services/productService";
 import type { ProductListParams, ProductSortType, ProductTag } from "@/types/product";
@@ -47,7 +46,7 @@ export default function Categories() {
   const [searchParams, setSearchParams] = useSearchParams();
   const syncedSearchKeyRef = useRef(searchParams.toString());
   const syncingFromUrlRef = useRef(false);
-  const productGridClass = "sf-next-product-grid store-product-grid grid grid-cols-2 gap-x-5 gap-y-8 pt-1 md:grid-cols-3 xl:grid-cols-4";
+  const productGridClass = "sf-next-product-grid grid grid-cols-2 gap-x-5 gap-y-8 pt-1 md:grid-cols-3 xl:grid-cols-4";
   const emptyColSpan = "col-span-2 md:col-span-3 xl:col-span-4";
 
   const initialIsNew = isNewArrivalCategoryParams(searchParams);
@@ -335,10 +334,6 @@ export default function Categories() {
     const active = rootKingkongItems.find((item) => item.active && !base.some((baseItem) => baseItem.id === item.id));
     return active ? [...base.slice(0, 5), active] : base;
   }, [rootKingkongItems]);
-  const featuredCategoryItems = useMemo(() => {
-    const preferred = rootKingkongItems.filter((item) => item.id !== "all" && item.id !== "new");
-    return (preferred.length ? preferred : rootKingkongItems).slice(0, 4);
-  }, [rootKingkongItems]);
   const activeFilterLabels = useMemo(() => {
     const labels: Array<{ key: string; label: string; onRemove?: () => void }> = [];
     if (submittedQuery) labels.push({ key: "query", label: submittedQuery, onRemove: handleClearTopSearch });
@@ -403,8 +398,8 @@ export default function Categories() {
         <div>
           <p className="mb-1 text-xs font-semibold text-[var(--theme-text)]">价格区间</p>
           <div className="grid grid-cols-2 gap-2">
-            <input value={minPrice} onChange={(e) => setMinPrice(e.target.value.replace(/[^\d.]/g, ""))} placeholder="最低价" className="store-category-filter-input rounded-xl border px-3 py-2 text-xs" />
-            <input value={maxPrice} onChange={(e) => setMaxPrice(e.target.value.replace(/[^\d.]/g, ""))} placeholder="最高价" className="store-category-filter-input rounded-xl border px-3 py-2 text-xs" />
+            <input value={minPrice} onChange={(e) => setMinPrice(e.target.value.replace(/[^\d.]/g, ""))} placeholder="最低价" className="sf-next-filter-input rounded-xl border px-3 py-2 text-xs" />
+            <input value={maxPrice} onChange={(e) => setMaxPrice(e.target.value.replace(/[^\d.]/g, ""))} placeholder="最高价" className="sf-next-filter-input rounded-xl border px-3 py-2 text-xs" />
           </div>
         </div>
         <div className="grid grid-cols-2 gap-2">
@@ -414,7 +409,7 @@ export default function Categories() {
             { k: isHot, t: "热销", f: setIsHot },
             { k: isRecommended, t: "推荐", f: setIsRecommended },
           ].map((it) => (
-            <UnifiedButton key={it.t} type="button" onClick={() => it.f(!it.k)} className={cn("store-category-filter-chip rounded-xl border px-3 py-2 text-xs font-semibold transition active:scale-[0.98]", it.k && "is-active")}>{it.t}</UnifiedButton>
+            <UnifiedButton key={it.t} type="button" onClick={() => it.f(!it.k)} className={cn("sf-next-filter-chip rounded-xl border px-3 py-2 text-xs font-semibold transition active:scale-[0.98]", it.k && "is-active")}>{it.t}</UnifiedButton>
           ))}
         </div>
         <div>
@@ -451,7 +446,7 @@ export default function Categories() {
 
   return (
     <div
-      className="store-page-shell store-v12-page store-categories-v12-page store-listing-page store-category-page sf-next-category-page store-bottom-safe text-[var(--theme-text)]"
+      className="sf-next-page-shell sf-next-route-page sf-next-categories-page sf-next-listing-page sf-next-category-page sf-next-bottom-safe text-[var(--theme-text)]"
       data-storefront-client-style={clientStyle}
     >
       <SeoHead
@@ -460,7 +455,7 @@ export default function Categories() {
         canonical={canonical}
         robots={robots}
       />
-      <main className="store-category-main sf-next-category-shell mx-auto w-full max-w-screen-xl">
+      <main className="sf-next-category-shell mx-auto w-full max-w-screen-xl">
         <section className="sf-next-category-hero" aria-label="分类入口">
           <div className="sf-next-category-titlebar">
             <h1>分类</h1>
@@ -477,11 +472,6 @@ export default function Categories() {
           />
           <CategoryTextPills items={categoryPills} loading={loading && categories.length === 0} />
         </section>
-
-        <FeaturedCategoryGrid
-          items={featuredCategoryItems}
-          loading={loading && categories.length === 0}
-        />
 
         {subCategories.length > 0 ? (
           <section className="sf-next-subcategory-strip" aria-label="子分类">
@@ -550,8 +540,8 @@ export default function Categories() {
             showSoftRefreshing={showSoftRefreshing}
             emptyState={
               !error ? (
-                <section className={cn(emptyColSpan, "store-account-v12-empty-panel store-listing-empty")}>
-                  <span className="store-account-v12-empty-panel__icon" aria-hidden>
+                <section className={cn(emptyColSpan, "sf-next-state-panel sf-next-listing-empty")}>
+                  <span className="sf-next-state-panel__icon" aria-hidden>
                     <Search size={28} />
                   </span>
                   <h2>
@@ -567,7 +557,7 @@ export default function Categories() {
                       : "商品上架后会自动显示在这里。"}
                   </p>
                   {(activeFilterCount > 0 || submittedQuery) ? (
-                    <UnifiedButton type="button" onClick={clearFilters} className="store-account-v12-empty-panel__action">
+                    <UnifiedButton type="button" onClick={clearFilters} className="sf-next-state-panel__primary">
                       <X size={17} aria-hidden />
                       清空筛选
                     </UnifiedButton>
@@ -688,35 +678,6 @@ function CategoryTextPills({ items, loading }: { items: CategoryKingkongItem[]; 
             </UnifiedButton>
           ))}
     </div>
-  );
-}
-
-function FeaturedCategoryGrid({ items, loading }: { items: CategoryKingkongItem[]; loading: boolean }) {
-  return (
-    <section className="sf-next-featured-categories" aria-labelledby="sf-next-featured-categories-title">
-      <h2 id="sf-next-featured-categories-title">精选分类</h2>
-      <div className="sf-next-featured-categories__grid">
-        {loading
-          ? Array.from({ length: 4 }).map((_, index) => (
-              <div key={index} className="sf-next-featured-category is-loading" aria-hidden>
-                <span />
-                <i />
-              </div>
-            ))
-          : items.map((item) => (
-              <CategoryNavTile
-                key={item.id}
-                id={item.id}
-                label={item.label}
-                iconValue={item.iconValue}
-                active={item.active}
-                onClick={item.onClick}
-                variant="plain"
-                className="sf-next-featured-category"
-              />
-            ))}
-      </div>
-    </section>
   );
 }
 

@@ -11,7 +11,7 @@ function StorefrontFallback() {
   return (
     <div
       data-route-fallback="store-app"
-      className="store-page-shell store-bottom-safe bg-[var(--theme-bg)] text-[var(--theme-text)]"
+      className="sf-next-page-shell sf-next-bottom-safe bg-[var(--theme-bg)] text-[var(--theme-text)]"
       aria-busy="true"
       aria-label="页面加载中"
     >
@@ -42,13 +42,13 @@ function AdminFallback() {
         <div className="space-y-3 p-4">
           <Skeleton className="h-8 w-32" />
           {Array.from({ length: 5 }).map((_, i) => (
-            <Skeleton key={i} className="h-9 w-full theme-rounded" />
+            <Skeleton key={i} className="h-9 w-full sf-next-theme-radius" />
           ))}
         </div>
       </aside>
       <div className="min-w-0 flex-1 p-4 md:p-6">
         <Skeleton className="mb-6 h-9 w-48 max-w-full" />
-        <Skeleton className="h-[min(40vh,18rem)] w-full max-w-4xl theme-rounded" />
+        <Skeleton className="h-[min(40vh,18rem)] w-full max-w-4xl sf-next-theme-radius" />
       </div>
     </div>
   );
@@ -62,8 +62,8 @@ export function AdminOutletFallback() {
         <Skeleton className="h-8 w-56 max-w-full" />
         <Skeleton className="h-4 w-80 max-w-full" />
       </div>
-      <Skeleton className="h-11 w-full max-w-md theme-rounded" />
-      <Skeleton className="h-[min(42vh,20rem)] w-full theme-rounded" />
+      <Skeleton className="h-11 w-full max-w-md sf-next-theme-radius" />
+      <Skeleton className="h-[min(42vh,20rem)] w-full sf-next-theme-radius" />
     </div>
   );
 }
@@ -72,7 +72,7 @@ export function StoreOutletFallback() {
   return (
     <div
       data-route-fallback="store-outlet"
-      className="store-page-shell store-bottom-safe bg-[var(--theme-bg)] text-[var(--theme-text)]"
+      className="sf-next-page-shell sf-next-bottom-safe bg-[var(--theme-bg)] text-[var(--theme-text)]"
       aria-busy="true"
       aria-label="页面加载中"
     >
@@ -102,7 +102,7 @@ export function StoreTabContentFallback() {
       aria-busy="true"
       aria-label="页面加载中"
     >
-      <div className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 shadow-[var(--store-card-shadow)]">
+      <div className="sf-next-surface-card p-3">
         <div className="flex items-center gap-3">
           <Skeleton className="h-10 w-10 shrink-0 rounded-full" />
           <div className="min-w-0 flex-1 space-y-2">
@@ -123,7 +123,7 @@ export function HomeShellSkeleton() {
   return (
     <div
       data-route-fallback="home-shell"
-      className="store-page-shell store-bottom-safe bg-[var(--theme-bg)] text-[var(--theme-text)]"
+      className="sf-next-page-shell sf-next-bottom-safe bg-[var(--theme-bg)] text-[var(--theme-text)]"
       aria-busy="true"
       aria-label="首页加载中"
     >

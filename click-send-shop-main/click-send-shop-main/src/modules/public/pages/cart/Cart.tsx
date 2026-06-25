@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
-import { BadgePercent, Heart, Minus, Pencil, Pin, Plus, Share2, Trash2, ShoppingBag, Loader2, Check, LogIn, ShieldCheck, Sparkles, X } from "lucide-react";
+import { BadgePercent, Heart, Minus, Pin, Plus, Share2, Trash2, ShoppingBag, Loader2, Check, LogIn, ShieldCheck, Sparkles, X } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import StorePageHeader from "@/components/store/StorePageHeader";
 import { STORE_MOBILE_PAGE_HEADER_CLASS } from "@/constants/storeLayout";
@@ -334,7 +334,8 @@ export default function Cart() {
             aria-label={allSelected ? "取消全选" : t("cart.selectAll")}
             className="sf-next-cart-edit-button"
           >
-            <Pencil size={22} strokeWidth={2.35} aria-hidden />
+            <Check size={16} strokeWidth={2.35} aria-hidden />
+            <span>{allSelected ? "取消全选" : "全选"}</span>
           </UnifiedButton>
         ) : null}
         title={headerTitle}
@@ -435,7 +436,7 @@ export default function Cart() {
             ) : (
               <>
               <div className="sf-next-cart-section-head" aria-label="购物车商品选择">
-                <span>已选商品</span>
+                <span>购物车商品</span>
                 <UnifiedButton
                   type="button"
                   onClick={() => setSelectAll(!allSelected)}

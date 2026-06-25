@@ -464,7 +464,9 @@ export default function Promotions() {
     return FILTERABLE_PROMOTION_TYPES.includes(raw as PromotionType) ? raw as PromotionType : "";
   }, [searchParams]);
   const initialCache = useMemo(() => readPromotionListCache(selectedType), [selectedType]);
+  const initialOverviewCache = useMemo(() => readPromotionListCache(""), []);
   const [list, setList] = useState<StorefrontPromotion[]>(() => initialCache?.list || []);
+  const [overviewList, setOverviewList] = useState<StorefrontPromotion[]>(() => initialOverviewCache?.list || []);
   const [loading, setLoading] = useState(() => !initialCache);
   const [error, setError] = useState("");
 
@@ -494,10 +496,35 @@ export default function Promotions() {
     void load();
   }, [load]);
 
+  useEffect(() => {
+    const cached = readPromotionListCache("");
+    if (cached) {
+      setOverviewList(cached.list);
+      return;
+    }
+
+    let cancelled = false;
+    marketingService.fetchPromotions({ pageSize: 60 })
+      .then((promotionResult) => {
+        if (cancelled) return;
+        const nextList = promotionResult.list || [];
+        writePromotionListCache("", nextList);
+        setOverviewList(nextList);
+      })
+      .catch(() => {
+        if (!cancelled) setOverviewList([]);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const activeFilterKey = filterScrollKey(selectedType);
   const { containerRef: filtersRef, setItemRef: setFilterRef, scrollToKey: scrollFilterToKey } =
     useHorizontalActiveScroll<HTMLElement, HTMLAnchorElement>(activeFilterKey, FILTERS.length);
   const showFullSkeleton = loading && list.length === 0;
+  const folioList = overviewList.length ? overviewList : list;
 
   return (
     <div className="sf-next-page sf-next-promotions-page">
@@ -515,10 +542,10 @@ export default function Promotions() {
       />
 
       <main className="sf-next-container sf-next-promotions-main">
-        {showFullSkeleton ? (
+        {showFullSkeleton && !folioList.length ? (
           <PromotionsFolioSkeleton />
-        ) : list.length ? (
-          <PromotionsFolio list={list} selectedType={selectedType} />
+        ) : folioList.length ? (
+          <PromotionsFolio list={folioList} selectedType={selectedType} />
         ) : null}
 
         <nav

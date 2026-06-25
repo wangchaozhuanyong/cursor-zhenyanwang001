@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback, useMemo, useRef, type FormEvent } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Search, X } from "lucide-react";
+import { ArrowLeft, Search, X } from "lucide-react";
 import { useProductStore } from "@/stores/useProductStore";
 import { STORE_COPY } from "@/constants/storeCopy";
 import { cn } from "@/lib/utils";
@@ -56,6 +56,7 @@ export default function Categories() {
   const [sort, setSort] = useState<ProductSortType>(normalizeSort(searchParams.get("sort")));
   const [query, setQuery] = useState(searchParams.get("keyword") || "");
   const [submittedQuery, setSubmittedQuery] = useState(searchParams.get("keyword") || "");
+  const [searchPanelOpen, setSearchPanelOpen] = useState(false);
   const [minPrice, setMinPrice] = useState(searchParams.get("min_price") || "");
   const [maxPrice, setMaxPrice] = useState(searchParams.get("max_price") || "");
   const [inStock, setInStock] = useState(searchParams.get("in_stock") === "1");
@@ -208,9 +209,12 @@ export default function Categories() {
     setIsRecommended(false);
   }, []);
 
-  const handleTopSearchSubmit = useCallback((nextValue?: string) => {
-    setSubmittedQuery((nextValue ?? query).trim());
-  }, [query]);
+  const handleSearchPanelSubmit = useCallback((nextValue: string) => {
+    const normalized = nextValue.trim();
+    setQuery(normalized);
+    setSubmittedQuery(normalized);
+    setSearchPanelOpen(false);
+  }, []);
 
   const handleClearTopSearch = useCallback(() => {
     setQuery("");
@@ -329,11 +333,7 @@ export default function Categories() {
     totalPages: pagination.totalPages,
   });
 
-  const categoryPills = useMemo(() => {
-    const base = rootKingkongItems.slice(0, 6);
-    const active = rootKingkongItems.find((item) => item.active && !base.some((baseItem) => baseItem.id === item.id));
-    return active ? [...base.slice(0, 5), active] : base;
-  }, [rootKingkongItems]);
+  const categoryPills = rootKingkongItems;
   const activeFilterLabels = useMemo(() => {
     const labels: Array<{ key: string; label: string; onRemove?: () => void }> = [];
     if (submittedQuery) labels.push({ key: "query", label: submittedQuery, onRemove: handleClearTopSearch });
@@ -456,54 +456,61 @@ export default function Categories() {
         robots={robots}
       />
       <main className="sf-next-category-shell mx-auto w-full max-w-screen-xl">
+        <section className="sf-next-category-toolbar" aria-label="分类搜索和筛选">
+          <UnifiedButton
+            type="button"
+            className="sf-next-category-search-trigger"
+            onClick={() => setSearchPanelOpen(true)}
+            aria-label="打开商品搜索"
+          >
+            <Search size={19} aria-hidden />
+            <span>{submittedQuery || STORE_COPY.searchPlaceholder}</span>
+          </UnifiedButton>
+          <div className="sf-next-category-filter-slot">
+            {filterDrawer}
+          </div>
+        </section>
+
         <section className="sf-next-category-hero" aria-label="分类入口">
           <div className="sf-next-category-titlebar">
             <h1>分类</h1>
-            <UnifiedButton type="button" className="sf-next-icon-button" onClick={() => handleTopSearchSubmit()} aria-label="搜索分类商品">
+            <UnifiedButton type="button" className="sf-next-icon-button" onClick={() => setSearchPanelOpen(true)} aria-label="打开商品搜索">
               <Search size={24} aria-hidden />
             </UnifiedButton>
           </div>
-          <CategorySearchForm
-            query={query}
-            placeholder={STORE_COPY.searchPlaceholder}
-            onQueryChange={setQuery}
-            onSubmit={handleTopSearchSubmit}
-            onClearSearch={handleClearTopSearch}
-          />
           <CategoryTextPills items={categoryPills} loading={loading && categories.length === 0} />
         </section>
-
-        {subCategories.length > 0 ? (
-          <section className="sf-next-subcategory-strip" aria-label="子分类">
-            <UnifiedButton
-              type="button"
-              aria-pressed={activeRootId === activeCat}
-              className={cn("sf-next-subcategory-chip", activeRootId === activeCat && "is-active")}
-              onClick={() => activeRootId && handleSelectChild(activeRootId)}
-            >
-              全部
-            </UnifiedButton>
-            {subCategories.map((child) => (
-              <UnifiedButton
-                key={child.id}
-                type="button"
-                aria-pressed={activeCat === child.id}
-                className={cn("sf-next-subcategory-chip", activeCat === child.id && "is-active")}
-                onClick={() => handleSelectChild(child.id)}
-              >
-                {storefrontCategoryName(child.name)}
-              </UnifiedButton>
-            ))}
-          </section>
-        ) : null}
 
         <section className="sf-next-listing-section" aria-label={productSectionTitle}>
           <div className="sf-next-listing-head">
             <h2>{productSectionTitle}</h2>
-            <div className="sf-next-listing-head-actions">
-              {filterDrawer}
-            </div>
+            <span className="sf-next-listing-count" aria-live="polite">
+              {pagination.total > 0 ? `${pagination.total} 款` : ""}
+            </span>
           </div>
+          {subCategories.length > 0 ? (
+            <section className="sf-next-subcategory-strip" aria-label="子分类">
+              <UnifiedButton
+                type="button"
+                aria-pressed={activeRootId === activeCat}
+                className={cn("sf-next-subcategory-chip", activeRootId === activeCat && "is-active")}
+                onClick={() => activeRootId && handleSelectChild(activeRootId)}
+              >
+                全部
+              </UnifiedButton>
+              {subCategories.map((child) => (
+                <UnifiedButton
+                  key={child.id}
+                  type="button"
+                  aria-pressed={activeCat === child.id}
+                  className={cn("sf-next-subcategory-chip", activeCat === child.id && "is-active")}
+                  onClick={() => handleSelectChild(child.id)}
+                >
+                  {storefrontCategoryName(child.name)}
+                </UnifiedButton>
+              ))}
+            </section>
+          ) : null}
           <div className="sf-next-listing-sort-shell">
             <ProductSortBar value={sort} onChange={setSort} className="sf-next-listing-sortbar" />
           </div>
@@ -596,66 +603,141 @@ export default function Categories() {
           ) : null}
         </section>
       </main>
+      <CategorySearchOverlay
+        open={searchPanelOpen}
+        query={query}
+        placeholder={STORE_COPY.searchPlaceholder}
+        categoryItems={rootKingkongItems}
+        tags={quickTags}
+        onClose={() => setSearchPanelOpen(false)}
+        onQueryChange={setQuery}
+        onSubmit={handleSearchPanelSubmit}
+        onClear={handleClearTopSearch}
+        onTagSelect={(tag) => {
+          setActiveTagId(activeTagId === tag.id ? "" : tag.id);
+          setSearchPanelOpen(false);
+        }}
+      />
     </div>
   );
 }
 
-function CategorySearchForm({
+function CategorySearchOverlay({
+  open,
   query,
   placeholder,
+  categoryItems,
+  tags,
+  onClose,
   onQueryChange,
   onSubmit,
-  onClearSearch,
+  onClear,
+  onTagSelect,
 }: {
+  open: boolean;
   query: string;
   placeholder: string;
+  categoryItems: CategoryKingkongItem[];
+  tags: ProductTag[];
+  onClose: () => void;
   onQueryChange: (value: string) => void;
-  onSubmit: (value?: string) => void;
-  onClearSearch: () => void;
+  onSubmit: (value: string) => void;
+  onClear: () => void;
+  onTagSelect: (tag: ProductTag) => void;
 }) {
-  const inputId = "category-search-next";
   const inputRef = useRef<HTMLInputElement | null>(null);
 
-  const submitCurrentQuery = () => {
-    const value = inputRef.current?.value ?? query;
-    onSubmit(value);
-  };
+  useEffect(() => {
+    if (!open) return;
+    const timer = window.setTimeout(() => inputRef.current?.focus(), 80);
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.clearTimeout(timer);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [onClose, open]);
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    submitCurrentQuery();
-  };
+  if (!open) return null;
+
+  const submitCurrentQuery = () => onSubmit(query);
 
   return (
-    <form className="sf-next-category-search" onSubmit={handleSubmit} aria-label="分类页搜索">
-      <Search size={21} className="sf-next-category-search__icon" aria-hidden />
-      <label className="sr-only" htmlFor={inputId}>搜索分类商品</label>
-      <input
-        id={inputId}
-        ref={inputRef}
-        name="categoryKeyword"
-        type="search"
-        value={query}
-        onChange={(event) => onQueryChange(event.target.value)}
-        onKeyDown={(event) => {
-          if (event.key === "Enter") {
+    <div className="sf-next-search-panel" role="dialog" aria-modal="true" aria-label="搜索商品">
+      <button type="button" className="sf-next-search-panel__scrim" onClick={onClose} aria-label="关闭搜索" />
+      <aside className="sf-next-search-panel__sheet">
+        <form
+          className="sf-next-search-panel__bar"
+          onSubmit={(event) => {
             event.preventDefault();
             submitCurrentQuery();
-          }
-        }}
-        placeholder={placeholder}
-      />
-      {query ? (
-        <UnifiedButton
-          type="button"
-          className="sf-next-category-search__clear"
-          onClick={onClearSearch}
-          aria-label="清空搜索关键词"
+          }}
         >
-          <X size={15} aria-hidden />
-        </UnifiedButton>
-      ) : null}
-    </form>
+          <UnifiedButton type="button" className="sf-next-search-panel__back" onClick={onClose} aria-label="返回">
+            <ArrowLeft size={20} aria-hidden />
+          </UnifiedButton>
+          <label className="sr-only" htmlFor="category-search-panel-input">搜索商品</label>
+          <div className="sf-next-search-panel__input-wrap">
+            <Search size={18} aria-hidden />
+            <input
+              id="category-search-panel-input"
+              ref={inputRef}
+              type="search"
+              value={query}
+              onChange={(event) => onQueryChange(event.target.value)}
+              placeholder={placeholder}
+            />
+            {query ? (
+              <UnifiedButton type="button" className="sf-next-search-panel__clear" onClick={onClear} aria-label="清空搜索关键词">
+                <X size={15} aria-hidden />
+              </UnifiedButton>
+            ) : null}
+          </div>
+          <UnifiedButton type="submit" className="sf-next-search-panel__submit">
+            搜索
+          </UnifiedButton>
+        </form>
+
+        <section className="sf-next-search-panel__section" aria-label="快捷分类">
+          <h2>快捷分类</h2>
+          <div className="sf-next-search-panel__chips">
+            {categoryItems.slice(0, 12).map((item) => (
+              <UnifiedButton
+                key={item.id}
+                type="button"
+                className={cn("sf-next-search-panel__chip", item.active && "is-active")}
+                onClick={() => {
+                  item.onClick();
+                  onClose();
+                }}
+              >
+                {item.label}
+              </UnifiedButton>
+            ))}
+          </div>
+        </section>
+
+        {tags.length ? (
+          <section className="sf-next-search-panel__section" aria-label="商品标签">
+            <h2>商品标签</h2>
+            <div className="sf-next-search-panel__chips">
+              {tags.slice(0, 12).map((tag) => (
+                <UnifiedButton
+                  key={tag.id}
+                  type="button"
+                  className="sf-next-search-panel__chip"
+                  onClick={() => onTagSelect(tag)}
+                >
+                  {storefrontCategoryName(tag.name)}
+                </UnifiedButton>
+              ))}
+            </div>
+          </section>
+        ) : null}
+      </aside>
+    </div>
   );
 }
 

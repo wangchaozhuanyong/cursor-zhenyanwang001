@@ -385,9 +385,6 @@ export default function Profile() {
         </aside>
 
         <div className="sf-next-profile-stack min-w-0 space-y-3 sm:space-y-4 xl:max-w-4xl">
-          <header className="sf-next-profile-titlebar">
-            <h1>我的</h1>
-          </header>
           {authPending ? (
             <ProfileAuthLoadingCard />
           ) : !loggedIn ? (

@@ -530,6 +530,7 @@ function RecentProductCard({ product, onOpen }: { product: Product; onOpen: () =
           alt={vm.imageAlt}
           className="h-full w-full"
           imgClassName="h-full w-full object-cover"
+          fit="cover"
           loading="lazy"
           sizes="112px"
         />

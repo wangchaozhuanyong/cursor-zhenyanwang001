@@ -21,7 +21,7 @@ export function CheckoutSubmitBar({
   disabledHint,
   onSubmit,
 }: CheckoutSubmitBarProps) {
-  const ctaText = disabled && disabledHint ? disabledHint : submitCtaLabel(paymentMethod, false);
+  const ctaText = disabled && disabledHint ? "待确认" : submitCtaLabel(paymentMethod, false);
   const blocked = disabled && Boolean(disabledHint);
 
   return (
@@ -29,7 +29,7 @@ export function CheckoutSubmitBar({
       <div className="mx-auto flex max-w-lg items-center gap-3 px-4 py-3.5">
         {blocked ? (
           <span className="flex min-w-0 flex-1 flex-col gap-1 rounded-2xl border border-[color-mix(in_srgb,var(--theme-warning)_28%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-warning)_8%,var(--theme-surface))] px-3.5 py-2.5">
-            <span className="min-w-0 truncate text-[11px] font-semibold leading-tight text-[var(--theme-text-muted)]">
+            <span className="min-w-0 text-[11px] font-semibold leading-snug text-[var(--theme-text-muted)]">
               {disabledHint}
             </span>
             <span className="text-[18px] font-extrabold leading-none text-[var(--theme-text)] sm:text-xl">待确认</span>

@@ -12,6 +12,9 @@ const WAIT_MS = Number(process.env.CAPTURE_WAIT_MS || 900);
 const ADMIN_PHONE = process.env.ADMIN_PHONE || "18800000001";
 const ADMIN_PASSWORD = String(process.env.ADMIN_PASSWORD || "").trim();
 const ADMIN_REQUEST_ORIGIN = new URL(BASE).origin;
+const AUDIT_USER_PHONE = String(process.env.AUDIT_USER_PHONE || process.env.PUBLIC_TEST_USER_PHONE || "").trim();
+const AUDIT_USER_PASSWORD = String(process.env.AUDIT_USER_PASSWORD || process.env.PUBLIC_TEST_USER_PASSWORD || "").trim();
+const AUDIT_USER_COUNTRY_CODE = String(process.env.AUDIT_USER_COUNTRY_CODE || "+60").trim();
 
 function stamp() {
   const d = new Date();
@@ -82,6 +85,39 @@ async function registerUser() {
     token,
     profile,
   };
+}
+
+async function loginAuditUserFromEnv() {
+  if (!AUDIT_USER_PHONE && !AUDIT_USER_PASSWORD) return null;
+  if (!AUDIT_USER_PHONE || !AUDIT_USER_PASSWORD) {
+    throw new Error("AUDIT_USER_PHONE and AUDIT_USER_PASSWORD must be provided together.");
+  }
+  const login = await jfetch(`${API}/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      phone: AUDIT_USER_PHONE,
+      countryCode: AUDIT_USER_COUNTRY_CODE,
+      password: AUDIT_USER_PASSWORD,
+    }),
+  });
+  const token = login.token?.accessToken || login.token;
+  const profile = token
+    ? await jfetch(`${API}/user/profile`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }).catch(() => null)
+    : null;
+  return {
+    phone: AUDIT_USER_PHONE,
+    password: AUDIT_USER_PASSWORD,
+    countryCode: AUDIT_USER_COUNTRY_CODE,
+    token,
+    profile,
+  };
+}
+
+async function resolveAuditUser() {
+  return (await loginAuditUserFromEnv()) || registerUser();
 }
 
 async function authPost(pathname, token, payload) {
@@ -850,7 +886,7 @@ async function main() {
 
   if (apiAvailable) {
     try {
-      user = await registerUser();
+      user = await resolveAuditUser();
       const seed = await seedProduct(user.token);
       product = seed.product;
       cartSeeded = seed.cartSeeded;

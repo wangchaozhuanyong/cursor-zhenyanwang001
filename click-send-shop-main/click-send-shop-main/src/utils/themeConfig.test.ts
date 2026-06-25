@@ -175,6 +175,7 @@ describe("themeConfig", () => {
       "storefront-next.tokens.css",
       "storefront-next.primitives.css",
       "storefront-next.extended-routes.css",
+      "storefront-next.final-contract.css",
     ]
       .map((file) => readFileSync(join(process.cwd(), "src/styles", file), "utf8"))
       .join("\n");

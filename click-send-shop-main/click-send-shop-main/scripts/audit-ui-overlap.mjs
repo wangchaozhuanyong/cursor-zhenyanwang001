@@ -1,7 +1,9 @@
 /**
  * UI overlap audit (extended).
  * Usage: node scripts/audit-ui-overlap.mjs
- * Env: BASE_URL, API_BASE_URL, VIEWPORTS (e.g. "390x844,375x667"), COUPON_STYLES_ALL=1, SKIP_AUTH=1, SKIP_ADMIN=1, AUDIT_READ_ONLY=1
+ * Env: BASE_URL, API_BASE_URL, VIEWPORTS (e.g. "390x844,375x667"), COUPON_STYLES_ALL=1,
+ *      SKIP_AUTH=1, SKIP_ADMIN=1, AUDIT_READ_ONLY=1,
+ *      AUDIT_USER_PHONE, AUDIT_USER_PASSWORD, AUDIT_USER_COUNTRY_CODE
  */
 import { chromium } from "@playwright/test";
 
@@ -30,6 +32,9 @@ const ADMIN_CSRF_TOKEN = String(process.env.ADMIN_CSRF_TOKEN || "").trim();
 const REQUIRE_ADMIN_SCAN = process.env.REQUIRE_ADMIN_SCAN === "1";
 const SKIP_AUTH = READ_ONLY_AUDIT || process.env.SKIP_AUTH === "1";
 const SKIP_ADMIN = READ_ONLY_AUDIT || process.env.SKIP_ADMIN === "1";
+const AUDIT_USER_PHONE = String(process.env.AUDIT_USER_PHONE || process.env.PUBLIC_TEST_USER_PHONE || "").trim();
+const AUDIT_USER_PASSWORD = String(process.env.AUDIT_USER_PASSWORD || process.env.PUBLIC_TEST_USER_PASSWORD || "").trim();
+const AUDIT_USER_COUNTRY_CODE = String(process.env.AUDIT_USER_COUNTRY_CODE || "+60").trim();
 
 function assertAdminPassword() {
   if (!ADMIN_PASSWORD && !ADMIN_ACCESS_TOKEN) throw new Error("Missing ADMIN_PASSWORD env; do not use hardcoded admin credentials.");
@@ -192,7 +197,34 @@ async function registerUser() {
     body: JSON.stringify({ phone, countryCode, password }),
   });
   const token = login.token?.accessToken || login.token;
-  return { token, password, phone };
+  return { token, password, phone, source: "register" };
+}
+
+async function loginAuditUserFromEnv() {
+  if (!AUDIT_USER_PHONE && !AUDIT_USER_PASSWORD) return null;
+  if (!AUDIT_USER_PHONE || !AUDIT_USER_PASSWORD) {
+    throw new Error("AUDIT_USER_PHONE and AUDIT_USER_PASSWORD must be provided together.");
+  }
+  const login = await jfetch(`${API}/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      phone: AUDIT_USER_PHONE,
+      countryCode: AUDIT_USER_COUNTRY_CODE,
+      password: AUDIT_USER_PASSWORD,
+    }),
+  });
+  const token = login.token?.accessToken || login.token;
+  return {
+    token,
+    phone: AUDIT_USER_PHONE,
+    password: AUDIT_USER_PASSWORD,
+    source: "env",
+  };
+}
+
+async function resolveAuditUser() {
+  return (await loginAuditUserFromEnv()) || registerUser();
 }
 
 function splitSetCookieHeader(value) {
@@ -720,7 +752,7 @@ async function main() {
 
   if (!SKIP_AUTH && apiAvailable) {
     try {
-      const user = await registerUser();
+      const user = await resolveAuditUser();
       userCreds = { phone: user.phone, password: user.password, token: user.token };
       try {
         cartReady = await seedCart(user.token);
@@ -731,7 +763,8 @@ async function main() {
         report.push({ phase: "setup", error: `购物车种子: ${e.message}` });
       }
     } catch (e) {
-      report.push({ phase: "setup", error: `用户注册: ${e.message}` });
+      const authSetup = AUDIT_USER_PHONE || AUDIT_USER_PASSWORD ? "前台测试用户登录" : "用户注册";
+      report.push({ phase: "setup", error: `${authSetup}: ${e.message}` });
     }
   }
 

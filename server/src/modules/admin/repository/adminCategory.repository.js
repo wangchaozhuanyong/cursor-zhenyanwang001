@@ -32,13 +32,20 @@ async function insertCategory(params) {
     seo_description,
     icon,
     icon_url,
+    banner_image_url,
+    banner_title,
+    banner_subtitle,
+    banner_link,
+    banner_enabled,
     sort_order,
     is_visible,
   } = params;
   await db.query(
     `INSERT INTO categories
-       (id, parent_id, name, description, buying_guide, faq_json, seo_title, seo_description, icon, icon_url, sort_order, is_visible, is_active)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+       (id, parent_id, name, description, buying_guide, faq_json, seo_title, seo_description, icon, icon_url,
+        banner_image_url, banner_title, banner_subtitle, banner_link, banner_enabled,
+        sort_order, is_visible, is_active)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     [
       id,
       parent_id || null,
@@ -50,6 +57,11 @@ async function insertCategory(params) {
       seo_description || '',
       icon || '',
       icon_url || icon || '',
+      banner_image_url || '',
+      banner_title || '',
+      banner_subtitle || '',
+      banner_link || '',
+      banner_enabled ? 1 : 0,
       sort_order || 0,
       is_visible === false ? 0 : 1,
       is_visible === false ? 0 : 1,
@@ -129,5 +141,4 @@ module.exports = {
   deleteCategoryById,
   restoreCategoryById,
 };
-
 

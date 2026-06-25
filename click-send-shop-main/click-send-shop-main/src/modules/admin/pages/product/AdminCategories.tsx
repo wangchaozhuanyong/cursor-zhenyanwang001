@@ -57,6 +57,11 @@ type CategoryForm = {
   seo_description: string;
   icon: string;
   icon_url: string;
+  banner_image_url: string;
+  banner_title: string;
+  banner_subtitle: string;
+  banner_link: string;
+  banner_enabled: boolean;
   parent_id: string;
   sort_order: number;
   is_visible: boolean;
@@ -84,6 +89,11 @@ const EMPTY_FORM: CategoryForm = {
   seo_description: "",
   icon: "",
   icon_url: "",
+  banner_image_url: "",
+  banner_title: "",
+  banner_subtitle: "",
+  banner_link: "",
+  banner_enabled: false,
   parent_id: "",
   sort_order: 0,
   is_visible: true,
@@ -127,6 +137,11 @@ function serializeCategoryForm(value: CategoryForm) {
     seo_description: value.seo_description,
     icon: value.icon,
     icon_url: value.icon_url,
+    banner_image_url: value.banner_image_url,
+    banner_title: value.banner_title,
+    banner_subtitle: value.banner_subtitle,
+    banner_link: value.banner_link,
+    banner_enabled: value.banner_enabled === true,
     parent_id: value.parent_id,
     sort_order: Number(value.sort_order || 0),
     is_visible: value.is_visible !== false,
@@ -300,6 +315,111 @@ function CategoryIconPreview({ value }: { value: CategoryForm }) {
   return <ImageIcon size={22} className="text-muted-foreground" />;
 }
 
+function CategoryBannerFields({
+  value,
+  onChange,
+  onUpload,
+}: {
+  value: CategoryForm;
+  onChange: (patch: Partial<CategoryForm>) => void;
+  onUpload: (file: File) => void;
+}) {
+  const bannerImage = value.banner_image_url.trim();
+
+  return (
+    <div className="grid gap-3">
+      <div className="overflow-hidden rounded-2xl border border-border bg-muted/30">
+        <div className="aspect-[16/7] w-full bg-[linear-gradient(135deg,color-mix(in_srgb,var(--theme-primary)_10%,var(--theme-surface)),var(--theme-surface))]">
+          {bannerImage ? (
+            <img src={bannerImage} alt="" className="h-full w-full object-cover object-center" />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center gap-2 text-sm text-muted-foreground">
+              <ImageIcon size={18} />
+              <Tx>分类广告图预览</Tx>
+            </div>
+          )}
+        </div>
+        <div className="grid gap-1 border-t border-border bg-background px-3 py-2">
+          <p className="truncate text-sm font-semibold text-foreground">{value.banner_title.trim() || "广告标题可选"}</p>
+          <p className="line-clamp-1 text-xs text-muted-foreground">{value.banner_subtitle.trim() || "副标题可选；前台无文案时只显示图片。"}</p>
+        </div>
+      </div>
+
+      <label className="flex h-11 items-center justify-between gap-3 rounded-xl border border-border bg-background px-3 text-sm text-foreground">
+        <span><Tx>前台显示分类广告</Tx></span>
+        <input
+          type="checkbox"
+          className="h-4 w-4 accent-[var(--theme-primary)]"
+          checked={value.banner_enabled}
+          onChange={(e) => onChange({ banner_enabled: e.target.checked })}
+        />
+      </label>
+
+      <div className="space-y-1">
+        <AdminLabelWithHint
+          label={<Tx>广告图片 URL</Tx>}
+          hint={<Tx>建议横幅比例 16:7 或 2.4:1；移动端会固定比例裁切，避免撑开页面。</Tx>}
+        />
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <input
+            value={value.banner_image_url}
+            onChange={(e) => onChange({ banner_image_url: e.target.value })}
+            placeholder="粘贴图片 URL 或上传横幅图"
+            className="h-11 min-w-0 flex-1 rounded-xl border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-[var(--theme-primary)]"
+          />
+          <div className="flex gap-2">
+            <label className="inline-flex h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-border bg-background px-3 text-sm font-medium text-foreground transition hover:bg-secondary">
+              <Upload size={16} />
+              <Tx>上传</Tx>
+              <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && onUpload(e.target.files[0])} />
+            </label>
+            <UnifiedButton
+              type="button"
+              disabled={!bannerImage}
+              onClick={() => onChange({ banner_image_url: "" })}
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-border bg-background px-3 text-sm text-muted-foreground transition hover:bg-secondary hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <X size={15} />
+              <Tx>清空</Tx>
+            </UnifiedButton>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="space-y-1">
+          <span className="text-xs font-medium text-muted-foreground"><Tx>广告标题</Tx></span>
+          <input
+            value={value.banner_title}
+            onChange={(e) => onChange({ banner_title: e.target.value })}
+            placeholder="可选，建议 12 字以内"
+            className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-[var(--theme-primary)]"
+          />
+        </label>
+        <label className="space-y-1">
+          <span className="text-xs font-medium text-muted-foreground"><Tx>跳转链接</Tx></span>
+          <input
+            value={value.banner_link}
+            onChange={(e) => onChange({ banner_link: e.target.value })}
+            placeholder="/promotions 或 https://..."
+            className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-[var(--theme-primary)]"
+          />
+        </label>
+      </div>
+
+      <label className="space-y-1">
+        <span className="text-xs font-medium text-muted-foreground"><Tx>广告副标题</Tx></span>
+        <input
+          value={value.banner_subtitle}
+          onChange={(e) => onChange({ banner_subtitle: e.target.value })}
+          placeholder="可选，说明活动或服务亮点"
+          className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-[var(--theme-primary)]"
+        />
+      </label>
+    </div>
+  );
+}
+
 function CategoryDrawerSection({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
@@ -430,12 +550,14 @@ function CategoryDrawerFields({
   parentControl,
   onChange,
   onUpload,
+  onBannerUpload,
 }: {
   mode: CategoryDrawerMode;
   value: CategoryForm;
   parentControl: ReactNode;
   onChange: (patch: Partial<CategoryForm>) => void;
   onUpload: (file: File) => void;
+  onBannerUpload: (file: File) => void;
 }) {
   const previewName = value.name.trim() || (mode === "create" ? "新分类" : "未命名分类");
   const statusClass = value.is_visible ? THEME_BADGE_SUCCESS : THEME_BADGE_MUTED;
@@ -534,6 +656,10 @@ function CategoryDrawerFields({
         </div>
       </CategoryDrawerSection>
 
+      <CategoryDrawerSection title="分类顶部广告">
+        <CategoryBannerFields value={value} onChange={onChange} onUpload={onBannerUpload} />
+      </CategoryDrawerSection>
+
       <CategoryDrawerSection title="前台内容与 SEO">
         <CategoryContentFields value={value} onChange={onChange} />
       </CategoryDrawerSection>
@@ -606,6 +732,11 @@ export default function AdminCategories() {
           seo_description: editingCategory.seo_description || "",
           icon: editingCategory.icon || "",
           icon_url: editingCategory.icon_url || "",
+          banner_image_url: editingCategory.banner_image_url || "",
+          banner_title: editingCategory.banner_title || "",
+          banner_subtitle: editingCategory.banner_subtitle || "",
+          banner_link: editingCategory.banner_link || "",
+          banner_enabled: editingCategory.banner_enabled === true,
           parent_id: editingCategory.parent_id || "",
           sort_order: editingCategory.sort_order || 0,
           is_visible: editingCategory.is_visible !== false,
@@ -694,6 +825,22 @@ export default function AdminCategories() {
     }
   };
 
+  const uploadBannerImage = async (file: File, target: "create" | "edit") => {
+    try {
+      const res = await uploadService.uploadSingle(file, { mode: "banner" });
+      const url = res.url || "";
+      if (!url) throw new Error("服务器未返回图片地址");
+      if (target === "create") {
+        setFormData((f) => ({ ...f, banner_image_url: url, banner_enabled: true }));
+      } else {
+        setEditData((f) => ({ ...f, banner_image_url: url, banner_enabled: true }));
+      }
+      toast.success(tText("分类广告图已上传"));
+    } catch (e) {
+      toast.error(toastErrorMessage(e, "上传失败"));
+    }
+  };
+
   const resetSystemIcon = (key: SystemCategoryIconKey) => {
     setSystemIconForm((prev) => ({ ...prev, [key]: "" }));
   };
@@ -734,6 +881,11 @@ export default function AdminCategories() {
         seo_description: formData.seo_description.trim(),
         icon: formData.icon.trim(),
         icon_url: formData.icon_url.trim(),
+        banner_image_url: formData.banner_image_url.trim(),
+        banner_title: formData.banner_title.trim(),
+        banner_subtitle: formData.banner_subtitle.trim(),
+        banner_link: formData.banner_link.trim(),
+        banner_enabled: formData.banner_enabled,
         parent_id: formData.parent_id || null,
         sort_order: formData.sort_order,
         is_visible: formData.is_visible,
@@ -761,6 +913,11 @@ export default function AdminCategories() {
       seo_description: cat.seo_description || "",
       icon: cat.icon || "",
       icon_url: cat.icon_url || "",
+      banner_image_url: cat.banner_image_url || "",
+      banner_title: cat.banner_title || "",
+      banner_subtitle: cat.banner_subtitle || "",
+      banner_link: cat.banner_link || "",
+      banner_enabled: cat.banner_enabled === true,
       parent_id: cat.parent_id || "",
       sort_order: cat.sort_order || 0,
       is_visible: cat.is_visible !== false,
@@ -783,6 +940,11 @@ export default function AdminCategories() {
         seo_description: editData.seo_description.trim(),
         icon: editData.icon.trim(),
         icon_url: editData.icon_url.trim(),
+        banner_image_url: editData.banner_image_url.trim(),
+        banner_title: editData.banner_title.trim(),
+        banner_subtitle: editData.banner_subtitle.trim(),
+        banner_link: editData.banner_link.trim(),
+        banner_enabled: editData.banner_enabled,
         parent_id: editData.parent_id || null,
         sort_order: editData.sort_order,
         is_visible: editData.is_visible,
@@ -972,6 +1134,7 @@ export default function AdminCategories() {
               )}
               onChange={updateDrawerForm}
               onUpload={(file) => void uploadIcon(file, drawerMode === "edit" ? "edit" : "create")}
+              onBannerUpload={(file) => void uploadBannerImage(file, drawerMode === "edit" ? "edit" : "create")}
             />
           </form>
         ) : null}
@@ -1154,6 +1317,11 @@ export default function AdminCategories() {
                         </span>
                       </div>
                       {cat.description ? <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">{cat.description}</p> : null}
+                      {cat.banner_enabled && cat.banner_image_url ? (
+                        <span className="mt-1 inline-flex w-fit items-center rounded-full bg-[color-mix(in_srgb,var(--theme-primary)_10%,var(--theme-surface))] px-2 py-0.5 text-[11px] font-medium text-[var(--theme-primary)]">
+                          <Tx>已配置分类广告</Tx>
+                        </span>
+                      ) : null}
                     </div>
                   </div>
                 )}

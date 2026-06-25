@@ -23,6 +23,7 @@ import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import StorefrontLoadErrorPanel from "@/components/store/StorefrontLoadErrorPanel";
 import SilkProductGrid from "@/components/motion/SilkProductGrid";
+import StableImage from "@/components/ui/StableImage";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { hasMorePaginatedItems } from "@/lib/pagination";
 import {
@@ -307,6 +308,13 @@ export default function Categories() {
     || searchParams.get("page"),
   );
   const activeCategory = useMemo(() => (activeCat === "all" || isNew ? null : findCategoryById(categories, activeCat)), [activeCat, categories, isNew]);
+  const activeCategoryBanner = useMemo(() => {
+    if (!activeCategory) return null;
+    if (hasEnabledCategoryBanner(activeCategory)) return activeCategory;
+    if (!activeRootId || activeRootId === activeCategory.id) return null;
+    const root = findCategoryById(categories, activeRootId);
+    return hasEnabledCategoryBanner(root) ? root : null;
+  }, [activeCategory, activeRootId, categories]);
   const activeCategoryName = activeCategory ? storefrontCategoryName(activeCategory.name) : "";
   const categoryDescription = activeCategory?.description?.trim() || "";
   const siteName = (siteInfo.siteName || STORE_COPY.brandName).trim();
@@ -488,6 +496,7 @@ export default function Categories() {
               {pagination.total > 0 ? `${pagination.total} 款` : ""}
             </span>
           </div>
+          <CategoryBannerCard category={activeCategoryBanner} />
           {subCategories.length > 0 ? (
             <section className="sf-next-subcategory-strip" aria-label="子分类">
               <UnifiedButton
@@ -618,6 +627,62 @@ export default function Categories() {
           setSearchPanelOpen(false);
         }}
       />
+    </div>
+  );
+}
+
+function hasEnabledCategoryBanner(category?: Category | null): category is Category {
+  return Boolean(category?.banner_enabled && category.banner_image_url?.trim());
+}
+
+function CategoryBannerCard({ category }: { category: Category | null }) {
+  const [hidden, setHidden] = useState(false);
+
+  useEffect(() => {
+    setHidden(false);
+  }, [category?.id, category?.banner_image_url]);
+
+  if (!category || hidden) return null;
+
+  const imageUrl = category.banner_image_url?.trim();
+  if (!imageUrl) return null;
+
+  const title = category.banner_title?.trim();
+  const subtitle = category.banner_subtitle?.trim();
+  const link = category.banner_link?.trim();
+  const content = (
+    <>
+      <StableImage
+        src={imageUrl}
+        alt={title || `${storefrontCategoryName(category.name)} 分类广告`}
+        width={720}
+        height={315}
+        aspectRatio="16 / 7"
+        className="sf-next-category-banner__media"
+        imgClassName="object-cover"
+        loading="lazy"
+        onError={() => setHidden(true)}
+      />
+      {(title || subtitle) ? (
+        <span className="sf-next-category-banner__copy">
+          {title ? <strong>{title}</strong> : null}
+          {subtitle ? <span>{subtitle}</span> : null}
+        </span>
+      ) : null}
+    </>
+  );
+
+  if (link) {
+    return (
+      <a className="sf-next-category-banner" href={link} aria-label={title || `${storefrontCategoryName(category.name)} 分类广告`}>
+        {content}
+      </a>
+    );
+  }
+
+  return (
+    <div className="sf-next-category-banner" aria-label={title || `${storefrontCategoryName(category.name)} 分类广告`}>
+      {content}
     </div>
   );
 }

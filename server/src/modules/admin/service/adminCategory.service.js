@@ -36,6 +36,16 @@ function normalizeText(value, max = 2000) {
   return String(value || '').trim().slice(0, max);
 }
 
+function normalizeCategoryBannerFields(body = {}) {
+  return {
+    banner_image_url: normalizeText(body.banner_image_url, 500),
+    banner_title: normalizeText(body.banner_title, 120),
+    banner_subtitle: normalizeText(body.banner_subtitle, 240),
+    banner_link: normalizeText(body.banner_link, 500),
+    banner_enabled: body.banner_enabled === true || body.banner_enabled === 1 || body.banner_enabled === '1',
+  };
+}
+
 function normalizeCategory(row) {
   return {
     id: row.id,
@@ -48,6 +58,11 @@ function normalizeCategory(row) {
     seo_description: row.seo_description || '',
     icon: row.icon || '',
     icon_url: row.icon_url || row.icon || '',
+    banner_image_url: row.banner_image_url || '',
+    banner_title: row.banner_title || '',
+    banner_subtitle: row.banner_subtitle || '',
+    banner_link: row.banner_link || '',
+    banner_enabled: !!row.banner_enabled,
     sort_order: row.sort_order ?? 0,
     is_active: !!row.is_active,
     is_visible: row.is_visible !== undefined ? !!row.is_visible : !!row.is_active,
@@ -137,7 +152,8 @@ async function createCategory(body, adminUserId, req) {
     seo_title: normalizeText(body.seo_title, 255),
     seo_description: normalizeText(body.seo_description, 500),
   };
-  await repo.insertCategory({ id, parent_id, name, icon, icon_url, sort_order, is_visible, ...contentFields });
+  const bannerFields = normalizeCategoryBannerFields(body);
+  await repo.insertCategory({ id, parent_id, name, icon, icon_url, sort_order, is_visible, ...contentFields, ...bannerFields });
   await writeAuditLog({
     req,
     operatorId: adminUserId,
@@ -145,7 +161,7 @@ async function createCategory(body, adminUserId, req) {
     objectType: 'category',
     objectId: id,
     summary: `创建分类 ${name}`,
-    after: { name, icon, icon_url, parent_id, sort_order, is_visible, ...contentFields },
+    after: { name, icon, icon_url, parent_id, sort_order, is_visible, ...contentFields, ...bannerFields },
     result: 'success',
   });
   bumpCatalogCache();
@@ -161,6 +177,7 @@ async function createCategory(body, adminUserId, req) {
       seo_description: contentFields.seo_description,
       icon: icon || '',
       icon_url: icon_url || icon || '',
+      ...bannerFields,
       sort_order: sort_order ?? 0,
       is_visible: is_visible !== false,
       is_active: is_visible !== false,
@@ -208,6 +225,26 @@ async function updateCategory(id, body, adminUserId, req) {
   if (icon_url !== undefined) {
     fragments.push('icon_url = ?');
     values.push(icon_url);
+  }
+  if (body.banner_image_url !== undefined) {
+    fragments.push('banner_image_url = ?');
+    values.push(normalizeText(body.banner_image_url, 500));
+  }
+  if (body.banner_title !== undefined) {
+    fragments.push('banner_title = ?');
+    values.push(normalizeText(body.banner_title, 120));
+  }
+  if (body.banner_subtitle !== undefined) {
+    fragments.push('banner_subtitle = ?');
+    values.push(normalizeText(body.banner_subtitle, 240));
+  }
+  if (body.banner_link !== undefined) {
+    fragments.push('banner_link = ?');
+    values.push(normalizeText(body.banner_link, 500));
+  }
+  if (body.banner_enabled !== undefined) {
+    fragments.push('banner_enabled = ?');
+    values.push(body.banner_enabled === true || body.banner_enabled === 1 || body.banner_enabled === '1' ? 1 : 0);
   }
   if (parent_id !== undefined) {
     await assertParentAllowed(parent_id, id);
@@ -274,4 +311,3 @@ module.exports = {
   deleteCategory,
   updateCategorySort,
 };
-

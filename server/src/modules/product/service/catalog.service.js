@@ -81,7 +81,9 @@ async function getCategoriesLite() {
 }
 
 async function getCategoryById(id) {
-  return repo.selectCategoryById(id);
+  const row = await repo.selectCategoryById(id);
+  if (!row) return null;
+  return buildCategoryTree([row])[0] || null;
 }
 
 async function getProductTags(limit) {
@@ -130,6 +132,11 @@ function buildCategoryTree(rows, options = {}) {
         faq: normalizeCategoryFaq(row.faq_json),
         seo_title: row.seo_title || '',
         seo_description: row.seo_description || '',
+        banner_image_url: row.banner_image_url || '',
+        banner_title: row.banner_title || '',
+        banner_subtitle: row.banner_subtitle || '',
+        banner_link: row.banner_link || '',
+        banner_enabled: !!row.banner_enabled,
       }),
       icon: row.icon || '',
       icon_url: row.icon_url || row.icon || '',

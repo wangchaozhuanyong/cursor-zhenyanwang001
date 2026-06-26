@@ -1,6 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ShieldCheck, Truck, Wallet } from "lucide-react";
 import SeoHead from "@/components/SeoHead";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
@@ -48,11 +47,9 @@ import {
   ProfileOrderPanel,
   ProfileSecondaryLinkPanel,
   ProfileServiceGrid,
-  ProfileTrustStrip,
   type ProfileAssetItem,
   type ProfileOrderAction,
   type ProfileServiceItem,
-  type ProfileTrustItem,
 } from "./ProfileSections";
 
 const ProfileWechatBindSection = THIRD_PARTY_LOGIN_ENABLED
@@ -363,12 +360,6 @@ export default function Profile() {
     if (key) navigateFeature(key as AccountFeatureKey);
   };
 
-  const trustItems = useMemo<ProfileTrustItem[]>(() => [
-    { title: "正品保障", desc: "平台规则保障", icon: ShieldCheck },
-    { title: "本地配送", desc: "运费结算确认", icon: Truck },
-    { title: "安全支付", desc: "订单金额复核", icon: Wallet },
-  ], []);
-
   return (
     <div className="sf-next-page sf-next-profile-page sf-next-page-shell sf-next-bottom-safe text-[var(--theme-text)]">
       <SeoHead
@@ -473,8 +464,6 @@ export default function Profile() {
                 onNavigate={(item) => handleFeatureNavigate(item.key, item.path, item.auth)}
                 onSupportClick={() => handleFeatureNavigate("support", "/support-download?tab=support", false)}
               />
-
-              <ProfileTrustStrip items={trustItems} />
 
               {loggedIn ? <ProfileLogoutButton onClick={() => setLogoutConfirmOpen(true)} /> : null}
             </aside>

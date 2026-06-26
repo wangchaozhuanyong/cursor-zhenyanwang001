@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ArrowUpRight, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import ProductCoverImage from "@/components/ProductCoverImage";
 import { cn } from "@/lib/utils";
 import { appendThemePreviewParams } from "@/utils/themePreviewParams";
@@ -63,7 +63,7 @@ export default function ProductCardV2({
         </div>
 
         <div className="sf-next-product-card__info flex min-h-[5.75rem] min-w-0 flex-col sm:min-h-24">
-          <h3 className={t.text.productTitle}>{vm.name}</h3>
+          <h3 className={cn(t.text.productTitle, "sf-next-product-card__title")}>{vm.name}</h3>
           <BadgeRow badges={vm.badges} subtle />
           <DecisionMetaRow items={vm.decisionTexts} />
           <ActivityProgressBar percent={vm.activityProgressPercent} text={vm.activityProgressText} />
@@ -71,11 +71,11 @@ export default function ProductCardV2({
             <div className="mt-auto flex items-end justify-between gap-2 pt-2">
               <StorefrontPrice amount={vm.priceText} originalAmount={vm.originalPriceText} />
               <span className={cn(
-                "sf-next-product-card__open hidden shrink-0 items-center gap-1 sm:inline-flex",
+                "sf-next-product-card__cart sf-next-product-card__cart--list shrink-0",
                 clientStyle === "black_gold" && "sf-next-product-card__open--warm",
+                vm.soldOut && "is-disabled",
               )}>
-                查看
-                <ArrowUpRight size={12} />
+                <Plus size={17} strokeWidth={2.4} />
               </span>
             </div>
           ) : null}

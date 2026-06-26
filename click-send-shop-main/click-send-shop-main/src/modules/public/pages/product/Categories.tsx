@@ -49,8 +49,8 @@ export default function Categories() {
   const [searchParams, setSearchParams] = useSearchParams();
   const syncedSearchKeyRef = useRef(searchParams.toString());
   const syncingFromUrlRef = useRef(false);
-  const productGridClass = "sf-next-product-grid grid grid-cols-2 gap-x-5 gap-y-8 pt-1 md:grid-cols-3 xl:grid-cols-4";
-  const emptyColSpan = "col-span-2 md:col-span-3 xl:col-span-4";
+  const productGridClass = "sf-next-product-grid sf-next-category-product-list grid grid-cols-1 gap-2 pt-1";
+  const emptyColSpan = "col-span-1";
 
   const initialIsNew = isNewArrivalCategoryParams(searchParams);
   const [activeCat, setActiveCat] = useState(initialIsNew ? "all" : searchParams.get("cat") || "all");
@@ -542,7 +542,7 @@ export default function Categories() {
             products={visibleProducts}
             className={productGridClass}
             shellClassName="md:min-h-[28rem]"
-            displayMode="theme"
+            displayMode="list"
             skeletonCount={8}
             siteContext={productCardSiteContext}
             itemKeyPrefix={`category:${isNew ? "new" : activeCat}`}

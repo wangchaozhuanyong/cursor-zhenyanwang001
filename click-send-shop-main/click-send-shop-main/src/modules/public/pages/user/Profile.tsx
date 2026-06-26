@@ -40,7 +40,6 @@ import { useStoreNavigationGuard } from "@/features/navigation/useStoreNavigatio
 import {
   PROFILE_CARD_CLASS,
   PROFILE_MENU_TAP,
-  ProfileAssetPanel,
   ProfileGuestCard,
   ProfileHeroCard,
   ProfileIdentityHeader,
@@ -342,11 +341,8 @@ export default function Profile() {
     () => buildAccountFeaturesByKeys([
       "editProfile",
       "address",
-      "coupons",
       "favorites",
       "history",
-      "wallet",
-      "points",
       "returns",
       "support",
       "install",
@@ -440,10 +436,6 @@ export default function Profile() {
                     items={orderActions}
                     onViewAll={() => handleFeatureNavigate("orders", "/orders", true)}
                     onNavigate={(item) => handleFeatureNavigate(item.key || "", item.path, item.auth)}
-                  />
-                  <ProfileAssetPanel
-                    items={profileStatItems}
-                    onNavigate={(item) => handleFeatureNavigate(item.key, item.path, item.auth)}
                   />
                 </>
               ) : null}

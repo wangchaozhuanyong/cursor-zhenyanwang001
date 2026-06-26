@@ -1,8 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, ChevronRight, Search as SearchIcon, X } from "lucide-react";
 import ProductCoverImage from "@/components/ProductCoverImage";
+import { StoreSearchDrawer, StoreSearchLauncher } from "@/components/store/StoreSearchDrawer";
+import { buildStoreSearchCategoryOptions, type StoreSearchTagOption } from "@/components/store/storeSearchOptions";
 import { STORE_COPY } from "@/constants/storeCopy";
+import { NEW_ARRIVAL_CATEGORY_PATH } from "@/constants/newArrivalNavigation";
 import { useClientDesignStyle } from "@/modules/storefront-v2/design/useClientDesignStyle";
 import StorefrontPrice from "@/modules/storefront-v2/components/StorefrontPrice";
 import { buildProductCardV2Model } from "@/modules/storefront-v2/product/productCardV2Model";
@@ -13,15 +16,17 @@ import { cn } from "@/lib/utils";
 import { useProductStore } from "@/stores/useProductStore";
 import { useHistoryStore } from "@/stores/useHistoryStore";
 import SilkProductGrid from "@/components/motion/SilkProductGrid";
-import { fetchHotSearchTerms, fetchSearchSuggestions, trackSearchKeyword } from "@/services/searchService";
-import type { HotSearchTerm, SearchSuggestion } from "@/types/search";
+import * as productService from "@/services/productService";
+import { fetchHotSearchTerms, trackSearchKeyword } from "@/services/searchService";
+import type { HotSearchTerm } from "@/types/search";
 import { THEME_ALERT_ERROR_SOFT } from "@/utils/themeVisuals";
 import SeoHead from "@/components/SeoHead";
 import { buildCanonical } from "@/utils/seo";
 import { setSearchAttribution } from "@/services/analyticsService";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { appendThemePreviewParams } from "@/utils/themePreviewParams";
-import type { Product, ProductListParams } from "@/types/product";
+import { storefrontCategoryName } from "@/utils/storefrontCopySanitizer";
+import type { Product, ProductListParams, ProductTag } from "@/types/product";
 
 const HISTORY_KEY = "search_history";
 const MAX_HISTORY = 10;
@@ -93,11 +98,11 @@ export default function Search() {
   const initialKeyword = searchParams.get("keyword")?.trim() || "";
   const [query, setQuery] = useState(initialKeyword);
   const [submittedQuery, setSubmittedQuery] = useState(initialKeyword);
+  const [searchDrawerOpen, setSearchDrawerOpen] = useState(false);
   const [hotTerms, setHotTerms] = useState<HotSearchTerm[]>([]);
-  const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
+  const [quickTags, setQuickTags] = useState<ProductTag[]>([]);
   const [searchHistory, setSearchHistory] = useState<string[]>(() => (typeof window === "undefined" ? [] : getHistory()));
   const [readySearchQueryKey, setReadySearchQueryKey] = useState("");
-  const suggestDebounceRef = useRef<ReturnType<typeof setTimeout>>();
   const pendingTrackKeywordRef = useRef(initialKeyword);
   const latestSearchQueryKeyRef = useRef("");
 
@@ -110,8 +115,10 @@ export default function Search() {
     hotProducts,
     newProducts,
     recommendedProducts,
+    categories,
     loadProducts,
     loadHomeData,
+    loadCategories,
   } = useProductStore();
   const historyProducts = useHistoryStore((state) => state.history);
   const loadHistory = useHistoryStore((state) => state.loadHistory);
@@ -157,7 +164,9 @@ export default function Search() {
     fetchHotSearchTerms(10)
       .then(setHotTerms)
       .catch(() => setHotTerms([]));
-  }, []);
+    void loadCategories();
+    productService.fetchProductTags(16).then(setQuickTags).catch(() => setQuickTags([]));
+  }, [loadCategories]);
 
   useEffect(() => {
     loadHistory().catch(() => {});
@@ -167,23 +176,6 @@ export default function Search() {
     if (!shouldShowDiscovery) return;
     void loadHomeData({ background: hasDiscoveryProducts });
   }, [hasDiscoveryProducts, loadHomeData, shouldShowDiscovery]);
-
-  useEffect(() => {
-    if (suggestDebounceRef.current) clearTimeout(suggestDebounceRef.current);
-    const term = query.trim();
-    if (!term || term === submittedQuery) {
-      setSuggestions([]);
-      return;
-    }
-    suggestDebounceRef.current = setTimeout(() => {
-      fetchSearchSuggestions(term, 8)
-        .then(setSuggestions)
-        .catch(() => setSuggestions([]));
-    }, 220);
-    return () => {
-      if (suggestDebounceRef.current) clearTimeout(suggestDebounceRef.current);
-    };
-  }, [query, submittedQuery]);
 
   useEffect(() => {
     if (!searchProductParams) return;
@@ -233,7 +225,6 @@ export default function Search() {
     setSearchParams(nextParams, { replace: true });
     setQuery(trimmed);
     setSubmittedQuery(trimmed);
-    setSuggestions([]);
     addToHistory(trimmed);
     setSearchAttribution(trimmed);
     pendingTrackKeywordRef.current = trimmed;
@@ -245,27 +236,31 @@ export default function Search() {
     setSearchParams(nextParams, { replace: true });
     setQuery("");
     setSubmittedQuery("");
-    setSuggestions([]);
   }, [searchParams, setSearchParams]);
 
-  const handleQueryChange = useCallback((value: string) => {
-    setQuery(value);
-    if (!value.trim() && submittedQuery) clearSearch();
-  }, [clearSearch, submittedQuery]);
-
-  const handleSubmit = useCallback(() => {
-    commitSearch(query);
-  }, [commitSearch, query]);
-
-  const handleFormSubmit = useCallback((event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    handleSubmit();
-  }, [handleSubmit]);
+  const submitFromDrawer = useCallback((value: string) => {
+    if (!value.trim()) {
+      clearSearch();
+      return;
+    }
+    commitSearch(value);
+  }, [clearSearch, commitSearch]);
 
   const hotTermLabels = useMemo(() => buildHotTermLabels(hotTerms), [hotTerms]);
-  const shouldShowSuggestions = query.trim().length > 0 && suggestions.length > 0 && query.trim() !== submittedQuery.trim();
   const showDiscoveryProductsLoading = shouldShowDiscovery && loading && recentBrowseProducts.length === 0 && recommendedBrowseProducts.length === 0;
   const siteName = siteInfo.siteName || STORE_COPY.brandName;
+  const searchCategoryOptions = useMemo(() => buildStoreSearchCategoryOptions({
+    categories,
+    activeCategoryId: "all",
+    onAll: () => navigate(appendThemePreviewParams("/categories")),
+    onNew: () => navigate(appendThemePreviewParams(NEW_ARRIVAL_CATEGORY_PATH)),
+    onCategorySelect: (category) => navigate(appendThemePreviewParams(`/categories?cat=${encodeURIComponent(category.id)}`)),
+  }), [categories, navigate]);
+  const searchTagOptions = useMemo<StoreSearchTagOption[]>(() => quickTags.map((tag) => ({
+    id: tag.id,
+    label: storefrontCategoryName(tag.name),
+    onSelect: () => navigate(appendThemePreviewParams(`/categories?tag_id=${encodeURIComponent(tag.id)}`)),
+  })), [navigate, quickTags]);
 
   return (
     <div
@@ -279,48 +274,23 @@ export default function Search() {
         robots="noindex,follow"
       />
       <header className="sf-next-search-header sticky top-0 z-header pt-[env(safe-area-inset-top,0px)]">
-        <form className="sf-next-search-bar mx-auto w-full max-w-screen-xl" onSubmit={handleFormSubmit} role="search">
+        <div className="sf-next-search-bar mx-auto w-full max-w-screen-xl" role="search">
           <UnifiedButton type="button" onClick={goBack} className="sf-next-search-nav-button" aria-label="返回">
             <ArrowLeft size={22} aria-hidden />
           </UnifiedButton>
-          <label className="sr-only" htmlFor="store-search-input">搜索商品</label>
-          <div className="sf-next-search-input">
-            <SearchIcon size={19} aria-hidden />
-            <input
-              id="store-search-input"
-              type="search"
-              value={query}
-              autoFocus
-              placeholder="搜索商品"
-              onChange={(event) => handleQueryChange(event.target.value)}
-              aria-label={STORE_COPY.searchPlaceholder}
-            />
-            {query ? (
-              <UnifiedButton type="button" onClick={clearSearch} className="sf-next-search-clear" aria-label="清空搜索">
-                <X size={14} aria-hidden />
-              </UnifiedButton>
-            ) : null}
-          </div>
-          <UnifiedButton type="submit" className="sf-next-search-nav-button" aria-label="搜索">
+          <StoreSearchLauncher
+            value={submittedQuery || query}
+            placeholder={STORE_COPY.searchPlaceholder}
+            className="sf-next-search-page-launcher"
+            onClick={() => setSearchDrawerOpen(true)}
+          />
+          <UnifiedButton type="button" className="sf-next-search-nav-button" aria-label="打开搜索" onClick={() => setSearchDrawerOpen(true)}>
             <SearchIcon size={22} aria-hidden />
           </UnifiedButton>
-        </form>
+        </div>
       </header>
 
       <main className="sf-next-search-body mx-auto w-full max-w-screen-xl">
-        {shouldShowSuggestions ? (
-          <SearchListSection title="搜索建议">
-            {suggestions.map((item) => (
-              <SearchSuggestionRow
-                key={`${item.source}-${item.keyword}`}
-                label={item.keyword}
-                meta={item.source === "term" ? "热搜" : "商品"}
-                onClick={() => commitSearch(item.keyword)}
-              />
-            ))}
-          </SearchListSection>
-        ) : null}
-
         {shouldShowDiscovery ? (
           <>
             <SearchHistorySection
@@ -397,6 +367,17 @@ export default function Search() {
           </>
         )}
       </main>
+      <StoreSearchDrawer
+        open={searchDrawerOpen}
+        value={query}
+        placeholder={STORE_COPY.searchPlaceholder}
+        categories={searchCategoryOptions}
+        tags={searchTagOptions}
+        onClose={() => setSearchDrawerOpen(false)}
+        onSubmit={submitFromDrawer}
+        onValueChange={setQuery}
+        onClear={clearSearch}
+      />
     </div>
   );
 }

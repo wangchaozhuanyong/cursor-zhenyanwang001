@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
-import { ArrowLeft, Search, X } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { useProductStore } from "@/stores/useProductStore";
 import { STORE_COPY } from "@/constants/storeCopy";
 import { cn } from "@/lib/utils";
+import { StoreSearchDrawer } from "@/components/store/StoreSearchDrawer";
+import type { StoreSearchCategoryOption, StoreSearchTagOption } from "@/components/store/storeSearchOptions";
 import ProductFilterDrawer from "@/components/ProductFilterDrawer";
 import ProductSortBar from "@/components/ProductSortBar";
 import type { CategoryKingkongItem } from "@/components/CategoryKingkongRow";
@@ -342,25 +344,19 @@ export default function Categories() {
   });
 
   const categoryPills = rootKingkongItems;
-  const activeFilterLabels = useMemo(() => {
-    const labels: Array<{ key: string; label: string; onRemove?: () => void }> = [];
-    if (submittedQuery) labels.push({ key: "query", label: submittedQuery, onRemove: handleClearTopSearch });
-    if (isNew) labels.push({ key: "new", label: NEW_ARRIVAL_CATEGORY_LABEL, onRemove: () => setIsNew(false) });
-    if (isHot) labels.push({ key: "hot", label: "热销", onRemove: () => setIsHot(false) });
-    if (isRecommended) labels.push({ key: "recommended", label: "推荐", onRemove: () => setIsRecommended(false) });
-    if (inStock) labels.push({ key: "stock", label: "有库存", onRemove: () => setInStock(false) });
-    if (minPrice || maxPrice) {
-      labels.push({
-        key: "price",
-        label: `${minPrice || "0"}-${maxPrice || "不限"}`,
-        onRemove: () => {
-          setMinPrice("");
-          setMaxPrice("");
-        },
-      });
-    }
-    return labels;
-  }, [handleClearTopSearch, inStock, isHot, isNew, isRecommended, maxPrice, minPrice, submittedQuery]);
+  const searchCategoryOptions = useMemo<StoreSearchCategoryOption[]>(() => rootKingkongItems.map((item) => ({
+    id: item.id,
+    label: item.label,
+    active: item.active,
+    onSelect: item.onClick,
+  })), [rootKingkongItems]);
+
+  const searchTagOptions = useMemo<StoreSearchTagOption[]>(() => quickTags.map((tag) => ({
+    id: tag.id,
+    label: storefrontCategoryName(tag.name),
+    active: activeTagId === tag.id,
+    onSelect: () => setActiveTagId(activeTagId === tag.id ? "" : tag.id),
+  })), [activeTagId, quickTags]);
 
   useEffect(() => {
     if (!productQueryReady || !hasMoreProducts || loading || listRefreshing) return;
@@ -523,8 +519,6 @@ export default function Categories() {
           <div className="sf-next-listing-sort-shell">
             <ProductSortBar value={sort} onChange={setSort} className="sf-next-listing-sortbar" />
           </div>
-          <ActiveFilterStrip labels={activeFilterLabels} onClear={clearFilters} />
-
           {error && visibleProducts.length === 0 ? (
             <div className="mb-3">
               <StorefrontLoadErrorPanel
@@ -612,20 +606,16 @@ export default function Categories() {
           ) : null}
         </section>
       </main>
-      <CategorySearchOverlay
+      <StoreSearchDrawer
         open={searchPanelOpen}
-        query={query}
+        value={query}
         placeholder={STORE_COPY.searchPlaceholder}
-        categoryItems={rootKingkongItems}
-        tags={quickTags}
+        categories={searchCategoryOptions}
+        tags={searchTagOptions}
         onClose={() => setSearchPanelOpen(false)}
-        onQueryChange={setQuery}
         onSubmit={handleSearchPanelSubmit}
+        onValueChange={setQuery}
         onClear={handleClearTopSearch}
-        onTagSelect={(tag) => {
-          setActiveTagId(activeTagId === tag.id ? "" : tag.id);
-          setSearchPanelOpen(false);
-        }}
       />
     </div>
   );
@@ -687,125 +677,6 @@ function CategoryBannerCard({ category }: { category: Category | null }) {
   );
 }
 
-function CategorySearchOverlay({
-  open,
-  query,
-  placeholder,
-  categoryItems,
-  tags,
-  onClose,
-  onQueryChange,
-  onSubmit,
-  onClear,
-  onTagSelect,
-}: {
-  open: boolean;
-  query: string;
-  placeholder: string;
-  categoryItems: CategoryKingkongItem[];
-  tags: ProductTag[];
-  onClose: () => void;
-  onQueryChange: (value: string) => void;
-  onSubmit: (value: string) => void;
-  onClear: () => void;
-  onTagSelect: (tag: ProductTag) => void;
-}) {
-  const inputRef = useRef<HTMLInputElement | null>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const timer = window.setTimeout(() => inputRef.current?.focus(), 80);
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      window.clearTimeout(timer);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [onClose, open]);
-
-  if (!open) return null;
-
-  const submitCurrentQuery = () => onSubmit(query);
-
-  return (
-    <div className="sf-next-search-panel" role="dialog" aria-modal="true" aria-label="搜索商品">
-      <button type="button" className="sf-next-search-panel__scrim" onClick={onClose} aria-label="关闭搜索" />
-      <aside className="sf-next-search-panel__sheet">
-        <form
-          className="sf-next-search-panel__bar"
-          onSubmit={(event) => {
-            event.preventDefault();
-            submitCurrentQuery();
-          }}
-        >
-          <UnifiedButton type="button" className="sf-next-search-panel__back" onClick={onClose} aria-label="返回">
-            <ArrowLeft size={20} aria-hidden />
-          </UnifiedButton>
-          <label className="sr-only" htmlFor="category-search-panel-input">搜索商品</label>
-          <div className="sf-next-search-panel__input-wrap">
-            <Search size={18} aria-hidden />
-            <input
-              id="category-search-panel-input"
-              ref={inputRef}
-              type="search"
-              value={query}
-              onChange={(event) => onQueryChange(event.target.value)}
-              placeholder={placeholder}
-            />
-            {query ? (
-              <UnifiedButton type="button" className="sf-next-search-panel__clear" onClick={onClear} aria-label="清空搜索关键词">
-                <X size={15} aria-hidden />
-              </UnifiedButton>
-            ) : null}
-          </div>
-          <UnifiedButton type="submit" className="sf-next-search-panel__submit">
-            搜索
-          </UnifiedButton>
-        </form>
-
-        <section className="sf-next-search-panel__section" aria-label="快捷分类">
-          <h2>快捷分类</h2>
-          <div className="sf-next-search-panel__chips">
-            {categoryItems.slice(0, 12).map((item) => (
-              <UnifiedButton
-                key={item.id}
-                type="button"
-                className={cn("sf-next-search-panel__chip", item.active && "is-active")}
-                onClick={() => {
-                  item.onClick();
-                  onClose();
-                }}
-              >
-                {item.label}
-              </UnifiedButton>
-            ))}
-          </div>
-        </section>
-
-        {tags.length ? (
-          <section className="sf-next-search-panel__section" aria-label="商品标签">
-            <h2>商品标签</h2>
-            <div className="sf-next-search-panel__chips">
-              {tags.slice(0, 12).map((tag) => (
-                <UnifiedButton
-                  key={tag.id}
-                  type="button"
-                  className="sf-next-search-panel__chip"
-                  onClick={() => onTagSelect(tag)}
-                >
-                  {storefrontCategoryName(tag.name)}
-                </UnifiedButton>
-              ))}
-            </div>
-          </section>
-        ) : null}
-      </aside>
-    </div>
-  );
-}
-
 function CategoryTextPills({ items, loading }: { items: CategoryKingkongItem[]; loading: boolean }) {
   return (
     <div className="sf-next-category-pills" role="tablist" aria-label="商品分类">
@@ -824,30 +695,6 @@ function CategoryTextPills({ items, loading }: { items: CategoryKingkongItem[]; 
               {item.label}
             </UnifiedButton>
           ))}
-    </div>
-  );
-}
-
-function ActiveFilterStrip({
-  labels,
-  onClear,
-}: {
-  labels: Array<{ key: string; label: string; onRemove?: () => void }>;
-  onClear: () => void;
-}) {
-  if (!labels.length) return null;
-  return (
-    <div className="sf-next-active-filters" aria-label="已选筛选">
-      <span>已选：</span>
-      {labels.map((item) => (
-        <UnifiedButton key={item.key} type="button" className="sf-next-active-filter" onClick={item.onRemove}>
-          {item.label}
-          {item.onRemove ? <X size={13} aria-hidden /> : null}
-        </UnifiedButton>
-      ))}
-      <UnifiedButton type="button" className="sf-next-active-filter sf-next-active-filter--clear" onClick={onClear}>
-        清空
-      </UnifiedButton>
     </div>
   );
 }

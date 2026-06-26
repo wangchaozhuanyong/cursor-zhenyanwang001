@@ -196,16 +196,20 @@ export function ProfileHeroCard({
               }}
               className="profile-card-asset"
             >
-              <span className="profile-card-asset-token" aria-hidden="true">
-                {item.label.replace(/^我的/, "").slice(0, 1) || "会"}
-              </span>
-              <span>{item.label}</span>
+              <span className="profile-card-asset-value">{item.value}</span>
+              <span className="profile-card-asset-label">{normalizeAssetLabel(item.label)}</span>
             </UnifiedButton>
           ))}
         </div>
       ) : null}
     </section>
   );
+}
+
+function normalizeAssetLabel(label: string) {
+  const normalized = label.replace(/^我的/, "").replace(/^可用/, "").trim();
+  if (normalized === "返现余额") return "返现";
+  return normalized || label;
 }
 
 export function ProfileGuestCard({

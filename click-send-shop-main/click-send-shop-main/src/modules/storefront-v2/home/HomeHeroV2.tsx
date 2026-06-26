@@ -1,14 +1,21 @@
-import { useState, type FormEvent, type MouseEvent } from "react";
-import { ChevronDown, Search, UserRound } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { UserRound } from "lucide-react";
 import BannerCarousel from "@/components/BannerCarousel";
 import NotificationIconButton from "@/components/NotificationIconButton";
 import StoreBrandLogo from "@/components/store/StoreBrandLogo";
+import { StoreSearchDrawer, StoreSearchLauncher } from "@/components/store/StoreSearchDrawer";
+import { buildStoreSearchCategoryOptions, type StoreSearchTagOption } from "@/components/store/storeSearchOptions";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import type { Banner } from "@/types/banner";
 import type { ThemeConfig } from "@/types/theme";
 import { STORE_COPY } from "@/constants/storeCopy";
+import { NEW_ARRIVAL_CATEGORY_PATH } from "@/constants/newArrivalNavigation";
 import { usePublicLocale } from "@/i18n/publicLocale";
 import { useNotificationStore } from "@/stores/useNotificationStore";
+import { useProductStore } from "@/stores/useProductStore";
+import * as productService from "@/services/productService";
+import type { ProductTag } from "@/types/product";
+import { storefrontCategoryName } from "@/utils/storefrontCopySanitizer";
 
 type HomeHeroV2Props = {
   siteName: string;
@@ -36,23 +43,45 @@ export default function HomeHeroV2({
   onNavigate,
 }: HomeHeroV2Props) {
   const hasBanner = bannerEnabled && (bannersLoading || banners.length > 0);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [keyword, setKeyword] = useState("");
+  const [searchTags, setSearchTags] = useState<ProductTag[]>([]);
+  const categories = useProductStore((s) => s.categories);
+  const loadCategories = useProductStore((s) => s.loadCategories);
   const { locale, localizedPath, t } = usePublicLocale();
   const displaySlogan = locale !== "zh" && containsCjk(slogan) ? t("hero.siteSlogan") : slogan;
   const displayDescription = locale !== "zh" && containsCjk(description) ? t("hero.siteDescription") : description;
   const heroTitle = buildQuietHeroTitle(siteName, displaySlogan);
   const compactHeroDescription = normalizeHeroDescription(displayDescription, heroTitle);
 
+  useEffect(() => {
+    if (!searchOpen) return;
+    void loadCategories();
+  }, [loadCategories, searchOpen]);
+
+  useEffect(() => {
+    productService.fetchProductTags(16).then(setSearchTags).catch(() => setSearchTags([]));
+  }, []);
+
   const openSearchPage = (value = keyword) => {
     const trimmed = value.trim();
+    setKeyword(trimmed);
     onNavigate(localizedPath(trimmed ? `/search?keyword=${encodeURIComponent(trimmed)}` : "/search"));
   };
 
-  const submitSearch = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
-    openSearchPage();
-  };
+  const searchCategoryOptions = useMemo(() => buildStoreSearchCategoryOptions({
+    categories,
+    activeCategoryId: "all",
+    onAll: () => onNavigate(localizedPath("/categories")),
+    onNew: () => onNavigate(localizedPath(NEW_ARRIVAL_CATEGORY_PATH)),
+    onCategorySelect: (category) => onNavigate(localizedPath(`/categories?cat=${encodeURIComponent(category.id)}`)),
+  }), [categories, localizedPath, onNavigate]);
+
+  const searchTagOptions = useMemo<StoreSearchTagOption[]>(() => searchTags.map((tag) => ({
+    id: tag.id,
+    label: storefrontCategoryName(tag.name),
+    onSelect: () => onNavigate(localizedPath(`/categories?tag_id=${encodeURIComponent(tag.id)}`)),
+  })), [localizedPath, onNavigate, searchTags]);
 
   return (
     <section
@@ -65,39 +94,21 @@ export default function HomeHeroV2({
         siteName={siteName}
         logoSrc={logoSrc}
         onNavigate={onNavigate}
+        searchValue={keyword}
+        searchPlaceholder={t("hero.searchPlaceholder")}
+        onSearchOpen={() => setSearchOpen(true)}
       />
-
-      <form
-        onSubmit={submitSearch}
-        className="sf-next-home-hero__search"
-        onClick={stopPropagation}
-        aria-label={t("hero.searchAria")}
-      >
-        <button
-          type="button"
-          className="sf-next-home-hero__search-scope"
-          onClick={() => onNavigate(localizedPath("/search"))}
-        >
-          {t("common.searchScopeAll")}
-          <ChevronDown size={14} aria-hidden />
-        </button>
-        <Search size={18} className="sf-next-home-hero__search-icon" aria-hidden />
-        <label className="sr-only" htmlFor="home-next-search">{t("hero.searchLabel")}</label>
-        <input
-          id="home-next-search"
-          type="search"
-          value={keyword}
-          onChange={(event) => setKeyword(event.target.value)}
-          placeholder={t("hero.searchPlaceholder")}
-          className="sf-next-home-hero__search-input"
-        />
-        <UnifiedButton
-          type="submit"
-          className="sf-next-home-hero__search-submit"
-        >
-          {t("common.searchSubmit")}
-        </UnifiedButton>
-      </form>
+      <StoreSearchDrawer
+        open={searchOpen}
+        value={keyword}
+        placeholder={t("hero.searchPlaceholder")}
+        categories={searchCategoryOptions}
+        tags={searchTagOptions}
+        onClose={() => setSearchOpen(false)}
+        onSubmit={openSearchPage}
+        onValueChange={setKeyword}
+        onClear={() => setKeyword("")}
+      />
 
       <div className="sf-next-home-hero__feature">
         <div className="sf-next-home-hero__copy">
@@ -145,10 +156,6 @@ export default function HomeHeroV2({
   );
 }
 
-function stopPropagation(event: MouseEvent<HTMLElement>) {
-  event.stopPropagation();
-}
-
 function containsCjk(value: string) {
   return /[\u3400-\u9fff]/.test(value);
 }
@@ -182,10 +189,16 @@ function HeroChrome({
   siteName,
   logoSrc,
   onNavigate,
+  searchValue,
+  searchPlaceholder,
+  onSearchOpen,
 }: {
   siteName: string;
   logoSrc?: string;
   onNavigate: (path: string) => void;
+  searchValue?: string;
+  searchPlaceholder: string;
+  onSearchOpen: () => void;
 }) {
   const { localizedPath, t } = usePublicLocale();
   const unreadCount = useNotificationStore((s) => s.unreadCount);
@@ -211,6 +224,12 @@ function HeroChrome({
           <span className="sf-next-home-hero__brand-meta">{STORE_COPY.siteSlogan}</span>
         </span>
       </UnifiedButton>
+      <StoreSearchLauncher
+        className="sf-next-home-hero__top-search"
+        value={searchValue}
+        placeholder={searchPlaceholder}
+        onClick={onSearchOpen}
+      />
       <div className="sf-next-home-hero__actions">
         <NotificationIconButton
           unreadCount={unreadCount}

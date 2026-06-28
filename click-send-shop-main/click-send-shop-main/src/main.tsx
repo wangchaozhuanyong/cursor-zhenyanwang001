@@ -10,6 +10,7 @@ import "@/styles/storefront-next.tokens.css";
 import "@/styles/storefront-next.primitives.css";
 import "@/styles/storefront-next.extended-routes.css";
 import "@/styles/storefront-next.final-contract.css";
+import "@/styles/storefront-next.category.css";
 import { initPwaOfflineNavigation, markStoreSpaReady } from "@/lib/pwaOfflineNavigation";
 import AppVersionReadyMarker from "@/components/AppVersionReadyMarker";
 import AppBootReady from "@/components/AppBootReady";

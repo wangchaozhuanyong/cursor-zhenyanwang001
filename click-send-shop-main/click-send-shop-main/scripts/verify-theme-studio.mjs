@@ -98,6 +98,11 @@ const MOCK_PRODUCT = {
   variants: [],
 };
 
+const MOCK_PRODUCT_TAGS = [
+  { id: "verify-tag-new", name: "新品", bg_color: "#ECFDF5", text_color: "#047857" },
+  { id: "verify-tag-local", name: "本地优选", bg_color: "#EFF6FF", text_color: "#1D4ED8" },
+];
+
 function apiOk(data) {
   return JSON.stringify({ code: 0, message: "ok", data });
 }
@@ -143,6 +148,9 @@ async function installApiMocks(context, baseUrl) {
           ],
         }),
       });
+    }
+    if (!url.includes("/admin/") && url.includes("/api/products/tags")) {
+      return route.fulfill({ status: 200, contentType: "application/json", body: apiOk(MOCK_PRODUCT_TAGS) });
     }
     if (!url.includes("/admin/") && /\/api\/products(\?|$)/.test(url)) {
       return route.fulfill({

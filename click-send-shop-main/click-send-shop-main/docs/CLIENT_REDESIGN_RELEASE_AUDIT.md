@@ -174,7 +174,7 @@ BASE_URL=http://127.0.0.1:5174 VIEWPORT=1280x800 npm run capture:client-redesign
 - `RouteStatePanel` 被物流详情和 CMS 内容页引用。
 - `StatusTimeline` 被物流详情和售后详情页引用。
 - `storefrontDesignContract` 被 `StoreAppRoutes.tsx` 引用，用于客户端设计 scope。
-- `storefront-foundation.css`、`storefront-next.tokens.css`、`storefront-next.primitives.css`、`storefront-next.extended-routes.css` 已在 `src/main.tsx` 入口加载。
+- `storefront-foundation.css`、`storefront-next.tokens.css`、`storefront-next.primitives.css`、`storefront-next.extended-routes.css`、`storefront-next.final-contract.css`、`storefront-next.category.css` 已在 `src/main.tsx` 入口加载。
 
 ## 建议提交方案
 

@@ -199,6 +199,7 @@ const requiredReferences = [
   { name: "storefront-next.tokens.css", pattern: "storefront-next\\.tokens\\.css", min: 1 },
   { name: "storefront-next.primitives.css", pattern: "storefront-next\\.primitives\\.css", min: 1 },
   { name: "storefront-next.extended-routes.css", pattern: "storefront-next\\.extended-routes\\.css", min: 1 },
+  { name: "storefront-next.category.css", pattern: "storefront-next\\.category\\.css", min: 1 },
 ];
 
 for (const item of requiredReferences) {

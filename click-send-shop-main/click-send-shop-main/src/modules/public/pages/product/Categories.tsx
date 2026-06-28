@@ -6,6 +6,8 @@ import { STORE_COPY } from "@/constants/storeCopy";
 import { cn } from "@/lib/utils";
 import { StoreSearchDrawer, StoreSearchLauncher } from "@/components/store/StoreSearchDrawer";
 import type { StoreSearchCategoryOption, StoreSearchTagOption } from "@/components/store/storeSearchOptions";
+import StoreCategoryPrimaryNav from "@/components/store/StoreCategoryPrimaryNav";
+import StoreCategorySubcategorySelector from "@/components/store/StoreCategorySubcategorySelector";
 import ProductFilterDrawer from "@/components/ProductFilterDrawer";
 import ProductSortBar from "@/components/ProductSortBar";
 import type { CategoryKingkongItem } from "@/components/CategoryKingkongRow";
@@ -34,6 +36,8 @@ import {
   isNewArrivalCategoryParams,
 } from "@/constants/newArrivalNavigation";
 import { storefrontCategoryName } from "@/utils/storefrontCopySanitizer";
+
+const INLINE_SUBCATEGORY_LIMIT = 6;
 
 export default function Categories() {
   const clientStyle = useClientDesignStyle();
@@ -66,6 +70,7 @@ export default function Categories() {
   const [isNew, setIsNew] = useState(initialIsNew);
   const [isHot, setIsHot] = useState(searchParams.get("is_hot") === "1");
   const [isRecommended, setIsRecommended] = useState(searchParams.get("is_recommended") === "1");
+  const [subcategoryPanelOpen, setSubcategoryPanelOpen] = useState(false);
   const [readyProductQueryKey, setReadyProductQueryKey] = useState("");
   const latestProductQueryKeyRef = useRef("");
   const products = useProductStore((s) => s.products);
@@ -191,12 +196,14 @@ export default function Categories() {
     void trackEvent({ event_type: "category_click", module: "categories", category_id: childId });
     setIsNew(false);
     setActiveCat(childId);
+    setSubcategoryPanelOpen(false);
   }, []);
 
   const handleRootCategoryClick = useCallback((cat: Category) => {
     void trackEvent({ event_type: "category_click", module: "categories", category_id: cat.id });
     setIsNew(false);
     setActiveCat(cat.id);
+    setSubcategoryPanelOpen(false);
   }, []);
 
   const clearFilters = useCallback(() => {
@@ -246,6 +253,15 @@ export default function Categories() {
     const root = findCategoryById(categories, activeRootId);
     return root?.children?.filter(Boolean) ?? [];
   }, [activeRootId, categories]);
+  const visibleSubCategories = useMemo(() => {
+    if (subCategories.length <= INLINE_SUBCATEGORY_LIMIT) return subCategories;
+    const primaryItems = subCategories.slice(0, INLINE_SUBCATEGORY_LIMIT);
+    const activeChild = subCategories.find((child) => child.id === activeCat);
+    if (!activeChild || primaryItems.some((child) => child.id === activeChild.id)) return primaryItems;
+    return [...primaryItems.slice(0, INLINE_SUBCATEGORY_LIMIT - 1), activeChild];
+  }, [activeCat, subCategories]);
+  const hasMoreSubCategories = subCategories.length > visibleSubCategories.length;
+  const hiddenSubcategoryCount = Math.max(0, subCategories.length - INLINE_SUBCATEGORY_LIMIT);
   const systemAllIconValue = siteInfo.categorySystemAllIconUrl?.trim() || "all";
   const systemNewIconValue = siteInfo.categorySystemNewIconUrl?.trim() || "new";
 
@@ -384,6 +400,10 @@ export default function Categories() {
     };
   }, [hasMoreProducts, listRefreshing, loadMoreProducts, loading, productQueryReady]);
 
+  useEffect(() => {
+    setSubcategoryPanelOpen(false);
+  }, [activeRootId]);
+
   const filterDrawer = (
     <ProductFilterDrawer
       activeFilterCount={activeFilterCount}
@@ -479,7 +499,7 @@ export default function Categories() {
               <Search size={24} aria-hidden />
             </UnifiedButton>
           </div>
-          <CategoryTextPills items={categoryPills} loading={loading && categories.length === 0} />
+          <StoreCategoryPrimaryNav items={categoryPills} loading={loading && categories.length === 0} />
         </section>
 
         <section className="sf-next-listing-section" aria-label={productSectionTitle}>
@@ -490,28 +510,20 @@ export default function Categories() {
             </span>
           </div>
           <CategoryBannerCard category={activeCategoryBanner} />
-          {subCategories.length > 0 ? (
-            <section className="sf-next-subcategory-strip" aria-label="子分类">
-              <UnifiedButton
-                type="button"
-                aria-pressed={activeRootId === activeCat}
-                className={cn("sf-next-subcategory-chip", activeRootId === activeCat && "is-active")}
-                onClick={() => activeRootId && handleSelectChild(activeRootId)}
-              >
-                全部
-              </UnifiedButton>
-              {subCategories.map((child) => (
-                <UnifiedButton
-                  key={child.id}
-                  type="button"
-                  aria-pressed={activeCat === child.id}
-                  className={cn("sf-next-subcategory-chip", activeCat === child.id && "is-active")}
-                  onClick={() => handleSelectChild(child.id)}
-                >
-                  {storefrontCategoryName(child.name)}
-                </UnifiedButton>
-              ))}
-            </section>
+          {subCategories.length > 0 && activeRootId ? (
+            <StoreCategorySubcategorySelector
+              sectionLabel={`${productSectionTitle}二级分类`}
+              activeCat={activeCat}
+              activeRootId={activeRootId}
+              subCategories={subCategories}
+              visibleSubCategories={visibleSubCategories}
+              hasMoreSubCategories={hasMoreSubCategories}
+              hiddenSubcategoryCount={hiddenSubcategoryCount}
+              panelOpen={subcategoryPanelOpen}
+              onClosePanel={() => setSubcategoryPanelOpen(false)}
+              onSelect={handleSelectChild}
+              onTogglePanel={() => setSubcategoryPanelOpen((open) => !open)}
+            />
           ) : null}
           <div className="sf-next-listing-sort-shell">
             <ProductSortBar value={sort} onChange={setSort} className="sf-next-listing-sortbar" />
@@ -670,28 +682,6 @@ function CategoryBannerCard({ category }: { category: Category | null }) {
   return (
     <div className="sf-next-category-banner" aria-label={title || `${storefrontCategoryName(category.name)} 分类广告`}>
       {content}
-    </div>
-  );
-}
-
-function CategoryTextPills({ items, loading }: { items: CategoryKingkongItem[]; loading: boolean }) {
-  return (
-    <div className="sf-next-category-pills" role="tablist" aria-label="商品分类">
-      {loading
-        ? Array.from({ length: 5 }).map((_, index) => (
-            <span key={index} className="sf-next-category-pill is-loading" aria-hidden />
-          ))
-        : items.map((item) => (
-            <UnifiedButton
-              key={item.id}
-              type="button"
-              aria-pressed={item.active}
-              className={cn("sf-next-category-pill", item.active && "is-active")}
-              onClick={item.onClick}
-            >
-              {item.label}
-            </UnifiedButton>
-          ))}
     </div>
   );
 }

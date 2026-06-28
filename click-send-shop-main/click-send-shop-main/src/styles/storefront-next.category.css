@@ -1,0 +1,659 @@
+/* Category page final layer: independent primary/secondary category scrolling. */
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page {
+  --sc-category-row-media: clamp(5.25rem, 25vw, 6.35rem);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-category-shell {
+  padding-inline: var(--sc-page-x) !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-category-toolbar {
+  border-color: var(--sc-line) !important;
+  border-radius: 0.875rem !important;
+  background: color-mix(in srgb, var(--sf-surface) 92%, transparent) !important;
+  gap: 0.5rem !important;
+  margin-bottom: 0 !important;
+  padding-inline: 0 !important;
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--sf-ink) 5%, transparent) !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-category-search-trigger {
+  min-width: 0 !important;
+  height: 2.55rem !important;
+  border-radius: 0.88rem !important;
+  padding-inline: 0.72rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-category-search-trigger span {
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-listing-section {
+  gap: 0.56rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page input {
+  font-size: 16px !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-listing-sort-shell {
+  width: 100% !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-listing-sortbar.sf-next-sortbar {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 0 !important;
+  overflow: hidden !important;
+  border: 0 !important;
+  padding: 0.22rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-listing-sortbar .sf-next-sort-pill {
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 1.95rem !important;
+  border-radius: 0.58rem !important;
+  padding: 0 0.18rem !important;
+  font-size: 0.7rem !important;
+  font-weight: 730 !important;
+  white-space: nowrap !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-product-grid {
+  align-items: stretch !important;
+  gap: 0.55rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-category-product-list {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  align-items: stretch !important;
+  padding-top: 0 !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-product-card.sf-next-product-card--list {
+  display: grid !important;
+  grid-template-columns: var(--sc-category-row-media) minmax(0, 1fr) !important;
+  align-items: stretch !important;
+  gap: 0.58rem !important;
+  min-width: 0 !important;
+  width: 100% !important;
+  min-height: calc(var(--sc-category-row-media) + 0.7rem) !important;
+  border: 1px solid var(--sc-line) !important;
+  border-radius: 0.86rem !important;
+  background: var(--sf-surface) !important;
+  padding: 0.38rem !important;
+  overflow: hidden !important;
+  box-shadow: var(--sc-soft-shadow) !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-product-card--list .sf-next-product-card__media,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-product-card.sf-next-product-card--list .sf-next-product-card__media {
+  position: relative !important;
+  width: var(--sc-category-row-media) !important;
+  min-width: var(--sc-category-row-media) !important;
+  height: var(--sc-category-row-media) !important;
+  min-height: var(--sc-category-row-media) !important;
+  max-height: var(--sc-category-row-media) !important;
+  aspect-ratio: 1 / 1 !important;
+  align-self: center !important;
+  overflow: hidden !important;
+  border: 1px solid color-mix(in srgb, var(--sf-line) 68%, transparent) !important;
+  border-radius: 0.66rem !important;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--sf-canvas) 78%, var(--sf-surface)), var(--sf-surface-muted)) !important;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--sf-surface) 70%, transparent) !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-product-card--list .sf-next-product-card__media .sf-next-ratio-image,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-product-card--list .sf-next-product-card__media picture {
+  width: 100% !important;
+  height: 100% !important;
+  aspect-ratio: 1 / 1 !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-product-card--list .sf-next-product-card__media :where(img, .sf-next-ratio-image__img),
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-product-card.sf-next-product-card--list .sf-next-product-card__media :where(img, .sf-next-ratio-image__img) {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  object-position: center !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-product-card--list .sf-next-product-card__info,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-product-card.sf-next-product-card--list .sf-next-product-card__info {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  grid-template-rows: minmax(0, 1fr) auto !important;
+  grid-auto-flow: row !important;
+  gap: 0.16rem !important;
+  min-height: var(--sc-category-row-media) !important;
+  padding: 0.1rem 0.06rem 0.1rem 0 !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-product-card--list .sf-next-product-card__copy {
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-product-card--list .sf-next-product-card__title {
+  display: -webkit-box !important;
+  overflow: hidden !important;
+  color: var(--sf-ink) !important;
+  font-size: 0.82rem !important;
+  font-weight: 780 !important;
+  line-height: 1.22 !important;
+  -webkit-box-orient: vertical !important;
+  -webkit-line-clamp: 2 !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-product-card--list :where(.storefront-badge, .sf-next-product-card__caption) {
+  max-width: 100% !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-product-card--list .storefront-badge {
+  min-height: 1.12rem !important;
+  overflow: hidden !important;
+  padding: 0.16rem 0.38rem !important;
+  font-size: 0.62rem !important;
+  line-height: 1 !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-product-card--list .sf-next-product-card__caption {
+  display: -webkit-box !important;
+  overflow: hidden !important;
+  color: var(--sf-ink-secondary) !important;
+  font-size: 0.72rem !important;
+  line-height: 1.28 !important;
+  -webkit-box-orient: vertical !important;
+  -webkit-line-clamp: 1 !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-product-card--list .sf-next-product-card__buy,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-product-card.sf-next-product-card--list .sf-next-product-card__buy {
+  grid-column: 1 !important;
+  grid-row: 2 !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 44px !important;
+  align-items: end !important;
+  gap: 0.5rem !important;
+  justify-self: stretch !important;
+  width: 100% !important;
+  min-height: 2.42rem !important;
+  padding-top: 0.12rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-product-card--list .sf-next-price {
+  display: inline-flex !important;
+  flex-wrap: wrap !important;
+  align-items: baseline !important;
+  justify-content: flex-start !important;
+  justify-self: start !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow: visible !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-product-card--list .sf-next-price__amount {
+  display: inline-flex !important;
+  flex: 0 0 auto !important;
+  width: max-content !important;
+  min-width: max-content !important;
+  align-items: center !important;
+  max-width: 100% !important;
+  overflow: visible !important;
+  font-size: 1rem !important;
+  line-height: 1.08 !important;
+  text-overflow: clip !important;
+  white-space: nowrap !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-product-card--list .sf-next-price__currency {
+  padding: 0.16rem 0.25rem !important;
+  font-size: 0.58rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-product-card--list .sf-next-price__original {
+  display: none !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-product-card__cart--list {
+  width: 2.42rem !important;
+  min-width: 2.42rem !important;
+  height: 2.42rem !important;
+  min-height: 2.42rem !important;
+  align-self: end !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-product-card__cart--list.is-disabled {
+  background: color-mix(in srgb, var(--sf-muted) 44%, var(--sf-line)) !important;
+  color: var(--sf-surface) !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-product-card--skeleton.sf-next-product-card--list {
+  grid-template-columns: var(--sc-category-row-media) minmax(0, 1fr) !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-category-pill {
+  gap: 0.36rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-category-pill__icon {
+  display: none;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-category-pill__label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-subcategory-region {
+  position: relative;
+  min-width: 0;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-subcategory-more {
+  gap: 0.24rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-subcategory-more svg {
+  transition: transform 180ms ease;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-subcategory-more.is-active svg {
+  transform: rotate(180deg);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-subcategory-panel {
+  display: grid;
+  min-width: 0;
+  gap: 0.72rem;
+  border: 1px solid var(--sc-line);
+  border-radius: 0.95rem;
+  background: color-mix(in srgb, var(--sf-surface) 98%, transparent);
+  padding: 0.72rem;
+  box-shadow: 0 1rem 2.6rem color-mix(in srgb, var(--sf-ink) 14%, transparent);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-subcategory-panel__head {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-subcategory-panel__head strong {
+  overflow: hidden;
+  color: var(--sf-ink);
+  font-size: 0.88rem;
+  font-weight: 820;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-subcategory-panel__close {
+  display: inline-grid !important;
+  width: 2rem !important;
+  min-width: 2rem !important;
+  height: 2rem !important;
+  min-height: 2rem !important;
+  place-items: center !important;
+  border: 1px solid var(--sc-line) !important;
+  border-radius: 0.68rem !important;
+  background: var(--sf-surface-muted) !important;
+  padding: 0 !important;
+  color: var(--sf-ink-secondary) !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-subcategory-panel__grid {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+@media (max-width: 767px) {
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page.sf-next-bottom-safe,
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-route-page.sf-next-category-page.sf-next-bottom-safe {
+    height: 100dvh !important;
+    min-height: 100dvh !important;
+    overflow: hidden !important;
+    padding-bottom: 0 !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-category-shell {
+    display: grid !important;
+    grid-template-columns: 5.35rem minmax(0, 1fr) !important;
+    grid-template-rows: auto minmax(0, 1fr) !important;
+    gap: 0.58rem !important;
+    width: 100% !important;
+    max-width: var(--sc-mobile-frame) !important;
+    height: calc(100dvh - var(--sf-bottom-nav-total-height, 5.25rem)) !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    padding: 0.55rem var(--sc-page-x) 0.72rem !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-category-toolbar {
+    position: relative !important;
+    z-index: 12 !important;
+    grid-column: 1 / -1 !important;
+    grid-row: 1 !important;
+    grid-template-columns: minmax(0, 1fr) 4.4rem !important;
+    gap: 0.46rem !important;
+    min-height: 2.45rem !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-category-search-trigger,
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-category-filter-slot > * {
+    height: var(--sc-touch-min) !important;
+    min-height: var(--sc-touch-min) !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-category-hero {
+    grid-column: 1 !important;
+    grid-row: 2 !important;
+    align-self: stretch !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    min-height: 0 !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    border-right: 1px solid var(--sc-line) !important;
+    padding: 0 0.28rem 0 0 !important;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-category-hero::-webkit-scrollbar,
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-listing-section::-webkit-scrollbar {
+    display: none;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-category-titlebar {
+    display: none !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-category-pills {
+    display: grid !important;
+    align-content: start !important;
+    gap: 0.42rem !important;
+    width: 100% !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    padding: 0 0 0.35rem !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-category-pill {
+    display: grid !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 3.72rem !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    justify-items: center !important;
+    gap: 0.2rem !important;
+    border: 1px solid transparent !important;
+    border-radius: 0.82rem !important;
+    background: transparent !important;
+    padding: 0.42rem 0.24rem !important;
+    color: var(--sf-ink-secondary) !important;
+    text-align: center !important;
+    white-space: normal !important;
+    box-shadow: none !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-category-pill.is-active {
+    border-color: var(--sf-ink) !important;
+    background: var(--sf-ink) !important;
+    color: var(--sf-canvas) !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-category-pill__icon {
+    display: grid !important;
+    width: 1.65rem !important;
+    height: 1.65rem !important;
+    place-items: center !important;
+    color: currentColor !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-category-pill__icon svg,
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-category-pill__icon-image {
+    width: 1.22rem !important;
+    height: 1.22rem !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-category-pill__label {
+    display: -webkit-box !important;
+    width: 100% !important;
+    min-height: 1.8rem !important;
+    overflow: hidden !important;
+    font-size: 0.72rem !important;
+    font-weight: 720 !important;
+    line-height: 1.22 !important;
+    text-align: center !important;
+    text-overflow: ellipsis !important;
+    -webkit-box-orient: vertical !important;
+    -webkit-line-clamp: 2 !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-category-pill.is-loading {
+    width: 100% !important;
+    height: 3.72rem !important;
+    border-radius: 0.82rem !important;
+    background: linear-gradient(90deg, var(--sf-surface-muted), var(--sf-surface), var(--sf-surface-muted)) !important;
+    background-size: 200% 100% !important;
+    animation: sf-next-card-shimmer 1.15s ease-in-out infinite !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-listing-section {
+    grid-column: 2 !important;
+    grid-row: 2 !important;
+    align-self: stretch !important;
+    gap: 0.55rem !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    border-top: 0 !important;
+    padding: 0 0.06rem 0.9rem 0 !important;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-listing-head {
+    gap: 0.42rem !important;
+    min-height: 2rem !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-listing-head h2 {
+    overflow: hidden !important;
+    font-size: 1rem !important;
+    font-weight: 840 !important;
+    line-height: 1.16 !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-listing-sort-shell {
+    border-radius: 0.72rem !important;
+    overflow: hidden !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-listing-sortbar {
+    min-height: 2.38rem !important;
+    border: 0 !important;
+    border-radius: 0.68rem !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-listing-sortbar button.sf-next-sort-pill {
+    min-width: 0 !important;
+    height: var(--sc-touch-min) !important;
+    min-height: var(--sc-touch-min) !important;
+    padding-inline: 0.1rem !important;
+    font-size: 0.72rem !important;
+    white-space: nowrap !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-product-card.sf-next-product-card--list .sf-next-product-card__buy {
+    grid-template-columns: minmax(0, 1fr) 44px !important;
+    gap: 8px !important;
+    min-height: 50px !important;
+    overflow: visible !important;
+    padding-block: 3px !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-product-card.sf-next-product-card--list .sf-next-product-card__cart--list {
+    width: 44px !important;
+    min-width: 44px !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    margin-left: 0 !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-subcategory-region {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 10 !important;
+    margin: -0.08rem -0.06rem 0 !important;
+    background: color-mix(in srgb, var(--sf-canvas) 95%, transparent) !important;
+    padding: 0.16rem 0.06rem 0.44rem !important;
+    backdrop-filter: blur(10px);
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-subcategory-strip {
+    gap: 0.34rem !important;
+    padding: 0 !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-subcategory-chip {
+    display: inline-flex !important;
+    max-width: 6.5rem !important;
+    min-height: 2.08rem !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 0.7rem !important;
+    padding: 0 0.58rem !important;
+    font-size: 0.72rem !important;
+    font-weight: 740 !important;
+    line-height: 1 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-subcategory-panel {
+    position: absolute !important;
+    top: calc(100% + 0.36rem) !important;
+    right: 0 !important;
+    left: 0 !important;
+    z-index: 18 !important;
+    max-height: min(48dvh, 18rem) !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-subcategory-panel__grid .sf-next-subcategory-chip {
+    max-width: 100% !important;
+    justify-content: center !important;
+  }
+}
+
+@media (max-width: 380px) {
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page {
+    --sc-category-row-media: 5.05rem;
+  }
+}
+
+@media (min-width: 768px) {
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page {
+    --sc-category-row-media: 7rem;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-category-shell {
+    display: grid !important;
+    grid-template-columns: minmax(12rem, 15rem) minmax(0, 1fr) !important;
+    grid-template-rows: auto minmax(0, auto) !important;
+    align-items: start !important;
+    gap: 1rem !important;
+    max-width: min(100%, 78rem) !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-category-toolbar {
+    grid-column: 1 / -1 !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-listing-sortbar button.sf-next-sort-pill {
+    height: 40px !important;
+    min-height: 40px !important;
+    padding-block: 0 !important;
+    line-height: 1.12 !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-category-hero {
+    position: sticky !important;
+    top: 1rem !important;
+    grid-column: 1 !important;
+    max-height: calc(100dvh - 2rem) !important;
+    overflow-y: auto !important;
+    border-right: 1px solid var(--sc-line) !important;
+    padding-right: 0.72rem !important;
+    scrollbar-width: none;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-category-hero::-webkit-scrollbar {
+    display: none;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-category-titlebar {
+    display: grid !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-category-pills {
+    display: grid !important;
+    gap: 0.5rem !important;
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-category-pill {
+    width: 100% !important;
+    min-width: 0 !important;
+    justify-content: flex-start !important;
+    text-align: left !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-listing-section {
+    grid-column: 2 !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-subcategory-strip {
+    flex-wrap: wrap !important;
+    overflow: visible !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-subcategory-panel {
+    position: absolute !important;
+    top: calc(100% + 0.45rem) !important;
+    right: 0 !important;
+    z-index: 12 !important;
+    width: min(24rem, 100%) !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-subcategory-panel__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}

@@ -20,6 +20,7 @@
 - token 样式：`src/styles/storefront-next.tokens.css`
 - 原语样式：`src/styles/storefront-next.primitives.css`
 - 路由扩展样式：`src/styles/storefront-next.extended-routes.css`
+- 分类页最终样式层：`src/styles/storefront-next.category.css`
 
 旧 `GuestHome`、`MemberHome`、`HomeOpsBlocks` 和旧 `store-home-*` 首页视觉层已经退出正式客户端源码。后续不能为了兼容旧样式重新接回正式路由。
 
@@ -149,7 +150,7 @@
 - class 前缀：`sf-next-profile`
 - 账户页不得再使用 `client-profile-*` 旧视觉选择器
 - 账户页英雄卡不得再输出 `store-profile-vip-card`、`profile-guest-card` 等旧 Profile root class
-- 旧 Profile 视觉层不得继续放在 `index.css`，正式样式必须收口到 `storefront-next.extended-routes.css`
+- 旧 Profile 视觉层不得继续放在 `index.css`，正式样式必须收口到 `storefront-next.extended-routes.css`；分类页独立滚动和二级分类最终规则收口到 `storefront-next.category.css`
 - 登录/未登录态、会员卡、资产、订单、服务、邀请好友和退出登录必须共享同一套账户页网格、卡片、间距和安全区
 - 移动端未登录卡片的按钮、权益入口和说明文字必须在 390px 内稳定换行，不能横向撑开
 

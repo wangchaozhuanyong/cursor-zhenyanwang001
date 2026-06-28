@@ -176,6 +176,7 @@ describe("themeConfig", () => {
       "storefront-next.primitives.css",
       "storefront-next.extended-routes.css",
       "storefront-next.final-contract.css",
+      "storefront-next.category.css",
     ]
       .map((file) => readFileSync(join(process.cwd(), "src/styles", file), "utf8"))
       .join("\n");
@@ -201,7 +202,7 @@ describe("themeConfig", () => {
       "var(--mall-surface)",
       ".sf-next-home-page",
       ".sf-next-category-page",
-      ".sf-next-promotions-card",
+      ".sf-next-promo-card",
       ".sf-next-cart-page .sf-next-cart-item",
       ".sf-next-product-detail-page .sf-next-product-gallery",
       ".sf-next-account-hero",

@@ -41,6 +41,7 @@
 - `src/styles/storefront-next.tokens.css`
 - `src/styles/storefront-next.primitives.css`
 - `src/styles/storefront-next.extended-routes.css`
+- `src/styles/storefront-next.category.css`
 - `src/styles/client-redesign.css`
 - `src/styles/support-download.css`
 - `src/main.tsx`

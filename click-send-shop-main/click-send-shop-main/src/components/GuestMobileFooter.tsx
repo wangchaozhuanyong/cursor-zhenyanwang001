@@ -92,7 +92,7 @@ export function GuestFooterBrandMark({ siteName, logoSrc, centered = false }: { 
 
   const textMark = (
     <span className={cn("min-w-0", centered && "block max-w-full text-center")}>
-      <span className="block truncate font-display text-[28px] font-bold leading-none text-[var(--theme-text-on-surface)] sm:text-[34px]">
+      <span className="block truncate font-display text-[28px] font-bold leading-[1.08] text-[var(--theme-text-on-surface)] sm:text-[34px]">
         {base}
       </span>
       <span className="mt-1 block text-[12px] font-semibold leading-none text-[var(--theme-text-muted-on-surface)]">

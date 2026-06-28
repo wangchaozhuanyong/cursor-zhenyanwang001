@@ -9325,3 +9325,14 @@ html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-campaign-card__
   -webkit-box-orient: vertical !important;
   -webkit-line-clamp: 2 !important;
 }
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-product-card--list .sf-next-price__amount {
+  display: inline-flex !important;
+  flex: 0 0 auto !important;
+  width: max-content !important;
+  min-width: max-content !important;
+  align-items: center !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: nowrap !important;
+}

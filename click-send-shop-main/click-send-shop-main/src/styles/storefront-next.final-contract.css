@@ -9473,3 +9473,204 @@ html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .
     box-shadow: 0 0.7rem 1.55rem color-mix(in srgb, var(--sf-ink) 5%, transparent) !important;
   }
 }
+
+/* Client design precision repair v20: quieter coupon tickets and profile invite pass. */
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault {
+  isolation: isolate;
+  border: 1px solid color-mix(in srgb, var(--sf-line) 82%, transparent) !important;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--sf-surface) 98%, transparent), color-mix(in srgb, var(--sf-surface-muted) 34%, var(--sf-surface))),
+    var(--sf-surface) !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault::before {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 0 50%, var(--sf-canvas) 0 0.34rem, transparent 0.36rem),
+    radial-gradient(circle at 100% 50%, var(--sf-canvas) 0 0.34rem, transparent 0.36rem);
+  content: "";
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault__value {
+  border-right-color: color-mix(in srgb, var(--sf-accent) 22%, var(--sf-line)) !important;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--sf-accent) 9%, white), color-mix(in srgb, var(--sf-accent) 5%, var(--sf-surface-muted))) !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault__kind {
+  color: color-mix(in srgb, var(--sf-accent) 72%, var(--sf-ink-secondary)) !important;
+  font-weight: 760 !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault__title {
+  color: var(--sf-ink) !important;
+  font-weight: 820 !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault__meta,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault__date {
+  color: color-mix(in srgb, var(--sf-ink-secondary) 92%, var(--sf-ink)) !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault__topline {
+  color: color-mix(in srgb, var(--sf-success) 80%, var(--sf-ink)) !important;
+  font-weight: 780 !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault__topline :where(button, span:last-child) {
+  border-radius: 999px !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault__code {
+  border-top-color: color-mix(in srgb, var(--sf-line) 80%, transparent) !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel {
+  overflow: visible !important;
+  border-radius: 1.05rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel > .ir-stage {
+  aspect-ratio: 390 / 188 !important;
+  overflow: visible !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-card {
+  border: 1px solid color-mix(in srgb, var(--sf-line) 22%, transparent) !important;
+  border-radius: 1.05rem !important;
+  background:
+    radial-gradient(circle at 82% 22%, color-mix(in srgb, var(--sf-accent) 15%, transparent), transparent 5.8rem),
+    linear-gradient(135deg, color-mix(in srgb, var(--sf-graphite) 94%, var(--sf-accent)), color-mix(in srgb, var(--sf-graphite) 82%, black)) !important;
+  background-size: auto !important;
+  box-shadow: 0 1rem 2.6rem color-mix(in srgb, var(--sf-graphite) 13%, transparent) !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-card::before {
+  display: block !important;
+  inset: 0 !important;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, white 7%, transparent) 1px, transparent 1px),
+    linear-gradient(180deg, color-mix(in srgb, white 5%, transparent) 1px, transparent 1px) !important;
+  background-size: 4.5rem 4.5rem !important;
+  mask-image: linear-gradient(135deg, transparent 0%, rgb(0 0 0 / 0.55) 36%, transparent 86%) !important;
+  opacity: 0.55 !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-card::after {
+  left: 1rem !important;
+  right: 1rem !important;
+  top: 3.75rem !important;
+  background: color-mix(in srgb, white 15%, transparent) !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-badge {
+  left: 1rem !important;
+  top: 0.95rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-badgeText {
+  color: color-mix(in srgb, white 82%, var(--sf-accent)) !important;
+  font-size: 0.72rem !important;
+  font-weight: 800 !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-title {
+  left: 1rem !important;
+  top: 4.75rem !important;
+  max-width: 56% !important;
+  color: color-mix(in srgb, white 94%, var(--sf-accent)) !important;
+  font-size: clamp(1.2rem, 6.2cqw, 1.7rem) !important;
+  line-height: 1.06 !important;
+  white-space: normal !important;
+  text-wrap: balance;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-subtitle {
+  left: 1rem !important;
+  top: 7.4rem !important;
+  width: 56% !important;
+  display: -webkit-box !important;
+  color: color-mix(in srgb, white 67%, transparent) !important;
+  font-size: clamp(0.68rem, 2.65cqw, 0.78rem) !important;
+  line-height: 1.42 !important;
+  overflow: hidden !important;
+  -webkit-box-orient: vertical !important;
+  -webkit-line-clamp: 2 !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-stats {
+  right: 0.9rem !important;
+  top: 4.65rem !important;
+  left: auto !important;
+  width: 36.5% !important;
+  min-height: 4.55rem !important;
+  grid-template-columns: 1fr !important;
+  gap: 0.32rem !important;
+  border-color: color-mix(in srgb, white 13%, transparent) !important;
+  background: color-mix(in srgb, white 8%, transparent) !important;
+  padding: 0.36rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-stat {
+  min-height: 1.84rem !important;
+  align-items: flex-start !important;
+  border-radius: 0.64rem !important;
+  background: color-mix(in srgb, white 7%, transparent) !important;
+  padding: 0.34rem 0.46rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-statLabel {
+  color: color-mix(in srgb, white 58%, transparent) !important;
+  font-size: 0.58rem !important;
+  line-height: 1.1 !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-statValue {
+  color: color-mix(in srgb, white 92%, var(--sf-accent)) !important;
+  font-size: 0.82rem !important;
+  line-height: 1.04 !important;
+  text-align: left !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-actions {
+  left: 1rem !important;
+  right: 1rem !important;
+  bottom: 0.8rem !important;
+  width: auto !important;
+  gap: 0.42rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-action {
+  min-height: 2.08rem !important;
+  height: 2.08rem !important;
+  border-radius: 999px !important;
+  font-size: 0.72rem !important;
+  gap: 0.28rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-action svg {
+  width: 0.86rem !important;
+  height: 0.86rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-code-panel {
+  margin-top: 0.55rem !important;
+}
+
+@media (max-width: 374px) {
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-title {
+    max-width: 54% !important;
+    font-size: 1.08rem !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-subtitle {
+    display: none !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-stats {
+    width: 38% !important;
+  }
+}

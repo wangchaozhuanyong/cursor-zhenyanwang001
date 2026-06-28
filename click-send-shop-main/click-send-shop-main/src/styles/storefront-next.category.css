@@ -657,3 +657,18 @@ html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .
     grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
   }
 }
+
+@media (min-width: 1120px) {
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page {
+    --sc-category-row-media: 6.45rem;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-category-product-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.7rem !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-listing-empty {
+    grid-column: 1 / -1 !important;
+  }
+}

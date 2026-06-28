@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { getMonitoringRuns, type MonitoringRun } from "@/services/admin/monitoringService";
 import MonitoringSubnav from "./MonitoringSubnav";
-import AdminNativeTable from "@/components/admin/AdminNativeTable";
+import AdminNativeTable, {
+  AdminNativeTableSkeletonRows,
+  AdminNativeTableStateRow,
+} from "@/components/admin/AdminNativeTable";
 import {
   Badge,
   formatTime,
@@ -73,7 +76,6 @@ export default function AdminMonitoringRuns() {
         </>
       )}
     >
-      {error ? <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div> : null}
       <AdminNativeTable>
           <thead className={monitoringTableHeadClass}>
             <tr>
@@ -89,6 +91,9 @@ export default function AdminMonitoringRuns() {
             </tr>
           </thead>
           <tbody>
+            {loading && !runs.length ? (
+              <AdminNativeTableSkeletonRows columns={9} rows={5} label={tText("运行记录加载中")} />
+            ) : null}
             {runs.map((run) => (
               <tr key={run.id} className="border-t">
                 <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "left")}>{ml.runType(run.run_type)}</td>
@@ -104,13 +109,23 @@ export default function AdminMonitoringRuns() {
                 </td>
               </tr>
             ))}
-            {!runs.length && (
-              <tr>
-                <td className={adminTdClassName(`py-6 text-center ${monitoringMutedClass}`, "center")} colSpan={9}>
-                  {loading ? "加载中..." : "暂无运行记录"}
-                </td>
-              </tr>
-            )}
+            {!loading && error && !runs.length ? (
+              <AdminNativeTableStateRow
+                colSpan={9}
+                type="error"
+                title={tText("运行记录加载失败")}
+                description={error}
+                actionLabel={tText("重试")}
+                onAction={() => void load()}
+              />
+            ) : null}
+            {!loading && !error && !runs.length ? (
+              <AdminNativeTableStateRow
+                colSpan={9}
+                title={tText("暂无运行记录")}
+                description={tText("当前筛选条件下没有检测运行记录。")}
+              />
+            ) : null}
           </tbody>
       </AdminNativeTable>
       <div className={`flex flex-col gap-2 text-sm ${monitoringMutedClass} sm:flex-row sm:items-center sm:justify-between`}>

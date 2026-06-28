@@ -54,7 +54,7 @@ export default function Categories() {
   const syncedSearchKeyRef = useRef(searchParams.toString());
   const syncingFromUrlRef = useRef(false);
   const productGridClass = "sf-next-product-grid sf-next-category-product-list grid grid-cols-1 gap-2 pt-1";
-  const emptyColSpan = "col-span-1";
+  const emptyColSpan = "col-span-full";
 
   const initialIsNew = isNewArrivalCategoryParams(searchParams);
   const [activeCat, setActiveCat] = useState(initialIsNew ? "all" : searchParams.get("cat") || "all");

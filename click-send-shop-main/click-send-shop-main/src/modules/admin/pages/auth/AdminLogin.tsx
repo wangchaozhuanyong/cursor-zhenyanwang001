@@ -20,6 +20,8 @@ function normalizeMfaCode(value: string) {
 
 const loadAccountService = () => import("@/services/admin/accountService");
 const loadToast = () => import("sonner").then((module) => module.toast);
+const adminLoginPrimaryButtonClass =
+  "touch-manipulation mt-2 min-h-[48px] w-full rounded-xl bg-[var(--theme-primary)] py-3 text-base font-semibold text-[var(--theme-primary-foreground)] shadow-sm transition hover:brightness-[1.04] active:brightness-95 disabled:opacity-50 sm:text-sm";
 
 function showLoginToast(type: "success" | "error", message: string) {
   void loadToast()
@@ -303,7 +305,7 @@ export default function AdminLogin() {
                   type="button"
                   onClick={handleVerifyMfa}
                   disabled={loading || passkeyLoading || mfaCode.length !== 6}
-                  className="touch-manipulation mt-2 min-h-[48px] w-full rounded-xl btn-theme-price py-3 text-base font-semibold text-[var(--theme-price-foreground)] transition-opacity hover:opacity-90 active:opacity-95 disabled:opacity-50 sm:text-sm"
+                  className={adminLoginPrimaryButtonClass}
                 >
                   {loading ? t("login.mfaVerifying") : t("login.mfaVerifySubmit")}
                 </UnifiedButton>
@@ -373,7 +375,7 @@ export default function AdminLogin() {
                   type="button"
                   onClick={handleLogin}
                   disabled={loading}
-                  className="touch-manipulation mt-2 min-h-[48px] w-full rounded-xl btn-theme-price py-3 text-base font-semibold text-[var(--theme-price-foreground)] transition-opacity hover:opacity-90 active:opacity-95 disabled:opacity-50 sm:text-sm"
+                  className={adminLoginPrimaryButtonClass}
                 >
                   {loading ? t("login.submitting") : t("login.submit")}
                 </UnifiedButton>

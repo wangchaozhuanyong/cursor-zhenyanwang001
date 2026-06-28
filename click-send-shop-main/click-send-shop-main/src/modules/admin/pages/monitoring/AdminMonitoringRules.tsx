@@ -7,7 +7,10 @@ import {
   type MonitoringSeverity,
 } from "@/services/admin/monitoringService";
 import MonitoringSubnav from "./MonitoringSubnav";
-import AdminNativeTable from "@/components/admin/AdminNativeTable";
+import AdminNativeTable, {
+  AdminNativeTableSkeletonRows,
+  AdminNativeTableStateRow,
+} from "@/components/admin/AdminNativeTable";
 import { Tx } from "@/components/admin/AdminText";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import { useAdminT } from "@/hooks/useAdminT";
@@ -64,8 +67,6 @@ export default function AdminMonitoringRules() {
       hint={<Tx>启用/停用规则、调整严重等级与 Cron，并可手动触发一次检测。</Tx>}
       filters={<MonitoringSubnav />}
     >
-      {error ? <div className="mb-4 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div> : null}
-      {loading ? <div className={`text-sm ${monitoringMutedClass}`}><Tx>加载中...</Tx></div> : null}
       <AdminNativeTable tableClassName="admin-table-fixed">
           <colgroup>
             <col style={{ width: "44%" }} />
@@ -88,6 +89,9 @@ export default function AdminMonitoringRules() {
             </tr>
           </thead>
           <tbody>
+            {loading && !rules.length ? (
+              <AdminNativeTableSkeletonRows columns={7} rows={5} label={tText("监控规则加载中")} />
+            ) : null}
             {rules.map((rule) => {
               const ruleTitle = ml.rule(rule.code, rule.title);
               const ruleDesc = ml.ruleDescription(rule.code, rule.description);
@@ -157,12 +161,22 @@ export default function AdminMonitoringRules() {
                 </tr>
               );
             })}
-            {!loading && !rules.length ? (
-              <tr>
-                <td className={adminTdClassName(`py-6 text-center ${monitoringMutedClass}`, "center")} colSpan={7}>
-                  暂无监控规则
-                </td>
-              </tr>
+            {!loading && error && !rules.length ? (
+              <AdminNativeTableStateRow
+                colSpan={7}
+                type="error"
+                title={tText("监控规则加载失败")}
+                description={error}
+                actionLabel={tText("重试")}
+                onAction={() => void load()}
+              />
+            ) : null}
+            {!loading && !error && !rules.length ? (
+              <AdminNativeTableStateRow
+                colSpan={7}
+                title={tText("暂无监控规则")}
+                description={tText("系统还没有配置可用的监控规则。")}
+              />
             ) : null}
           </tbody>
       </AdminNativeTable>

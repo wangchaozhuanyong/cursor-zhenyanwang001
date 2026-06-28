@@ -8117,6 +8117,7 @@ html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-c
 }
 
 html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-card {
+  min-height: 100% !important;
   border-radius: var(--sc-card-radius) !important;
   background:
     radial-gradient(circle at 82% 20%, color-mix(in srgb, var(--sf-accent) 18%, transparent) 0 3.4rem, transparent 3.55rem),

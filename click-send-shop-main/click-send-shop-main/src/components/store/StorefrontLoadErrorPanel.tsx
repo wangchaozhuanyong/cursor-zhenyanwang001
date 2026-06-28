@@ -27,6 +27,8 @@ export default function StorefrontLoadErrorPanel({
 
   return (
     <div
+      role="alert"
+      aria-live="polite"
       className={
         compact
           ? `rounded-xl px-4 py-4 text-center text-sm ${THEME_ALERT_ERROR_SOFT}`

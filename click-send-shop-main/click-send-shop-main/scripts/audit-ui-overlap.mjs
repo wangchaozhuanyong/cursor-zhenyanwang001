@@ -718,9 +718,10 @@ async function tryCheckoutCouponSheet(page, metaBase) {
   await waitStable(page);
   if (page.url().includes("/login")) return issues;
 
-  const trigger = page.getByText(/选择优惠券|优惠券/).first();
+  const trigger = page.getByRole("button", { name: /选择优惠券|优惠券|可用优惠|暂无可用|张可用/ }).first();
   if ((await trigger.count()) === 0) return issues;
-  await trigger.click();
+  if (!(await trigger.isVisible().catch(() => false))) return issues;
+  await trigger.click({ timeout: 5000 }).catch(() => null);
   await page.waitForTimeout(FULL_AUDIT ? 600 : 250);
 
   const hit = await scanPage(page, { ...metaBase, route: "结算-选券弹层", path: "/checkout", scroll: "弹层打开" });

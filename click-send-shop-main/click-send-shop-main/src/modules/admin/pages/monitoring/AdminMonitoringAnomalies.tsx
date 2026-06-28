@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { getMonitoringAnomalies, type MonitoringAnomaly } from "@/services/admin/monitoringService";
 import MonitoringSubnav from "./MonitoringSubnav";
-import AdminNativeTable from "@/components/admin/AdminNativeTable";
+import AdminNativeTable, {
+  AdminNativeTableSkeletonRows,
+  AdminNativeTableStateRow,
+} from "@/components/admin/AdminNativeTable";
 import MonitoringAnomalyRowActions from "./MonitoringAnomalyRowActions";
 import {
   Badge,
@@ -39,24 +42,31 @@ export default function AdminMonitoringAnomalies() {
   const [severity, setSeverity] = useState("");
   const [keyword, setKeyword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(() => {
+    setError(null);
     setLoading(true);
-    getMonitoringAnomalies({ page, pageSize: 20, status, severity, keyword })
+    return getMonitoringAnomalies({ page, pageSize: 20, status, severity, keyword })
       .then((res) => {
         setList(res.data.list);
         setTotal(res.data.total);
+      })
+      .catch((err: unknown) => {
+        setList([]);
+        setTotal(0);
+        setError(err instanceof Error ? err.message : "加载异常数据失败");
       })
       .finally(() => setLoading(false));
   }, [keyword, page, severity, status]);
 
   useEffect(() => {
-    load();
+    void load();
   }, [load]);
 
   async function action(fn: () => Promise<unknown>) {
     await fn();
-    load();
+    await load();
   }
 
   return (
@@ -99,6 +109,9 @@ export default function AdminMonitoringAnomalies() {
             </tr>
           </thead>
           <tbody>
+            {loading && !list.length ? (
+              <AdminNativeTableSkeletonRows columns={9} rows={5} label={tText("异常数据加载中")} />
+            ) : null}
             {list.map((item) => (
               <tr key={item.id} className="border-t align-middle">
                 <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}><Badge value={item.severity} tone={severityClass[item.severity]} /></td>
@@ -118,13 +131,23 @@ export default function AdminMonitoringAnomalies() {
                 </td>
               </tr>
             ))}
-            {!list.length && (
-              <tr>
-                <td className={adminTdClassName(`py-6 text-center ${monitoringMutedClass}`, "center")} colSpan={9}>
-                  {loading ? "加载中..." : "暂无异常"}
-                </td>
-              </tr>
-            )}
+            {!loading && error && !list.length ? (
+              <AdminNativeTableStateRow
+                colSpan={9}
+                type="error"
+                title={tText("异常数据加载失败")}
+                description={error}
+                actionLabel={tText("重试")}
+                onAction={() => void load()}
+              />
+            ) : null}
+            {!loading && !error && !list.length ? (
+              <AdminNativeTableStateRow
+                colSpan={9}
+                title={tText("暂无异常")}
+                description={tText("当前筛选条件下没有数据一致性异常。")}
+              />
+            ) : null}
           </tbody>
       </AdminNativeTable>
       <div className={`mt-4 flex items-center justify-between text-sm ${monitoringMutedClass}`}>

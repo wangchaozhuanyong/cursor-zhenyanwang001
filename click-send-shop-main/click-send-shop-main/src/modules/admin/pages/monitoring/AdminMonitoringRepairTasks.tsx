@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { executeRepairTask, getRepairTasks, type MonitoringRepairTask } from "@/services/admin/monitoringService";
 import MonitoringSubnav from "./MonitoringSubnav";
-import AdminNativeTable from "@/components/admin/AdminNativeTable";
+import AdminNativeTable, {
+  AdminNativeTableSkeletonRows,
+  AdminNativeTableStateRow,
+} from "@/components/admin/AdminNativeTable";
 import { AdminTableCell } from "@/components/admin/AdminTableCell";
 import {
   Badge,
@@ -110,8 +113,7 @@ export default function AdminMonitoringRepairTasks() {
         </>
       )}
     >
-      {error ? <div className="mb-4 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div> : null}
-      {actionError ? <div className="mb-4 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{actionError}</div> : null}
+      {actionError ? <div role="alert" className="mb-4 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{actionError}</div> : null}
       <AdminNativeTable>
           <thead className={monitoringTableHeadClass}>
             <tr>
@@ -126,6 +128,9 @@ export default function AdminMonitoringRepairTasks() {
             </tr>
           </thead>
           <tbody>
+            {loading && !list.length ? (
+              <AdminNativeTableSkeletonRows columns={8} rows={5} label={tText("修复任务加载中")} />
+            ) : null}
             {list.map((task) => (
               <tr key={task.id} className="border-t align-top">
                 <td className={adminTdClassName(ADMIN_TABLE_NOWRAP_CLASS, "center")}><Badge value={task.repair_status} /></td>
@@ -156,13 +161,23 @@ export default function AdminMonitoringRepairTasks() {
                 </td>
               </tr>
             ))}
-            {!list.length && (
-              <tr>
-                <td className={adminTdClassName(`py-6 text-center ${monitoringMutedClass}`, "center")} colSpan={8}>
-                  {loading ? "加载中..." : "暂无修复任务"}
-                </td>
-              </tr>
-            )}
+            {!loading && error && !list.length ? (
+              <AdminNativeTableStateRow
+                colSpan={8}
+                type="error"
+                title={tText("修复任务加载失败")}
+                description={error}
+                actionLabel={tText("重试")}
+                onAction={() => void load()}
+              />
+            ) : null}
+            {!loading && !error && !list.length ? (
+              <AdminNativeTableStateRow
+                colSpan={8}
+                title={tText("暂无修复任务")}
+                description={tText("当前筛选条件下没有待处理的修复任务。")}
+              />
+            ) : null}
           </tbody>
       </AdminNativeTable>
       <div className={`flex flex-col gap-2 text-sm ${monitoringMutedClass} sm:flex-row sm:items-center sm:justify-between`}>

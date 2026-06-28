@@ -48,12 +48,6 @@ export type ProfileServiceItem = {
   badgeText?: string;
 };
 
-export type ProfileTrustItem = {
-  title: string;
-  desc: string;
-  icon: LucideIcon;
-};
-
 export type ProfileSnapshotItem = {
   key: string;
   label: string;
@@ -518,24 +512,6 @@ export function ProfileInstallShortcut({
       <UnifiedButton type="button" data-feature-key={item.key} onClick={() => onNavigate(item)} className="profile-install-button">
         去添加
       </UnifiedButton>
-    </section>
-  );
-}
-
-export function ProfileTrustStrip({ items }: { items: ProfileTrustItem[] }) {
-  return (
-    <section className="profile-trust-strip sf-next-profile-trust-strip">
-      {items.map((item) => (
-        <div key={item.title} className="profile-trust-entry">
-          <span className="profile-trust-icon">
-            <item.icon size={21} strokeWidth={2.1} />
-          </span>
-          <span className="profile-trust-copy">
-            <span className="profile-trust-title">{item.title}</span>
-            <span className="profile-trust-desc">{item.desc}</span>
-          </span>
-        </div>
-      ))}
     </section>
   );
 }

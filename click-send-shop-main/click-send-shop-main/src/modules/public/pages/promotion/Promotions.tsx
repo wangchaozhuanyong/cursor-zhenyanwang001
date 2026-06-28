@@ -599,9 +599,9 @@ export default function Promotions() {
       <main className="sf-next-container sf-next-promotions-main">
         {showFullSkeleton && !folioList.length ? (
           <PromotionsFolioSkeleton />
-        ) : folioList.length ? (
+        ) : (
           <PromotionsFolio list={folioList} selectedType={selectedType} />
-        ) : null}
+        )}
 
         <nav
           className="sf-next-promo-filters no-scrollbar"

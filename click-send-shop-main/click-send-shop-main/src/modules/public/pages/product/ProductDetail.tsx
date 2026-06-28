@@ -101,6 +101,7 @@ export default function ProductDetail() {
   const reviewsVm = useProductReviews(id ?? "");
   const siteInfo = useSiteInfo();
   const siteCapabilities = useSiteCapabilities();
+  const promotionsEnabled = siteCapabilities.mallEnabled && (siteCapabilities.couponEnabled || siteCapabilities.pointsEnabled);
   const { themeConfig } = useThemeRuntime();
   const clientStyle = useClientDesignStyle();
   const productGridClass = getProductGridClassName(themeConfig.productCardVariant);
@@ -217,7 +218,7 @@ export default function ProductDetail() {
             description={error ?? "该商品可能已下架，或当前链接不可用。"}
             onRetry={() => id && loadProductDetail(id)}
             onBrowse={() => navigate(localizedPath("/categories"))}
-            onPromotions={() => navigate(localizedPath("/promotions"))}
+            onPromotions={promotionsEnabled ? () => navigate(localizedPath("/promotions")) : undefined}
           />
         </div>
       </div>
@@ -898,7 +899,7 @@ function ProductDetailErrorPanel({
   description: string;
   onRetry: () => void;
   onBrowse: () => void;
-  onPromotions: () => void;
+  onPromotions?: () => void;
 }) {
   const guards = [
     {
@@ -953,9 +954,11 @@ function ProductDetailErrorPanel({
         <UnifiedButton type="button" onClick={onBrowse}>
           去分类
         </UnifiedButton>
-        <UnifiedButton type="button" onClick={onPromotions}>
-          活动中心
-        </UnifiedButton>
+        {onPromotions ? (
+          <UnifiedButton type="button" onClick={onPromotions}>
+            活动中心
+          </UnifiedButton>
+        ) : null}
       </div>
     </section>
   );

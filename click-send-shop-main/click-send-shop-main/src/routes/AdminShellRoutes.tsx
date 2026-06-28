@@ -128,7 +128,7 @@ function AdminShellRouteContent() {
             <Route path="settings/referral" element={<Navigate to="/admin/marketing/rewards" replace />} />
             <Route path="settings/site" element={<AdminSiteSettings />} />
             <Route path="settings/features" element={<AdminFeatureSettings />} />
-            <Route path="settings/telegram" element={<AdminTelegramSettings />} />
+            <Route path="settings/telegram" element={<CapabilityRoute enabled={capabilities.telegramOrderNotifyEnabled}><AdminTelegramSettings /></CapabilityRoute>} />
             <Route path="support-download" element={<CapabilityRoute enabled={capabilities.customerServiceDownloadEnabled}><AdminSupportDownload /></CapabilityRoute>} />
             <Route path="settings/theme" element={<AdminThemeSettings />} />
             <Route path="home-ops" element={<AdminHomeOps />} />

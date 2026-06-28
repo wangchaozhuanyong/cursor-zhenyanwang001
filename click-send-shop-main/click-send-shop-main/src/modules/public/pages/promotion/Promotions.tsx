@@ -21,7 +21,6 @@ import * as marketingService from "@/services/marketingService";
 import { buildCanonical } from "@/utils/seo";
 import { cn } from "@/lib/utils";
 import { usePublicLocale } from "@/i18n/publicLocale";
-import { useHorizontalActiveScroll } from "@/hooks/useHorizontalActiveScroll";
 import { isInternalStorefrontCopy, storefrontDisplayText } from "@/utils/storefrontCopySanitizer";
 import type { PromotionType, StorefrontPromotion } from "@/services/marketingService";
 
@@ -213,12 +212,70 @@ function promotionActionLabel(type: PromotionType) {
   return labels[type] || "查看活动";
 }
 
-function buildFilterHref(type: PromotionFilter) {
-  return type ? `${PROMOTIONS_BASE_PATH}?type=${type}` : PROMOTIONS_BASE_PATH;
+function promotionFolioCopy(
+  selectedType: PromotionFilter,
+  promotionTypeLabel: (type: string) => string,
+  t: (key: string) => string,
+) {
+  const copy: Partial<Record<PromotionType, { title: string; description: string; actionLabel: string; fallbackHref: string }>> = {
+    coupon: {
+      title: "领券优惠专区",
+      description: "先领券再下单，优惠券会在可用商品和结算页集中展示。",
+      actionLabel: "去领券",
+      fallbackHref: "/coupons",
+    },
+    flash_sale: {
+      title: "限时秒杀专区",
+      description: "限时活动集中展示，库存和倒计时以活动详情为准。",
+      actionLabel: "马上抢",
+      fallbackHref: "/categories",
+    },
+    full_reduction: {
+      title: "满减优惠专区",
+      description: "满足金额后自动优惠，适合凑单查看可参与商品。",
+      actionLabel: "看满减",
+      fallbackHref: "/categories",
+    },
+    full_discount: {
+      title: "满折优惠专区",
+      description: "指定商品组合享折扣，切换商品时保留当前活动筛选。",
+      actionLabel: "看满折",
+      fallbackHref: "/categories",
+    },
+    limited_time_discount: {
+      title: "限时折扣专区",
+      description: "短时优惠集中展示，价格和库存以活动详情为准。",
+      actionLabel: "看折扣",
+      fallbackHref: "/categories",
+    },
+    member_price: {
+      title: "会员专享优惠",
+      description: "会员价和权益活动集中展示，登录后可查看可用资格。",
+      actionLabel: "看会员价",
+      fallbackHref: "/categories",
+    },
+  };
+
+  if (selectedType && copy[selectedType]) return copy[selectedType]!;
+  if (selectedType) {
+    const label = promotionTypeLabel(selectedType);
+    return {
+      title: `${label}专区`,
+      description: "当前活动类型会自动显示在这里，可切换上方入口查看其它优惠。",
+      actionLabel: "浏览商品",
+      fallbackHref: "/categories",
+    };
+  }
+  return {
+    title: t("promotion.headerTitle"),
+    description: t("promotion.headerSubtitle"),
+    actionLabel: "浏览活动",
+    fallbackHref: "/categories",
+  };
 }
 
-function filterScrollKey(type: PromotionFilter) {
-  return type || "all";
+function buildFilterHref(type: PromotionFilter) {
+  return type ? `${PROMOTIONS_BASE_PATH}?type=${type}` : PROMOTIONS_BASE_PATH;
 }
 
 function promotionScopeLabel(scopeType: string | null | undefined, t: (key: string) => string) {
@@ -389,13 +446,14 @@ function PromotionsFolio({
   const featured = list[0];
   const activeCount = list.filter((promotion) => promotion.runtime_status === "active").length;
   const typeCount = new Set(list.map((promotion) => promotion.type)).size;
+  const fallbackCopy = promotionFolioCopy(selectedType, promotionTypeLabel, t);
   const label = selectedType ? promotionTypeLabel(selectedType) : t("common.allPromotions");
-  const title = featured ? displayPromotionTitle(featured, promotionTypeLabel) : t("promotion.headerTitle");
-  const description = featured ? displayPromotionSubtitle(featured) : t("promotion.headerSubtitle");
+  const title = selectedType ? fallbackCopy.title : featured ? displayPromotionTitle(featured, promotionTypeLabel) : fallbackCopy.title;
+  const description = selectedType ? fallbackCopy.description : featured ? displayPromotionSubtitle(featured) : fallbackCopy.description;
   const actionHref = featured
     ? localizedPath(`${PROMOTIONS_BASE_PATH}/${featured.slug}`)
-    : localizedPath("/coupons");
-  const actionLabel = featured ? promotionActionLabel(featured.type) : t("promotion.goCoupons");
+    : localizedPath(fallbackCopy.fallbackHref);
+  const actionLabel = selectedType ? fallbackCopy.actionLabel : featured ? promotionActionLabel(featured.type) : fallbackCopy.actionLabel;
 
   return (
     <section className="sf-next-promo-folio" aria-label="活动概览">
@@ -520,11 +578,8 @@ export default function Promotions() {
     };
   }, []);
 
-  const activeFilterKey = filterScrollKey(selectedType);
-  const { containerRef: filtersRef, setItemRef: setFilterRef, scrollToKey: scrollFilterToKey } =
-    useHorizontalActiveScroll<HTMLElement, HTMLAnchorElement>(activeFilterKey, FILTERS.length);
   const showFullSkeleton = loading && list.length === 0;
-  const folioList = overviewList.length ? overviewList : list;
+  const folioList = selectedType ? list : overviewList.length ? overviewList : list;
 
   return (
     <div className="sf-next-page sf-next-promotions-page">
@@ -549,7 +604,6 @@ export default function Promotions() {
         ) : null}
 
         <nav
-          ref={filtersRef}
           className="sf-next-promo-filters no-scrollbar"
           aria-label={t("promotion.quickNav")}
         >
@@ -557,15 +611,12 @@ export default function Promotions() {
             const Icon = filter.icon;
             const active = selectedType === filter.type;
             const label = filter.type ? promotionTypeLabel(filter.type) : t("common.allPromotions");
-            const scrollKey = filterScrollKey(filter.type);
             return (
               <Link
                 key={filter.type || "all"}
-                ref={(node) => setFilterRef(scrollKey, node)}
                 to={localizedPath(buildFilterHref(filter.type))}
                 preventScrollReset
                 aria-current={active ? "page" : undefined}
-                onClick={() => scrollFilterToKey(scrollKey)}
                 className={cn(
                   "sf-next-promo-filter",
                   active && "is-active",

@@ -31,6 +31,11 @@ const FEATURE_ITEMS: FeatureItem[] = [
     label: "在线支付",
     desc: "作用：控制结账支付渠道、支付订单和后台支付管理接口；默认开启。关闭后用户不能创建在线支付，只能走站点允许的其他付款方式。风险：误关会直接影响下单收款；只在支付渠道、Webhook 和对账链路确认正常后开启。",
   },
+  {
+    key: "billplzEnabled",
+    label: "Billplz / FPX",
+    desc: "控制前台是否展示并允许使用 Billplz / FPX 渠道。需要先在「支付渠道」配置并启用对应渠道；关闭时即使渠道启用，客户端也不会展示该渠道。",
+  },
   { key: "pointsEnabled", label: "积分", desc: "关闭后隐藏积分入口，后端拒绝积分相关接口。" },
   { key: "couponEnabled", label: "优惠券", desc: "关闭后隐藏优惠券入口，后端拒绝领券和优惠券管理接口。" },
   { key: "reviewEnabled", label: "评价", desc: "关闭后隐藏评价入口，后端拒绝提交评价。" },
@@ -77,7 +82,25 @@ const FEATURE_ITEMS: FeatureItem[] = [
   {
     key: "restrictedProductComplianceEnabled",
     label: "受限商品合规（预留）",
-    desc: "作用：预留给受监管商品提示、noindex、年龄/合规限制；默认开启。影响前台展示、SEO 和部分合规提示。风险：误关可能让受限商品缺少提醒或搜索限制；修改前必须先和业务/法务确认。",
+    desc: "作用：控制前台受监管商品角标、详情合规提示和年龄确认；默认开启。受监管商品 noindex 由「站点设置 > 合规与访问限制」里的独立 SEO 开关控制。风险：误关可能让受限商品缺少提醒；修改前必须先和业务/法务确认。",
+    superAdminOnly: true,
+  },
+  {
+    key: "promotionEngineV2",
+    label: "营销引擎 V2（预留）",
+    desc: "后端预留开关：用于新营销引擎灰度。默认关闭，未验收前不建议开启。",
+    superAdminOnly: true,
+  },
+  {
+    key: "pricingEngineV2",
+    label: "价格引擎 V2（预留）",
+    desc: "后端预留开关：用于新价格计算链路灰度。默认关闭，涉及订单金额，未验收前不建议开启。",
+    superAdminOnly: true,
+  },
+  {
+    key: "inventoryLockV2",
+    label: "库存锁定 V2（预留）",
+    desc: "后端预留开关：用于新库存锁定链路灰度。默认关闭，涉及下单库存占用，未验收前不建议开启。",
     superAdminOnly: true,
   },
 ];

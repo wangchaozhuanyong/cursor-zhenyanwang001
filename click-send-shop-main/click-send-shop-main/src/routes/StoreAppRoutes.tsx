@@ -581,7 +581,7 @@ function renderStandalonePublicRoutes(capabilities: ReturnType<typeof useSiteCap
       <Route path={publicRoutePath("/checkout", localized)} element={<ProtectedRoute><CapabilityRoute enabled={capabilities.mallEnabled}><Checkout /></CapabilityRoute></ProtectedRoute>} />
       <Route path={publicRoutePath("/payment/result", localized)} element={<CapabilityRoute enabled={capabilities.mallEnabled}><PaymentResult /></CapabilityRoute>} />
       <Route path={publicRoutePath("/settings", localized)} element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-      <Route path={publicRoutePath("/member/benefits", localized)} element={<ProtectedRoute><MemberBenefits /></ProtectedRoute>} />
+      <Route path={publicRoutePath("/member/benefits", localized)} element={<ProtectedRoute><CapabilityRoute enabled={capabilities.memberLevelEnabled}><MemberBenefits /></CapabilityRoute></ProtectedRoute>} />
       <Route path={publicRoutePath("/member-benefits", localized)} element={<Navigate to={publicNavigatePath("/member/benefits", localized)} replace />} />
       <Route path={publicRoutePath("/orders", localized)} element={<ProtectedRoute><Orders /></ProtectedRoute>} />
       <Route path={publicRoutePath("/orders/:id/logistics", localized)} element={<ProtectedRoute><OrderLogistics /></ProtectedRoute>} />

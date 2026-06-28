@@ -1,8 +1,9 @@
 import { BadgePercent, Headphones, Home, LayoutGrid, ShoppingCart, User } from "lucide-react";
-import type { MouseEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, type MouseEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import DeferredStoreCartBadge from "@/components/store/DeferredStoreCartBadge";
-import StoreSearchField from "@/components/store/StoreSearchField";
+import { StoreSearchDrawer, StoreSearchLauncher } from "@/components/store/StoreSearchDrawer";
+import { buildStoreSearchCategoryOptions, type StoreSearchTagOption } from "@/components/store/storeSearchOptions";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { useSiteInfo, useSiteInfoLoaded } from "@/hooks/useSiteInfo";
 import { cn } from "@/lib/utils";
@@ -17,7 +18,12 @@ import { preloadStoreRoute } from "@/utils/storeRoutePreload";
 import { isStoreNavPathVisible } from "@/utils/storeNavVisibility";
 import StoreBrandLogo from "@/components/store/StoreBrandLogo";
 import StoreLanguageSwitcher from "@/components/store/StoreLanguageSwitcher";
+import * as productService from "@/services/productService";
+import { useProductStore } from "@/stores/useProductStore";
 import { stripPublicLocaleFromPathname, usePublicLocale } from "@/i18n/publicLocale";
+import { NEW_ARRIVAL_CATEGORY_PATH } from "@/constants/newArrivalNavigation";
+import { storefrontCategoryName } from "@/utils/storefrontCopySanitizer";
+import type { ProductTag } from "@/types/product";
 
 type NavItem = { path: string; label: string; icon: typeof Home; enabled?: boolean };
 
@@ -38,6 +44,10 @@ export default function StoreDesktopHeader({ className }: { className?: string }
   const { themeConfig } = useThemeRuntime();
   const { localizedPath, t } = usePublicLocale();
   const currentPathname = stripPublicLocaleFromPathname(location.pathname);
+  const categories = useProductStore((state) => state.categories);
+  const loadCategories = useProductStore((state) => state.loadCategories);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchTags, setSearchTags] = useState<ProductTag[]>([]);
   const siteName = siteInfo.siteName || STORE_COPY.brandName;
   const logoSrc = resolveSiteLogoUrl(siteInfo);
   const shouldReserveLogoSpace = Boolean(logoSrc) || !siteInfoLoaded;
@@ -69,10 +79,35 @@ export default function StoreDesktopHeader({ className }: { className?: string }
     return currentPathname === base || currentPathname.startsWith(`${base}/`);
   };
 
-  const openRoute = (path: string) => {
+  const openRoute = useCallback((path: string) => {
     preloadHeaderRoute(path);
     navigateWithStoreTransition(navigate, localizedPath(path));
+  }, [localizedPath, navigate]);
+
+  useEffect(() => {
+    if (!capabilities.mallEnabled) return;
+    void loadCategories();
+    productService.fetchProductTags(16).then(setSearchTags).catch(() => setSearchTags([]));
+  }, [capabilities.mallEnabled, loadCategories]);
+
+  const submitSearch = (value: string) => {
+    const keyword = value.trim();
+    openRoute(keyword ? `/search?keyword=${encodeURIComponent(keyword)}` : "/search");
   };
+
+  const searchCategoryOptions = useMemo(() => buildStoreSearchCategoryOptions({
+    categories,
+    activeCategoryId: currentPathname === "/categories" ? "all" : undefined,
+    onAll: () => openRoute("/categories"),
+    onNew: () => openRoute(NEW_ARRIVAL_CATEGORY_PATH),
+    onCategorySelect: (category) => openRoute(`/categories?cat=${encodeURIComponent(category.id)}`),
+  }), [categories, currentPathname, openRoute]);
+
+  const searchTagOptions = useMemo<StoreSearchTagOption[]>(() => searchTags.map((tag) => ({
+    id: tag.id,
+    label: storefrontCategoryName(tag.name),
+    onSelect: () => openRoute(`/categories?tag_id=${encodeURIComponent(tag.id)}`),
+  })), [openRoute, searchTags]);
 
   const handleRouteLink = (event: MouseEvent<HTMLAnchorElement>, path: string) => {
     if (!isPlainLeftClick(event)) return;
@@ -131,7 +166,11 @@ export default function StoreDesktopHeader({ className }: { className?: string }
 
         <div className="min-w-0 flex-1 max-w-xl">
           {capabilities.mallEnabled ? (
-            <StoreSearchField mode="navigate" placeholder={t("hero.searchPlaceholder")} onNavigate={() => openRoute("/search")} />
+            <StoreSearchLauncher
+              placeholder={t("hero.searchPlaceholder")}
+              className="sf-next-header-search-launcher"
+              onClick={() => setSearchOpen(true)}
+            />
           ) : (
             <div className="h-9" />
           )}
@@ -180,6 +219,16 @@ export default function StoreDesktopHeader({ className }: { className?: string }
           )}
         </div>
       </div>
+      {capabilities.mallEnabled ? (
+        <StoreSearchDrawer
+          open={searchOpen}
+          placeholder={t("hero.searchPlaceholder")}
+          categories={searchCategoryOptions}
+          tags={searchTagOptions}
+          onClose={() => setSearchOpen(false)}
+          onSubmit={submitSearch}
+        />
+      ) : null}
     </header>
   );
 }

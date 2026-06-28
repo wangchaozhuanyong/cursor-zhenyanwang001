@@ -681,7 +681,12 @@ const CouponCard = forwardRef<HTMLDivElement, CouponCardProps>(function CouponCa
         status={toValueVaultStatus(coupon.status)}
         title={coupon.title}
         value={getValueVaultValue(coupon)}
-        meta={`${coupon.minSpendText}，${coupon.scopeText}`}
+        meta={(
+          <span className="sf-next-value-vault__meta-lines">
+            <span>{coupon.minSpendText}</span>
+            <span>{coupon.scopeText}</span>
+          </span>
+        )}
         validText={coupon.expire}
         code={coupon.code}
         unavailableReason={unavailableReason}

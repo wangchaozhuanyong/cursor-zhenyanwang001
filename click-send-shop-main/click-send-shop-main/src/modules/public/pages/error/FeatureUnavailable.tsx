@@ -1,9 +1,12 @@
 import { Headphones, Home, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 
 export default function FeatureUnavailable() {
   const navigate = useNavigate();
+  const capabilities = useSiteCapabilities();
+  const supportPath = capabilities.customerServiceDownloadEnabled ? "/support-download?tab=support" : "/help";
 
   return (
     <div className="sf-next-page-shell sf-next-bottom-safe sf-next-page sf-next-route-page flex min-h-[60vh] items-center justify-center bg-[var(--theme-bg)] px-4 py-10 text-[var(--theme-text)]">
@@ -26,7 +29,7 @@ export default function FeatureUnavailable() {
           </UnifiedButton>
           <UnifiedButton
             type="button"
-            onClick={() => navigate("/support-download?tab=support")}
+            onClick={() => navigate(supportPath)}
             className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-[var(--theme-border)] bg-[var(--theme-bg)] px-5 text-sm font-semibold text-[var(--theme-text)] transition hover:bg-[var(--theme-surface)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-primary)] focus-visible:ring-offset-2"
           >
             <Headphones size={15} />

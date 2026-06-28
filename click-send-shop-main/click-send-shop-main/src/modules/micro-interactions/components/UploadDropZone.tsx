@@ -1,4 +1,4 @@
-import type { DragEvent, ReactNode } from "react";
+import type { CSSProperties, DragEvent, ReactNode } from "react";
 import { useCallback, useState } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -8,6 +8,7 @@ type UploadDropZoneProps = {
   children: ReactNode;
   className?: string;
   disabled?: boolean;
+  style?: CSSProperties;
   onFiles: (files: FileList) => void;
   as?: "label" | "motion.div";
 };
@@ -16,6 +17,7 @@ export function UploadDropZone({
   children,
   className,
   disabled,
+  style,
   onFiles,
   as = "label",
 }: UploadDropZoneProps) {
@@ -66,6 +68,7 @@ export function UploadDropZone({
     onDragLeave: handleDragLeave,
     onDrop: handleDrop,
     className: cn(className, activeClass, disabled && "pointer-events-none opacity-60"),
+    style,
     ...motionProps,
   };
 

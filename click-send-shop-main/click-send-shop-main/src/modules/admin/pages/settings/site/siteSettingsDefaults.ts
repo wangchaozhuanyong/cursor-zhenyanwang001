@@ -13,6 +13,8 @@ export const EMPTY_SITE_SETTINGS: SiteSettings = {
   facebookUrl: "",
   tiktokUrl: "",
   xhsUrl: "",
+  youtubeUrl: "",
+  otherSocialLinks: "",
   currency: "MYR",
   seoTitle: "",
   seoDescription: "",

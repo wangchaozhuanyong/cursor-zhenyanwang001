@@ -16,7 +16,7 @@ import { UnifiedButton } from "@/components/ui/UnifiedButton";
 type HomeOpsTab = "modules" | "display" | "nav" | "newArrival";
 
 const HOME_OPS_TABS: { id: HomeOpsTab; label: string; icon: React.ElementType; desc: string }[] = [
-  { id: "modules", label: "模块开关", icon: ToggleLeft, desc: "管理首页模块的启用、禁用和顺序" },
+  { id: "modules", label: "模块开关", icon: ToggleLeft, desc: "管理首页模块的启用和禁用" },
   { id: "display", label: "展示设置", icon: LayoutGrid, desc: "设置首页展示规则与数量" },
   { id: "nav", label: "快捷入口", icon: Grid3X3, desc: "维护图标、标题、跳转方式和排序" },
   { id: "newArrival", label: "新品主推设置", icon: Sparkles, desc: "配置新品专区的展示内容" },

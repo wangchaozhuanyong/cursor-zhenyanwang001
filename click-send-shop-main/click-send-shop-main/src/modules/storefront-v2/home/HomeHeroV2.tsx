@@ -16,6 +16,7 @@ import { useProductStore } from "@/stores/useProductStore";
 import * as productService from "@/services/productService";
 import type { ProductTag } from "@/types/product";
 import { storefrontCategoryName } from "@/utils/storefrontCopySanitizer";
+import { getBannerCtaText } from "@/utils/bannerCta";
 
 type HomeHeroV2Props = {
   siteName: string;
@@ -46,6 +47,7 @@ export default function HomeHeroV2({
   const [searchOpen, setSearchOpen] = useState(false);
   const [keyword, setKeyword] = useState("");
   const [searchTags, setSearchTags] = useState<ProductTag[]>([]);
+  const [activeBanner, setActiveBanner] = useState<Banner | null>(null);
   const categories = useProductStore((s) => s.categories);
   const loadCategories = useProductStore((s) => s.loadCategories);
   const { locale, localizedPath, t } = usePublicLocale();
@@ -53,11 +55,33 @@ export default function HomeHeroV2({
   const displayDescription = locale !== "zh" && containsCjk(description) ? t("hero.siteDescription") : description;
   const heroTitle = buildQuietHeroTitle(siteName, displaySlogan);
   const compactHeroDescription = normalizeHeroDescription(displayDescription, heroTitle);
+  const activeBannerTitle = activeBanner?.title?.trim() || "";
+  const activeBannerDescription = activeBanner?.description?.trim() || "";
+  const activeBannerLink = activeBanner?.link?.trim() || "";
+  const activeBannerCtaText = activeBanner ? getBannerCtaText(activeBanner) : "";
+  const displayHeroTitle = activeBannerTitle || heroTitle;
+  const displayHeroDescription = activeBannerDescription
+    ? normalizeBannerHeroDescription(activeBannerDescription)
+    : compactHeroDescription;
+  const displayHeroActionLabel = activeBannerCtaText || (activeBannerLink ? "查看详情" : "查看");
+
+  const handleHeroAction = () => {
+    if (activeBannerLink) {
+      onNavigate(activeBannerLink);
+      return;
+    }
+    onNavigate(localizedPath("/categories"));
+  };
 
   useEffect(() => {
     if (!searchOpen) return;
     void loadCategories();
   }, [loadCategories, searchOpen]);
+
+  useEffect(() => {
+    if (hasBanner) return;
+    setActiveBanner(null);
+  }, [hasBanner]);
 
   useEffect(() => {
     productService.fetchProductTags(16).then(setSearchTags).catch(() => setSearchTags([]));
@@ -113,14 +137,14 @@ export default function HomeHeroV2({
       <div className="sf-next-home-hero__feature">
         <div className="sf-next-home-hero__copy">
           <span className="sf-next-home-hero__kicker">{siteName}</span>
-          <h2>{heroTitle}</h2>
-          {compactHeroDescription ? <p>{compactHeroDescription}</p> : null}
+          <h2>{displayHeroTitle}</h2>
+          {displayHeroDescription ? <p>{displayHeroDescription}</p> : null}
           <UnifiedButton
             type="button"
             className="sf-next-home-hero__feature-action"
-            onClick={() => onNavigate(localizedPath("/categories"))}
+            onClick={handleHeroAction}
           >
-            查看
+            {displayHeroActionLabel}
           </UnifiedButton>
         </div>
 
@@ -132,7 +156,7 @@ export default function HomeHeroV2({
             <span className="sf-next-home-hero__art-base" />
           </div>
           {hasBanner ? (
-            <div className="sf-next-home-hero__banner-texture" aria-hidden="true">
+            <div className="sf-next-home-hero__banner-texture">
               <BannerCarousel
                 banners={banners}
                 loading={bannersLoading}
@@ -140,6 +164,7 @@ export default function HomeHeroV2({
                 autoRotateMs={autoRotateMs}
                 trackingModule="home_v2_banner"
                 showCopyLayer={false}
+                onActiveBannerChange={setActiveBanner}
               />
             </div>
           ) : (
@@ -183,6 +208,16 @@ function normalizeHeroDescription(description: string, title: string) {
   if (cleanedTitle && cleaned.includes(cleanedTitle) && cleaned.length <= cleanedTitle.length + 8) return "";
   if (cleaned.length > 34) return "";
   return cleaned;
+}
+
+function normalizeBannerHeroDescription(description: string) {
+  const cleaned = description
+    .split(/\r?\n|[|｜]/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .join(" ");
+  if (cleaned.length <= 56) return cleaned;
+  return `${cleaned.slice(0, 55)}…`;
 }
 
 function HeroChrome({

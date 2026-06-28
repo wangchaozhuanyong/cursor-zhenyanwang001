@@ -27,6 +27,18 @@ function getMalaysiaProviderAdapter(provider) {
     : malaysiaLocalProvider;
 }
 
+function isBillplzProvider(provider) {
+  return provider === 'billplz' || provider === 'fpx';
+}
+
+async function isBillplzCapabilityEnabled() {
+  try {
+    return await getSiteCapabilitiesApi().isCapabilityEnabled('billplzEnabled');
+  } catch {
+    return false;
+  }
+}
+
 function getMalaysiaWebhookSecret(provider) {
   if (provider === 'billplz' || provider === 'fpx') {
     return (
@@ -310,15 +322,10 @@ async function listChannelsForUser(countryCode, currency) {
   const cur = (currency || 'MYR').toUpperCase();
   const rows = await payRepo.selectChannelsByCountryCurrency(payDb, cc, cur);
   const stripeReady = !!(process.env.STRIPE_SECRET_KEY || '').trim();
-  let billplzEnabled = false;
-  try {
-    billplzEnabled = await getSiteCapabilitiesApi().isCapabilityEnabled('billplzEnabled');
-  } catch {
-    billplzEnabled = false;
-  }
+  const billplzEnabled = await isBillplzCapabilityEnabled();
   const filtered = rows.filter((r) => {
     if (r.code === 'stripe_checkout' && r.provider === 'stripe' && !stripeReady) return false;
-    if ((r.provider === 'billplz' || r.provider === 'fpx') && !billplzEnabled) return false;
+    if (isBillplzProvider(r.provider) && !billplzEnabled) return false;
     return true;
   });
   return filtered.map((r) => ({
@@ -630,6 +637,10 @@ async function createIntent(userId, body) {
 
   if (channelProvider === 'internal' && channel.code === 'reward_wallet') {
     throw new ValidationError('返现钱包请使用 POST /orders/:id/pay，channel=reward_wallet');
+  }
+
+  if (isBillplzProvider(channelProvider) && !(await isBillplzCapabilityEnabled())) {
+    throw new ValidationError('本站未启用 Billplz / FPX');
   }
 
   if (channelProvider === 'stripe') {

@@ -35,6 +35,7 @@ const CLIENT_TITLE_MODULE_KEYS = new Set<HomeModuleKey>([
   "hot_sales",
   "recommend",
   "guest_recommend",
+  "invite_entry",
 ]);
 
 type Props = {

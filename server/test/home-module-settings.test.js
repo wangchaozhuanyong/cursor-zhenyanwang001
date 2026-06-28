@@ -127,6 +127,15 @@ test('module key registry exposes only one coupon storefront switch', () => {
   assert.deepEqual(couponKeys, ['coupon_center']);
 });
 
+test('parseSettings aligns default module visibility with storefront defaults', () => {
+  const { module: homeModuleSettings } = loadHomeModuleSettingsWithMocks();
+  const settings = homeModuleSettings.parseSettings(null);
+
+  assert.equal(settings.modules.invite_entry, true);
+  assert.equal(settings.modules.full_reduction_notice, false);
+  assert.equal(settings.modules.promotion_banner, false);
+});
+
 test('saveHomeModuleSettings persists and clears custom titles', async () => {
   const { module: homeModuleSettings, getStored, getHomeInvalidated, getCatalogCleared } =
     loadHomeModuleSettingsWithMocks(JSON.stringify({

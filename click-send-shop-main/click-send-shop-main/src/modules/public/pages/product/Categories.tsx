@@ -4,7 +4,7 @@ import { Search, X } from "lucide-react";
 import { useProductStore } from "@/stores/useProductStore";
 import { STORE_COPY } from "@/constants/storeCopy";
 import { cn } from "@/lib/utils";
-import { StoreSearchDrawer } from "@/components/store/StoreSearchDrawer";
+import { StoreSearchDrawer, StoreSearchLauncher } from "@/components/store/StoreSearchDrawer";
 import type { StoreSearchCategoryOption, StoreSearchTagOption } from "@/components/store/storeSearchOptions";
 import ProductFilterDrawer from "@/components/ProductFilterDrawer";
 import ProductSortBar from "@/components/ProductSortBar";
@@ -461,15 +461,12 @@ export default function Categories() {
       />
       <main className="sf-next-category-shell mx-auto w-full max-w-screen-xl">
         <section className="sf-next-category-toolbar" aria-label="分类搜索和筛选">
-          <UnifiedButton
-            type="button"
+          <StoreSearchLauncher
+            value={submittedQuery}
+            placeholder={STORE_COPY.searchPlaceholder}
             className="sf-next-category-search-trigger"
             onClick={() => setSearchPanelOpen(true)}
-            aria-label="打开商品搜索"
-          >
-            <Search size={19} aria-hidden />
-            <span>{submittedQuery || STORE_COPY.searchPlaceholder}</span>
-          </UnifiedButton>
+          />
           <div className="sf-next-category-filter-slot">
             {filterDrawer}
           </div>

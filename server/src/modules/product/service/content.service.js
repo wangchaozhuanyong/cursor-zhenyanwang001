@@ -15,7 +15,7 @@ function requireAdminApi(name) {
  * 公开站点信息字段（供前端无鉴权读取）
  *  - 基础品牌：siteName / siteDescription / siteSlogan / logoUrl / faviconUrl
  *  - 联系方式：contactPhone / contactEmail / address（IM 客服见 supportDownloadConfig）
- *  - 社交：instagramUrl / facebookUrl / tiktokUrl / xhsUrl
+ *  - 社交：instagramUrl / facebookUrl / tiktokUrl / xhsUrl / youtubeUrl / otherSocialLinks
  *  - 业务：currency / sstEnabled / sstRatePercent / sstLabel / sstCustomerNote
  *  - SEO：seoTitle / seoDescription / seoKeywords / ogImageUrl
  *  - 页脚：footerCompanyName / footerCopyright / footerIcpNo / footerPolicyUrl / footerTermsUrl
@@ -30,7 +30,7 @@ const PUBLIC_SITE_KEYS = [
   // 联系方式
   'contactPhone', 'contactEmail', 'address',
   // 社交
-  'instagramUrl', 'facebookUrl', 'tiktokUrl', 'xhsUrl',
+  'instagramUrl', 'facebookUrl', 'tiktokUrl', 'xhsUrl', 'youtubeUrl', 'otherSocialLinks',
   // 业务
   'currency',
   'orderPaymentTimeoutEnabled',

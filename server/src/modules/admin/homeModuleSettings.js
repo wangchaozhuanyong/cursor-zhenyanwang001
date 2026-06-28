@@ -14,6 +14,7 @@ const MODULE_KEYS = [
   'hot_sales',
   'recommend',
   'guest_recommend',
+  'invite_entry',
   'flash_sale_section',
   'coupon_center',
   'full_reduction_notice',
@@ -22,6 +23,8 @@ const MODULE_KEYS = [
 
 const DEFAULT_MODULES = {
   ...Object.fromEntries(MODULE_KEYS.map((k) => [k, true])),
+  full_reduction_notice: false,
+  promotion_banner: false,
 };
 
 const DEFAULT_SETTINGS = {

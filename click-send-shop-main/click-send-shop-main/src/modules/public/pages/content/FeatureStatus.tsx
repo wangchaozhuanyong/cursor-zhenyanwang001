@@ -16,6 +16,7 @@ const capabilityLabels = [
   { key: "mallEnabled", group: "shopping", label: "商城购物", on: "商品浏览、购物车和订单链路可用", off: "商城购物暂时关闭" },
   { key: "serviceEnabled", group: "shopping", label: "服务入口", on: "签证、装修、留学等服务入口可展示", off: "服务入口暂时关闭" },
   { key: "onlinePaymentEnabled", group: "shopping", label: "在线支付", on: "可展示在线支付入口", off: "在线支付暂不可用" },
+  { key: "billplzEnabled", group: "shopping", label: "Billplz / FPX", on: "FPX 在线转账渠道可展示", off: "FPX 在线转账渠道关闭" },
   { key: "inventoryEnabled", group: "shopping", label: "库存状态", on: "库存信息正常展示", off: "库存维护中，提交前会再次确认" },
   { key: "shippingEnabled", group: "shopping", label: "配送规则", on: "结算页可自动计算运费", off: "配送规则维护中" },
   { key: "couponEnabled", group: "marketing", label: "优惠券", on: "优惠券中心和结算优惠可展示", off: "优惠券入口会降级或隐藏" },

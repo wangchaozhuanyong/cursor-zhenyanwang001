@@ -96,6 +96,15 @@ describe('merged OG image site setting', () => {
     assert.equal(state.requestedKeys.includes('defaultOgImageUrl'), true);
   });
 
+  test('public site info requests social fields used by organization structured data', async () => {
+    const { service, state } = loadContentServiceWithRows([]);
+
+    await service.getPublicSiteInfo();
+
+    assert.equal(state.requestedKeys.includes('youtubeUrl'), true);
+    assert.equal(state.requestedKeys.includes('otherSocialLinks'), true);
+  });
+
   test('admin settings read prefers ogImageUrl and hides defaultOgImageUrl', async () => {
     const { service } = loadAdminSiteSettingsService({
       rows: [

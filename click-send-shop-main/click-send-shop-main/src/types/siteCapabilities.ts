@@ -15,6 +15,10 @@ export interface SiteCapabilities {
   storefrontMultilingualEnabled: boolean;
   restrictedProductComplianceEnabled: boolean;
   trafficAnalyticsEnabled: boolean;
+  billplzEnabled: boolean;
+  promotionEngineV2: boolean;
+  pricingEngineV2: boolean;
+  inventoryLockV2: boolean;
   /** 开启后，导出/下载等操作需二次确认 */
   downloadConfirmEnabled: boolean;
 }
@@ -36,6 +40,10 @@ export const DEFAULT_SITE_CAPABILITIES: SiteCapabilities = {
   storefrontMultilingualEnabled: false,
   restrictedProductComplianceEnabled: true,
   trafficAnalyticsEnabled: true,
+  billplzEnabled: false,
+  promotionEngineV2: false,
+  pricingEngineV2: false,
+  inventoryLockV2: false,
   downloadConfirmEnabled: true,
 };
 

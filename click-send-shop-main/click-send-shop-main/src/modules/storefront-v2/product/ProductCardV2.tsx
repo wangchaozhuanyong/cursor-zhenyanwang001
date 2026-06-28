@@ -63,12 +63,14 @@ export default function ProductCardV2({
         </div>
 
         <div className="sf-next-product-card__info flex min-h-[5.75rem] min-w-0 flex-col sm:min-h-24">
-          <h3 className={cn(t.text.productTitle, "sf-next-product-card__title")}>{vm.name}</h3>
-          <BadgeRow badges={vm.badges} subtle />
-          <DecisionMetaRow items={vm.decisionTexts} />
-          <ActivityProgressBar percent={vm.activityProgressPercent} text={vm.activityProgressText} />
+          <div className="sf-next-product-card__copy min-w-0">
+            <h3 className={cn(t.text.productTitle, "sf-next-product-card__title")}>{vm.name}</h3>
+            <BadgeRow badges={vm.badges} subtle />
+            <DecisionMetaRow items={vm.decisionTexts} />
+            <ActivityProgressBar percent={vm.activityProgressPercent} text={vm.activityProgressText} />
+          </div>
           {showPrice ? (
-            <div className="mt-auto flex items-end justify-between gap-2 pt-2">
+            <div className="sf-next-product-card__buy mt-auto flex items-end justify-between gap-2 pt-2">
               <StorefrontPrice amount={vm.priceText} originalAmount={vm.originalPriceText} />
               <span className={cn(
                 "sf-next-product-card__cart sf-next-product-card__cart--list shrink-0",

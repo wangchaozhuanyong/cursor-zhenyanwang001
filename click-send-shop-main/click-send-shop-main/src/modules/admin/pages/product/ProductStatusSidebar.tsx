@@ -2,6 +2,7 @@ import type { Dispatch, SetStateAction } from "react";
 import AdminFieldHint, { AdminLabelWithHint } from "@/components/admin/AdminFieldHint";
 import { Tx } from "@/components/admin/AdminText";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import { THEME_PRODUCT_MEDIA_ASPECT_STYLE } from "@/constants/productMediaAspect";
 import { useAdminDisplayLabel } from "@/hooks/useAdminDisplayLabel";
 import { LoadingButton } from "@/modules/micro-interactions";
 import type { ProductFormPayloadSlice } from "@/modules/admin/pages/product/productFormTypes";
@@ -174,15 +175,15 @@ export default function ProductStatusSidebar({
         <h3 className="mb-3 text-sm font-semibold text-foreground"><Tx>预览</Tx></h3>
         <div className="rounded-lg border border-border p-3">
           {form.cover_image ? (
-            <div className="mb-3 aspect-[4/3] w-full overflow-hidden rounded-md border border-border bg-secondary/50">
+            <div className="mb-3 w-full overflow-hidden rounded-md border border-border bg-secondary/50" style={THEME_PRODUCT_MEDIA_ASPECT_STYLE}>
               <img
                 src={form.cover_image}
                 alt={form.cover_image_alt || `${form.name || "商品"} 卡片预览图`}
-                className="h-full w-full object-contain object-center"
+                className="h-full w-full object-center [object-fit:var(--theme-image-fit,cover)]"
               />
             </div>
           ) : (
-            <div className="mb-3 aspect-[4/3] rounded-md border border-dashed border-border bg-secondary/50" />
+            <div className="mb-3 rounded-md border border-dashed border-border bg-secondary/50" style={THEME_PRODUCT_MEDIA_ASPECT_STYLE} />
           )}
           <div className="mb-1 flex flex-wrap gap-1">
             {form.tag_ids.length > 0 &&

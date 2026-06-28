@@ -12,6 +12,7 @@ import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useHomeBanners } from "@/hooks/useHomeBanners";
 import { useHomeModuleSettings } from "@/hooks/useHomeModuleSettings";
+import { useLoyaltyVisibility } from "@/hooks/useLoyaltyVisibility";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
@@ -37,6 +38,7 @@ import { usePublicLocale } from "@/i18n/publicLocale";
 import type { FooterNavItem, HomeNavItem } from "@/types/content";
 import { filterVisibleHomeNavItems } from "@/utils/homeNavCapabilities";
 import { normalizeHomeNavText, openHomeNavItemTarget } from "@/utils/homeNavTarget";
+import { isLoyaltyFeatureEnabled } from "@/utils/loyaltyFeatureVisibility";
 import { useClientDesignStyle } from "../design/useClientDesignStyle";
 import type { StorefrontCampaignVm } from "../campaign/campaignTypes";
 import {
@@ -63,6 +65,7 @@ export default function StoreHomeV2() {
   const { localizedPath } = usePublicLocale();
   const clientStyle = useClientDesignStyle();
   const { settings: homeModules, navItems, ready: homeModulesReady } = useHomeModuleSettings();
+  const { config: loyaltyConfig, loading: loyaltyLoading } = useLoyaltyVisibility();
   const { banners, loading: bannersLoading } = useHomeBanners();
 
   const hotProducts = useProductStore((state) => state.hotProducts);
@@ -153,7 +156,19 @@ export default function StoreHomeV2() {
     return buildHomeCampaignEntrances(types);
   }, [audience, homeModules, homeModulesReady]);
 
-  const newArrivalProducts = useMemo(() => uniqueProducts(newProducts, 8), [newProducts]);
+  const newArrivalDisplayCount = useMemo(
+    () => clampNewArrivalDisplayCount(siteInfo.newArrivalDisplayCount),
+    [siteInfo.newArrivalDisplayCount],
+  );
+  const newArrivalTitle = useMemo(
+    () => siteInfo.newArrivalSectionTitle?.trim() || getHomeModuleTitle(homeModules, "new_arrivals", "新品上市"),
+    [homeModules, siteInfo.newArrivalSectionTitle],
+  );
+  const newArrivalSubtitle = siteInfo.newArrivalSectionSubtitle?.trim() || undefined;
+  const newArrivalProducts = useMemo(
+    () => uniqueProducts(newProducts, newArrivalDisplayCount),
+    [newArrivalDisplayCount, newProducts],
+  );
   const hotHomeProducts = useMemo(() => uniqueProducts(hotProducts, homeModules.hotBatchSize * 2), [homeModules.hotBatchSize, hotProducts]);
   const guestProducts = useMemo(
     () => uniqueProducts([...hotProducts, ...recommendedProducts], homeModules.guestRecommendMax),
@@ -228,6 +243,9 @@ export default function StoreHomeV2() {
   const showHotSales = isHomeModuleEnabled(homeModules, "hot_sales", audience);
   const showRecommend = isAuthenticated && isHomeModuleEnabled(homeModules, "recommend", "member");
   const showGuestRecommend = !isAuthenticated && isHomeModuleEnabled(homeModules, "guest_recommend", "guest");
+  const showInviteEntry = isHomeModuleEnabled(homeModules, "invite_entry", audience)
+    && !loyaltyLoading
+    && isLoyaltyFeatureEnabled("referral", siteCapabilities, loyaltyConfig);
   return (
     <div
       className={cn(
@@ -291,16 +309,17 @@ export default function StoreHomeV2() {
 
         {siteCapabilities.mallEnabled && showNewArrivals ? (
           <HomeProductSectionV2
-            title={getHomeModuleTitle(homeModules, "new_arrivals", "新品上市")}
+            title={newArrivalTitle}
+            subtitle={newArrivalSubtitle}
             products={newArrivalProducts}
             loading={homeLoading && newArrivalProducts.length === 0}
-            skeletonCount={8}
+            skeletonCount={newArrivalDisplayCount}
             actionLabel="查看新品"
             actionPath={NEW_ARRIVAL_CATEGORY_PATH}
             emptyText="新品正在整理中，可以先看分类。"
             emptyActionLabel="去分类"
             showPrice={siteInfo.newArrivalShowPrice !== "0"}
-            previewLimit={4}
+            previewLimit={newArrivalDisplayCount}
             onNavigate={navigatePath}
           />
         ) : null}
@@ -314,15 +333,18 @@ export default function StoreHomeV2() {
             actionLabel="全部商品"
             emptyText="精选商品暂时没有更新，可以先进入分类浏览。"
             emptyActionLabel="浏览分类"
-            previewLimit={4}
+            previewLimit={homeModules.guestRecommendMax}
             onNavigate={navigatePath}
           />
         ) : null}
 
-        <HomeInviteEntry
-          authenticated={isAuthenticated}
-          onNavigate={navigatePath}
-        />
+        {showInviteEntry ? (
+          <HomeInviteEntry
+            authenticated={isAuthenticated}
+            title={getHomeModuleTitle(homeModules, "invite_entry", "邀请好友")}
+            onNavigate={navigatePath}
+          />
+        ) : null}
 
         {siteCapabilities.mallEnabled && showHotSales ? (
           <HomeProductSectionV2
@@ -334,7 +356,7 @@ export default function StoreHomeV2() {
             actionPath="/categories?sort=sales_desc"
             emptyText="热销榜暂时没有数据，可以先看全部商品。"
             emptyActionLabel="全部商品"
-            previewLimit={4}
+            previewLimit={homeModules.hotBatchSize}
             onNavigate={navigatePath}
           />
         ) : null}
@@ -348,7 +370,7 @@ export default function StoreHomeV2() {
             actionLabel="更多推荐"
             emptyText="还没有足够的浏览记录生成推荐，可以先看看热销商品。"
             emptyActionLabel="看热销"
-            previewLimit={4}
+            previewLimit={homeModules.recBatchSize}
             onNavigate={navigatePath}
           />
         ) : null}
@@ -459,9 +481,11 @@ function HomeQuickEntryPanel({
 
 function HomeInviteEntry({
   authenticated,
+  title,
   onNavigate,
 }: {
   authenticated: boolean;
+  title: string;
   onNavigate: (path: string) => void;
 }) {
   return (
@@ -470,7 +494,7 @@ function HomeInviteEntry({
         <Users size={22} />
       </div>
       <div className="sf-next-home-invite__copy">
-        <h2>邀请好友</h2>
+        <h2>{title}</h2>
         <p>{authenticated ? "分享邀请码，查看奖励与邀请记录" : "登录后生成专属邀请卡"}</p>
       </div>
       <UnifiedButton
@@ -482,6 +506,12 @@ function HomeInviteEntry({
       </UnifiedButton>
     </section>
   );
+}
+
+function clampNewArrivalDisplayCount(value?: string) {
+  const count = Number.parseInt(String(value ?? ""), 10);
+  if (!Number.isFinite(count)) return 8;
+  return Math.min(16, Math.max(1, count));
 }
 
 function isCampaignEnabled(

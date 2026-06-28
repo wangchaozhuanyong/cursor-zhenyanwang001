@@ -174,6 +174,8 @@ export interface SiteSettings {
   facebookUrl?: string;
   tiktokUrl?: string;
   xhsUrl?: string;
+  youtubeUrl?: string;
+  otherSocialLinks?: string;
 
   /* 业务 */
   currency?: string;

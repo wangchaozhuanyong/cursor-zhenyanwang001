@@ -62,14 +62,19 @@ export default function ProductMediaSection({
             <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>封面图</Tx></label>
             <UploadDropZone
               disabled={uploadingCover}
-              className={`relative mx-auto flex h-32 w-32 items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-border sm:mx-0 ${uploadingCover ? "cursor-not-allowed opacity-80" : "cursor-pointer hover:border-[color-mix(in_srgb,var(--theme-primary)_50%,var(--theme-border))]"}`}
+              className={`relative mx-auto flex w-32 items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-border sm:mx-0 ${uploadingCover ? "cursor-not-allowed opacity-80" : "cursor-pointer hover:border-[color-mix(in_srgb,var(--theme-primary)_50%,var(--theme-border))]"}`}
+              style={THEME_PRODUCT_MEDIA_ASPECT_STYLE}
               onFiles={(files) => {
                 const file = files[0];
                 if (file) void uploadImageFile(file, "cover");
               }}
             >
               {form.cover_image ? (
-                <img src={form.cover_image} alt={form.cover_image_alt || `${form.name || "商品"} 封面图`} className="h-full w-full object-cover" />
+                <img
+                  src={form.cover_image}
+                  alt={form.cover_image_alt || `${form.name || "商品"} 封面图`}
+                  className="h-full w-full [object-fit:var(--theme-image-fit,cover)]"
+                />
               ) : (
                 <div className="text-center">
                   <Upload size={22} className="mx-auto text-muted-foreground" />
@@ -105,13 +110,17 @@ export default function ProductMediaSection({
             <label className="mb-1 block text-xs font-medium text-muted-foreground"><Tx>轮播图（最多 6 张）</Tx></label>
             <div className="flex flex-wrap gap-2">
               {form.images.map((img, i) => (
-                <div key={i} className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg border border-border">
-                  <img src={img} alt={form.image_alts[i] || `${form.name || "商品"} 详情图 ${i + 1}`} className="h-full w-full object-cover" />
+                <div key={i} className="relative w-20 shrink-0 overflow-hidden rounded-lg border border-border" style={THEME_PRODUCT_MEDIA_ASPECT_STYLE}>
+                  <img
+                    src={img}
+                    alt={form.image_alts[i] || `${form.name || "商品"} 详情图 ${i + 1}`}
+                    className="h-full w-full [object-fit:var(--theme-image-fit,cover)]"
+                  />
                   <UnifiedButton onClick={() => setForm((f) => removeProductGalleryImage(f, i))} className={`absolute top-0 right-0 rounded-bl px-1 text-xs ${THEME_BTN_DANGER_SOLID}`}>×</UnifiedButton>
                 </div>
               ))}
               {uploadingGallery && (
-                <div className="flex h-20 w-20 shrink-0 flex-col items-center justify-center rounded-lg border border-border bg-secondary/60 text-xs text-muted-foreground">
+                <div className="flex w-20 shrink-0 flex-col items-center justify-center rounded-lg border border-border bg-secondary/60 text-xs text-muted-foreground" style={THEME_PRODUCT_MEDIA_ASPECT_STYLE}>
                   <Loader2 className="h-4 w-4 animate-spin" />
                   <span className="mt-1"><Tx>上传中...</Tx></span>
                   {uploadProgress !== null ? <span className="text-[10px]">{uploadProgress}%</span> : null}
@@ -120,7 +129,8 @@ export default function ProductMediaSection({
               {form.images.length < 6 && (
                 <UploadDropZone
                   disabled={uploadingGallery}
-                  className={`flex h-20 w-20 shrink-0 items-center justify-center rounded-lg border-2 border-dashed border-border ${uploadingGallery ? "cursor-not-allowed opacity-60" : "cursor-pointer hover:border-[color-mix(in_srgb,var(--theme-primary)_50%,var(--theme-border))]"}`}
+                  className={`flex w-20 shrink-0 items-center justify-center rounded-lg border-2 border-dashed border-border ${uploadingGallery ? "cursor-not-allowed opacity-60" : "cursor-pointer hover:border-[color-mix(in_srgb,var(--theme-primary)_50%,var(--theme-border))]"}`}
+                  style={THEME_PRODUCT_MEDIA_ASPECT_STYLE}
                   onFiles={(files) => {
                     const file = files[0];
                     if (file) void uploadImageFile(file, "gallery");
@@ -135,7 +145,12 @@ export default function ProductMediaSection({
               <div className="mt-3 space-y-2">
                 {form.images.map((img, i) => (
                   <div key={`${img}-${i}`} className="grid grid-cols-[3rem_minmax(0,1fr)] items-center gap-2">
-                    <img src={img} alt={form.image_alts[i] || defaultGalleryImageAlt(form.name, i)} className="h-12 w-12 rounded-md object-cover" />
+                    <img
+                      src={img}
+                      alt={form.image_alts[i] || defaultGalleryImageAlt(form.name, i)}
+                      className="w-12 rounded-md [object-fit:var(--theme-image-fit,cover)]"
+                      style={THEME_PRODUCT_MEDIA_ASPECT_STYLE}
+                    />
                     <input
                       value={form.image_alts[i] || ""}
                       onChange={(e) => setForm((f) => updateProductGalleryImageAlt(f, i, e.target.value))}

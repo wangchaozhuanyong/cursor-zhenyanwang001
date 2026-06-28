@@ -84,6 +84,15 @@ export const SITE_SETTINGS_SECTIONS: SiteSettingsSectionDef[] = [
       { key: "facebookUrl", label: "Facebook", placeholder: "https://facebook.com/..." },
       { key: "tiktokUrl", label: "TikTok", placeholder: "https://tiktok.com/@..." },
       { key: "xhsUrl", label: "小红书", placeholder: "https://xiaohongshu.com/..." },
+      { key: "youtubeUrl", label: "YouTube", placeholder: "https://youtube.com/..." },
+      {
+        key: "otherSocialLinks",
+        label: "其它社交链接",
+        type: "textarea",
+        rows: 2,
+        placeholder: "[\"https://example.com/profile\"]",
+        hint: "JSON 数组格式；会进入前台 Organization 结构化数据 sameAs。",
+      },
     ],
   },
   {
@@ -233,7 +242,7 @@ export const SECTION_HELP: Record<
     tips: ["即时客服请在「页面装修 → 客服配置」配置"],
   },
   social: {
-    impacts: ["页脚社交图标", "关于我们社交链接"],
+    impacts: ["页脚社交图标", "关于我们社交链接", "Organization 结构化数据 sameAs"],
   },
   orders: {
     impacts: ["订单状态", "自动确认收货", "积分结算", "未支付自动取消"],

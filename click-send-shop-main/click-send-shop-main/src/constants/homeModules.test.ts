@@ -38,6 +38,16 @@ describe("home module title settings", () => {
     expect(couponDefinitions[0].label).toBe("优惠券模块");
   });
 
+  it("keeps invite entry admin-controlled and aligns campaign defaults with backend", () => {
+    const settings = mergeHomeModuleSettings();
+    const inviteDefinition = HOME_MODULE_DEFINITIONS.find((def) => def.key === "invite_entry");
+
+    expect(inviteDefinition?.audiences).toEqual(["member", "guest"]);
+    expect(settings.modules.invite_entry).toBe(true);
+    expect(settings.modules.full_reduction_notice).toBe(false);
+    expect(settings.modules.promotion_banner).toBe(false);
+  });
+
   it("normalizes banner autoplay seconds", () => {
     expect(mergeHomeModuleSettings({ bannerAutoplaySeconds: 2 }).bannerAutoplaySeconds).toBe(5);
     expect(mergeHomeModuleSettings({ bannerAutoplaySeconds: 7 }).bannerAutoplaySeconds).toBe(7);

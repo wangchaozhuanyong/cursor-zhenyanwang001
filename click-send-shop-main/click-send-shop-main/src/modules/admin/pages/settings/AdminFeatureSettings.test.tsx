@@ -89,6 +89,12 @@ describe("AdminFeatureSettings storefront language controls", () => {
     return checkbox;
   }
 
+  function getBillplzCheckbox() {
+    const checkbox = container?.querySelector<HTMLInputElement>('input[aria-label="Billplz / FPX"]');
+    if (!checkbox) throw new Error("Billplz / FPX checkbox not found");
+    return checkbox;
+  }
+
   afterEach(() => {
     if (root) {
       act(() => {
@@ -135,5 +141,41 @@ describe("AdminFeatureSettings storefront language controls", () => {
     const payload = settingsMocks.updateSiteCapabilities.mock.calls[0]?.[0] as SiteCapabilities;
     expect(payload.storefrontMultilingualEnabled).toBe(true);
     expect(payload.languageGateEnabled).toBe(false);
+  });
+
+  it("exposes Billplz / FPX as an admin-controlled storefront payment capability", async () => {
+    await renderPage();
+
+    expect(container).toHaveTextContent("Billplz / FPX");
+    expect(container).toHaveTextContent("客户端也不会展示该渠道");
+    expect(getBillplzCheckbox().checked).toBe(false);
+  });
+
+  it("preserves backend reserved capability keys in the save payload", async () => {
+    await renderPage({
+      ...DEFAULT_SITE_CAPABILITIES,
+      promotionEngineV2: true,
+      pricingEngineV2: true,
+      inventoryLockV2: true,
+    });
+
+    const checkbox = getBillplzCheckbox();
+    await act(async () => {
+      checkbox.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+
+    const saveButton = Array.from(container?.querySelectorAll("button") ?? [])
+      .find((button) => button.textContent?.includes("保存"));
+    await act(async () => {
+      saveButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+    await act(async () => {
+      await new Promise((resolve) => window.setTimeout(resolve, 0));
+    });
+
+    const payload = settingsMocks.updateSiteCapabilities.mock.calls[0]?.[0] as SiteCapabilities;
+    expect(payload.promotionEngineV2).toBe(true);
+    expect(payload.pricingEngineV2).toBe(true);
+    expect(payload.inventoryLockV2).toBe(true);
   });
 });

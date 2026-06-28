@@ -1,7 +1,9 @@
 import { Bell } from "lucide-react";
-import { lazy, Suspense, useState, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import StoreSearchField from "@/components/store/StoreSearchField";
+import { StoreSearchDrawer, StoreSearchLauncher } from "@/components/store/StoreSearchDrawer";
+import { buildStoreSearchCategoryOptions, type StoreSearchTagOption } from "@/components/store/storeSearchOptions";
 import { useSiteInfo, useSiteInfoLoaded } from "@/hooks/useSiteInfo";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { getStoreHeaderSurfaceClass } from "@/utils/storeHeaderSurface";
@@ -11,13 +13,19 @@ import { cn } from "@/lib/utils";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { isLoggedIn } from "@/utils/token";
 import StoreBrandLogo from "@/components/store/StoreBrandLogo";
+import * as productService from "@/services/productService";
+import { useProductStore } from "@/stores/useProductStore";
+import { NEW_ARRIVAL_CATEGORY_PATH } from "@/constants/newArrivalNavigation";
+import { appendThemePreviewParams } from "@/utils/themePreviewParams";
+import { storefrontCategoryName } from "@/utils/storefrontCopySanitizer";
+import type { ProductTag } from "@/types/product";
 
 const StoreNotificationAction = lazy(() => import("@/components/store/StoreNotificationAction"));
 
 export type StoreTabHeaderSearchMode = "navigate" | "filter" | "none";
 
 type StoreTabHeaderProps = {
-  /** navigate：点击/聚焦跳转搜索页；filter：页内筛选；none：无搜索（游客首页） */
+  /** navigate：点击打开统一搜索抽屉；filter：页内筛选；none：无搜索（游客首页） */
   searchMode?: StoreTabHeaderSearchMode;
   searchValue?: string;
   onSearchChange?: (value: string) => void;
@@ -50,6 +58,10 @@ export default function StoreTabHeader({
   const siteInfoLoaded = useSiteInfoLoaded();
   const { themeConfig } = useThemeRuntime();
   const [navigateSearchValue, setNavigateSearchValue] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchTags, setSearchTags] = useState<ProductTag[]>([]);
+  const categories = useProductStore((state) => state.categories);
+  const loadCategories = useProductStore((state) => state.loadCategories);
 
   const siteName = siteInfo.siteName || STORE_COPY.brandName;
   const logoSrc = resolveSiteLogoUrl(siteInfo);
@@ -57,10 +69,32 @@ export default function StoreTabHeader({
   const surfaceClass = getStoreHeaderSurfaceClass(themeConfig);
 
   const goSearch = () => {
-    const keyword = navigateSearchValue.trim();
-    navigate(keyword ? `/search?keyword=${encodeURIComponent(keyword)}` : "/search");
+    setSearchOpen(true);
+  };
+  const submitSearch = (value: string) => {
+    const keyword = value.trim();
+    navigate(appendThemePreviewParams(keyword ? `/search?keyword=${encodeURIComponent(keyword)}` : "/search"));
   };
   const goNotifications = () => navigate("/notifications");
+
+  useEffect(() => {
+    if (searchMode !== "navigate") return;
+    void loadCategories();
+    productService.fetchProductTags(16).then(setSearchTags).catch(() => setSearchTags([]));
+  }, [loadCategories, searchMode]);
+
+  const searchCategoryOptions = useMemo(() => buildStoreSearchCategoryOptions({
+    categories,
+    onAll: () => navigate(appendThemePreviewParams("/categories")),
+    onNew: () => navigate(appendThemePreviewParams(NEW_ARRIVAL_CATEGORY_PATH)),
+    onCategorySelect: (category) => navigate(appendThemePreviewParams(`/categories?cat=${encodeURIComponent(category.id)}`)),
+  }), [categories, navigate]);
+
+  const searchTagOptions = useMemo<StoreSearchTagOption[]>(() => searchTags.map((tag) => ({
+    id: tag.id,
+    label: storefrontCategoryName(tag.name),
+    onSelect: () => navigate(appendThemePreviewParams(`/categories?tag_id=${encodeURIComponent(tag.id)}`)),
+  })), [navigate, searchTags]);
 
   const nameClass = cn(
     "store-brand-name truncate tracking-normal",
@@ -90,15 +124,11 @@ export default function StoreTabHeader({
         </UnifiedButton>
 
         {searchMode === "navigate" ? (
-          <StoreSearchField
-            mode="navigate"
+          <StoreSearchLauncher
+            className="sf-next-tab-search-launcher"
             placeholder={searchPlaceholder ?? STORE_COPY.searchPlaceholder}
-            onNavigate={goSearch}
             value={navigateSearchValue}
-            onValueChange={setNavigateSearchValue}
-            onSubmit={goSearch}
-            showSubmitButton
-            submitOnly
+            onClick={goSearch}
           />
         ) : null}
 
@@ -134,6 +164,19 @@ export default function StoreTabHeader({
           )}
         </div>
       </div>
+      {searchMode === "navigate" ? (
+        <StoreSearchDrawer
+          open={searchOpen}
+          value={navigateSearchValue}
+          placeholder={searchPlaceholder ?? STORE_COPY.searchPlaceholder}
+          categories={searchCategoryOptions}
+          tags={searchTagOptions}
+          onClose={() => setSearchOpen(false)}
+          onSubmit={submitSearch}
+          onValueChange={setNavigateSearchValue}
+          onClear={() => setNavigateSearchValue("")}
+        />
+      ) : null}
     </header>
   );
 }

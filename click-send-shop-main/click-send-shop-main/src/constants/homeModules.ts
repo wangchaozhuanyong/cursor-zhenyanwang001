@@ -8,6 +8,7 @@ export type HomeModuleKey =
   | "hot_sales"
   | "recommend"
   | "guest_recommend"
+  | "invite_entry"
   | "flash_sale_section"
   | "coupon_center"
   | "full_reduction_notice"
@@ -81,6 +82,13 @@ export const HOME_MODULE_DEFINITIONS: HomeModuleDefinition[] = [
     category: "guest",
   },
   {
+    key: "invite_entry",
+    label: "邀请好友",
+    description: "首页邀请好友入口，受邀请奖励配置同步控制",
+    audiences: ["member", "guest"],
+    category: "common",
+  },
+  {
     key: "flash_sale_section",
     label: "首页秒杀专区",
     description: "展示限时秒杀活动与倒计时",
@@ -119,6 +127,7 @@ export const DEFAULT_HOME_MODULE_SETTINGS: HomeModuleSettings = {
     hot_sales: true,
     recommend: true,
     guest_recommend: true,
+    invite_entry: true,
     flash_sale_section: true,
     coupon_center: true,
     full_reduction_notice: false,

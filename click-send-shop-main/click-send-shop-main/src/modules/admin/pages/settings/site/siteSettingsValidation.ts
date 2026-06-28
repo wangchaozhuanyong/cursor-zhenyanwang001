@@ -61,6 +61,20 @@ export function validateSection(
     }
   }
 
+  if (sectionId === "social") {
+    const otherLinks = String(settings.otherSocialLinks ?? "").trim();
+    if (otherLinks) {
+      try {
+        const parsed = JSON.parse(otherLinks) as unknown;
+        if (!Array.isArray(parsed) || parsed.some((item) => typeof item !== "string")) {
+          issues.push({ level: "error", message: "其它社交链接须为字符串 JSON 数组" });
+        }
+      } catch {
+        issues.push({ level: "error", message: "其它社交链接不是有效 JSON" });
+      }
+    }
+  }
+
   if (sectionId === "orders") {
     const days = parseInt(String(settings.autoConfirmReceiveDays ?? ""), 10);
     if (!Number.isFinite(days) || days < 1 || days > 365) {

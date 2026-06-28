@@ -9336,3 +9336,140 @@ html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .
   text-overflow: clip !important;
   white-space: nowrap !important;
 }
+
+/* Client design precision repair v19: unify mobile page rhythm and keep route headers inside the viewport. */
+@media (max-width: 767px) {
+  html[data-app-scope="store"][data-storefront-ui="next"] {
+    --sc-page-x: 0.75rem;
+    --sc-page-y: 0.72rem;
+    --store-page-x: var(--sc-page-x);
+    --store-header-x: var(--sc-page-x);
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-page-header__inner {
+    padding-inline: var(--sc-page-x) !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-page-header__inner > .grid {
+    min-width: 0;
+    grid-template-columns: 2.5rem minmax(0, 1fr) 2.5rem !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-page-header button[aria-label="返回"] {
+    position: relative !important;
+    left: auto !important;
+    top: auto !important;
+    transform: none !important;
+    width: 2.5rem !important;
+    min-width: 2.5rem !important;
+    height: 2.5rem !important;
+    min-height: 2.5rem !important;
+    margin-left: 0 !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] :where(
+    .sf-next-account-main,
+    .sf-next-standard-page-shell__main,
+    .sf-next-profile-layout,
+    .sf-next-cart-page > main,
+    .sf-next-promotions-main,
+    .sf-next-search-body
+  ) {
+    padding-inline: var(--sc-page-x) !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] :where(
+    .sf-next-account-main > .mx-auto,
+    .sf-next-help-stack,
+    .sf-next-favorites-page .sf-next-account-main > section > .mx-auto,
+    .sf-next-coupons-page-shell .sf-next-account-main
+  ) {
+    gap: 0.72rem !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] :where(
+    .sf-next-help-quick,
+    .sf-next-help-faq-section,
+    .sf-next-help-feedback,
+    .sf-next-favorites-empty,
+    .sf-next-favorites-toolbar,
+    .sf-next-coupon-hero,
+    .sf-next-value-vault
+  ) {
+    border-radius: 0.94rem !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-help-stack {
+    padding-top: 0.08rem !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-help-quick,
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-help-faq-section,
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-help-feedback {
+    padding: 0.78rem !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-help-quick-grid {
+    gap: 0.5rem !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-help-quick-card {
+    min-height: 4.5rem !important;
+    padding: 0.66rem 0.5rem !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-help-faq__trigger {
+    min-height: 3rem !important;
+    padding: 0.72rem 0.78rem !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-favorites-page .sf-next-account-main > section > .mx-auto {
+    max-width: var(--sc-mobile-frame) !important;
+    margin-inline: auto !important;
+    padding-inline: 0 !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-favorites-toolbar {
+    min-height: 2.75rem !important;
+    padding: 0.1rem 0 !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-favorites-toolbar span {
+    min-height: 2.25rem !important;
+    padding-inline: 0.72rem !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-favorite-grid {
+    gap: 0.65rem !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-favorite-tile {
+    padding: 0.44rem !important;
+    border-radius: 0.94rem !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-favorite-tile__title {
+    margin-top: 0.58rem !important;
+    min-height: 2.35rem !important;
+    line-height: 1.36 !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-account-main {
+    padding-top: 0.62rem !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-coupon-hero {
+    margin-bottom: 0.58rem !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-status-rail,
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-category-rail {
+    margin-inline: 0 !important;
+    padding-inline: 0 !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault {
+    border-radius: 0.94rem !important;
+    box-shadow: 0 0.7rem 1.55rem color-mix(in srgb, var(--sf-ink) 5%, transparent) !important;
+  }
+}

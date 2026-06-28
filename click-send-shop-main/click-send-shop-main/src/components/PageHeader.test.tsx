@@ -41,9 +41,9 @@ describe("PageHeader", () => {
   it("centers the title when no right slot is present", async () => {
     await renderHeader();
 
-    expect(container?.querySelector("button[aria-label='返回']")?.className).toContain("absolute");
+    expect(container?.querySelector("button[aria-label='返回']")?.className).not.toContain("absolute");
+    expect(container?.querySelector("header > div > div")?.className).toContain("grid");
     expect(container?.querySelector("h1")?.className).toContain("text-center");
-    expect(container?.querySelector("h1")?.className).toContain("mx-auto");
   });
 
   it("places the title after the back button when a right slot is present", async () => {

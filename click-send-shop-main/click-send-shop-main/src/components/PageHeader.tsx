@@ -33,11 +33,11 @@ export default function PageHeader({
       className={
         hasRightSlot
           ? cn(
-              "relative -ml-3 flex h-11 w-11 shrink-0 items-center justify-center rounded-full p-0 text-[var(--theme-text)] transition hover:bg-[color-mix(in_srgb,var(--theme-primary)_10%,var(--theme-surface))] active:scale-95",
+              "relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full p-0 text-[var(--theme-text)] transition hover:bg-[color-mix(in_srgb,var(--theme-primary)_10%,var(--theme-surface))] active:scale-95",
               backButtonClassName,
             )
           : cn(
-              "absolute left-[calc(var(--store-header-x)-0.75rem)] top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full p-0 text-[var(--theme-text)] transition hover:bg-[color-mix(in_srgb,var(--theme-primary)_10%,var(--theme-surface))] active:scale-95",
+              "relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full p-0 text-[var(--theme-text)] transition hover:bg-[color-mix(in_srgb,var(--theme-primary)_10%,var(--theme-surface))] active:scale-95",
               backButtonClassName,
             )
       }
@@ -58,10 +58,11 @@ export default function PageHeader({
             <div className="shrink-0">{rightSlot}</div>
           </>
         ) : (
-          <>
-            {backButton}
-            <h1 className="sf-next-page-title mx-auto max-w-[calc(100%-7rem)] truncate text-center">{title}</h1>
-          </>
+          <div className="grid w-full min-w-0 grid-cols-[2.75rem_minmax(0,1fr)_2.75rem] items-center gap-1">
+            <div className="flex min-w-0 items-center justify-start">{backButton}</div>
+            <h1 className="sf-next-page-title min-w-0 truncate text-center">{title}</h1>
+            <div className="h-11 w-11" aria-hidden />
+          </div>
         )}
       </div>
     </header>

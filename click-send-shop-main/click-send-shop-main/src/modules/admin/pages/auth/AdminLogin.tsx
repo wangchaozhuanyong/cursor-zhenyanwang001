@@ -384,7 +384,11 @@ export default function AdminLogin() {
           </FormFieldShake>
 
           <div className="mt-6 text-center">
-            <UnifiedButton type="button" onClick={() => navigate("/")} className="text-xs text-muted-foreground hover:text-foreground">
+            <UnifiedButton
+              type="button"
+              onClick={() => navigate("/")}
+              className="inline-flex min-h-11 items-center justify-center rounded-full px-4 text-xs text-muted-foreground hover:bg-secondary hover:text-foreground"
+            >
               {t("login.backToStore")}
             </UnifiedButton>
           </div>

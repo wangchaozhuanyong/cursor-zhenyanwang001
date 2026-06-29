@@ -10,8 +10,9 @@ const GLOBAL_RECOVERY_SUPPRESSED_UNTIL_FLAG = "__appVersionRecoverySuppressedUnt
 const FRONTEND_CACHE_EVENT_TYPE = "frontend_chunk_load_failed";
 const FRONTEND_CACHE_EVENT_MODULE = "frontend_cache";
 
+const ASSET_URL_RE = /\/assets\/[^"'\s)]+\.(?:js|mjs|css)/i;
 const CHUNK_LOAD_ERROR_RE =
-  /Failed to fetch dynamically imported module|Importing a module script failed|Loading chunk [\w.-]+ failed|ChunkLoadError|error loading dynamically imported module|Unable to preload CSS|dynamically imported module|Importing module from .* was blocked|module script failed|Expected a JavaScript module script|disallowed MIME type|MIME type ["']?text\/html|net::ERR_(?:ABORTED|FAILED)|404(?: \(Not Found\))?.*\/assets\/|\/assets\/[^"'\s)]+\.(?:js|mjs|css)/i;
+  /Failed to fetch dynamically imported module|Importing a module script failed|Loading chunk [\w.-]+ failed|ChunkLoadError|error loading dynamically imported module|Unable to preload CSS|dynamically imported module|Importing module from .* was blocked|module script failed|Expected a JavaScript module script|disallowed MIME type|MIME type ["']?text\/html|404(?: \(Not Found\))?.*\/assets\/|\/assets\/[^"'\s)]+\.(?:js|mjs|css)/i;
 const APP_CACHE_RE = /workbox|precache|vite|pwa|app-shell|chunk/i;
 
 export type AppVersionRecoveryState = {
@@ -523,5 +524,5 @@ function stringifyError(reason: unknown): string {
 
 function extractAssetUrl(reason: unknown): string | undefined {
   const text = stringifyError(reason);
-  return text.match(/\/assets\/[^"'\s)]+\.(?:js|mjs|css)/i)?.[0];
+  return text.match(ASSET_URL_RE)?.[0];
 }

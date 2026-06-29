@@ -49,6 +49,7 @@ _deploy_bundle/
 
 # 本地回归/截图产物，不纳入版本库
 **/artifacts/
+**/tmp/
 **/.codex-artifacts/
 **/.codex-tmp/
 design-previews/five-mall-skins-effect-preview/

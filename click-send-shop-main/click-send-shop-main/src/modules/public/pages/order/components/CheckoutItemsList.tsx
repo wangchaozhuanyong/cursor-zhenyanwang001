@@ -20,20 +20,20 @@ export function CheckoutItemsList({ items }: CheckoutItemsListProps) {
       {items.map((item, index) => (
         <div
           key={`${item.product.id}:${item.variant_id || ""}`}
-          className="sf-next-checkout-item grid grid-cols-[5rem_minmax(0,1fr)] items-start gap-3 border-b border-[var(--theme-border)] py-3 last:border-0 sm:grid-cols-[5.5rem_minmax(0,1fr)] sm:gap-3.5"
+          className="sf-next-checkout-item grid grid-cols-[5rem_minmax(0,1fr)] items-stretch gap-3 border-b border-[var(--theme-border)] py-3 last:border-0 sm:grid-cols-[5.5rem_minmax(0,1fr)] sm:gap-3.5"
         >
           <ProductCoverImage
             url={item.product.cover_image}
             alt={item.product.name}
-            className="sf-next-checkout-media w-20 self-start rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-bg)] object-cover sm:w-[5.5rem]"
-            imgClassName="object-cover"
+            className="sf-next-checkout-media h-20 w-20 self-stretch rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-bg)] object-cover sm:h-[5.5rem] sm:w-[5.5rem]"
+            imgClassName="h-full w-full object-cover"
             sizes="(max-width: 640px) 80px, 88px"
             loading={index === 0 ? "eager" : "lazy"}
             fetchPriority={index === 0 ? "high" : "low"}
           />
-          <div className="sf-next-checkout-item-copy grid min-h-20 min-w-0 grid-rows-[auto_minmax(0,1fr)_auto] sm:min-h-[5.5rem]">
+          <div className="sf-next-checkout-item-copy grid h-20 min-h-20 min-w-0 grid-rows-[auto_auto_minmax(0,1fr)_auto] sm:h-[5.5rem] sm:min-h-[5.5rem]">
             <p className="sf-next-checkout-item-title line-clamp-2 text-foreground">{item.product.name}</p>
-            <div className="mt-1 flex min-w-0 items-start justify-between gap-2">
+            <div className="sf-next-checkout-item-meta-row mt-1 flex min-w-0 items-start justify-between gap-2">
               <p className="sf-next-checkout-item-meta min-w-0 truncate text-muted-foreground">
                 {item.variant_name ? `规格：${item.variant_name}` : "规格：默认规格"}
               </p>
@@ -41,7 +41,7 @@ export function CheckoutItemsList({ items }: CheckoutItemsListProps) {
                 x{item.qty}
               </span>
             </div>
-            <div className="mt-2 flex min-w-0 items-center justify-between gap-2 rounded-xl border border-[color-mix(in_srgb,var(--theme-border)_70%,transparent)] bg-[color-mix(in_srgb,var(--theme-bg)_72%,var(--theme-surface))] px-2.5 py-2">
+            <div className="sf-next-checkout-item-amount mt-auto flex min-w-0 items-center justify-between gap-2 rounded-xl border border-[color-mix(in_srgb,var(--theme-border)_70%,transparent)] bg-[color-mix(in_srgb,var(--theme-bg)_72%,var(--theme-surface))] px-2.5 py-2">
               <span className="min-w-0 text-[11px] font-semibold text-[var(--theme-text-muted)]">商品金额</span>
               <StoreAmountToken
                 amount={getCartLinePrice(item)}

@@ -26,7 +26,7 @@ export default function StoreAmountToken({
   return (
     <span
       className={cn(
-        "inline-flex min-w-0 rounded-2xl border border-[color-mix(in_srgb,var(--theme-price)_24%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-price)_7%,var(--theme-surface))] px-3 py-2 shadow-[inset_0_1px_0_color-mix(in_srgb,white_52%,transparent)]",
+        "inline-flex min-w-0 rounded-2xl border border-[color-mix(in_srgb,var(--theme-price)_24%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-price)_7%,var(--theme-surface))] px-3 py-2 shadow-[inset_0_1px_0_color-mix(in_srgb,var(--sf-surface)_52%,transparent)]",
         layout === "stacked" ? "flex-col items-start gap-1" : "items-center justify-between gap-2",
         className,
       )}

@@ -65,9 +65,15 @@ export default function ProductCardV2({
         <div className="sf-next-product-card__info flex min-h-[5.75rem] min-w-0 flex-col sm:min-h-24">
           <div className="sf-next-product-card__copy min-w-0">
             <h3 className={cn(t.text.productTitle, "sf-next-product-card__title")}>{vm.name}</h3>
-            <BadgeRow badges={vm.badges} subtle />
-            <DecisionMetaRow items={vm.decisionTexts} />
-            <ActivityProgressBar percent={vm.activityProgressPercent} text={vm.activityProgressText} />
+            <div className="sf-next-product-card__meta-strip">
+              <BadgeRow badges={vm.badges} subtle className="sf-next-product-card__badges" />
+              <DecisionMetaRow items={vm.decisionTexts} className="sf-next-product-card__decision" />
+            </div>
+            <ActivityProgressBar
+              className="sf-next-product-card__activity"
+              percent={vm.activityProgressPercent}
+              text={vm.activityProgressText}
+            />
           </div>
           {showPrice ? (
             <div className="sf-next-product-card__buy mt-auto flex items-end justify-between gap-2 pt-2">
@@ -139,11 +145,11 @@ export default function ProductCardV2({
   );
 }
 
-function ActivityProgressBar({ percent, text }: { percent?: number; text?: string }) {
+function ActivityProgressBar({ percent, text, className }: { percent?: number; text?: string; className?: string }) {
   if (!percent && !text) return null;
   const safePercent = Math.max(0, Math.min(100, Math.round(Number(percent || 0))));
   return (
-    <div className="mt-2 min-h-[1.1rem]">
+    <div className={cn("mt-2 min-h-[1.1rem]", className)}>
       <div className="h-1.5 overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--theme-border)_70%,transparent)]">
         <div
           className="h-full rounded-full bg-[var(--theme-price)] transition-[width]"
@@ -155,9 +161,9 @@ function ActivityProgressBar({ percent, text }: { percent?: number; text?: strin
   );
 }
 
-function DecisionMetaRow({ items }: { items: string[] }) {
+function DecisionMetaRow({ items, className }: { items: string[]; className?: string }) {
   return (
-    <div className="mt-1.5 flex min-h-[1rem] min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] leading-4 text-[var(--theme-text-muted)]">
+    <div className={cn("mt-1.5 flex min-h-[1rem] min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] leading-4 text-[var(--theme-text-muted)]", className)}>
       {items.map((item, index) => (
         <span key={`${item}-${index}`} className="inline-flex min-w-0 items-center gap-1">
           {index > 0 ? <span className="h-1 w-1 shrink-0 rounded-full bg-[var(--theme-border)]" aria-hidden /> : null}
@@ -168,10 +174,10 @@ function DecisionMetaRow({ items }: { items: string[] }) {
   );
 }
 
-function BadgeRow({ badges, subtle = false }: { badges: Array<{ key: string; label: string; tone: "hot" | "new" | "sale" | "normal" }>; subtle?: boolean }) {
+function BadgeRow({ badges, subtle = false, className }: { badges: Array<{ key: string; label: string; tone: "hot" | "new" | "sale" | "normal" }>; subtle?: boolean; className?: string }) {
   if (!badges.length) return null;
   return (
-    <div className="mt-1 flex flex-wrap gap-1">
+    <div className={cn("mt-1 flex flex-wrap gap-1", className)}>
       {badges.slice(0, 2).map((badge) => (
         <StorefrontBadge key={badge.key} tone={subtle ? "normal" : badge.tone}>
           {badge.label}
@@ -183,7 +189,7 @@ function BadgeRow({ badges, subtle = false }: { badges: Array<{ key: string; lab
 
 function SoldOutMask() {
   return (
-    <div className="absolute inset-0 flex items-center justify-center bg-black/35 text-xs font-bold text-white">
+    <div className="absolute inset-0 flex items-center justify-center bg-[color-mix(in_srgb,var(--sf-ink)_42%,transparent)] text-xs font-bold text-[var(--sf-surface)]">
       已售罄
     </div>
   );

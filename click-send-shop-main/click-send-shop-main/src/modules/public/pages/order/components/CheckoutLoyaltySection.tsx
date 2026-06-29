@@ -24,11 +24,17 @@ function money(v: number) {
   return v.toFixed(2);
 }
 
-const REDEEM_PANEL_CLASS =
-  "rounded-2xl border border-[color-mix(in_srgb,var(--theme-primary)_24%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-primary)_7%,var(--theme-surface))] px-4 py-3.5 shadow-sm";
+const REDEEM_CARD_CLASS =
+  "sf-next-checkout-redeem-card rounded-2xl border border-[color-mix(in_srgb,var(--theme-primary)_18%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-primary)_5%,var(--theme-surface))] p-3.5 shadow-sm";
+
+const REDEEM_TOGGLE_CLASS =
+  "sf-next-checkout-redeem-toggle grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--theme-border)_74%,transparent)] bg-[var(--theme-surface)] px-3.5 py-3";
+
+const REDEEM_INPUT_ROW_CLASS =
+  "sf-next-checkout-redeem-input-row grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2";
 
 const FORM_CONTROL_CLASS =
-  "w-full rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-[var(--theme-primary)]";
+  "w-full min-w-0 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2.5 text-base text-foreground outline-none focus:ring-2 focus:ring-[var(--theme-primary)]";
 
 export function CheckoutLoyaltySection({
   pointsRedeemEnabled,
@@ -63,21 +69,18 @@ export function CheckoutLoyaltySection({
   };
 
   return (
-    <section className="sf-next-checkout-card sf-next-theme-radius border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 sf-next-theme-shadow space-y-4">
-      <div className="mb-1 flex items-center gap-3">
-        <span className="sf-next-checkout-step flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--theme-price)] text-xs font-bold text-[var(--theme-price-foreground)]">4</span>
-        <div>
-          <h3 className="text-[15px] font-semibold text-foreground">积分抵扣</h3>
-          <p className="mt-0.5 text-xs text-muted-foreground">使用积分直接抵扣订单金额，系统会按本单规则计算可抵扣上限</p>
-        </div>
+    <section className="sf-next-checkout-card sf-next-checkout-loyalty-section sf-next-theme-radius space-y-4 border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 sf-next-theme-shadow">
+      <div className="min-w-0">
+        <h3 className="text-[15px] font-semibold text-foreground">积分与返现抵扣</h3>
+        <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">可用额度按当前订单实时计算，提交前会再次以后端金额为准</p>
       </div>
 
       {pointsRedeemEnabled ? (
-        <div className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3.5">
-          <label className={`${REDEEM_PANEL_CLASS} flex items-start justify-between gap-3`}>
+        <div className={REDEEM_CARD_CLASS}>
+          <label className={REDEEM_TOGGLE_CLASS}>
             <span className="min-w-0 flex-1">
-              <span className="text-[11px] font-medium text-muted-foreground">抵扣积分</span>
-              <span className="mt-1 flex items-end gap-1 text-foreground">
+              <span className="block text-sm font-semibold text-foreground">抵扣积分</span>
+              <span className="mt-1 flex min-w-0 flex-wrap items-end gap-x-1 gap-y-0.5 text-foreground">
                 <strong className="text-xl leading-none">{displayRedeemPoints}</strong>
                 <span className="text-xs font-semibold">积分</span>
               </span>
@@ -85,7 +88,13 @@ export function CheckoutLoyaltySection({
                 你的积分可抵扣 RM {money(availablePointsDiscount)}，本单最多可抵扣 RM {money(orderMaxPointsDiscount)}
               </span>
             </span>
-            <input type="checkbox" checked={usePoints} onChange={(e) => onUsePointsChange(e.target.checked)} />
+            <input
+              className="sf-next-checkout-redeem-checkbox"
+              type="checkbox"
+              checked={usePoints}
+              disabled={maxPoints <= 0}
+              onChange={(e) => onUsePointsChange(e.target.checked)}
+            />
           </label>
           {disabledReason && maxPoints <= 0 ? <p className="mt-2 text-xs text-[var(--theme-danger)]">{disabledReason}</p> : null}
           {usePoints ? (
@@ -96,10 +105,11 @@ export function CheckoutLoyaltySection({
                 min={0}
                 max={maxPoints}
                 step={redeemStep}
+                disabled={maxPoints <= 0}
                 value={Math.max(0, Math.min(maxPoints, pointsToUse))}
                 onChange={(e) => onPointsToUseChange(normalizePointsInput(Number(e.target.value || 0)))}
               />
-              <div className="flex items-center gap-2">
+              <div className={REDEEM_INPUT_ROW_CLASS}>
                 <input
                   className={FORM_CONTROL_CLASS}
                   type="number"
@@ -109,7 +119,7 @@ export function CheckoutLoyaltySection({
                   value={pointsToUse}
                   onChange={(e) => onPointsToUseChange(normalizePointsInput(Number(e.target.value || 0)))}
                 />
-                <UnifiedButton type="button" className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2.5 text-xs font-semibold text-foreground" onClick={() => onPointsToUseChange(maxPoints)}>
+                <UnifiedButton type="button" className="sf-next-checkout-redeem-all-button rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2.5 text-xs font-semibold text-foreground" onClick={() => onPointsToUseChange(maxPoints)}>
                   全部
                 </UnifiedButton>
               </div>
@@ -120,13 +130,21 @@ export function CheckoutLoyaltySection({
       ) : null}
 
       {rewardCashRedeemEnabled ? (
-        <div className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3.5">
-          <label className="flex items-start justify-between gap-3 rounded-2xl bg-[var(--theme-bg)] px-4 py-3.5 text-sm font-medium">
+        <div className={REDEEM_CARD_CLASS}>
+          <label className={REDEEM_TOGGLE_CLASS}>
             <span className="min-w-0 flex-1">
               <span className="block text-sm font-semibold text-foreground">返现余额抵扣</span>
-              <span className="mt-1 block text-xs font-normal leading-relaxed text-muted-foreground">可用 RM {availableReward.toFixed(2)}，本单最多 RM {maxReward.toFixed(2)}</span>
+              <span className="mt-1 block text-xs font-normal leading-relaxed text-muted-foreground">
+                可用 RM {availableReward.toFixed(2)}，本单最多 RM {maxReward.toFixed(2)}
+              </span>
             </span>
-            <input type="checkbox" checked={useRewardCash} onChange={(e) => onUseRewardCashChange(e.target.checked)} />
+            <input
+              className="sf-next-checkout-redeem-checkbox"
+              type="checkbox"
+              checked={useRewardCash}
+              disabled={maxReward <= 0}
+              onChange={(e) => onUseRewardCashChange(e.target.checked)}
+            />
           </label>
           {useRewardCash ? (
             <div className="mt-3 space-y-2">
@@ -136,10 +154,11 @@ export function CheckoutLoyaltySection({
                 min={0}
                 max={maxReward}
                 step="0.01"
+                disabled={maxReward <= 0}
                 value={Math.max(0, Math.min(maxReward, rewardCashAmount))}
                 onChange={(e) => onRewardCashAmountChange(Math.max(0, Math.min(maxReward, Number(e.target.value || 0))))}
               />
-              <div className="flex items-center gap-2">
+              <div className={REDEEM_INPUT_ROW_CLASS}>
                 <input
                   className={FORM_CONTROL_CLASS}
                   type="number"
@@ -149,7 +168,7 @@ export function CheckoutLoyaltySection({
                   value={rewardCashAmount}
                   onChange={(e) => onRewardCashAmountChange(Math.max(0, Math.min(maxReward, Number(e.target.value || 0))))}
                 />
-                <UnifiedButton type="button" className="rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2.5 text-xs font-semibold text-foreground" onClick={() => onRewardCashAmountChange(maxReward)}>
+                <UnifiedButton type="button" className="sf-next-checkout-redeem-all-button rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2.5 text-xs font-semibold text-foreground" onClick={() => onRewardCashAmountChange(maxReward)}>
                   全部
                 </UnifiedButton>
               </div>

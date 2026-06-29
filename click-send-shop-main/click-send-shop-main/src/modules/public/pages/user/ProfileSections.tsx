@@ -129,7 +129,6 @@ export function ProfileIdentityHeader({
       </UnifiedButton>
       <button type="button" onClick={onProfileClick} className="sf-next-profile-identity__copy">
         <strong title={userName} aria-label={userName}>{displayName}</strong>
-        <span>查看账户资料</span>
       </button>
       <div className="sf-next-profile-identity__actions">
         <NotificationIconButton
@@ -168,13 +167,18 @@ export function ProfileHeroCard({
   const folioAssets = (assets || []).slice(0, 3);
 
   return (
-    <section className="sf-next-profile-hero-card" onClick={onMemberLevelClick}>
+    <section className="sf-next-profile-hero-card" aria-label={`${memberLevelName}会员权益`}>
       <span className="profile-vip-watermark" aria-hidden="true" />
-      <div className="profile-vip-folio-head">
+      <UnifiedButton
+        type="button"
+        onClick={onMemberLevelClick}
+        className="profile-vip-folio-head"
+        aria-label={`查看${memberLevelName}会员权益`}
+      >
         <span>MEMBER FOLIO</span>
         <h2>{memberLevelName}</h2>
         <p>权益以当前会员配置为准</p>
-      </div>
+      </UnifiedButton>
 
       {folioAssets.length ? (
         <div className="profile-card-assets" aria-label="我的资产">
@@ -188,6 +192,7 @@ export function ProfileHeroCard({
                 event.stopPropagation();
                 onAssetNavigate?.(item);
               }}
+              onKeyDown={(event) => event.stopPropagation()}
               className="profile-card-asset"
             >
               <span className="profile-card-asset-value">{item.value}</span>

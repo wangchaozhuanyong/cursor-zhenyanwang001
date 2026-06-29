@@ -806,7 +806,7 @@ export default function Cart() {
               </span>
               {t("cart.selectAll")}
             </SquishButton>
-            <div className="sf-next-cart-checkout-total min-w-0 flex-1">
+            <div className="sf-next-cart-checkout-total min-w-0 flex-1" aria-live="polite">
               <span className="sf-next-cart-checkout-total__label">{estimatedDiscount > 0 ? t("cart.estimatedPayable") : t("cart.total")}</span>
               <span className="sf-next-cart-checkout-total__price">
                 <AnimatedNumber value={estimatedPayable} decimals={2} format={(n) => `RM ${n.toFixed(2)}`} />

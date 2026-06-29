@@ -78,6 +78,7 @@ export default function Categories() {
   const categories = useProductStore((s) => s.categories);
   const loading = useProductStore((s) => s.loading);
   const listRefreshing = useProductStore((s) => s.listRefreshing);
+  const currentListCacheKey = useProductStore((s) => s.currentListCacheKey);
   const error = useProductStore((s) => s.error);
   const loadProducts = useProductStore((s) => s.loadProducts);
   const loadMoreProducts = useProductStore((s) => s.loadMoreProducts);
@@ -351,7 +352,11 @@ export default function Categories() {
   const productQueryReady = readyProductQueryKey === productQueryKey;
   const visibleProducts = productQueryReady ? products : [];
   const showFullSkeleton = Boolean(productListParams) && (!productQueryReady || (loading && visibleProducts.length === 0));
-  const showSoftRefreshing = productQueryReady && listRefreshing && visibleProducts.length > 0;
+  const showSoftRefreshing =
+    productQueryReady
+    && listRefreshing
+    && currentListCacheKey === productQueryKey
+    && visibleProducts.length > 0;
   const hasMoreProducts = hasMorePaginatedItems({
     loadedCount: visibleProducts.length,
     total: pagination.total,

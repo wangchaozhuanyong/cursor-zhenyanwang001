@@ -552,7 +552,7 @@ export default function GuestMobileFooter({
                     key={`${item.label}-${item.path}`}
                     type="button"
                     onClick={() => onNavigate(item.path)}
-                    className="text-[12px] font-medium text-[var(--theme-text-muted-on-surface)] transition hover:text-[var(--theme-primary)]"
+                    className="-mx-2 inline-flex min-h-9 items-center rounded-md px-2 text-[12px] font-medium text-[var(--theme-text-muted-on-surface)] transition hover:bg-[color-mix(in_srgb,var(--theme-primary)_8%,var(--theme-surface))] hover:text-[var(--theme-primary)]"
                   >
                     {index > 0 ? <span className="mr-4 text-[var(--theme-border)]" aria-hidden>|</span> : null}
                     {item.label}

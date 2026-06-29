@@ -3921,11 +3921,12 @@ html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-support-contact
 html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-support-contact__link {
   display: flex;
   min-width: 0;
+  min-height: 2.75rem;
   align-items: center;
   justify-content: space-between;
   gap: var(--sf-space-2);
   border-top: 1px solid var(--sf-line);
-  padding-top: var(--sf-space-3);
+  padding-block: var(--sf-space-3);
   color: var(--sf-accent);
   font-size: var(--sf-font-sm);
   font-weight: 760;
@@ -10364,12 +10365,16 @@ html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-ca
   display: grid;
   min-width: 0;
   gap: 0.65rem;
-  border-bottom: 1px solid rgb(255 255 255 / 14%);
-  padding-bottom: 0.95rem;
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--sf-on-accent) 14%, transparent);
+  background: transparent;
+  padding: 0 0 0.95rem;
+  color: inherit;
+  text-align: left;
 }
 
 html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-vip-folio-head span {
-  color: rgb(255 255 255 / 66%);
+  color: color-mix(in srgb, var(--sf-on-accent) 66%, transparent);
   font-size: 0.78rem;
   font-weight: 850;
   letter-spacing: 0.02em;
@@ -10382,7 +10387,7 @@ html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-ca
 }
 
 html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-vip-folio-head h2 {
-  color: #fff;
+  color: var(--sf-on-accent);
   font-size: 1.68rem;
   font-weight: 900;
   line-height: 1.08;
@@ -10390,7 +10395,7 @@ html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-ca
 }
 
 html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-vip-folio-head p {
-  color: rgb(255 255 255 / 62%);
+  color: color-mix(in srgb, var(--sf-on-accent) 62%, transparent);
   font-size: 0.95rem;
   line-height: 1.45;
 }

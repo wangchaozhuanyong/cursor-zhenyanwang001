@@ -25,10 +25,10 @@ export function CheckoutSubmitBar({
   const blocked = disabled && Boolean(disabledHint);
 
   return (
-    <div className="sf-next-checkout-submit-bar fixed bottom-0 left-0 right-0 z-checkout-bar border-t border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md pb-safe safe-bottom-bar md:hidden">
+    <div className="sf-next-checkout-submit-bar fixed bottom-0 left-0 right-0 z-checkout-bar border-t border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md pb-safe safe-bottom-bar md:hidden" aria-live="polite">
       <div className="mx-auto flex max-w-lg items-center gap-3 px-4 py-3.5">
         {blocked ? (
-          <span className="flex min-w-0 flex-1 flex-col gap-1 rounded-2xl border border-[color-mix(in_srgb,var(--theme-warning)_28%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-warning)_8%,var(--theme-surface))] px-3.5 py-2.5">
+          <span className="flex min-w-0 flex-1 flex-col gap-1 rounded-2xl border border-[color-mix(in_srgb,var(--theme-warning)_28%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-warning)_8%,var(--theme-surface))] px-3.5 py-2.5" role="status">
             <span className="min-w-0 text-[11px] font-semibold leading-snug text-[var(--theme-text-muted)]">
               {disabledHint}
             </span>

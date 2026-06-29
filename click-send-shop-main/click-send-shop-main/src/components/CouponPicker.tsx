@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Ticket, ChevronRight, Check, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import PremiumCouponCard from "@/components/PremiumCouponCard";
@@ -139,6 +139,7 @@ function CouponListBody(props: {
 }
 
 export default function CouponPicker({ totalAmount, shippingFee = 0, selectedCouponId, onSelect, coupons, unusableCoupons = [], loading, embedded = false }: CouponPickerProps) {
+  const listId = useId();
   const [open, setOpen] = useState(false);
   const isMobileSheet = usePreferBottomSheet("standard");
   const selected = coupons.find((c) => c.id === selectedCouponId) ?? null;
@@ -152,16 +153,19 @@ export default function CouponPicker({ totalAmount, shippingFee = 0, selectedCou
     <div className={embedded ? "" : "sf-next-surface-card overflow-hidden rounded-2xl border border-[var(--theme-border)]"}>
       <UnifiedButton
         type="button"
+        aria-controls={!isMobileSheet ? listId : undefined}
+        aria-expanded={open}
+        aria-haspopup={isMobileSheet ? "dialog" : undefined}
         aria-busy={loading}
         disabled={embedded && loading && coupons.length === 0 && unusableCoupons.length === 0}
         onClick={() => (isMobileSheet ? setOpen(true) : setOpen((v) => !v))}
-        className={embedded ? "flex w-full items-center justify-between gap-3 rounded-xl border border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-primary)_6%,var(--theme-surface))] px-4 py-3.5 text-left" : "flex w-full items-center justify-between p-5"}
+        className={embedded ? "sf-next-checkout-coupon-trigger flex w-full min-w-0 items-center justify-between gap-3 rounded-xl border border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-primary)_6%,var(--theme-surface))] px-4 py-3.5 text-left" : "flex w-full items-center justify-between p-5"}
       >
         {embedded ? (
           <>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-[var(--theme-text-on-surface)]">{selected ? selected.title : "选择优惠券"}</p>
-              <p className="mt-0.5 text-xs text-[var(--theme-text-muted-on-surface)]">{statusLabel}</p>
+            <div className="min-w-0 flex-1 overflow-hidden">
+              <p className="sf-next-checkout-coupon-title truncate text-sm font-medium text-[var(--theme-text-on-surface)]">{selected ? selected.title : "选择优惠券"}</p>
+              <p className="sf-next-checkout-coupon-status mt-0.5 truncate text-xs text-[var(--theme-text-muted-on-surface)]" aria-live="polite">{statusLabel}</p>
             </div>
             {loading ? <span className="sf-next-checkout-coupon-loading-pill" aria-hidden /> : <ChevronRight size={18} className="shrink-0 text-[var(--theme-text-muted-on-surface)]" />}
           </>
@@ -196,7 +200,7 @@ export default function CouponPicker({ totalAmount, shippingFee = 0, selectedCou
       ) : (
         <AnimatePresence>
           {open && (
-            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25 }} className="overflow-hidden">
+            <motion.div id={listId} initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25 }} className="overflow-hidden">
               <div className="space-y-2 border-t border-[var(--theme-border)] px-4 pb-4 pt-3">
                 <CouponListBody {...listProps} />
               </div>

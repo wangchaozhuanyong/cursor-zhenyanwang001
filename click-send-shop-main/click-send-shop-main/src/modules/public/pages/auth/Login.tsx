@@ -760,12 +760,13 @@ export default function Login() {
 
           {mode === "login" && effectiveCredentialMode === "password" && (
             <div className="auth-login-meta-row flex items-center justify-between">
-              <label className="flex items-center gap-2 cursor-pointer">
+              <label className="flex min-h-11 cursor-pointer items-center gap-2 rounded-full px-1 pr-2">
                 <input
                   type="checkbox"
+                  aria-label={t("auth.rememberAccount")}
                   checked={remember}
                   onChange={(e) => setRemember(e.target.checked)}
-                  className="h-4 w-4 rounded border-border accent-[var(--theme-primary)]"
+                  className="h-5 w-5 rounded border-border accent-[var(--theme-primary)]"
                 />
                 <span className="text-xs text-muted-foreground">{t("auth.rememberAccount")}</span>
               </label>

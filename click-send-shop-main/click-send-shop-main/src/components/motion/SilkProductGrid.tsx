@@ -8,6 +8,7 @@ import type { ProductCardSiteContext } from "@/components/ProductCard";
 
 const INITIAL_PRODUCT_RENDER_LIMIT = 24;
 const DEFERRED_PRODUCT_REVEAL_MS = 650;
+const SOFT_REFRESH_NOTICE_DELAY_MS = 450;
 
 type IdleWindow = Window & {
   requestIdleCallback?: (callback: () => void, options?: { timeout?: number }) => number;
@@ -42,6 +43,7 @@ export default function SilkProductGrid({
   const isListView = displayMode === "list";
   const shouldDeferList = products.length > INITIAL_PRODUCT_RENDER_LIMIT;
   const [renderAll, setRenderAll] = useState(!shouldDeferList);
+  const [showDelayedRefreshNotice, setShowDelayedRefreshNotice] = useState(false);
 
   useEffect(() => {
     if (!shouldDeferList) {
@@ -62,6 +64,16 @@ export default function SilkProductGrid({
     return () => window.clearTimeout(timer);
   }, [shouldDeferList, products]);
 
+  useEffect(() => {
+    if (!showSoftRefreshing) {
+      setShowDelayedRefreshNotice(false);
+      return;
+    }
+
+    const timer = window.setTimeout(() => setShowDelayedRefreshNotice(true), SOFT_REFRESH_NOTICE_DELAY_MS);
+    return () => window.clearTimeout(timer);
+  }, [showSoftRefreshing]);
+
   const visibleProducts = useMemo(
     () => (renderAll ? products : products.slice(0, INITIAL_PRODUCT_RENDER_LIMIT)),
     [products, renderAll],
@@ -69,8 +81,8 @@ export default function SilkProductGrid({
 
   return (
     <div className={cn("relative min-h-[12rem]", shellClassName)}>
-      <SilkRefreshOverlay show={showSoftRefreshing} />
-      <div className={cn(className, showSoftRefreshing && "opacity-95")}>
+      <SilkRefreshOverlay show={showDelayedRefreshNotice} label="正在刷新商品" />
+      <div className={cn(className, showDelayedRefreshNotice && "opacity-95")}>
         {showFullSkeleton
           ? Array.from({ length: skeletonCount }).map((_, i) => (
               <ProductCardV2Skeleton key={`silk-skeleton-${i}`} variant={isListView ? "list" : "grid"} />

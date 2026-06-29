@@ -59,6 +59,8 @@ describe("appVersionRecovery", () => {
     expect(isChunkLoadFailure({ message: "Unable to preload CSS for /assets/page.css" })).toBe(true);
     expect(isChunkLoadFailure("net::ERR_ABORTED 404 (Not Found) https://example.com/assets/page-old.js")).toBe(true);
     expect(isChunkLoadFailure("Expected a JavaScript module script but the server responded with a MIME type of \"text/html\"")).toBe(true);
+    expect(isChunkLoadFailure("net::ERR_ABORTED https://example.com/api/coupons")).toBe(false);
+    expect(isChunkLoadFailure({ message: "net::ERR_FAILED /api/cart" })).toBe(false);
     expect(isChunkLoadFailure({ message: "Request failed with status code 404 /api/coupons" })).toBe(false);
   });
 

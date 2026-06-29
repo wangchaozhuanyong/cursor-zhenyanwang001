@@ -1,4 +1,3 @@
-// @ts-nocheck
 const { Queue, QueueEvents, Worker } = require('bullmq');
 const { buildRedisOptions, getRedisKeyPrefix } = require('../config/redis');
 

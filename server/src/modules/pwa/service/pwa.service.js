@@ -1,4 +1,3 @@
-// @ts-nocheck
 const fs = require('fs');
 const crypto = require('crypto');
 const dns = require('dns').promises;

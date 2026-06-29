@@ -223,14 +223,13 @@ npm run verify:dist
 
 ```bash
 npm run lint
-npm run check:mojibake
-npm run check:admin-i18n
-npm run check:api-paths
+npm run check:text
 npm run typecheck
 npm run typecheck:strict-api
 npm run typecheck:strict-admin
 npm run build:admin
 npm run build
+npm run verify:pwa
 npm run test
 ```
 
@@ -238,6 +237,7 @@ npm run test
 
 ```bash
 npm run arch:check
+npm run check:no-new-ts-nocheck
 npm run check:migrations
 npm run check:report-registry
 npm run typecheck
@@ -271,7 +271,7 @@ npm run test:report-export
 node server/scripts/check-tracked-artifacts.js
 ```
 
-## 19. 按任务类型的最小验证
+## 20. 按任务类型的最小验证
 
 | 任务类型 | 最小验证 |
 | --- | --- |
@@ -287,7 +287,7 @@ node server/scripts/check-tracked-artifacts.js
 | 安全任务 | 后端测试、相关安全专项测试、必要时手工攻击路径验证 |
 | 数据一致性任务 | 对应 unit/integration/report 测试，必要时审计脚本 |
 
-## 20. 无法运行验证时
+## 21. 无法运行验证时
 
 必须说明：
 

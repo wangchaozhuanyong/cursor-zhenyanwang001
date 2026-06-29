@@ -16,20 +16,7 @@ const ignoredDirs = new Set([
   'node_modules',
 ]);
 
-const allowed = new Set([
-  'server/src/app.js',
-  'server/src/config/redis.js',
-  'server/src/index.js',
-  'server/src/modules/admin/homeModuleSettings.js',
-  'server/src/modules/admin/repository/rbac.repository.js',
-  'server/src/modules/admin/service/rbac.service.js',
-  'server/src/modules/auth/repository/auth.repository.js',
-  'server/src/modules/auth/service/oauth.service.js',
-  'server/src/modules/auth/service/wechat.service.js',
-  'server/src/modules/pwa/service/pwa.service.js',
-  'server/src/queues/index.js',
-  'server/src/routes/index.js',
-]);
+const allowed = new Set();
 
 const scanRoots = [
   path.join(repoRoot, 'server', 'src'),

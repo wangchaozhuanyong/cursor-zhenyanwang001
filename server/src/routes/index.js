@@ -1,4 +1,3 @@
-// @ts-nocheck
 const { Router } = require('express');
 const health = require('../modules/health');
 const auth = require('../modules/auth');

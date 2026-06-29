@@ -204,6 +204,18 @@ async function overview() {
   };
 }
 
+async function isUserSecurityIpBlocked(ip) {
+  return repo.isIpBlocked(ip);
+}
+
+async function isUserSecurityDeviceBlocked(deviceId) {
+  return repo.isDeviceBlocked(deviceId);
+}
+
+async function insertUserSecurityEvent(event) {
+  return repo.insertSecurityEvent(event);
+}
+
 async function listLoginAttempts(query = {}) {
   const { page, pageSize, offset } = paginate(query);
   const filters = {
@@ -575,5 +587,8 @@ module.exports = {
   listUserSessions,
   revokeUserSessions,
   unprotectUser,
+  isUserSecurityIpBlocked,
+  isUserSecurityDeviceBlocked,
+  insertUserSecurityEvent,
   HIGH_SEVERITIES,
 };

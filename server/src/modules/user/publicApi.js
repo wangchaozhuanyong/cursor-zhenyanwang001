@@ -3,16 +3,12 @@ const rewardService = require('./service/reward.service');
 const notificationService = require('./service/notification.service');
 const memberLevelService = require('./service/memberLevel.service');
 const { UserStatsService } = require('./service/userStats.service');
-const uploadCtrl = require('./controller/upload.controller');
-const uploadPresignCtrl = require('./controller/uploadPresign.controller');
+const uploadRouteService = require('./service/uploadRoute.service');
+const uploadPresignRouteService = require('./service/uploadPresignRoute.service');
 const uploadAssetService = require('./service/uploadAsset.service');
-const uploadAssetRepo = require('./repository/uploadAsset.repository');
 const couponAdminIssueService = require('./service/couponAdminIssue.service');
 const couponService = require('./service/coupon.service');
 const couponLifecycle = require('./service/couponLifecycle.service');
-const couponRepo = require('./repository/coupon.repository');
-const pointsRepo = require('./repository/points.repository');
-const rewardRepo = require('./repository/reward.repository');
 
 module.exports = {
   settleOrderPoints: pointsService.settleOrderPoints,
@@ -35,19 +31,19 @@ module.exports = {
   syncStatsAfterOrderPaid: UserStatsService.syncStatsAfterOrderPaid,
   syncStatsAfterRefund: UserStatsService.syncStatsAfterRefund,
   syncStatsAfterOrderCancelled: UserStatsService.syncStatsAfterOrderCancelled,
-  uploadMiddleware: uploadCtrl.uploadMiddleware,
-  uploadMultiple: uploadCtrl.uploadMultiple,
-  uploadFile: uploadCtrl.uploadFile,
-  uploadFiles: uploadCtrl.uploadFiles,
-  createUploadTicket: uploadPresignCtrl.createTicket,
-  completeUpload: uploadPresignCtrl.completeUpload,
+  uploadMiddleware: uploadRouteService.uploadMiddleware,
+  uploadMultiple: uploadRouteService.uploadMultiple,
+  uploadFile: uploadRouteService.uploadFile,
+  uploadFiles: uploadRouteService.uploadFiles,
+  createUploadTicket: uploadPresignRouteService.createTicket,
+  completeUpload: uploadPresignRouteService.completeUpload,
   recordUploadedAsset: uploadAssetService.recordUploadedAsset,
   safeRecordUploadedAsset: uploadAssetService.safeRecordUploadedAsset,
-  selectPendingVideoTranscodeAssets: uploadAssetRepo.selectPendingVideoTranscodeAssets,
-  claimVideoTranscodeAsset: uploadAssetRepo.claimVideoTranscodeAsset,
-  markVideoTranscodeReady: uploadAssetRepo.markVideoTranscodeReady,
-  markVideoTranscodeFailed: uploadAssetRepo.markVideoTranscodeFailed,
-  replaceProductVideoUrl: uploadAssetRepo.replaceProductVideoUrl,
+  selectPendingVideoTranscodeAssets: uploadAssetService.selectPendingVideoTranscodeAssets,
+  claimVideoTranscodeAsset: uploadAssetService.claimVideoTranscodeAsset,
+  markVideoTranscodeReady: uploadAssetService.markVideoTranscodeReady,
+  markVideoTranscodeFailed: uploadAssetService.markVideoTranscodeFailed,
+  replaceProductVideoUrl: uploadAssetService.replaceProductVideoUrl,
   getAdminRewardRecords: rewardService.getAdminRecords,
   issueCouponToUsers: couponAdminIssueService.issueCouponToUsers,
   getAvailableCoupons: couponService.getAvailableCoupons,
@@ -56,13 +52,13 @@ module.exports = {
   buildEffectiveCoupon: couponLifecycle.buildEffectiveCoupon,
   resolveUserCouponRuntimeStatus: couponLifecycle.resolveUserCouponRuntimeStatus,
   restoreCouponAfterOrderCancelled: couponLifecycle.restoreCouponAfterOrderCancelled,
-  selectUserCouponsPage: couponRepo.selectUserCouponsPage,
-  selectCheckoutCandidateUserCoupons: couponRepo.selectCheckoutCandidateUserCoupons,
-  selectUserPointsBalance: pointsRepo.selectUserPointsBalance,
-  hasPendingReverse: pointsRepo.hasPendingReverse,
-  sumUserRewardTransactions: rewardRepo.sumUserRewardTransactions,
-  selectSuccessLedgerForUser: pointsRepo.selectSuccessLedgerForUser,
-  selectUserIdsWithPositiveBalance: pointsRepo.selectUserIdsWithPositiveBalance,
-  getPointsConnection: pointsRepo.getConnection,
-  selectPointsRecordByRelatedForUpdate: pointsRepo.selectRecordByRelatedForUpdate,
+  selectUserCouponsPage: couponService.selectUserCouponsPage,
+  selectCheckoutCandidateUserCoupons: couponService.selectCheckoutCandidateUserCoupons,
+  selectUserPointsBalance: pointsService.selectUserPointsBalance,
+  hasPendingReverse: pointsService.hasPendingReverse,
+  sumUserRewardTransactions: rewardService.sumUserRewardTransactions,
+  selectSuccessLedgerForUser: pointsService.selectSuccessLedgerForUser,
+  selectUserIdsWithPositiveBalance: pointsService.selectUserIdsWithPositiveBalance,
+  getPointsConnection: pointsService.getPointsConnection,
+  selectPointsRecordByRelatedForUpdate: pointsService.selectPointsRecordByRelatedForUpdate,
 };

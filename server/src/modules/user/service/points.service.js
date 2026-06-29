@@ -235,6 +235,26 @@ async function hasPendingReverse(userId) {
   return repo.hasPendingReverse(userId);
 }
 
+async function selectUserPointsBalance(userId) {
+  return repo.selectUserPointsBalance(userId);
+}
+
+async function selectSuccessLedgerForUser(conn, userId) {
+  return repo.selectSuccessLedgerForUser(conn, userId);
+}
+
+async function selectUserIdsWithPositiveBalance(limit) {
+  return repo.selectUserIdsWithPositiveBalance(limit);
+}
+
+async function getPointsConnection() {
+  return repo.getConnection();
+}
+
+async function selectPointsRecordByRelatedForUpdate(conn, relatedRecordId, action) {
+  return repo.selectRecordByRelatedForUpdate(conn, relatedRecordId, action);
+}
+
 async function resolveSignInAward() {
   let points = 5;
   let enabled = true;
@@ -443,6 +463,11 @@ module.exports = {
   getAdminRecords,
   getBalance,
   hasPendingReverse,
+  selectUserPointsBalance,
+  selectSuccessLedgerForUser,
+  selectUserIdsWithPositiveBalance,
+  getPointsConnection,
+  selectPointsRecordByRelatedForUpdate,
   getClientPointsConfig,
   signIn,
 };

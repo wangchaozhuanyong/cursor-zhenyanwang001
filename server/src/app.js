@@ -1,12 +1,15 @@
-// @ts-nocheck
 const fs = require('fs');
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const crypto = require('crypto');
-const helmet = require('helmet');
+const helmetModule = require('helmet');
+const helmet = /** @type {typeof import('helmet').default} */ (helmetModule.default || helmetModule);
 const compression = require('compression');
-const rateLimit = require('express-rate-limit');
+const rateLimitModule = require('express-rate-limit');
+const rateLimit = /** @type {typeof import('express-rate-limit').rateLimit} */ (
+  rateLimitModule.rateLimit || rateLimitModule.default || rateLimitModule
+);
 const requestContext = require('./middleware/requestContext');
 const accessLogger = require('./middleware/accessLogger');
 const apiTimeout = require('./middleware/apiTimeout');
@@ -284,6 +287,7 @@ if (!useHttpsSite) {
   cspDirectives['upgrade-insecure-requests'] = null;
 }
 
+/** @type {import('helmet').HelmetOptions} */
 const helmetBaseOptions = {
   crossOriginResourcePolicy: { policy: 'cross-origin' },
   ...(!useHttpsSite ? { strictTransportSecurity: false } : {}),
@@ -536,7 +540,7 @@ if (serveSpa) {
   const frontendAssetsDir = path.join(frontendDist, 'assets');
 
   // PWA install identity must follow admin-configured site logo/name, not the build-time bundled icon.
-  registerPwaBrandRoutes(app, { frontendDist });
+  registerPwaBrandRoutes(app);
 
   // Hashed build artifacts can be long-cached safely.
   app.use(

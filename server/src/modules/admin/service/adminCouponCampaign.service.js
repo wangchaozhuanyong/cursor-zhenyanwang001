@@ -175,6 +175,22 @@ async function listCampaigns(query) {
   return { kind: 'paginate', list: rows.map((row) => formatCampaign(row)), total, page, pageSize };
 }
 
+async function selectPublicCouponCampaignsByPosition(position, types = [], options = {}) {
+  return repo.selectPublicCampaignsByPosition(position, types, options);
+}
+
+async function isCouponCampaignClaimAllowed(campaignId, couponId, userId) {
+  return repo.isCouponCampaignClaimAllowed(campaignId, couponId, userId);
+}
+
+async function resolveCouponCampaignClaim(campaignId, couponId, userId) {
+  return repo.resolveCouponCampaignClaim(campaignId, couponId, userId);
+}
+
+async function selectCouponCampaignCouponIds(campaignId) {
+  return repo.selectCouponIdsByCampaignId(campaignId);
+}
+
 async function getCampaign(id) {
   const row = await repo.selectCampaignById(id);
   if (!row) throw new BusinessError(404, '优惠券活动不存在');
@@ -295,4 +311,8 @@ module.exports = {
   deleteCampaign,
   formatCampaign,
   runtimeStatus,
+  selectPublicCouponCampaignsByPosition,
+  isCouponCampaignClaimAllowed,
+  resolveCouponCampaignClaim,
+  selectCouponCampaignCouponIds,
 };

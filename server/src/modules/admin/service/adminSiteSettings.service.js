@@ -112,6 +112,14 @@ async function getSiteSettings() {
   return { data: normalizeMergedOgImageSetting(rowsToMap(rows)) };
 }
 
+async function selectSiteSettingValue(key) {
+  return repo.selectSettingValue(key);
+}
+
+async function upsertSiteSetting(key, value) {
+  return repo.upsertSetting(key, value);
+}
+
 async function updateSiteSettings(body, adminUserId, req) {
   const beforeRows = await repo.selectNonShippingSettingsRows();
   const beforeMap = normalizeMergedOgImageSetting(rowsToMap(beforeRows));
@@ -327,4 +335,6 @@ module.exports = {
   getSiteSettings,
   updateSiteSettings,
   uploadSiteAsset,
+  selectSiteSettingValue,
+  upsertSiteSetting,
 };

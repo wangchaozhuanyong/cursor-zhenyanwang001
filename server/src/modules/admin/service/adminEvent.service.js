@@ -654,6 +654,10 @@ function startEscalationScheduler() {
   });
 }
 
+async function listActiveEventRecordsByTypes(eventTypes = [], limit = 500) {
+  return repo.listActiveRecordsByTypes(eventTypes, limit);
+}
+
 module.exports = {
   VALID_STATUSES,
   emitEvent,
@@ -680,4 +684,5 @@ module.exports = {
   listRules,
   scanEscalations,
   startEscalationScheduler,
+  listActiveEventRecordsByTypes,
 };

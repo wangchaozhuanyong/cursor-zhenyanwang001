@@ -1,6 +1,5 @@
-// @ts-nocheck
 /**
- * Google OAuth锛氭巿鏉冭烦杞笌鍥炶皟绛惧彂鐭湡 ticket锛屽墠绔?exchange 鎹?JWT
+ * Google OAuth：授权跳转与回调签发短期 ticket，前端 exchange 换 JWT。
  */
 const crypto = require('crypto');
 const {
@@ -308,7 +307,6 @@ module.exports = {
   exchangeTicket,
   oauthCallbackBaseUrl,
   sanitizeRedirectAfter,
-  /** 閰嶇疆缂哄け绛夛細娴忚鍣ㄨ烦杞?GET /start 鏃惰繑鍥?HTML 閲嶅畾鍚戣€岄潪 JSON */
+  /** 配置缺失等场景：浏览器跳转 GET /start 时返回 HTML 重定向而非 JSON。 */
   redirectLoginWithOAuthError: errorRedirect,
 };
-

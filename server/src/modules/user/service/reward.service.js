@@ -301,6 +301,10 @@ async function sumRewardTransactionsBalance(conn, userId) {
   return repo.sumUserRewardTransactions(conn, userId);
 }
 
+async function sumUserRewardTransactions(conn, userId) {
+  return repo.sumUserRewardTransactions(conn, userId);
+}
+
 async function insertRewardTransaction(conn, params) {
   return repo.insertTransaction(conn, params);
 }
@@ -318,5 +322,6 @@ module.exports = {
   getConfig,
   getRewardUsageSettings,
   sumRewardTransactionsBalance,
+  sumUserRewardTransactions,
   insertRewardTransaction,
 };

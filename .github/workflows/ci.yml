@@ -64,9 +64,7 @@ jobs:
       - run: npm ci
       - run: npm audit --omit=dev
       - run: npm run lint
-      - run: npm run check:mojibake
-      - run: npm run check:admin-i18n
-      - run: npm run check:api-paths
+      - run: npm run check:text
       - run: npm run typecheck
       - run: npm run typecheck:strict-api
       - run: npm run typecheck:strict-admin
@@ -76,6 +74,7 @@ jobs:
       - run: npm run build
         env:
           VITE_API_BASE_URL: /api
+      - run: npm run verify:pwa
 
   server-typecheck:
     name: Server (typecheck)

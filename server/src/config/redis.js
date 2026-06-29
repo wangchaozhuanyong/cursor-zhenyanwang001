@@ -1,15 +1,28 @@
-// @ts-nocheck
-const Redis = require('ioredis');
+/** @typedef {import('ioredis').RedisOptions} RedisOptions */
+/** @typedef {import('ioredis').default & { __clickSendShopLoggerAttached?: boolean }} RedisClientWithLogger */
+
+const Redis = /** @type {typeof import('ioredis').default} */ (/** @type {unknown} */ (require('ioredis')));
 const { instanceLogPrefix } = require('./instance');
 
+/** @type {RedisClientWithLogger | undefined} */
 let redisClient;
 let warnedConnectionError = false;
 
+/**
+ * @param {string} name
+ * @param {number} fallback
+ * @returns {number}
+ */
 function envInt(name, fallback) {
   const value = Number(process.env[name]);
   return Number.isFinite(value) && value >= 0 ? value : fallback;
 }
 
+/**
+ * @param {string} name
+ * @param {boolean} [fallback]
+ * @returns {boolean}
+ */
 function envBool(name, fallback = false) {
   const value = process.env[name];
   if (value === undefined || value === '') return fallback;
@@ -24,6 +37,10 @@ function getRedisKeyPrefix() {
   return (process.env.REDIS_KEY_PREFIX || process.env.SITE_CODE || 'click-send-shop').trim().replace(/:+$/, '');
 }
 
+/**
+ * @param {RedisOptions} options
+ * @returns {RedisOptions}
+ */
 function applyRedisUrlOptions(options) {
   const url = getRedisUrl();
   if (!url) return options;
@@ -44,6 +61,10 @@ function applyRedisUrlOptions(options) {
   return options;
 }
 
+/**
+ * @param {RedisOptions} [overrides]
+ * @returns {RedisOptions}
+ */
 function buildRedisOptions(overrides = {}) {
   const password = process.env.REDIS_PASSWORD || undefined;
   const db = envInt('REDIS_DB', 0);
@@ -77,6 +98,11 @@ function buildRedisOptions(overrides = {}) {
   return options;
 }
 
+/**
+ * @param {RedisClientWithLogger} client
+ * @param {string} [label]
+ * @returns {RedisClientWithLogger}
+ */
 function attachRedisLogger(client, label = 'default') {
   if (client.__clickSendShopLoggerAttached) return client;
   client.__clickSendShopLoggerAttached = true;
@@ -94,12 +120,18 @@ function attachRedisLogger(client, label = 'default') {
   return client;
 }
 
+/**
+ * @param {RedisOptions} [overrides]
+ * @param {string} [label]
+ * @returns {RedisClientWithLogger}
+ */
 function createRedisConnection(overrides = {}, label = 'default') {
   const options = buildRedisOptions(overrides);
   const client = new Redis(options);
   return attachRedisLogger(client, label);
 }
 
+/** @returns {RedisClientWithLogger} */
 function getRedisClient() {
   if (!redisClient) {
     redisClient = createRedisConnection({}, 'shared');
@@ -107,6 +139,10 @@ function getRedisClient() {
   return redisClient;
 }
 
+/**
+ * @param {RedisOptions} [overrides]
+ * @returns {RedisClientWithLogger}
+ */
 function createBullMqConnection(overrides = {}) {
   return createRedisConnection(
     {
@@ -117,6 +153,9 @@ function createBullMqConnection(overrides = {}) {
   );
 }
 
+/**
+ * @param {RedisClientWithLogger} [client]
+ */
 async function pingRedis(client = getRedisClient()) {
   const startedAt = Date.now();
   const response = await client.ping();
@@ -127,6 +166,9 @@ async function pingRedis(client = getRedisClient()) {
   };
 }
 
+/**
+ * @param {RedisClientWithLogger | undefined} [client]
+ */
 async function closeRedis(client = redisClient) {
   if (!client) return;
   if (client.status === 'end') return;

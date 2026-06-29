@@ -1,6 +1,6 @@
-// @ts-nocheck
 /**
- * 寰俊寮€鏀惧钩鍙扮綉绔欏簲鐢ㄦ壂鐮佺櫥褰曪紙snsapi_login锛? * 鎵嬫満鍙蜂负涓昏处鍙凤紝寰俊涓虹涓夋柟韬唤缁戝畾
+ * 微信开放平台网站应用扫码登录（snsapi_login）。
+ * 手机号为主账号，微信作为第三方身份绑定。
  */
 const crypto = require('crypto');
 const {
@@ -483,7 +483,7 @@ async function getWechatIdentityForUser(userId) {
   };
 }
 
-/** 鐢ㄦ埛绔祫鏂欙細涓嶆毚闇?openid / unionid */
+/** 用户端资料：不暴露 openid / unionid。 */
 async function getWechatBindingForProfile(userId) {
   const row = await repo.selectAuthIdentityByUserAndProvider(userId, PROVIDER);
   if (!row) return { bound: false };
@@ -507,4 +507,3 @@ module.exports = {
   getWechatBindingForProfile,
   redirectLoginWithWechatError: errorRedirect,
 };
-

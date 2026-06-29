@@ -1,11 +1,22 @@
-// @ts-nocheck
 /**
- * 棣栭〉鍐呭妯″潡寮€鍏充笌灞曠ず鍙傛暟锛堝瓨 site_settings.home_module_settings JSON锛? */
+ * 首页内容模块开关与展示参数，存储于 site_settings.home_module_settings JSON。
+ *
+ * @typedef {Record<string, unknown>} PlainObject
+ * @typedef {{
+ *   modules: Record<string, boolean>,
+ *   titles: Record<string, string>,
+ *   bannerAutoplaySeconds: number,
+ *   hotBatchSize: number,
+ *   recBatchSize: number,
+ *   guestRecommendMax: number,
+ * }} HomeModuleSettings
+ */
 const siteSettingsRepo = require('./repository/adminSiteSettings.repository');
 const productPublicApi = /** @type {any} */ (require('../product/publicApi'));
 
 const SETTING_KEY = 'home_module_settings';
 
+/** @type {readonly string[]} */
 const MODULE_KEYS = [
   'banner',
   'trust_bar',
@@ -21,12 +32,14 @@ const MODULE_KEYS = [
   'promotion_banner',
 ];
 
+/** @type {Record<string, boolean>} */
 const DEFAULT_MODULES = {
   ...Object.fromEntries(MODULE_KEYS.map((k) => [k, true])),
   full_reduction_notice: false,
   promotion_banner: false,
 };
 
+/** @type {HomeModuleSettings} */
 const DEFAULT_SETTINGS = {
   modules: { ...DEFAULT_MODULES },
   titles: {},
@@ -36,73 +49,116 @@ const DEFAULT_SETTINGS = {
   guestRecommendMax: 8,
 };
 
+/**
+ * @param {unknown} value
+ * @returns {PlainObject | null}
+ */
+function asPlainObject(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  return /** @type {PlainObject} */ (value);
+}
+
+/**
+ * @param {unknown} value
+ * @param {number} min
+ * @param {number} max
+ * @param {number} fallback
+ * @returns {number}
+ */
 function clampInt(value, min, max, fallback) {
   const n = Number(value);
   if (!Number.isFinite(n)) return fallback;
   return Math.min(max, Math.max(min, Math.trunc(n)));
 }
 
+/**
+ * @param {unknown} value
+ * @returns {string}
+ */
 function normalizeTitle(value) {
   if (typeof value !== 'string') return '';
   return value.trim().slice(0, 40);
 }
 
+/**
+ * @param {unknown} raw
+ * @returns {Record<string, string>}
+ */
 function normalizeTitles(raw) {
+  const rawTitles = asPlainObject(raw);
+  /** @type {Record<string, string>} */
   const titles = {};
-  if (!raw || typeof raw !== 'object') return titles;
+  if (!rawTitles) return titles;
   for (const key of MODULE_KEYS) {
-    const title = normalizeTitle(raw[key]);
+    const title = normalizeTitle(rawTitles[key]);
     if (title) titles[key] = title;
   }
   return titles;
 }
 
+/**
+ * @returns {HomeModuleSettings}
+ */
+function defaultSettings() {
+  return {
+    ...DEFAULT_SETTINGS,
+    modules: { ...DEFAULT_MODULES },
+    titles: {},
+  };
+}
+
+/**
+ * @param {unknown} raw
+ * @returns {HomeModuleSettings}
+ */
 function parseSettings(raw) {
-  if (!raw) return { ...DEFAULT_SETTINGS, modules: { ...DEFAULT_MODULES } };
+  if (!raw) return defaultSettings();
   let parsed = raw;
   if (typeof raw === 'string') {
     try {
       parsed = JSON.parse(raw);
     } catch {
-      return { ...DEFAULT_SETTINGS, modules: { ...DEFAULT_MODULES } };
+      return defaultSettings();
     }
   }
-  if (!parsed || typeof parsed !== 'object') {
-    return { ...DEFAULT_SETTINGS, modules: { ...DEFAULT_MODULES } };
-  }
+  const parsedSettings = asPlainObject(parsed);
+  if (!parsedSettings) return defaultSettings();
+
+  /** @type {Record<string, boolean>} */
   const modules = { ...DEFAULT_MODULES };
-  if (parsed.modules && typeof parsed.modules === 'object') {
+  const parsedModules = asPlainObject(parsedSettings.modules);
+  if (parsedModules) {
     for (const key of MODULE_KEYS) {
-      if (parsed.modules[key] === false || parsed.modules[key] === 0 || parsed.modules[key] === '0') {
+      if (parsedModules[key] === false || parsedModules[key] === 0 || parsedModules[key] === '0') {
         modules[key] = false;
-      } else if (parsed.modules[key] === true || parsed.modules[key] === 1 || parsed.modules[key] === '1') {
+      } else if (parsedModules[key] === true || parsedModules[key] === 1 || parsedModules[key] === '1') {
         modules[key] = true;
       }
     }
   }
   return {
     modules,
-    titles: normalizeTitles(parsed.titles),
+    titles: normalizeTitles(parsedSettings.titles),
     bannerAutoplaySeconds: clampInt(
-      parsed.bannerAutoplaySeconds ?? parsed.banner_autoplay_seconds,
+      parsedSettings.bannerAutoplaySeconds ?? parsedSettings.banner_autoplay_seconds,
       3,
       20,
       DEFAULT_SETTINGS.bannerAutoplaySeconds,
     ),
     hotBatchSize: clampInt(
-      parsed.hotBatchSize ?? parsed.hot_batch_size,
+      parsedSettings.hotBatchSize ?? parsedSettings.hot_batch_size,
       2,
       12,
       DEFAULT_SETTINGS.hotBatchSize,
     ),
     recBatchSize: clampInt(
-      parsed.recBatchSize ?? parsed.rec_batch_size,
+      parsedSettings.recBatchSize ?? parsedSettings.rec_batch_size,
       2,
       12,
       DEFAULT_SETTINGS.recBatchSize,
     ),
     guestRecommendMax: clampInt(
-      parsed.guestRecommendMax ?? parsed.guest_recommend_max,
+      parsedSettings.guestRecommendMax ?? parsedSettings.guest_recommend_max,
       4,
       24,
       DEFAULT_SETTINGS.guestRecommendMax,
@@ -110,28 +166,38 @@ function parseSettings(raw) {
   };
 }
 
+/** @returns {Promise<HomeModuleSettings>} */
 async function getHomeModuleSettings() {
   const raw = await siteSettingsRepo.selectSettingValue(SETTING_KEY);
   return parseSettings(raw);
 }
 
+/**
+ * @param {PlainObject} body
+ * @param {string | null | undefined} adminUserId
+ * @param {import('express').Request | undefined} req
+ * @returns {Promise<HomeModuleSettings>}
+ */
 async function saveHomeModuleSettings(body, adminUserId, req) {
   const current = await getHomeModuleSettings();
+  /** @type {HomeModuleSettings} */
   const next = { ...current };
 
-  if (body.modules && typeof body.modules === 'object') {
+  const bodyModules = asPlainObject(body.modules);
+  if (bodyModules) {
     next.modules = { ...current.modules };
     for (const key of MODULE_KEYS) {
-      if (body.modules[key] === undefined) continue;
-      const v = body.modules[key];
+      if (bodyModules[key] === undefined) continue;
+      const v = bodyModules[key];
       next.modules[key] = !(v === false || v === 0 || v === '0');
     }
   }
-  if (body.titles && typeof body.titles === 'object') {
+  const bodyTitles = asPlainObject(body.titles);
+  if (bodyTitles) {
     next.titles = { ...(current.titles || {}) };
     for (const key of MODULE_KEYS) {
-      if (body.titles[key] === undefined) continue;
-      const title = normalizeTitle(body.titles[key]);
+      if (bodyTitles[key] === undefined) continue;
+      const title = normalizeTitle(bodyTitles[key]);
       if (title) next.titles[key] = title;
       else delete next.titles[key];
     }
@@ -167,7 +233,7 @@ async function saveHomeModuleSettings(body, adminUserId, req) {
     const productApi = productPublicApi || {};
     if (typeof productApi.clearCatalogCache === 'function') productApi.clearCatalogCache();
   } catch {
-    /* catalog 鏈姞杞芥椂蹇界暐 */
+    /* catalog 尚未加载时忽略 */
   }
 
   const { writeAuditLog } = require('../../utils/auditLog');

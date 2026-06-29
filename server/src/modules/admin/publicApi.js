@@ -2,10 +2,9 @@ const triggerApi = require('./notificationTriggerApi');
 const homeOpsService = require('./service/adminHomeOps.service');
 const adminEventService = require('./service/adminEvent.service');
 const adminEventBus = require('./service/adminEventBus.service');
-const adminEventRepo = require('./repository/adminEvent.repository');
-const adminSiteSettingsRepo = require('./repository/adminSiteSettings.repository');
-const adminUserSecurityRepo = require('./repository/adminUserSecurity.repository');
-const adminCouponCampaignRepo = require('./repository/adminCouponCampaign.repository');
+const adminSiteSettingsService = require('./service/adminSiteSettings.service');
+const adminUserSecurityService = require('./service/adminUserSecurity.service');
+const adminCouponCampaignService = require('./service/adminCouponCampaign.service');
 const backupService = require('./service/backup.service');
 
 module.exports = {
@@ -15,15 +14,15 @@ module.exports = {
   emitEvent: adminEventService.emitEvent,
   autoResolveEventByFingerprint: adminEventService.autoResolveByFingerprint,
   publishAdminEvent: adminEventBus.publishAdminEvent,
-  listActiveEventRecordsByTypes: adminEventRepo.listActiveRecordsByTypes,
-  selectSiteSettingValue: adminSiteSettingsRepo.selectSettingValue,
-  upsertSiteSetting: adminSiteSettingsRepo.upsertSetting,
-  isUserSecurityIpBlocked: adminUserSecurityRepo.isIpBlocked,
-  isUserSecurityDeviceBlocked: adminUserSecurityRepo.isDeviceBlocked,
-  insertUserSecurityEvent: adminUserSecurityRepo.insertSecurityEvent,
-  selectPublicCouponCampaignsByPosition: adminCouponCampaignRepo.selectPublicCampaignsByPosition,
-  isCouponCampaignClaimAllowed: adminCouponCampaignRepo.isCouponCampaignClaimAllowed,
-  resolveCouponCampaignClaim: adminCouponCampaignRepo.resolveCouponCampaignClaim,
-  selectCouponCampaignCouponIds: adminCouponCampaignRepo.selectCouponIdsByCampaignId,
+  listActiveEventRecordsByTypes: adminEventService.listActiveEventRecordsByTypes,
+  selectSiteSettingValue: adminSiteSettingsService.selectSiteSettingValue,
+  upsertSiteSetting: adminSiteSettingsService.upsertSiteSetting,
+  isUserSecurityIpBlocked: adminUserSecurityService.isUserSecurityIpBlocked,
+  isUserSecurityDeviceBlocked: adminUserSecurityService.isUserSecurityDeviceBlocked,
+  insertUserSecurityEvent: adminUserSecurityService.insertUserSecurityEvent,
+  selectPublicCouponCampaignsByPosition: adminCouponCampaignService.selectPublicCouponCampaignsByPosition,
+  isCouponCampaignClaimAllowed: adminCouponCampaignService.isCouponCampaignClaimAllowed,
+  resolveCouponCampaignClaim: adminCouponCampaignService.resolveCouponCampaignClaim,
+  selectCouponCampaignCouponIds: adminCouponCampaignService.selectCouponCampaignCouponIds,
   createPreCleanupBackup: backupService.createPreCleanupBackup,
 };

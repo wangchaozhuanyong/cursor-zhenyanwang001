@@ -193,6 +193,14 @@ async function getUserCoupons(userId, query) {
   return { list, total, page, pageSize };
 }
 
+async function selectUserCouponsPage(userId, status, pageSize, offset) {
+  return repo.selectUserCouponsPage(userId, status, pageSize, offset);
+}
+
+async function selectCheckoutCandidateUserCoupons(userId, limit = 1000) {
+  return repo.selectCheckoutCandidateUserCoupons(userId, limit);
+}
+
 async function getCouponCenter(userId) {
   const [claimableCoupons, mine] = await Promise.all([
     getAvailableCoupons(userId, { includeDisplayPositions: true, includeAudienceLimited: true }),
@@ -368,6 +376,8 @@ module.exports = {
   getUserCoupons,
   getAvailableCoupons,
   getCouponCenter,
+  selectUserCouponsPage,
+  selectCheckoutCandidateUserCoupons,
   claimCoupon,
   expireUserCouponsNow,
   decorateCouponsWithClaimability: (coupons, userId) => claimability.decorateCouponsWithClaimability(repo, coupons, userId),

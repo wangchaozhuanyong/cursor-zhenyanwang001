@@ -46,7 +46,7 @@ echo "HEAD=$COMMIT"
 echo ""
 echo "=== 2) Root npm install (skip if no package.json) ==="
 if [[ -f package.json ]]; then
-  npm install --no-audit --fund=false
+  npm ci --no-audit --fund=false
 else
   echo "No package.json at repo root - skip."
 fi
@@ -57,7 +57,7 @@ if [[ ! -d "$PROJECT_DIR/$FRONTEND_SUB" ]]; then
   echo "No frontend dir $FRONTEND_SUB - skip."
 else
   cd "$PROJECT_DIR/$FRONTEND_SUB"
-  npm install --no-audit --fund=false
+  npm ci --no-audit --fund=false
   npm run build
   cd "$PROJECT_DIR"
   mkdir -p "$PROJECT_DIR/public-frontend"
@@ -87,7 +87,7 @@ fi
 echo ""
 echo "=== 4) Backend: npm install + DB migrate ==="
 cd "$PROJECT_DIR/server"
-npm install --no-audit --fund=false
+npm ci --no-audit --fund=false
 npm run migrate
 
 echo ""

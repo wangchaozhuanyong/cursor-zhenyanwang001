@@ -87,10 +87,35 @@ async function safeRecordUploadedAsset(input) {
   }
 }
 
+async function selectPendingVideoTranscodeAssets(limit) {
+  return repo.selectPendingVideoTranscodeAssets(limit);
+}
+
+async function claimVideoTranscodeAsset(id) {
+  return repo.claimVideoTranscodeAsset(id);
+}
+
+async function markVideoTranscodeReady(id, metadata) {
+  return repo.markVideoTranscodeReady(id, metadata);
+}
+
+async function markVideoTranscodeFailed(id, errorMessage, metadata = {}) {
+  return repo.markVideoTranscodeFailed(id, errorMessage, metadata);
+}
+
+async function replaceProductVideoUrl(oldUrls, newUrl) {
+  return repo.replaceProductVideoUrl(oldUrls, newUrl);
+}
+
 module.exports = {
   inferStorageProvider,
   normalizeAssetInput,
   normalizePurpose,
   recordUploadedAsset,
   safeRecordUploadedAsset,
+  selectPendingVideoTranscodeAssets,
+  claimVideoTranscodeAsset,
+  markVideoTranscodeReady,
+  markVideoTranscodeFailed,
+  replaceProductVideoUrl,
 };

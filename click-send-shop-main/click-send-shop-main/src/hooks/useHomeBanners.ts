@@ -1,11 +1,16 @@
 import { useState, useEffect } from "react";
 import * as homeBannerService from "@/services/homeBannerService";
 import * as homeService from "@/services/homeService";
+import {
+  DEFAULT_HOME_BANNERS,
+  HOME_BANNER_ASSET_REVISION,
+  resolveHomeBannerSet,
+} from "@/constants/homeBannerDefaults";
 import type { Banner } from "@/types/banner";
 import { scheduleIdleTask } from "@/utils/idleScheduler";
 
 type UseHomeBannersOpts = { fetchRemote?: boolean };
-const BANNER_CACHE_KEY = "home_banners_cache_v1";
+const BANNER_CACHE_KEY = `home_banners_cache_${HOME_BANNER_ASSET_REVISION}`;
 const BANNER_CACHE_TTL_MS = 60_000;
 const BANNER_BACKGROUND_REFRESH_DELAY_MS = 9_000;
 
@@ -52,9 +57,10 @@ export function useHomeBanners(opts?: UseHomeBannersOpts) {
     let cancelLatestRefresh: (() => void) | undefined;
 
     const applyBanners = (next: Banner[]) => {
-      if (cancelled || next.length === 0) return false;
-      setBanners(next);
-      writeBannerCache(next);
+      const resolved = resolveHomeBannerSet(sanitizeBanners(next));
+      if (cancelled || resolved.length === 0) return false;
+      setBanners(resolved);
+      writeBannerCache(resolved);
       setLoading(false);
       return true;
     };
@@ -79,9 +85,14 @@ export function useHomeBanners(opts?: UseHomeBannersOpts) {
       const loadLatestBanners = async () => {
         try {
           const latest = await homeBannerService.fetchActiveBanners({ fresh: true });
-          applyBanners(sanitizeBanners(Array.isArray(latest) ? latest : []));
+          const applied = applyBanners(Array.isArray(latest) ? latest : []);
+          if (!applied && readBannerCache().length === 0) {
+            applyBanners(DEFAULT_HOME_BANNERS);
+          }
         } catch {
-          // keep existing cached banners
+          if (readBannerCache().length === 0) {
+            applyBanners(DEFAULT_HOME_BANNERS);
+          }
         } finally {
           if (!cancelled) setLoading(false);
         }
@@ -124,11 +135,11 @@ function readBannerCache(): Banner[] {
   if (typeof window === "undefined") return [];
   try {
     const parsed = JSON.parse(sessionStorage.getItem(BANNER_CACHE_KEY) || "[]");
-    if (Array.isArray(parsed)) return sanitizeBanners(parsed);
+    if (Array.isArray(parsed)) return resolveHomeBannerSet(sanitizeBanners(parsed));
     if (!parsed || typeof parsed !== "object") return [];
     const cachedAt = Number((parsed as { cachedAt?: unknown }).cachedAt || 0);
     if (!cachedAt || Date.now() - cachedAt > BANNER_CACHE_TTL_MS) return [];
-    return sanitizeBanners((parsed as { items?: Banner[] }).items || []);
+    return resolveHomeBannerSet(sanitizeBanners((parsed as { items?: Banner[] }).items || []));
   } catch {
     return [];
   }

@@ -58,7 +58,7 @@ const POSTER_TEMPLATES: readonly PosterTemplate[] = [
     title: "扫码进入大马通",
     subtitle: "马来西亚华人精选好物与生活服务",
     note: "精选好物、优惠与本地生活服务，一码直达。",
-    image: "/assets/home-banners/home-hero-03-local-goods-bg.webp",
+    image: "/assets/module-cards/rich-module-06-china-selection-card.webp",
     layout: "shopping",
     palette: {
       bg: "#f7fbf8",
@@ -80,7 +80,7 @@ const POSTER_TEMPLATES: readonly PosterTemplate[] = [
     title: "好友下单，奖励到账",
     subtitle: "通过我的专属二维码注册，自动绑定邀请关系",
     note: "注册后下单，奖励按平台规则自动记录。",
-    image: "/assets/home-banners/home-hero-05-support-bg.webp",
+    image: "/assets/module-cards/rich-module-02-membership-benefits-card.webp",
     layout: "reward",
     palette: {
       bg: "#fff8ed",
@@ -102,7 +102,7 @@ const POSTER_TEMPLATES: readonly PosterTemplate[] = [
     title: "在马来西亚，生活采购更省心",
     subtitle: "商品、服务、优惠，一码直达",
     note: "覆盖采购、生活服务与本地优惠。",
-    image: "/assets/home-banners/home-hero-01-platform-bg.webp",
+    image: "/assets/module-cards/rich-module-04-delivery-arrangement-card.webp",
     layout: "life",
     palette: {
       bg: "#eef5f3",

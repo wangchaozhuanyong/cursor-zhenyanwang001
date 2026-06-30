@@ -13,6 +13,7 @@ import { STORE_COPY } from "@/constants/storeCopy";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { preloadStoreRoute } from "@/utils/storeRoutePreload";
 import { isStoreNavPathVisible } from "@/utils/storeNavVisibility";
+import { getRememberedStoreTabPath } from "@/utils/storeScrollRestoration";
 import StoreBrandLogo from "@/components/store/StoreBrandLogo";
 import StoreLanguageSwitcher from "@/components/store/StoreLanguageSwitcher";
 import { stripPublicLocaleFromPathname, usePublicLocale } from "@/i18n/publicLocale";
@@ -62,7 +63,7 @@ export default function StoreTabletBar({ className }: { className?: string }) {
 
   const openRoute = (path: string) => {
     preloadTabletRoute(path);
-    navigateWithStoreTransition(navigate, localizedPath(path));
+    navigateWithStoreTransition(navigate, localizedPath(getRememberedStoreTabPath(path)));
   };
 
   const handleRouteLink = (event: MouseEvent<HTMLAnchorElement>, path: string) => {
@@ -107,7 +108,7 @@ export default function StoreTabletBar({ className }: { className?: string }) {
             return (
               <Link
                 key={item.path}
-                to={localizedPath(item.path)}
+                to={localizedPath(getRememberedStoreTabPath(item.path))}
                 onClick={(event) => handleRouteLink(event, item.path)}
                 onMouseEnter={() => preloadTabletRoute(item.path)}
                 onFocus={() => preloadTabletRoute(item.path)}

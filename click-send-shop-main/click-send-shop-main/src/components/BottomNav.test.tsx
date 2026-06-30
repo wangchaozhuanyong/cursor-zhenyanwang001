@@ -62,6 +62,7 @@ function dispatchPointerEvent(target: Element, type: "pointerdown" | "pointerup"
     pointerType: { value: pointerType },
   });
   target.dispatchEvent(event);
+  return event;
 }
 
 describe("BottomNav", () => {
@@ -106,20 +107,43 @@ describe("BottomNav", () => {
     expect(navClassName).not.toContain("pointer-events-none");
   });
 
-  it("warms and highlights on touch down, then navigates after a confirmed tap", async () => {
+  it("navigates on touch down so scroll momentum cannot swallow the tab switch", async () => {
+    await renderBottomNav();
+
+    const dealsButton = container?.querySelector<HTMLButtonElement>("button[aria-label='优惠活动']");
+    expect(dealsButton).not.toBeNull();
+
+    let pointerDownEvent: MouseEvent | null = null;
+    await act(async () => {
+      pointerDownEvent = dispatchPointerEvent(dealsButton!, "pointerdown", "touch");
+    });
+
+    expect(container?.querySelector("[data-testid='location']")?.textContent).toBe("/promotions");
+    expect(pointerDownEvent?.defaultPrevented).toBe(false);
+
+    await act(async () => {
+      dispatchPointerEvent(dealsButton!, "pointerup", "touch");
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(container?.querySelector("[data-testid='location']")?.textContent).toBe("/promotions");
+  });
+
+  it("keeps mouse navigation on pointer up to avoid accidental hover presses", async () => {
     await renderBottomNav();
 
     const dealsButton = container?.querySelector<HTMLButtonElement>("button[aria-label='优惠活动']");
     expect(dealsButton).not.toBeNull();
 
     await act(async () => {
-      dispatchPointerEvent(dealsButton!, "pointerdown", "touch");
+      dispatchPointerEvent(dealsButton!, "pointerdown", "mouse");
     });
 
     expect(container?.querySelector("[data-testid='location']")?.textContent).toBe("/new-arrivals");
 
     await act(async () => {
-      dispatchPointerEvent(dealsButton!, "pointerup", "touch");
+      dispatchPointerEvent(dealsButton!, "pointerup", "mouse");
       await Promise.resolve();
       await Promise.resolve();
     });

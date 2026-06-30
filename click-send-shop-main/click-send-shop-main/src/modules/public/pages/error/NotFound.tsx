@@ -15,7 +15,7 @@ export default function NotFound() {
   }, []);
 
   return (
-    <div className="sf-next-page-shell sf-next-bottom-safe sf-next-page sf-next-route-page flex min-h-screen items-center justify-center bg-[var(--theme-bg)] px-4 py-12 text-[var(--theme-text)]">
+    <main className="sf-next-page-shell sf-next-bottom-safe sf-next-page sf-next-route-page flex min-h-screen items-center justify-center bg-[var(--theme-bg)] px-4 py-12 text-[var(--theme-text)]">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -52,6 +52,6 @@ export default function NotFound() {
           </UnifiedButton>
         </div>
       </motion.div>
-    </div>
+    </main>
   );
 }

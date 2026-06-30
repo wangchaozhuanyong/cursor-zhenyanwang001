@@ -1,34 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import * as orderService from "@/services/orderService";
 import type { CheckoutPickerCoupon } from "@/types/coupon";
 import type { SubmitOrderParams } from "@/types/order";
 import { formatCouponScopeText } from "@/utils/couponDisplay";
 
 /** 结算页可用优惠券：页面/hook → couponService → API */
-const CHECKOUT_COUPONS_CACHE_TTL_MS = 30_000;
-
-type CheckoutCouponsCacheEntry = {
-  coupons: CheckoutPickerCoupon[];
-  unusableCoupons: CheckoutPickerCoupon[];
-  savedAt: number;
-};
-
-const checkoutCouponsCache = new Map<string, CheckoutCouponsCacheEntry>();
-
-function buildCheckoutCouponsCacheKey(orderAmount: number, checkoutParams: SubmitOrderParams) {
-  return JSON.stringify({ orderAmount, checkoutParams });
-}
-
-function getCachedCheckoutCoupons(cacheKey: string) {
-  const cached = checkoutCouponsCache.get(cacheKey);
-  if (!cached) return null;
-  if (Date.now() - cached.savedAt > CHECKOUT_COUPONS_CACHE_TTL_MS) {
-    checkoutCouponsCache.delete(cacheKey);
-    return null;
-  }
-  return cached;
-}
-
 function parseScopeList(raw: unknown): string[] {
   if (Array.isArray(raw)) return raw.map((x) => String(x).trim()).filter(Boolean);
   if (typeof raw === "string" && raw.trim()) {
@@ -68,6 +44,12 @@ export function useCheckoutPickerCoupons(orderAmount: number, checkoutParams?: S
   const [coupons, setCoupons] = useState<CheckoutPickerCoupon[]>([]);
   const [unusableCoupons, setUnusableCoupons] = useState<CheckoutPickerCoupon[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadedRequestKey, setLoadedRequestKey] = useState("");
+  const requestKey = useMemo(() => (
+    checkoutParams
+      ? JSON.stringify({ orderAmount, checkoutParams })
+      : ""
+  ), [checkoutParams, orderAmount]);
 
   useEffect(() => {
     let cancelled = false;
@@ -75,33 +57,18 @@ export function useCheckoutPickerCoupons(orderAmount: number, checkoutParams?: S
       setCoupons([]);
       setUnusableCoupons([]);
       setLoading(orderAmount > 0);
-      return () => {
-        cancelled = true;
-      };
-    }
-    const cacheKey = buildCheckoutCouponsCacheKey(orderAmount, checkoutParams);
-    const cached = getCachedCheckoutCoupons(cacheKey);
-    if (cached) {
-      setCoupons(cached.coupons);
-      setUnusableCoupons(cached.unusableCoupons);
-      setLoading(false);
+      setLoadedRequestKey("");
       return () => {
         cancelled = true;
       };
     }
     setLoading(true);
+    setLoadedRequestKey("");
     orderService.checkoutCoupons(checkoutParams)
       .then((res) => {
         if (cancelled) return;
-        const nextCoupons = (res.usable || []).map((row, idx) => mapServerCoupon(row as unknown as Record<string, unknown>, idx, true));
-        const nextUnusableCoupons = (res.unusable || []).map((row, idx) => mapServerCoupon(row as unknown as Record<string, unknown>, idx, false));
-        checkoutCouponsCache.set(cacheKey, {
-          coupons: nextCoupons,
-          unusableCoupons: nextUnusableCoupons,
-          savedAt: Date.now(),
-        });
-        setCoupons(nextCoupons);
-        setUnusableCoupons(nextUnusableCoupons);
+        setCoupons((res.usable || []).map((row, idx) => mapServerCoupon(row as unknown as Record<string, unknown>, idx, true)));
+        setUnusableCoupons((res.unusable || []).map((row, idx) => mapServerCoupon(row as unknown as Record<string, unknown>, idx, false)));
       })
       .catch(() => {
         if (!cancelled) {
@@ -110,12 +77,17 @@ export function useCheckoutPickerCoupons(orderAmount: number, checkoutParams?: S
         }
       })
       .finally(() => {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setLoadedRequestKey(requestKey);
+          setLoading(false);
+        }
       });
     return () => {
       cancelled = true;
     };
-  }, [orderAmount, checkoutParams]);
+  }, [orderAmount, checkoutParams, requestKey]);
 
-  return { coupons, unusableCoupons, loading };
+  const ready = !checkoutParams || loadedRequestKey === requestKey;
+
+  return { coupons, unusableCoupons, loading: loading || !ready, ready };
 }

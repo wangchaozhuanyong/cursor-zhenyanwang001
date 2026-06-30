@@ -183,6 +183,7 @@ export default function SettingsSecuritySection() {
 
   const passwordExpanded = activePanel === "password";
   const cancelExpanded = activePanel === "cancel";
+  const cancelConfirmReady = cancelConfirmText.trim() === "注销账号";
 
   return (
     <section className="space-y-2">
@@ -258,7 +259,7 @@ export default function SettingsSecuritySection() {
             />
             <UnifiedButton
               type="submit"
-              disabled={panelBusy}
+              disabled={panelBusy || !cancelConfirmReady}
               className="w-full rounded-full bg-[var(--theme-danger)] py-3 text-sm font-semibold text-[var(--theme-danger-foreground)] disabled:opacity-60"
             >
               {panelBusy ? "注销中..." : "确认注销账号"}

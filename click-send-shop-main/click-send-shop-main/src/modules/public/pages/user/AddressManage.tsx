@@ -1,10 +1,10 @@
 import { useState, useEffect, type ReactNode } from "react";
-import { Check, Edit3, Loader2, MapPin, Phone, Plus, Trash2 } from "lucide-react";
+import { Check, Edit3, MapPin, Phone, Plus, Trash2 } from "lucide-react";
 import { useGoBack } from "@/hooks/useGoBack";
 import { useUserStore, type Address } from "@/stores/useUserStore";
 import { toast } from "sonner";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
-import { BottomSheetForm } from "@/modules/micro-interactions";
+import { BottomSheetConfirm, BottomSheetForm } from "@/modules/micro-interactions";
 import { MALAYSIA_STATES } from "@/types/address";
 import { formatAddressForDisplay } from "@/services/addressService";
 import { THEME_ACCENT_CHIP_CLASS } from "@/utils/themeVisuals";
@@ -44,6 +44,7 @@ export default function AddressManage() {
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<AddressForm>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Address | null>(null);
 
   useEffect(() => {
     loadAddresses();
@@ -105,10 +106,11 @@ export default function AddressManage() {
     <UnifiedButton
       type="button"
       onClick={openAdd}
-      className="sf-next-address-add-button"
+      aria-label={t("address.addAddress")}
+      className="sf-next-address-add-button sf-next-address-add-button--header"
     >
       <Plus size={14} aria-hidden />
-      {t("address.add")}
+      <span className="sf-next-address-add-button__label">{t("address.add")}</span>
     </UnifiedButton>
   );
   return (
@@ -121,10 +123,7 @@ export default function AddressManage() {
         mainClassName="sf-next-account-main pb-24 sm:py-4 md:pb-12"
       >
         {addressLoading && addresses.length === 0 ? (
-          <div className="sf-next-address-loading">
-            <Loader2 size={24} className="mb-3 animate-spin text-[var(--theme-price)]" aria-label={t("address.loading")} />
-            <p className="text-sm">{t("address.loading")}</p>
-          </div>
+          <AddressLoadingSkeleton label={t("address.loading")} />
         ) : addresses.length === 0 ? (
           <section className="sf-next-state-panel sf-next-address-empty">
             <span className="sf-next-state-panel__icon" aria-hidden>
@@ -176,14 +175,7 @@ export default function AddressManage() {
                     </UnifiedButton>
                     <UnifiedButton
                       type="button"
-                      onClick={async () => {
-                        try {
-                          await removeAddress(addr.id);
-                          toast.success(t("address.deleted"), toastPresetQuickSuccess);
-                        } catch {
-                          toast.error(t("address.deleteFailed"));
-                        }
-                      }}
+                      onClick={() => setDeleteTarget(addr)}
                       className="sf-next-address-action sf-next-address-action--delete"
                     >
                       <Trash2 size={13} aria-hidden />
@@ -243,6 +235,29 @@ export default function AddressManage() {
           </label>
         </div>
       </BottomSheetForm>
+
+      <BottomSheetConfirm
+        open={Boolean(deleteTarget)}
+        onClose={() => setDeleteTarget(null)}
+        title={t("address.deleteConfirmTitle")}
+        description={
+          deleteTarget
+            ? `${t("address.deleteConfirmDescriptionPrefix")}「${deleteTarget.recipient_name}」${t("address.deleteConfirmDescriptionSuffix")}`
+            : undefined
+        }
+        confirmText={t("address.delete")}
+        danger
+        onConfirm={async () => {
+          if (!deleteTarget) return;
+          try {
+            await removeAddress(deleteTarget.id);
+            toast.success(t("address.deleted"), toastPresetQuickSuccess);
+          } catch (error) {
+            toast.error(t("address.deleteFailed"));
+            throw error;
+          }
+        }}
+      />
     </>
   );
 }
@@ -253,5 +268,27 @@ function AddressField({ label, children }: { label: string; children: ReactNode 
       <span>{label}</span>
       {children}
     </label>
+  );
+}
+
+function AddressLoadingSkeleton({ label }: { label: string }) {
+  return (
+    <section className="sf-next-address-loading" aria-busy="true" aria-label={label}>
+      {Array.from({ length: 3 }).map((_, index) => (
+        <article key={index} className="sf-next-address-loading-card">
+          <div className="sf-next-skeleton sf-next-address-loading-pin" />
+          <div className="sf-next-address-loading-copy">
+            <div className="sf-next-skeleton sf-next-address-loading-line is-title" />
+            <div className="sf-next-skeleton sf-next-address-loading-line is-phone" />
+            <div className="sf-next-skeleton sf-next-address-loading-line is-address" />
+          </div>
+          <div className="sf-next-address-loading-actions">
+            <div className="sf-next-skeleton sf-next-address-loading-action" />
+            <div className="sf-next-skeleton sf-next-address-loading-action" />
+          </div>
+        </article>
+      ))}
+      <span className="sr-only">{label}</span>
+    </section>
   );
 }

@@ -524,6 +524,7 @@ export default function Login() {
   return (
     <div
       className={`${STORE_AUTH_SHELL_CLASS} auth-login-page auth-next-page`}
+      data-auth-mode={mode}
       data-keyboard-open={keyboardOpen ? "true" : undefined}
       style={authShellStyle}
     >
@@ -539,9 +540,9 @@ export default function Login() {
           </button>
 
           <section className="auth-login-heading shrink-0">
-            <h2 className="font-display text-xl font-bold text-foreground sm:text-[22px]">
+            <h1 className="font-display text-xl font-bold text-foreground sm:text-[22px]">
               {mode === "login" ? t("auth.welcomeBack") : t("auth.createAccount")}
-            </h2>
+            </h1>
           </section>
         </div>
 
@@ -709,13 +710,13 @@ export default function Login() {
                   setPassword(e.target.value);
                   clearFieldError("password");
                 }}
-                className={cn(INPUT_CLASS, "pl-12 pr-12", fieldErrors.password && INPUT_ERROR_CLASS)}
+                className={cn(INPUT_CLASS, "pl-12 pr-14", fieldErrors.password && INPUT_ERROR_CLASS)}
               />
               <UnifiedButton
                 type="button"
                 onClick={() => setShowPwd(!showPwd)}
                 aria-label={showPwd ? t("auth.hidePassword") : t("auth.showPassword")}
-                className="absolute right-3 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-primary)] focus-visible:ring-offset-2 touch-target"
+                className="absolute right-2 top-1/2 inline-flex h-[44px] w-[44px] -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-primary)] focus-visible:ring-offset-2 touch-target"
               >
                 {showPwd ? <EyeOff size={18} aria-hidden /> : <Eye size={18} aria-hidden />}
               </UnifiedButton>

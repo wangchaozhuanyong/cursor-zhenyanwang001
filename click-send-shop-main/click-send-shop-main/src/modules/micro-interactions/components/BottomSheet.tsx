@@ -204,7 +204,7 @@ export function BottomSheet({
               {showHandle ? (
                 <UnifiedButton
                   type="button"
-                  className="app-bottom-sheet-handle-button flex w-full shrink-0 flex-col items-center pb-1 pt-3 outline-none"
+                  className="app-bottom-sheet-handle-button flex min-h-11 w-full shrink-0 flex-col items-center pb-1 pt-3 outline-none"
                   aria-label="向下拖动关闭"
                   onPointerDown={(e) => dragControls.start(e)}
                 >
@@ -237,7 +237,7 @@ export function BottomSheet({
                     <UnifiedButton
                       type="button"
                       onClick={onClose}
-                      className="app-bottom-sheet-close flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-[var(--theme-text-muted)] transition"
+                      className="app-bottom-sheet-close flex h-11 w-11 shrink-0 items-center justify-center rounded-full border text-[var(--theme-text-muted)] transition"
                       aria-label="关闭"
                     >
                       <X size={18} />

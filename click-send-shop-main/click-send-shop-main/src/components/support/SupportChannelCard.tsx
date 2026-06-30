@@ -90,11 +90,11 @@ export default function SupportChannelCard({ channel }: Props) {
     setDownloadingQr(true);
     void trackEvent({ event_type: "support_qr_download", module: "support", page: "/support-download" });
     try {
-      const saved = await downloadImage(qrUrl, `${title}-二维码`);
-      if (saved) toast.success("二维码已下载");
-      else toast.message("已打开二维码图片，请长按保存");
+      const saved = await downloadImage(qrUrl, `${title}-客服图片`);
+      if (saved) toast.success("客服图片已下载");
+      else toast.message("已打开客服图片，请长按保存");
     } catch {
-      toast.error("下载失败，请长按二维码图片保存");
+      toast.error("下载失败，请长按客服图片保存");
     } finally {
       setDownloadingQr(false);
     }
@@ -145,13 +145,13 @@ export default function SupportChannelCard({ channel }: Props) {
             {qrUrl ? (
               <StableImage
                 src={qrUrl}
-                alt={`${title}二维码`}
+                alt={`${title}客服二维码或图片`}
                 className="support-qr-image"
                 imgClassName="object-contain"
                 objectFit="contain"
               />
             ) : (
-              <div className="support-qr-placeholder">暂未配置二维码</div>
+              <div className="support-qr-placeholder">暂未配置客服图片</div>
             )}
           </div>
 
@@ -175,14 +175,14 @@ export default function SupportChannelCard({ channel }: Props) {
                 className="support-download-qr-button"
               >
                 {downloadingQr ? <Loader2 size={20} className="animate-spin" aria-hidden="true" /> : <Download size={20} aria-hidden="true" />}
-                <span>保存二维码</span>
+                <span>保存客服图片</span>
               </UnifiedButton>
             ) : null}
           </div>
 
           <div className="support-qr-safety">
             <BadgeCheck size={15} aria-hidden="true" />
-            <span>请认准页面展示的官方客服账号</span>
+            <span>请认准页面展示的官方客服账号与客服图片</span>
           </div>
         </div>
       </div>

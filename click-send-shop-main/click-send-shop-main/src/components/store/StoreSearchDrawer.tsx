@@ -160,9 +160,15 @@ export function StoreSearchDrawer({
               id="storefront-unified-search-input"
               ref={inputRef}
               type="search"
+              enterKeyHint="search"
               value={draft}
               placeholder={placeholder}
               onChange={(event) => updateDraft(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key !== "Enter" || event.nativeEvent.isComposing) return;
+                event.preventDefault();
+                submitTerm(draft);
+              }}
             />
             {draft ? (
               <UnifiedButton type="button" className="sf-next-store-search-drawer__clear" onClick={clearDraft} aria-label="清空搜索关键词">

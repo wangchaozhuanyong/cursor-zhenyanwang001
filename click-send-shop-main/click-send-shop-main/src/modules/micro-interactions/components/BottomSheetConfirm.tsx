@@ -39,6 +39,8 @@ export function BottomSheetConfirm({
     try {
       await onConfirm();
       onClose();
+    } catch {
+      // Keep the dialog open so the caller's error toast remains actionable.
     } finally {
       setBusy(false);
     }

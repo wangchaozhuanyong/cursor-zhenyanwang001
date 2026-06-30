@@ -67,7 +67,7 @@ export default function AccountProductCard({
         </Link>
 
         <div className="sf-next-account-product-card__content flex min-w-0 flex-col">
-          <Link to={href} className="min-w-0" aria-label={`查看 ${vm.name}`}>
+          <Link to={href} className="sf-next-account-product-card__title-link min-w-0" aria-label={`查看 ${vm.name}`}>
             <h3 className="sf-next-account-product-card__title line-clamp-2 min-h-[2.5rem] text-sm font-semibold leading-5 text-[var(--theme-text)]">
               {vm.name}
             </h3>

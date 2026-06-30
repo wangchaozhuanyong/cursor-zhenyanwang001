@@ -11,7 +11,7 @@ import { shouldHideBottomNav } from "./bottomNavVisibility";
 import { navigateWithStoreTransition } from "@/utils/storeNavigationTransition";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { preloadStoreRoute } from "@/utils/storeRoutePreload";
-import { rememberCurrentStoreScrollPosition } from "@/utils/storeScrollRestoration";
+import { getRememberedStoreTabPath, rememberCurrentStoreScrollPosition } from "@/utils/storeScrollRestoration";
 import { stripPublicLocaleFromPathname, usePublicLocale } from "@/i18n/publicLocale";
 
 /** 轻触允许的最大位移（px）；略放宽，避免「刚滑完页面就点底栏」被误判为滑动 */
@@ -31,6 +31,10 @@ function preloadTabRoute(path: string) {
 
 function preloadIdleTabRoute(path: string) {
   preloadStoreRoute(path, "idle");
+}
+
+function shouldActivateOnPointerDown(pointerType: string) {
+  return pointerType === "touch" || pointerType === "pen";
 }
 
 export default function BottomNav() {
@@ -84,10 +88,10 @@ export default function BottomNav() {
       return;
     }
     rememberCurrentStoreScrollPosition();
-    navigateWithStoreTransition(navigate, localizedPath(path));
+    navigateWithStoreTransition(navigate, localizedPath(getRememberedStoreTabPath(path)));
   }, [currentPathname, localizedPath, location.search, navigate]);
 
-  /** 避免 pointerup + click 双触发；兼容不支持 Pointer Events 的浏览器 */
+  /** 避免 pointerdown/pointerup/click 双触发；兼容不支持 Pointer Events 的浏览器 */
   const activateTab = useCallback((path: string) => {
     const now = Date.now();
     const last = lastNavTapRef.current;
@@ -144,6 +148,9 @@ export default function BottomNav() {
     };
     setPendingPath(path);
     void preloadTabRoute(path);
+    if (shouldActivateOnPointerDown(event.pointerType)) {
+      activateTab(path);
+    }
   };
 
   const handlePointerMove = (event: PointerEvent<HTMLButtonElement>) => {

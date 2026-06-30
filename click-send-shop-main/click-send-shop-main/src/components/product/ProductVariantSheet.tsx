@@ -251,12 +251,12 @@ export default function ProductVariantSheet({
   };
 
   const qtyStepper = (
-    <div className="grid w-36 shrink-0 grid-cols-[2.25rem_1fr_2.25rem] overflow-hidden rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)]">
+    <div className="grid w-40 shrink-0 grid-cols-[2.75rem_1fr_2.75rem] overflow-hidden rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)]">
       <UnifiedButton
         type="button"
         disabled={qty <= 1 || soldOut}
         onClick={() => tryChangeQty(qty - 1, "minus")}
-        className="flex h-9 min-w-[2.25rem] items-center justify-center p-0 disabled:opacity-40"
+        className="flex h-11 min-w-[2.75rem] items-center justify-center p-0 disabled:opacity-40"
         aria-label="减少"
       >
         <Minus size={16} />
@@ -283,14 +283,14 @@ export default function ProductVariantSheet({
           }
           if (parsed > maxQty) onQtyChange(clampQty(parsed));
         }}
-        className="h-9 min-w-0 bg-transparent px-1 text-center text-sm font-semibold tabular-nums outline-none"
+        className="h-11 min-w-0 bg-transparent px-1 text-center text-sm font-semibold tabular-nums outline-none"
         aria-label="数量"
       />
       <UnifiedButton
         type="button"
         disabled={soldOut || qty >= maxQty}
         onClick={() => tryChangeQty(qty + 1, "plus")}
-        className="flex h-9 min-w-[2.25rem] items-center justify-center p-0 disabled:opacity-40"
+        className="flex h-11 min-w-[2.75rem] items-center justify-center p-0 disabled:opacity-40"
         aria-label="增加"
       >
         <Plus size={16} />
@@ -361,7 +361,7 @@ export default function ProductVariantSheet({
                   disabled={disabled}
                   onClick={() => selectSpecValue(group.id, value.id)}
                   className={cn(
-                    "relative min-h-10 rounded-xl border px-3 py-1.5 text-sm transition disabled:opacity-45",
+                    "sf-next-variant-option relative min-h-11 rounded-xl border px-3 py-2 text-sm transition disabled:opacity-45",
                     active
                       ? "border-[var(--theme-price)] bg-[color-mix(in_srgb,var(--theme-price)_10%,var(--theme-surface))] font-semibold text-[var(--theme-price)]"
                       : "border-[var(--theme-border)] bg-[var(--theme-surface)] text-[var(--theme-text)] hover:border-[color-mix(in_srgb,var(--theme-price)_45%,var(--theme-border))]",
@@ -408,7 +408,7 @@ export default function ProductVariantSheet({
               disabled={disabled}
               onClick={() => onSelectVariant(variant.id)}
               className={cn(
-                "relative flex min-h-12 items-center justify-center gap-2 rounded-xl border px-3 py-2 text-center text-xs transition disabled:opacity-45",
+                "sf-next-variant-option relative flex min-h-12 items-center justify-center gap-2 rounded-xl border px-3 py-2 text-center text-xs transition disabled:opacity-45",
                 active
                   ? "border-[var(--theme-price)] bg-[color-mix(in_srgb,var(--theme-price)_10%,var(--theme-surface))] font-semibold text-[var(--theme-price)]"
                   : "border-[var(--theme-border)] bg-[var(--theme-surface)] text-[var(--theme-text)] hover:border-[color-mix(in_srgb,var(--theme-price)_45%,var(--theme-border))]",

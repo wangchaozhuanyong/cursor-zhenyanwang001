@@ -71,7 +71,12 @@ export function useCheckoutCouponSelection({
     weightKg,
   ]);
 
-  const { coupons: pickerCouponsRaw, unusableCoupons: pickerUnusableCouponsRaw, loading: rawPickerCouponsLoading } = useCheckoutPickerCoupons(
+  const {
+    coupons: pickerCouponsRaw,
+    unusableCoupons: pickerUnusableCouponsRaw,
+    loading: rawPickerCouponsLoading,
+    ready: pickerCouponsReady,
+  } = useCheckoutPickerCoupons(
     rawTotal,
     checkoutCouponParams,
   );
@@ -105,7 +110,12 @@ export function useCheckoutCouponSelection({
   );
 
   useEffect(() => {
-    if (couponInitDone || pickerCouponsLoading) return;
+    if (!couponEnabled) {
+      setSelectedCoupon(null);
+      if (!couponInitDone) setCouponInitDone(true);
+      return;
+    }
+    if (couponInitDone || pickerCouponsLoading || !pickerCouponsReady || !checkoutCouponParams) return;
 
     if (preferredCouponId === "none") {
       setSelectedCoupon(null);
@@ -175,7 +185,10 @@ export function useCheckoutCouponSelection({
     setCouponInitDone(true);
   }, [
     couponInitDone,
+    couponEnabled,
+    checkoutCouponParams,
     pickerCouponsLoading,
+    pickerCouponsReady,
     pickerCoupons,
     preferredCouponId,
     rawTotal,

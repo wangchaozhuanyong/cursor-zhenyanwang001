@@ -7,6 +7,7 @@ import StoreDesktopHeader from "@/components/store/StoreDesktopHeader";
 import StoreTabletBar from "@/components/store/StoreTabletBar";
 import { STORE_MOBILE_PAGE_HEADER_CLASS } from "@/constants/storeLayout";
 import { useGoBack } from "@/hooks/useGoBack";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { cn } from "@/lib/utils";
 
 type StoreAccountBreadcrumb = {
@@ -40,12 +41,15 @@ export default function StoreAccountLayout({
 }: StoreAccountLayoutProps) {
   const defaultBack = useGoBack(backFallback);
   const handleBack = onBack ?? defaultBack;
+  const usesDesktopHeading = useMediaQuery("(min-width: 768px)");
 
   return (
     <div className={cn("sf-next-page-shell sf-next-bottom-safe min-h-screen bg-background text-foreground", className)}>
-      <div className="md:hidden">
-        <PageHeader className={STORE_MOBILE_PAGE_HEADER_CLASS} title={title} onBack={handleBack} rightSlot={rightSlot} />
-      </div>
+      {!usesDesktopHeading ? (
+        <div className="md:hidden">
+          <PageHeader className={STORE_MOBILE_PAGE_HEADER_CLASS} title={title} onBack={handleBack} rightSlot={rightSlot} />
+        </div>
+      ) : null}
       <StoreTabletBar className="sf-next-fixed-header" />
       <StoreDesktopHeader className="sf-next-fixed-header" />
 
@@ -60,32 +64,34 @@ export default function StoreAccountLayout({
           <StoreAccountNav className="sticky top-[var(--sf-next-header-tablet-sticky-top)] xl:top-[var(--sf-next-header-desktop-sticky-top)]" />
         </aside>
         <section className="min-w-0">
-          <div className="mb-5 hidden items-start justify-between gap-4 md:flex">
-            <div className="min-w-0">
-              <UnifiedButton
-                type="button"
-                onClick={handleBack}
-                className="mb-2 inline-flex h-8 items-center gap-1 rounded-full px-0 text-sm font-medium text-[var(--theme-text-muted)] hover:text-[var(--theme-text)]"
-              >
-                <ChevronLeft size={16} />
-                {desktopBackLabel}
-              </UnifiedButton>
-              {breadcrumbs?.length ? (
-                <nav className="mb-1 flex flex-wrap items-center gap-1 text-xs text-[var(--theme-text-muted)]" aria-label="面包屑">
-                  {breadcrumbs.map((item, index) => (
-                    <span key={index} className="inline-flex items-center gap-1">
-                      <span className={index === breadcrumbs.length - 1 ? "font-medium text-[var(--theme-text)]" : undefined}>
-                        {item.label}
+          {usesDesktopHeading ? (
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <UnifiedButton
+                  type="button"
+                  onClick={handleBack}
+                  className="mb-2 inline-flex h-8 items-center gap-1 rounded-full px-0 text-sm font-medium text-[var(--theme-text-muted)] hover:text-[var(--theme-text)]"
+                >
+                  <ChevronLeft size={16} />
+                  {desktopBackLabel}
+                </UnifiedButton>
+                {breadcrumbs?.length ? (
+                  <nav className="mb-1 flex flex-wrap items-center gap-1 text-xs text-[var(--theme-text-muted)]" aria-label="面包屑">
+                    {breadcrumbs.map((item, index) => (
+                      <span key={index} className="inline-flex items-center gap-1">
+                        <span className={index === breadcrumbs.length - 1 ? "font-medium text-[var(--theme-text)]" : undefined}>
+                          {item.label}
+                        </span>
+                        {index < breadcrumbs.length - 1 ? <span>/</span> : null}
                       </span>
-                      {index < breadcrumbs.length - 1 ? <span>/</span> : null}
-                    </span>
-                  ))}
-                </nav>
-              ) : null}
-              <h1 className="truncate text-2xl font-bold tracking-normal text-[var(--theme-text)]">{title}</h1>
+                    ))}
+                  </nav>
+                ) : null}
+                <h1 className="truncate text-2xl font-bold tracking-normal text-[var(--theme-text)]">{title}</h1>
+              </div>
+              {rightSlot ? <div className="shrink-0">{rightSlot}</div> : null}
             </div>
-            {rightSlot ? <div className="shrink-0">{rightSlot}</div> : null}
-          </div>
+          ) : null}
           {children}
         </section>
       </main>

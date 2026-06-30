@@ -91,7 +91,7 @@ export default function ForgotPassword() {
             <ArrowLeft size={19} aria-hidden />
           </button>
           <section className="auth-login-heading shrink-0">
-            <h2 className="font-display text-xl font-bold text-foreground sm:text-[22px]">找回密码</h2>
+            <h1 className="font-display text-xl font-bold text-foreground sm:text-[22px]">找回密码</h1>
           </section>
         </div>
 

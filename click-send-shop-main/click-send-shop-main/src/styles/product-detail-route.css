@@ -2161,3 +2161,54 @@ html[data-app-scope="store"][data-theme-density="compact"] .sf-next-product-deta
   gap: 10px !important;
   padding: 12px !important;
 }
+
+/* Product media must be one continuous canvas, not a framed image inside another frame. */
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-product-detail-page .sf-next-product-gallery {
+  overflow: hidden !important;
+  border: 0 !important;
+  background: var(--sf-surface) !important;
+  box-shadow: none !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-product-detail-page .sf-next-product-gallery-inner,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-product-detail-page .sf-next-product-gallery-stage,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-product-detail-page .sf-next-product-gallery-frame,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-product-detail-page .sf-next-product-gallery .sf-next-ratio-image {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  aspect-ratio: auto !important;
+  background: var(--sf-surface) !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-product-detail-page .sf-next-product-gallery img {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  padding: 0 !important;
+  object-fit: contain !important;
+  object-position: center center !important;
+  background: var(--sf-surface) !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-product-detail-page .sf-next-product-gallery-count {
+  bottom: 0.75rem !important;
+}
+
+@media (max-width: 767px) {
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-product-detail-page .sf-next-product-gallery {
+    aspect-ratio: 1 / 1 !important;
+    border-radius: 0 0 var(--sc-card-radius) var(--sc-card-radius) !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-product-detail-page .sf-next-product-gallery-stage {
+    height: 100% !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-product-detail-page .sf-next-product-gallery > .sf-next-product-gallery-inner > .sf-next-product-gallery-stage:first-child {
+    height: 100% !important;
+    min-height: 0 !important;
+    aspect-ratio: auto !important;
+    background: var(--sf-surface) !important;
+  }
+}

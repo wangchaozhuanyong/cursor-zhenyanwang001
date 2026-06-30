@@ -25,6 +25,7 @@
     "test:browser-compat": "vitest run --pool=threads --maxWorkers=1 src/lib/browserBoot.test.ts src/utils/browserEnv.test.ts src/components/support/InstallPlatformCard.test.tsx",
     "test:watch": "vitest",
     "smoke:restructure": "node scripts/smoke-restructure.mjs",
+    "smoke:profile-mobile-actions": "node scripts/audit-profile-mobile-actions.mjs",
     "smoke:admin-auth-restructure": "node scripts/smoke-admin-auth-restructure.mjs",
     "regression:shots": "node scripts/regression-with-screenshots.mjs",
     "capture:client-redesign": "node scripts/capture-client-redesign-screens.mjs",

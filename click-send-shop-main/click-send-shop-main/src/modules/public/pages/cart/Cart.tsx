@@ -25,7 +25,6 @@ import StorePriceAmount from "@/components/store/StorePriceAmount";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { DesktopPurchaseCard, DesktopPurchaseTwoColumn } from "@/components/store/DesktopPurchasePattern";
 import { usePublicLocale } from "@/i18n/publicLocale";
-import CartPromotionNudge from "@/modules/storefront-v2/cart/CartPromotionNudge";
 import CouponPicker from "@/components/CouponPicker";
 import { useCheckoutPickerCoupons } from "@/hooks/useCheckoutPickerCoupons";
 import { estimateCheckoutCouponDiscount } from "@/modules/public/pages/order/utils/checkoutCouponDiscount";
@@ -83,7 +82,6 @@ export default function Cart() {
   const [quantityTargetKey, setQuantityTargetKey] = useState<string | null>(null);
   const [quantityDraft, setQuantityDraft] = useState("");
   const [cartPreview, setCartPreview] = useState<CartPromotionPreview | null>(null);
-  const [cartPreviewLoading, setCartPreviewLoading] = useState(false);
   const [cartPreviewError, setCartPreviewError] = useState<string | null>(null);
   const [selectedCoupon, setSelectedCoupon] = useState<CheckoutPickerCoupon | null>(null);
   const [couponSelectionTouched, setCouponSelectionTouched] = useState(false);
@@ -184,19 +182,16 @@ export default function Cart() {
   useEffect(() => {
     if (!isLoggedIn() || items.length === 0) {
       setCartPreview(null);
-      setCartPreviewLoading(false);
       setCartPreviewError(null);
       return;
     }
     const cachedPreview = getCachedCartPreview(cartPreviewSignature);
     if (cachedPreview) {
       setCartPreview(cachedPreview);
-      setCartPreviewLoading(false);
       setCartPreviewError(null);
       return;
     }
     let cancelled = false;
-    setCartPreviewLoading(true);
     setCartPreviewError(null);
     fetchCartPromotionPreview()
       .then((preview) => {
@@ -210,9 +205,6 @@ export default function Cart() {
           setCartPreview(null);
           setCartPreviewError(err instanceof Error ? err.message : t("cart.discountPreviewFailed"));
         }
-      })
-      .finally(() => {
-        if (!cancelled) setCartPreviewLoading(false);
       });
     return () => {
       cancelled = true;
@@ -735,23 +727,17 @@ export default function Cart() {
                 </AnimatePresence>
               </div>
               <div className="sf-next-cart-discount-section">
-                <h2>优惠</h2>
                 <CartDiscountPanel
                   selectedAmount={selectedAmount}
-                  estimatedDiscount={estimatedDiscount}
-                  estimatedPayable={estimatedPayable}
                   activityDiscount={previewActivityDiscount}
                   selectedCoupon={selectedCoupon}
                   selectedCouponDiscount={selectedCouponDiscount}
                   coupons={cartCoupons}
                   unusableCoupons={cartUnusableCoupons}
                   couponsLoading={cartCouponsLoading}
-                  previewLoading={cartPreviewLoading}
                   previewError={cartPreviewError}
                   canUseCartPreviewDiscount={canUseCartPreviewDiscount}
-                  promotionEvaluation={cartPreview?.promotion_evaluation ?? null}
                   onCouponSelect={handleCartCouponSelect}
-                  onBrowse={() => navigate(localizedPath("/categories"))}
                   t={t}
                 />
               </div>
@@ -990,74 +976,38 @@ function getCartLineUnavailableReason(item: CartItem) {
 
 function CartDiscountPanel({
   selectedAmount,
-  estimatedDiscount,
-  estimatedPayable,
   activityDiscount,
   selectedCoupon,
   selectedCouponDiscount,
   coupons,
   unusableCoupons,
   couponsLoading,
-  previewLoading,
   previewError,
   canUseCartPreviewDiscount,
-  promotionEvaluation,
   onCouponSelect,
-  onBrowse,
   t,
 }: {
   selectedAmount: number;
-  estimatedDiscount: number;
-  estimatedPayable: number;
   activityDiscount: number;
   selectedCoupon: CheckoutPickerCoupon | null;
   selectedCouponDiscount: number;
   coupons: CheckoutPickerCoupon[];
   unusableCoupons: CheckoutPickerCoupon[];
   couponsLoading: boolean;
-  previewLoading: boolean;
   previewError: string | null;
   canUseCartPreviewDiscount: boolean;
-  promotionEvaluation: CartPromotionPreview["promotion_evaluation"] | null;
   onCouponSelect: (coupon: CheckoutPickerCoupon | null) => void;
-  onBrowse: () => void;
   t: (key: string) => string;
 }) {
-  const loading = couponsLoading || previewLoading;
-  const hasDiscount = estimatedDiscount > 0;
   const hasBreakdown = activityDiscount > 0 || selectedCouponDiscount > 0 || Boolean(selectedCoupon);
-  const discountHeadline = loading && !hasDiscount
-    ? t("cart.autoDiscountChecking")
-    : hasDiscount
-      ? `${t("cart.autoDiscountSaved")} RM ${formatCartMoney(estimatedDiscount)}`
-      : t("cart.autoDiscountNone");
   const detailNote = !canUseCartPreviewDiscount
     ? t("cart.selectedSubsetDiscountNote")
     : previewError
       ? previewError
       : t("cart.discountEstimateNote");
-  const selectedCouponLabel = selectedCoupon
-    ? `${t("cart.selectedCoupon")}：${selectedCoupon.title}`
-    : couponsLoading
-      ? t("cart.couponLoading")
-      : coupons.length > 0
-        ? t("cart.autoCouponReady")
-        : t("cart.noCouponMatched");
 
   return (
     <section className="sf-next-cart-discount-panel" aria-label={t("cart.discountDetails")}>
-      <div className="sf-next-cart-discount-panel__head" data-has-discount={hasDiscount ? "true" : "false"}>
-        <div className="sf-next-cart-discount-panel__copy">
-          <p>{t("cart.autoDiscountTitle")}</p>
-          <strong>{discountHeadline}</strong>
-          <small>{selectedCouponLabel}</small>
-        </div>
-        <div className="sf-next-cart-discount-panel__total">
-          <small>{t("cart.estimatedPayable")}</small>
-          <b>RM {formatCartMoney(estimatedPayable)}</b>
-        </div>
-      </div>
-
       <div className="sf-next-cart-discount-panel__rows" data-has-breakdown={hasBreakdown ? "true" : "false"}>
         {activityDiscount > 0 ? (
           <div className="sf-next-cart-discount-panel__row">
@@ -1087,16 +1037,6 @@ function CartDiscountPanel({
           loading={couponsLoading}
         />
       </div>
-
-      {canUseCartPreviewDiscount && promotionEvaluation ? (
-        <CartPromotionNudge
-          campaign={null}
-          amount={selectedAmount}
-          evaluation={promotionEvaluation}
-          className="sf-next-cart-discount-panel__nudge"
-          onBrowse={onBrowse}
-        />
-      ) : null}
     </section>
   );
 }

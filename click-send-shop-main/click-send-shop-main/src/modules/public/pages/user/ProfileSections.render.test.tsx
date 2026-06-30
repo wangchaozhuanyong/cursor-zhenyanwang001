@@ -1,8 +1,15 @@
 import { act } from "react";
+import type { ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { Gift, Star, Ticket, Wallet } from "lucide-react";
+import { CircleHelp, Gift, Headphones, Settings, Star, Ticket, Wallet } from "lucide-react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { ProfileAssetPanel, type ProfileAssetItem } from "./ProfileSections";
+import {
+  ProfileAssetPanel,
+  ProfileSecondaryLinkPanel,
+  ProfileServiceGrid,
+  type ProfileAssetItem,
+  type ProfileServiceItem,
+} from "./ProfileSections";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -16,16 +23,28 @@ describe("ProfileAssetPanel", () => {
     { key: "balance", label: "余额", value: "RM 8.00", icon: Wallet, path: "/profile", auth: true },
     { key: "rewards", label: "奖励", value: "2", icon: Gift, path: "/rewards", auth: true },
   ];
+  const serviceItems: ProfileServiceItem[] = [
+    { key: "address", label: "收货地址", icon: Star, path: "/address", auth: true },
+    { key: "favorites", label: "我的收藏", icon: Gift, path: "/favorites", auth: false },
+    { key: "support", label: "客服中心", icon: Headphones, path: "/support-download?tab=support", auth: false },
+  ];
+  const secondaryItems: ProfileServiceItem[] = [
+    { key: "help", label: "帮助中心", icon: CircleHelp, path: "/help", auth: false },
+    { key: "settings", label: "账户设置", icon: Settings, path: "/settings", auth: true },
+  ];
 
-  async function renderPanel(onNavigate = vi.fn()) {
+  async function renderNode(node: ReactNode) {
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
 
     await act(async () => {
-      root?.render(<ProfileAssetPanel items={assetItems} onNavigate={onNavigate} />);
+      root?.render(<>{node}</>);
     });
+  }
 
+  async function renderPanel(onNavigate = vi.fn()) {
+    await renderNode(<ProfileAssetPanel items={assetItems} onNavigate={onNavigate} />);
     return onNavigate;
   }
 
@@ -65,5 +84,43 @@ describe("ProfileAssetPanel", () => {
     });
 
     expect(onNavigate).toHaveBeenCalledWith(assetItems[1]);
+  });
+
+  it("keeps shopping service actions wired to their original item payloads", async () => {
+    const onNavigate = vi.fn();
+    await renderNode(<ProfileServiceGrid items={serviceItems} onNavigate={onNavigate} />);
+
+    const buttons = Array.from(container?.querySelectorAll<HTMLButtonElement>(".profile-service-action") ?? []);
+
+    await act(async () => {
+      buttons[2]?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+
+    expect(buttons.map((button) => button.dataset.featureKey)).toEqual(["address", "favorites", "support"]);
+    expect(onNavigate).toHaveBeenCalledWith(serviceItems[2]);
+  });
+
+  it("keeps secondary actions and support shortcut clickable", async () => {
+    const onNavigate = vi.fn();
+    const onSupportClick = vi.fn();
+    await renderNode(
+      <ProfileSecondaryLinkPanel
+        items={secondaryItems}
+        onNavigate={onNavigate}
+        onSupportClick={onSupportClick}
+      />,
+    );
+
+    const buttons = Array.from(container?.querySelectorAll<HTMLButtonElement>(".profile-secondary-action") ?? []);
+    const supportButton = container?.querySelector<HTMLButtonElement>(".profile-section-more");
+
+    await act(async () => {
+      buttons[1]?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      supportButton?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+
+    expect(buttons.map((button) => button.dataset.featureKey)).toEqual(["help", "settings"]);
+    expect(onNavigate).toHaveBeenCalledWith(secondaryItems[1]);
+    expect(onSupportClick).toHaveBeenCalledTimes(1);
   });
 });

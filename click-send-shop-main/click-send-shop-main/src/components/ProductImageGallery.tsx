@@ -46,8 +46,8 @@ export default function ProductImageGallery({ images, imageAlts, name, videoUrl,
 
   if (media.length === 0) {
     return (
-      <div className="relative">
-        <div className="relative w-full overflow-hidden bg-secondary" style={THEME_PRODUCT_MEDIA_ASPECT_STYLE}>
+      <div className="sf-next-product-gallery-inner relative">
+        <div className="sf-next-product-gallery-stage relative w-full overflow-hidden bg-secondary" style={THEME_PRODUCT_MEDIA_ASPECT_STYLE}>
           <RatioImage
             src={fallbackImage}
             alt={`${name} 商品图`}
@@ -65,9 +65,9 @@ export default function ProductImageGallery({ images, imageAlts, name, videoUrl,
   }
 
   return (
-    <div className="relative">
+    <div className="sf-next-product-gallery-inner relative">
       <div
-        className="relative w-full overflow-hidden bg-secondary"
+        className="sf-next-product-gallery-stage relative w-full overflow-hidden bg-secondary"
         style={THEME_PRODUCT_MEDIA_ASPECT_STYLE}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
@@ -75,7 +75,7 @@ export default function ProductImageGallery({ images, imageAlts, name, videoUrl,
         <AnimatePresence initial={false} mode="wait">
           <motion.div
             key={`${currentItem.type}-${currentItem.url}`}
-            className="absolute inset-0 h-full w-full"
+            className="sf-next-product-gallery-frame absolute inset-0 h-full w-full"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -106,7 +106,7 @@ export default function ProductImageGallery({ images, imageAlts, name, videoUrl,
           </motion.div>
         </AnimatePresence>
 
-        <div className="pointer-events-none absolute bottom-3 left-1/2 z-10 -translate-x-1/2 rounded-full border border-[color-mix(in_srgb,var(--theme-border)_60%,transparent)] bg-[color-mix(in_srgb,var(--theme-surface)_88%,transparent)] px-2.5 py-1 text-[11px] font-medium text-[var(--theme-text-on-surface)] shadow-sm backdrop-blur-sm">
+        <div className="sf-next-product-gallery-count pointer-events-none absolute bottom-3 left-1/2 z-10 -translate-x-1/2 rounded-full border border-[color-mix(in_srgb,var(--theme-border)_60%,transparent)] bg-[color-mix(in_srgb,var(--theme-surface)_88%,transparent)] px-2.5 py-1 text-[11px] font-medium text-[var(--theme-text-on-surface)] shadow-sm backdrop-blur-sm">
           {current + 1} / {media.length}
         </div>
       </div>

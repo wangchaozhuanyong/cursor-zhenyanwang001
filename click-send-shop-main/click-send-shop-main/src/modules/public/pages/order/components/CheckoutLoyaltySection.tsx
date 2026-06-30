@@ -72,7 +72,6 @@ export function CheckoutLoyaltySection({
     <section className="sf-next-checkout-card sf-next-checkout-loyalty-section sf-next-theme-radius space-y-4 border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 sf-next-theme-shadow">
       <div className="min-w-0">
         <h3 className="text-[15px] font-semibold text-foreground">积分与返现抵扣</h3>
-        <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">可用额度按当前订单实时计算，提交前会再次以后端金额为准</p>
       </div>
 
       {pointsRedeemEnabled ? (

@@ -448,6 +448,7 @@ export default function Profile() {
 
               <ProfileServiceGrid
                 title="购物服务"
+                showTitle={false}
                 items={shoppingServiceItems}
                 onNavigate={(item) => handleFeatureNavigate(item.key, item.path, item.auth)}
                 rightLabel={hasCouponEntry ? "领取礼券" : undefined}

@@ -427,18 +427,20 @@ export function ProfileServiceGrid({
   items,
   onNavigate,
   title = "我的服务",
+  showTitle = true,
   rightLabel,
   onRightClick,
 }: {
   items: ProfileServiceItem[];
   onNavigate: (item: ProfileServiceItem) => void;
   title?: string;
+  showTitle?: boolean;
   rightLabel?: string;
   onRightClick?: () => void;
 }) {
   return (
     <section className={cn(PROFILE_CARD_CLASS, "sf-next-profile-service-panel", PROFILE_SECTION_PADDING)}>
-      <ProfileSectionTitle title={title} rightLabel={rightLabel} onRightClick={onRightClick} />
+      {showTitle ? <ProfileSectionTitle title={title} rightLabel={rightLabel} onRightClick={onRightClick} /> : null}
       <div className="profile-service-grid">
         {items.map((item) => (
           <UnifiedButton

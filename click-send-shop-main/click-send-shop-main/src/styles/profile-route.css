@@ -2627,10 +2627,53 @@ html[data-app-scope="store"][data-theme-member-card-style] .sf-next-profile-hero
   color: var(--theme-member-card-badge-fg);
 }
 
+html[data-app-scope="store"][data-storefront-ui="next"][data-theme-member-card-style] .sf-next-profile-hero-card .profile-card-asset {
+  border-color: color-mix(in srgb, var(--theme-member-card-foreground, var(--sf-canvas)) 72%, var(--theme-member-card-mid, var(--sf-ink)) 28%) !important;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-member-card-foreground, var(--sf-canvas)) 96%, var(--theme-member-card-mid, var(--sf-ink)) 4%),
+      color-mix(in srgb, var(--theme-member-card-foreground, var(--sf-canvas)) 84%, var(--theme-member-card-mid, var(--sf-ink)) 16%)
+    ) !important;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 54%, transparent),
+    0 10px 22px -18px color-mix(in srgb, var(--theme-member-card-mid, var(--sf-ink)) 74%, transparent) !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"][data-theme-member-card-style] .sf-next-profile-hero-card .profile-card-asset-value {
+  color: color-mix(in srgb, var(--theme-member-card-mid, var(--sf-ink)) 78%, black 22%) !important;
+  opacity: 1 !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"][data-theme-member-card-style] .sf-next-profile-hero-card .profile-card-asset-label {
+  color: color-mix(in srgb, var(--theme-member-card-mid, var(--sf-ink)) 66%, black 34%) !important;
+  opacity: 0.9 !important;
+}
+
 html[data-app-scope="store"][data-theme-member-card-style="light"] .sf-next-profile-hero-card,
 html[data-app-scope="store"][data-theme-member-card-style="fresh"] .sf-next-profile-hero-card {
   background:
     linear-gradient(135deg, color-mix(in srgb, var(--theme-member-card-mid, var(--theme-primary)) 10%, var(--client-surface)), var(--client-surface) 62%),
     var(--client-surface);
   color: var(--theme-text);
+}
+
+@media (max-width: 767px) {
+  html[data-app-scope="store"][data-storefront-ui="next"][data-store-tab-route="profile"] {
+    --sc-profile-bottom-hit-space: calc(var(--sf-bottom-nav-total-height, 3.75rem) + 4.75rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"][data-store-tab-route="profile"] body .sf-next-profile-layout {
+    padding-bottom: var(--sc-profile-bottom-hit-space) !important;
+    scroll-padding-bottom: var(--sc-profile-bottom-hit-space) !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-page :where(
+    button[data-feature-key],
+    .profile-section-more,
+    .profile-vip-action,
+    .sf-next-profile-identity__icon-button
+  ) {
+    touch-action: manipulation;
+  }
 }

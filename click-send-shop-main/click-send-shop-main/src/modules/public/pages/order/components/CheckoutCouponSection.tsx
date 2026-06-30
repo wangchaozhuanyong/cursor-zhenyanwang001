@@ -28,7 +28,6 @@ export function CheckoutCouponSection({
       <div className="mb-3 flex items-center justify-between gap-3">
         <div>
           <h3 className="text-[15px] font-bold text-foreground md:text-base">优惠</h3>
-          <p className="mt-0.5 text-xs text-muted-foreground">优惠只在这里选择，金额明细只展示结果</p>
         </div>
         {selectedCoupon ? (
           <span className="rounded-full bg-[color-mix(in_srgb,var(--theme-price)_10%,transparent)] px-3 py-1 text-xs font-semibold text-[var(--theme-price)]">

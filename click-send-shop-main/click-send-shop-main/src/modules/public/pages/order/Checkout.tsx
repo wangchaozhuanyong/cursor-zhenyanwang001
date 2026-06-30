@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ShoppingBag } from "lucide-react";
 import AppRouteFallback from "@/components/AppRouteFallback";
 import NotificationIconButton from "@/components/NotificationIconButton";
@@ -24,9 +24,6 @@ import { submitCtaLabel } from "./utils/checkoutText";
 import MarketingPositionNotices from "@/modules/public/components/marketing/MarketingPositionNotices";
 import StoreStandardPageShell from "@/components/store/StoreStandardPageShell";
 import { DesktopPurchaseCard, DesktopPurchaseTwoColumn } from "@/components/store/DesktopPurchasePattern";
-import CheckoutPromotionExplanation from "@/modules/storefront-v2/checkout/CheckoutPromotionExplanation";
-import { fetchPrimaryFullReductionCampaign } from "@/modules/storefront-v2/campaign/campaignService";
-import type { StorefrontCampaignVm } from "@/modules/storefront-v2/campaign/campaignTypes";
 import { usePublicLocale } from "@/i18n/publicLocale";
 import RouteStatePanel from "@/modules/storefront-v2/design/components/RouteStatePanel";
 import "@/styles/checkout-route.css";
@@ -44,21 +41,6 @@ export default function Checkout() {
   const isMobileSheet = usePreferBottomSheet("standard");
   const addresses = useUserStore((s) => s.addresses);
   const [addressSheetOpen, setAddressSheetOpen] = useState(false);
-  const [fullReductionCampaign, setFullReductionCampaign] = useState<StorefrontCampaignVm | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    void fetchPrimaryFullReductionCampaign()
-      .then((campaign) => {
-        if (!cancelled) setFullReductionCampaign(campaign);
-      })
-      .catch(() => {
-        if (!cancelled) setFullReductionCampaign(null);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   const handleChooseAddress = () => {
     if (isMobileSheet) setAddressSheetOpen(true);
@@ -193,16 +175,6 @@ export default function Checkout() {
                 sstShowInCatalog={checkout.sstCfg.enabled}
                 sstCustomerNote={checkout.sstCfg.customerNote}
               />
-              <CheckoutPromotionExplanation
-                discountLines={checkout.discountLines}
-                pointsBonusLines={checkout.pointsBonusLines}
-                promotionEvaluation={checkout.promotionEvaluation}
-                orderSnapshot={checkout.orderSnapshot}
-                fullReductionCampaign={fullReductionCampaign}
-                currentAmount={checkout.rawTotal}
-                pricingReady={checkout.backendPricingReady}
-                pricingError={checkout.orderPreviewError}
-              />
               <LoadingButton
                 state={checkout.submitting ? "loading" : "normal"}
                 onClick={checkout.handleSubmit}
@@ -291,17 +263,6 @@ export default function Checkout() {
                 sstPreview={checkout.sstPreview}
                 sstShowInCatalog={checkout.sstCfg.enabled}
                 sstCustomerNote={checkout.sstCfg.customerNote}
-              />
-              <CheckoutPromotionExplanation
-                discountLines={checkout.discountLines}
-                pointsBonusLines={checkout.pointsBonusLines}
-                promotionEvaluation={checkout.promotionEvaluation}
-                orderSnapshot={checkout.orderSnapshot}
-                fullReductionCampaign={fullReductionCampaign}
-                currentAmount={checkout.rawTotal}
-                pricingReady={checkout.backendPricingReady}
-                pricingError={checkout.orderPreviewError}
-                className="mt-4"
               />
             </div>
         </DesktopPurchaseTwoColumn>

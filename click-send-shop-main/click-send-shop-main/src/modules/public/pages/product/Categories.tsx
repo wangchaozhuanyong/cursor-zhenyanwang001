@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Search, X } from "lucide-react";
 import { useProductStore } from "@/stores/useProductStore";
 import { STORE_COPY } from "@/constants/storeCopy";
@@ -20,7 +20,7 @@ import { trackEvent } from "@/services/analyticsService";
 import { toast } from "sonner";
 import { useClientDesignStyle } from "@/modules/storefront-v2/design/useClientDesignStyle";
 import { THEME_ALERT_ERROR_SOFT } from "@/utils/themeVisuals";
-import { THEME_PREVIEW_PARAM_NAMES } from "@/utils/themePreviewParams";
+import { appendThemePreviewParams, THEME_PREVIEW_PARAM_NAMES } from "@/utils/themePreviewParams";
 import SeoHead from "@/components/SeoHead";
 import { buildCanonical } from "@/utils/seo";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
@@ -44,6 +44,7 @@ export default function Categories() {
   const clientStyle = useClientDesignStyle();
   const siteInfo = useSiteInfo();
   const siteCapabilities = useSiteCapabilities();
+  const navigate = useNavigate();
   const productCardSiteContext = useMemo(
     () => ({
       restrictedComplianceEnabled: siteCapabilities.restrictedProductComplianceEnabled,
@@ -228,10 +229,9 @@ export default function Categories() {
 
   const handleSearchPanelSubmit = useCallback((nextValue: string) => {
     const normalized = nextValue.trim();
-    setQuery(normalized);
-    setSubmittedQuery(normalized);
-    setSearchPanelOpen(false);
-  }, []);
+    const target = normalized ? `/search?keyword=${encodeURIComponent(normalized)}` : "/search";
+    navigate(appendThemePreviewParams(target));
+  }, [navigate]);
 
   const handleClearTopSearch = useCallback(() => {
     setQuery("");

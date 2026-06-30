@@ -85,6 +85,7 @@ export default function Categories() {
   const loadMoreProducts = useProductStore((s) => s.loadMoreProducts);
   const loadCategories = useProductStore((s) => s.loadCategories);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const listingSectionRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => { loadCategories(); }, [loadCategories]);
   useEffect(() => { productService.fetchProductTags(20).then(setQuickTags).catch(() => setQuickTags([])); }, []);
@@ -193,6 +194,10 @@ export default function Categories() {
       cancelled = true;
     };
   }, [loadProducts, productListParams, productQueryKey]);
+
+  useEffect(() => {
+    listingSectionRef.current?.scrollTo({ top: 0, behavior: "auto" });
+  }, [productQueryKey]);
 
   const handleSelectChild = useCallback((childId: string) => {
     void trackEvent({ event_type: "category_click", module: "categories", category_id: childId });
@@ -364,6 +369,11 @@ export default function Categories() {
     page: pagination.page,
     totalPages: pagination.totalPages,
   });
+  const useCompactProductShell =
+    !showFullSkeleton
+    && visibleProducts.length > 0
+    && visibleProducts.length <= 2
+    && !hasMoreProducts;
 
   const categoryPills = rootKingkongItems;
   const searchCategoryOptions = useMemo<StoreSearchCategoryOption[]>(() => rootKingkongItems.map((item) => ({
@@ -508,7 +518,7 @@ export default function Categories() {
           <StoreCategoryPrimaryNav items={categoryPills} loading={loading && categories.length === 0} />
         </section>
 
-        <section className="sf-next-listing-section" aria-label={productSectionTitle}>
+        <section ref={listingSectionRef} className="sf-next-listing-section" aria-label={productSectionTitle}>
           <CategoryBannerCard category={activeCategoryBanner} />
           {subCategories.length > 0 && activeRootId ? (
             <StoreCategorySubcategorySelector
@@ -550,7 +560,10 @@ export default function Categories() {
           <SilkProductGrid
             products={visibleProducts}
             className={productGridClass}
-            shellClassName="md:min-h-[28rem]"
+            shellClassName={cn(
+              "sf-next-category-product-shell md:min-h-[28rem]",
+              useCompactProductShell && "sf-next-category-product-shell--compact",
+            )}
             displayMode="list"
             skeletonCount={8}
             siteContext={productCardSiteContext}

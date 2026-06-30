@@ -15,6 +15,7 @@ import StorefrontBadge from "@/modules/storefront-v2/components/StorefrontBadge"
 import StorefrontPrice from "@/modules/storefront-v2/components/StorefrontPrice";
 import { buildProductCardV2Model } from "@/modules/storefront-v2/product/productCardV2Model";
 import { cn } from "@/lib/utils";
+import "@/styles/secondary-routes.css";
 
 export default function Favorites() {
   const navigate = useNavigate();

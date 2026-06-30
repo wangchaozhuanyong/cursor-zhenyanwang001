@@ -35,6 +35,7 @@ import {
   labelOrderPaymentMethodLocalized,
   labelPendingPaymentActionLocalized,
 } from "./orderPageLocale";
+import "@/styles/orders-route.css";
 
 const moreActionBtn =
   "flex w-full items-center justify-between rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-3 text-left text-sm font-semibold text-[var(--theme-text)]";

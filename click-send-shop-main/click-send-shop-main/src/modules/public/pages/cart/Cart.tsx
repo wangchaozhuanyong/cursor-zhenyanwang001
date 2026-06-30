@@ -32,6 +32,7 @@ import { estimateCheckoutCouponDiscount } from "@/modules/public/pages/order/uti
 import { fetchCartPromotionPreview } from "@/services/cartService";
 import { estimateCartWeightKg } from "@/lib/shippingFee";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
+import "@/styles/cart-route.css";
 
 const CART_ACTION_WIDTH = 244;
 const CART_ACTION_REVEAL_THRESHOLD = 64;

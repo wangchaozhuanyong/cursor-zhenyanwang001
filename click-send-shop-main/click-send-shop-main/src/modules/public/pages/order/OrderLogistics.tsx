@@ -15,6 +15,7 @@ import { getOrderLogisticsSnapshot } from "@/utils/orderLogistics";
 import { getBuyerOrderStatusTextLocalized, getOrderCopy } from "./orderPageLocale";
 import RouteStatePanel from "@/modules/storefront-v2/design/components/RouteStatePanel";
 import StatusTimeline, { type StatusTimelineItem } from "@/modules/storefront-v2/design/components/StatusTimeline";
+import "@/styles/orders-route.css";
 
 const LOGISTICS_PAGE_COPY: Record<PublicLocale, {
   title: string;

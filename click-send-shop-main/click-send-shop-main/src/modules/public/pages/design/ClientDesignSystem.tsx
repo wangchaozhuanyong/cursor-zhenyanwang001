@@ -24,6 +24,7 @@ import { isLoggedIn } from "@/utils/token";
 import { userCouponToPremiumDisplay } from "@/utils/couponDisplay";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import { toast } from "sonner";
+import "@/styles/client-design-system.css";
 
 type DesignRouteKind = "system" | "coupon-detail" | "share-detail" | "states";
 

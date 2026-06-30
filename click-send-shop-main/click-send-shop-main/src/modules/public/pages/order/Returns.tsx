@@ -24,6 +24,7 @@ import {
 import ProductCoverImage from "@/components/ProductCoverImage";
 import { usePublicLocale, type PublicLocale } from "@/i18n/publicLocale";
 import { useHorizontalActiveScroll } from "@/hooks/useHorizontalActiveScroll";
+import "@/styles/secondary-routes.css";
 
 const RETURNS_COPY: Record<PublicLocale, {
   title: string;

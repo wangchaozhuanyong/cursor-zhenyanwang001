@@ -1,0 +1,292 @@
+/* Pending reviews route styles. Loaded with the lazy review route only. */
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-pending-reviews-page {
+  background: var(--sf-canvas) !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-pending-reviews-refresh {
+  display: grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  min-height: 2.5rem;
+  place-items: center;
+  border: 1px solid var(--sf-line);
+  border-radius: 999px;
+  background: var(--sf-surface);
+  color: var(--sf-ink);
+  padding: 0;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-pending-reviews-hero {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--sf-space-3);
+  border: 1px solid var(--sf-line);
+  border-radius: var(--sf-radius-lg);
+  background: var(--sf-graphite);
+  color: #fff;
+  padding: var(--sf-space-4);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-pending-reviews-hero__icon {
+  display: grid;
+  width: 3rem;
+  height: 3rem;
+  place-items: center;
+  border-radius: 1rem;
+  background: rgb(255 255 255 / 12%);
+  color: #fff;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-pending-reviews-hero p {
+  margin: 0;
+  color: #c6cec7;
+  font-size: var(--sf-font-xs);
+  font-weight: 700;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-pending-reviews-hero h2 {
+  margin: 0.25rem 0 0;
+  overflow: hidden;
+  color: #fff;
+  font-size: var(--sf-font-xl);
+  font-weight: 700;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-pending-reviews-stack,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-pending-reviews-items {
+  display: grid;
+  min-width: 0;
+  gap: var(--sf-space-3);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-pending-reviews-loading {
+  display: grid;
+  min-width: 0;
+  gap: var(--sf-space-3);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-pending-reviews-loading__head {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: 2.5rem minmax(0, 1fr);
+  align-items: center;
+  gap: var(--sf-space-3);
+  border: 1px solid var(--sf-line);
+  border-radius: var(--sf-radius-lg);
+  background: var(--sf-surface);
+  padding: var(--sf-space-4);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-pending-reviews-loading__head > span {
+  display: grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  place-items: center;
+  border-radius: var(--sf-radius-sm);
+  background: var(--sf-surface-muted);
+  color: var(--sf-accent);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-pending-reviews-loading__head h2,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-pending-reviews-loading__head p {
+  margin: 0;
+  min-width: 0;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-pending-reviews-loading__head h2 {
+  color: var(--sf-ink);
+  font-size: var(--sf-font-lg);
+  font-weight: 760;
+  line-height: 1.25;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-pending-reviews-loading__head p {
+  margin-top: 0.25rem;
+  color: var(--sf-ink-secondary);
+  font-size: var(--sf-font-sm);
+  line-height: 1.45;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-pending-reviews-card {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--sf-line);
+  border-radius: var(--sf-radius-lg);
+  background: var(--sf-surface);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-pending-reviews-card__head {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.5rem;
+  border-bottom: 1px solid var(--sf-line);
+  padding: 0.75rem var(--sf-space-4);
+  color: var(--sf-ink-secondary);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-pending-reviews-card__head p {
+  margin: 0;
+  overflow: hidden;
+  font-size: var(--sf-font-xs);
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-pending-reviews-items {
+  padding: var(--sf-space-3);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-pending-reviews-item,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-pending-reviews-skeleton {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: 4rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--sf-space-3);
+  border-radius: var(--sf-radius-md);
+  background: var(--sf-surface-muted);
+  padding: 0.75rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-pending-reviews-cover {
+  width: 4rem;
+  min-width: 4rem;
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--sf-radius-sm);
+  background: var(--sf-surface-strong);
+  padding: 0;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-pending-reviews-copy {
+  min-width: 0;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-pending-reviews-copy p {
+  margin: 0;
+  overflow: hidden;
+  color: var(--sf-ink);
+  font-size: var(--sf-font-sm);
+  font-weight: 700;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-pending-reviews-copy span {
+  display: block;
+  min-width: 0;
+  margin-top: 0.25rem;
+  overflow: hidden;
+  color: var(--sf-ink-secondary);
+  font-size: var(--sf-font-xs);
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-pending-reviews-action {
+  min-height: 2.5rem;
+  border: 1px solid var(--sf-graphite);
+  border-radius: 999px;
+  background: var(--sf-graphite);
+  color: #fff;
+  padding: 0 0.875rem;
+  font-size: var(--sf-font-xs);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-pending-reviews-guide {
+  display: grid;
+  min-width: 0;
+  gap: var(--sf-space-3);
+  border: 1px solid var(--sf-line);
+  border-radius: var(--sf-radius-lg);
+  background: var(--sf-surface);
+  padding: var(--sf-space-4);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-pending-reviews-guide h2 {
+  margin: 0;
+  color: var(--sf-ink);
+  font-size: var(--sf-font-lg);
+  font-weight: 820;
+  line-height: 1.3;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-pending-reviews-guide ul {
+  display: grid;
+  min-width: 0;
+  gap: var(--sf-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-pending-reviews-guide li {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: var(--sf-space-2);
+  color: var(--sf-ink-secondary);
+  font-size: var(--sf-font-sm);
+  line-height: 1.55;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-pending-reviews-guide li svg {
+  margin-top: 0.16rem;
+  color: var(--sf-accent);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-pending-reviews-skeleton > span,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-pending-reviews-skeleton i {
+  display: block;
+  border-radius: var(--sf-radius-sm);
+  background: var(--sf-surface-strong);
+  animation: sf-next-skeleton-pulse 1.35s ease-in-out infinite;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-pending-reviews-skeleton > span {
+  width: 4rem;
+  aspect-ratio: 1 / 1;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-pending-reviews-skeleton div {
+  display: grid;
+  min-width: 0;
+  gap: 0.5rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-pending-reviews-skeleton i {
+  height: 0.75rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-pending-reviews-skeleton i:first-child {
+  width: 72%;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-pending-reviews-skeleton i:last-child {
+  width: 42%;
+}
+
+@media (max-width: 374px) {
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-pending-reviews-item,
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-pending-reviews-skeleton {
+    grid-template-columns: 3.5rem minmax(0, 1fr);
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-pending-reviews-action {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+}

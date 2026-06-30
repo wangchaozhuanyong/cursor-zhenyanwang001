@@ -29,6 +29,7 @@ import { fetchPrimaryFullReductionCampaign } from "@/modules/storefront-v2/campa
 import type { StorefrontCampaignVm } from "@/modules/storefront-v2/campaign/campaignTypes";
 import { usePublicLocale } from "@/i18n/publicLocale";
 import RouteStatePanel from "@/modules/storefront-v2/design/components/RouteStatePanel";
+import "@/styles/checkout-route.css";
 
 export default function Checkout() {
   const { localizedPath, t } = usePublicLocale();

@@ -26,6 +26,7 @@ import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 import { formatPointsRecordLabel } from "@/utils/pointsDisplayLabels";
 import { cn } from "@/lib/utils";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import "@/styles/loyalty-routes.css";
 
 const POINTS_ERROR_LABELS: Record<string, string> = {
   "Already signed in today": "今天已经签到过了",

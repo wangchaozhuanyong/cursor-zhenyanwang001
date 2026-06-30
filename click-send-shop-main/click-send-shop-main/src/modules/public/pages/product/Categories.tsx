@@ -36,6 +36,7 @@ import {
   isNewArrivalCategoryParams,
 } from "@/constants/newArrivalNavigation";
 import { storefrontCategoryName } from "@/utils/storefrontCopySanitizer";
+import "@/styles/storefront-next.category.css";
 
 const INLINE_SUBCATEGORY_LIMIT = 6;
 

@@ -13,6 +13,7 @@ import { sanitizeCmsHtml } from "@/utils/cmsSanitizer";
 import { STORE_COPY } from "@/constants/storeCopy";
 import { formatDateTime } from "@/utils/formatDateTime";
 import RouteStatePanel from "@/modules/storefront-v2/design/components/RouteStatePanel";
+import "@/styles/secondary-routes.css";
 
 const CONTACT_US_SLUG = "contact-us";
 

@@ -27,6 +27,7 @@ import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { appendThemePreviewParams } from "@/utils/themePreviewParams";
 import { storefrontCategoryName } from "@/utils/storefrontCopySanitizer";
 import type { Product, ProductListParams, ProductTag } from "@/types/product";
+import "@/styles/search-route.css";
 
 const HISTORY_KEY = "search_history";
 const MAX_HISTORY = 10;

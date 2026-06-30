@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils";
 import { usePublicLocale } from "@/i18n/publicLocale";
 import { isInternalStorefrontCopy, storefrontDisplayText } from "@/utils/storefrontCopySanitizer";
 import type { PromotionType, StorefrontPromotion } from "@/services/marketingService";
+import "@/styles/promotions-route.css";
 
 type PromotionFilter = PromotionType | "";
 const PROMOTIONS_BASE_PATH = "/promotions";

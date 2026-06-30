@@ -29,6 +29,7 @@ import {
   getOrderTabs,
   labelPendingPaymentActionLocalized,
 } from "./orderPageLocale";
+import "@/styles/orders-route.css";
 
 const ORDER_TAB_KEYS: OrderTab[] = ["all", "pending_payment", "paid", "shipped", "pending_review", "completed", "after_sale", "cancelled"];
 

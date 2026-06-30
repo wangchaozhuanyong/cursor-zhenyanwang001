@@ -11,6 +11,7 @@ import { THEME_ACCENT_CHIP_CLASS } from "@/utils/themeVisuals";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { usePublicLocale } from "@/i18n/publicLocale";
+import "@/styles/secondary-routes.css";
 
 type AddressForm = Omit<Address, "id">;
 const CARD = "sf-next-address-card";

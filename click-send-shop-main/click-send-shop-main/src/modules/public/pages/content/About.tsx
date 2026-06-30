@@ -12,6 +12,7 @@ import { sanitizeCmsHtml } from "@/utils/cmsSanitizer";
 import { isAboutPlaceholderBody } from "@/constants/helpCenterConfig";
 import { STORE_COPY } from "@/constants/storeCopy";
 import BalanceFolio from "@/modules/storefront-v2/design/components/BalanceFolio";
+import "@/styles/secondary-routes.css";
 
 const informationItems = [
   {

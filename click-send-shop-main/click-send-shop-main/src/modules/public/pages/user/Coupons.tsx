@@ -26,6 +26,7 @@ import ValueVaultCoupon, {
 import { copyToClipboard } from "@/utils/clipboard";
 import { toast } from "sonner";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
+import "@/styles/coupons-route.css";
 
 type DisplayStatus = "available" | "claimed" | "pending" | "used" | "expired" | "invalidated";
 

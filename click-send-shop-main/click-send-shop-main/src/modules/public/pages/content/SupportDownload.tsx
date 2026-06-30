@@ -23,12 +23,12 @@ import { STORE_COPY } from "@/constants/storeCopy";
 import { STORE_MOBILE_PAGE_HEADER_CLASS } from "@/constants/storeLayout";
 import { getChannelTitle } from "@/utils/supportChannels";
 import { toast } from "sonner";
-import "@/styles/support-download.css";
 import type { AnalyticsEventPayload } from "@/services/analyticsService";
 import type { SupportChannelType, SupportDownloadChannel } from "@/types/content";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { useHorizontalActiveScroll } from "@/hooks/useHorizontalActiveScroll";
 import { useGoBack } from "@/hooks/useGoBack";
+import "@/styles/support-download.css";
 
 type SupportDownloadView = SupportChannelType | "download";
 type SupportDownloadProps = {

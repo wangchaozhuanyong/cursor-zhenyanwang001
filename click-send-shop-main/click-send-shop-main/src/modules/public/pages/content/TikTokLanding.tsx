@@ -22,6 +22,7 @@ import {
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import StableImage from "@/components/ui/StableImage";
 import { markStoreSpaReady } from "@/lib/pwaOfflineNavigation";
+import "@/styles/tiktok-landing.css";
 
 function withViteBase(path: string): string {
   const base = String(import.meta.env.BASE_URL || "/");

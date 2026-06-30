@@ -12,6 +12,7 @@ import type { FaqItem } from "@/constants/help";
 import type { HelpCenterConfig } from "@/types/content";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import type { LucideIcon } from "lucide-react";
+import "@/styles/secondary-routes.css";
 
 function parseHelpConfig(raw?: string): { categories: string[]; faqs: FaqItem[] } | null {
   if (!raw?.trim()) return null;

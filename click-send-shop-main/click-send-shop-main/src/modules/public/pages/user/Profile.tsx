@@ -51,6 +51,7 @@ import {
   type ProfileOrderAction,
   type ProfileServiceItem,
 } from "./ProfileSections";
+import "@/styles/profile-route.css";
 
 const ProfileWechatBindSection = THIRD_PARTY_LOGIN_ENABLED
   ? lazy(() => import("./ProfileWechatBindSection"))

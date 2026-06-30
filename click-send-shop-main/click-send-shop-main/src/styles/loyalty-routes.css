@@ -1,0 +1,986 @@
+/* Moved from src/styles/storefront-next.extended-routes.css */
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-gifts-stack {
+  display: grid;
+  min-width: 0;
+  gap: var(--sf-space-4);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-gifts-folio {
+  gap: var(--sf-space-4);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-gifts-balance {
+  font-size: clamp(2.35rem, 11vw, 4.25rem);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-gifts-folio__stats {
+  overflow: hidden;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-gifts-folio__stats span {
+  text-align: center;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-gifts-filter,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-gifts-catalog,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-gifts-rules {
+  min-width: 0;
+  border: 1px solid var(--sf-line);
+  border-radius: var(--sf-radius-lg);
+  background: var(--sf-surface);
+  padding: var(--sf-space-4);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-gifts-filter {
+  display: grid;
+  gap: var(--sf-space-3);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-gifts-filter__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--sf-ink);
+  font-size: var(--sf-font-sm);
+  font-weight: 800;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-gifts-filter__title svg {
+  color: var(--sf-accent);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-gifts-filter__chips {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--sf-space-2);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-gifts-filter__chip {
+  min-width: 0;
+  min-height: 2.5rem;
+  justify-content: center;
+  gap: 0.35rem;
+  border: 1px solid var(--sf-line) !important;
+  border-radius: var(--sf-radius-full) !important;
+  background: var(--sf-surface-muted) !important;
+  color: var(--sf-ink-secondary) !important;
+  padding: 0 0.55rem !important;
+  font-size: var(--sf-font-xs);
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-gifts-filter__chip span {
+  color: var(--sf-ink-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-gifts-filter__chip.is-active {
+  border-color: var(--sf-accent-border) !important;
+  background: var(--sf-accent-soft) !important;
+  color: var(--sf-accent) !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-gifts-section-head {
+  display: flex;
+  min-width: 0;
+  align-items: end;
+  justify-content: space-between;
+  gap: var(--sf-space-3);
+  margin-bottom: var(--sf-space-3);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-gifts-section-head p,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-gifts-section-head h2 {
+  margin: 0;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-gifts-section-head p {
+  color: var(--sf-accent);
+  font-size: var(--sf-font-xs);
+  font-weight: 800;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-gifts-section-head h2 {
+  margin-top: 0.25rem;
+  color: var(--sf-ink);
+  font-size: var(--sf-font-xl);
+  font-weight: 850;
+  line-height: 1.15;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-gifts-section-head > span {
+  display: grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  place-items: center;
+  border-radius: var(--sf-radius-full);
+  background: var(--sf-graphite);
+  color: #fff;
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-gifts-grid {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sf-space-3);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-gifts-card {
+  display: grid;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--sf-line);
+  border-radius: var(--sf-radius-md);
+  background: var(--sf-surface-muted);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-gifts-card__media {
+  aspect-ratio: 1 / 1;
+  min-width: 0;
+  overflow: hidden;
+  background: var(--sf-surface);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-gifts-card__placeholder {
+  display: grid;
+  width: 100%;
+  place-items: center;
+  color: var(--sf-accent);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-gifts-card__body {
+  display: grid;
+  min-width: 0;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: var(--sf-space-3);
+  padding: var(--sf-space-3);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-gifts-card__title {
+  display: -webkit-box;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  color: var(--sf-ink);
+  font-size: var(--sf-font-sm);
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-gifts-card__price {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  margin-top: 0.45rem;
+  color: var(--sf-accent);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-gifts-card__price strong {
+  font-size: var(--sf-font-xl);
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-gifts-card__price span,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-gifts-card__meta,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-gifts-card__hint {
+  color: var(--sf-ink-secondary);
+  font-size: var(--sf-font-xs);
+  line-height: 1.45;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-gifts-card__meta {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.5rem;
+  margin-top: 0.45rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-gifts-card__hint {
+  margin: 0.45rem 0 0;
+  overflow-wrap: anywhere;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-gifts-card__button {
+  min-height: 2.5rem;
+  width: 100%;
+  border-radius: var(--sf-radius-full) !important;
+  background: var(--sf-graphite) !important;
+  color: #fff !important;
+  font-size: var(--sf-font-xs);
+  font-weight: 850;
+  white-space: normal;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-gifts-card__button:disabled {
+  background: color-mix(in srgb, var(--sf-graphite) 72%, var(--sf-surface-muted)) !important;
+  color: #d9dfda !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-gifts-state {
+  display: grid;
+  min-height: 10rem;
+  place-items: center;
+  border: 1px dashed var(--sf-line);
+  border-radius: var(--sf-radius-md);
+  color: var(--sf-ink-secondary);
+  font-size: var(--sf-font-sm);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-gifts-rules {
+  display: grid;
+  gap: var(--sf-space-2);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-gifts-rules div {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  align-items: start;
+  gap: var(--sf-space-2);
+  border: 1px solid var(--sf-line);
+  border-radius: var(--sf-radius-md);
+  background: var(--sf-surface-muted);
+  padding: var(--sf-space-3);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-gifts-rules span {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border-radius: var(--sf-radius-sm);
+  background: var(--sf-surface);
+  color: var(--sf-accent);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-gifts-rules p {
+  margin: 0;
+  color: var(--sf-ink-secondary);
+  font-size: var(--sf-font-sm);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-wallet-page main,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-page main,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-gifts-page main,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-rewards-page main {
+  min-width: 0;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-wallet-hero,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-folio,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-rewards-folio,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-gifts-folio {
+  box-shadow: none !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-wallet-hero::after,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-folio::after,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-rewards-folio::after,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-gifts-folio::after {
+  position: absolute;
+  right: -1.5rem;
+  bottom: -2rem;
+  width: 8rem;
+  height: 8rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--sf-accent) 22%, transparent);
+  content: "";
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-folio::after {
+  background: color-mix(in srgb, var(--sf-accent) 16%, transparent);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-rewards-folio::after {
+  background: color-mix(in srgb, var(--sf-danger) 18%, transparent);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-wallet-hero__label {
+  margin: 0;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-wallet-hero__amount {
+  display: block;
+  margin-top: 1.5rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-wallet-hero__meta {
+  position: relative;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-wallet-hero__meta span {
+  text-align: left;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-wallet-hero__meta b,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-wallet-hero__meta small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-folio__actions {
+  position: relative;
+  margin-top: var(--sf-space-4);
+  border-top: 1px solid rgb(255 255 255 / 14%);
+  padding-top: var(--sf-space-4);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-folio__actions .sf-next-folio__action {
+  width: 100%;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-folio__hint {
+  margin-top: 0.15rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-loading-list {
+  display: grid;
+  gap: var(--sf-space-3);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-loading-row {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: 2.25rem minmax(0, 1fr) 4rem;
+  align-items: center;
+  gap: var(--sf-space-3);
+  border: 1px solid var(--sf-line);
+  border-radius: var(--sf-radius-lg);
+  background: var(--sf-surface);
+  padding: var(--sf-space-4);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-loading-row__icon,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-loading-row__line,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-loading-row__amount {
+  display: block;
+  overflow: hidden;
+  background: linear-gradient(90deg, var(--sf-surface-muted), color-mix(in srgb, var(--sf-surface) 78%, white), var(--sf-surface-muted));
+  background-size: 200% 100%;
+  animation: sf-next-card-shimmer 1.15s ease-in-out infinite;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-loading-row__icon {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 999px;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-loading-row__body {
+  display: grid;
+  min-width: 0;
+  gap: 0.55rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-loading-row__line,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-loading-row__amount {
+  height: 0.78rem;
+  border-radius: 999px;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-loading-row__line.is-short {
+  width: 54%;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-loading-row__amount {
+  width: 100%;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-rewards-folio__label {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-rewards-folio__label .sf-next-folio__eyebrow {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-rewards-folio__meta {
+  position: relative;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-rewards-folio__meta-label {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.3rem;
+  color: #aab1aa;
+  font-size: var(--sf-font-2xs);
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-wallet-actions {
+  display: grid;
+  min-width: 0;
+  gap: var(--sf-space-3);
+  margin-top: var(--sf-space-4);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-wallet-action,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-wallet-note {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--sf-space-3);
+  border: 1px solid var(--sf-line);
+  border-radius: var(--sf-radius-lg);
+  background: var(--sf-surface);
+  padding: var(--sf-space-4);
+  color: var(--sf-ink);
+  text-align: left;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-wallet-action__icon,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-wallet-note > span {
+  display: grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  place-items: center;
+  border-radius: var(--sf-radius-sm);
+  background: var(--sf-accent-soft);
+  color: var(--sf-accent);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-wallet-action__copy {
+  display: grid;
+  min-width: 0;
+  gap: 0.15rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-wallet-action__copy strong,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-wallet-action__copy small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-wallet-action__copy strong {
+  color: var(--sf-ink);
+  font-size: var(--sf-font-base);
+  font-weight: 700;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-wallet-action__copy small,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-wallet-note p {
+  margin: 0;
+  color: var(--sf-ink-secondary);
+  font-size: var(--sf-font-xs);
+  line-height: 1.5;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-page article,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-rewards-page section {
+  min-width: 0;
+  border: 1px solid var(--sf-line) !important;
+  border-radius: var(--sf-radius-lg) !important;
+  background: var(--sf-surface) !important;
+  box-shadow: none !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-wallet-hero__amount,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-rewards-folio .sf-next-folio__value,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-folio .sf-next-folio__value,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-points-gifts-folio .sf-next-folio__value {
+  letter-spacing: 0;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-rewards-actions {
+  min-width: 0;
+  margin-top: var(--sf-space-4);
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-rewards-actions__grid {
+  display: grid;
+  min-width: 0;
+  gap: var(--sf-space-3);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-rewards-actions__grid.is-two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-rewards-action {
+  display: grid;
+  min-width: 0;
+  min-height: 4.7rem;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--sf-space-3);
+  border: 1px solid var(--sf-line);
+  border-radius: var(--sf-radius-lg);
+  background: var(--sf-surface);
+  padding: var(--sf-space-3);
+  color: var(--sf-ink);
+  text-align: left;
+  transition: transform 160ms ease, border-color 160ms ease, background-color 160ms ease;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-rewards-action:active {
+  transform: scale(0.985);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-rewards-action__icon {
+  display: grid;
+  width: 2.45rem;
+  height: 2.45rem;
+  place-items: center;
+  border-radius: 0.85rem;
+  background: var(--sf-accent-soft);
+  color: var(--sf-accent);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-rewards-action__copy {
+  display: grid;
+  min-width: 0;
+  gap: 0.18rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-rewards-action__copy strong,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-rewards-action__copy small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-rewards-action__copy strong {
+  color: var(--sf-ink);
+  font-size: var(--sf-font-sm);
+  font-weight: 760;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-rewards-action__copy small,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-rewards-action__arrow {
+  color: var(--sf-ink-secondary);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-rewards-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.28rem;
+  margin-top: var(--sf-space-4);
+  border: 1px solid var(--sf-line);
+  border-radius: var(--sf-radius-md);
+  background: var(--sf-surface-muted);
+  padding: 0.28rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-rewards-tab {
+  min-width: 0;
+  min-height: 2.35rem;
+  border-radius: calc(var(--sf-radius-md) - 0.28rem);
+  color: var(--sf-ink-secondary);
+  font-size: var(--sf-font-xs);
+  font-weight: 760;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-rewards-tab.is-active {
+  background: var(--sf-graphite);
+  color: #fff;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-rewards-ledger {
+  display: grid;
+  min-width: 0;
+  gap: var(--sf-space-3);
+  margin-top: var(--sf-space-4);
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-rewards-ledger__title {
+  margin: 0;
+  color: var(--sf-ink);
+  font-size: var(--sf-font-lg);
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-rewards-state {
+  display: grid;
+  min-height: 9.5rem;
+  min-width: 0;
+  place-items: center;
+  gap: var(--sf-space-2);
+  border: 1px solid var(--sf-line);
+  border-radius: var(--sf-radius-lg);
+  background: var(--sf-surface);
+  color: var(--sf-ink-secondary);
+  padding: var(--sf-space-6) var(--sf-space-4);
+  text-align: center;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-rewards-state p {
+  margin: 0;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-rewards-empty-actions {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--sf-space-2);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-rewards-record-groups {
+  display: grid;
+  min-width: 0;
+  gap: var(--sf-space-4);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-rewards-record-group,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-rewards-record-list {
+  display: grid;
+  min-width: 0;
+  gap: var(--sf-space-2);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-rewards-record-group__label {
+  margin: 0;
+  color: var(--sf-ink-secondary);
+  font-size: var(--sf-font-xs);
+  font-weight: 760;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-rewards-record {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  min-height: 4.55rem;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--sf-space-3);
+  border: 1px solid var(--sf-line);
+  border-radius: var(--sf-radius-lg);
+  background: var(--sf-surface);
+  padding: var(--sf-space-3);
+  color: var(--sf-ink);
+  text-align: left;
+  transition: transform 160ms ease, border-color 160ms ease, background-color 160ms ease;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-rewards-record.is-clickable:active {
+  transform: scale(0.985);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-rewards-record__icon {
+  display: grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 0.78rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-rewards-record__copy {
+  display: grid;
+  min-width: 0;
+  gap: 0.15rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-rewards-record__copy p,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-rewards-record__copy small {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-rewards-record__copy p {
+  color: var(--sf-ink);
+  font-size: var(--sf-font-sm);
+  font-weight: 760;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-rewards-record__copy small {
+  color: var(--sf-ink-secondary);
+  font-size: var(--sf-font-2xs);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-rewards-record__amount {
+  min-width: max-content;
+  font-size: var(--sf-font-sm);
+  font-weight: 820;
+  font-variant-numeric: tabular-nums;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-rewards-load-more {
+  min-height: 2.75rem;
+  border: 1px solid var(--sf-line);
+  border-radius: var(--sf-radius-sm);
+  background: var(--sf-surface);
+  color: var(--sf-ink-secondary);
+  font-size: var(--sf-font-sm);
+  font-weight: 760;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-wallet-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+@media (max-width: 430px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-rewards-actions__grid.is-two {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 374px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-rewards-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Moved from src/styles/client-redesign.css */
+
+html[data-app-scope="store"] .sf-next-points-page main,
+html[data-app-scope="store"] .sf-next-rewards-page main {
+  position: relative;
+  z-index: 1;
+}
+
+html[data-app-scope="store"] .sf-next-points-page article,
+html[data-app-scope="store"] .sf-next-points-page .sf-next-empty-state,
+html[data-app-scope="store"] .sf-next-rewards-page section,
+html[data-app-scope="store"] .sf-next-rewards-page .rounded-\[24px\] {
+  border-color: color-mix(in srgb, var(--client-border) 82%, transparent);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--theme-primary) 3%, #ffffff), #ffffff 70%),
+    var(--client-surface);
+  box-shadow: var(--client-next-card-shadow);
+}
+
+html[data-app-scope="store"] .sf-next-points-page .sf-next-empty-state {
+  border: 1px solid color-mix(in srgb, var(--client-border) 82%, transparent);
+  border-radius: var(--client-card-radius);
+}
+
+html[data-app-scope="store"] .sf-next-rewards-page .mt-6.flex {
+  border: 1px solid color-mix(in srgb, var(--client-border) 76%, transparent);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--client-surface) 92%, transparent);
+  padding: 6px;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.05);
+}
+
+html[data-app-scope="store"] .sf-next-points-page article,
+html[data-app-scope="store"] .sf-next-rewards-page button[class*="rounded-2xl"] {
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+html[data-app-scope="store"] .sf-next-points-page article:hover,
+html[data-app-scope="store"] .sf-next-rewards-page button[class*="rounded-2xl"]:hover {
+  border-color: color-mix(in srgb, var(--theme-primary) 20%, var(--client-border));
+  box-shadow: var(--client-next-card-shadow-hover);
+}
+
+html[data-app-scope="store"] .sf-next-points-page .sf-next-points-stack > section:first-child,
+html[data-app-scope="store"] .sf-next-rewards-page .rounded-\[28px\] {
+  border: 1px solid color-mix(in srgb, var(--theme-price) 20%, transparent);
+  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.12);
+}
+
+html[data-app-scope="store"] .sf-next-wallet-summary {
+  border: 1px solid color-mix(in srgb, var(--client-border) 82%, transparent);
+  border-radius: var(--client-card-radius);
+  background: color-mix(in srgb, var(--client-surface) 95%, transparent);
+  padding: 12px;
+  box-shadow: var(--client-next-card-shadow);
+}
+
+html[data-app-scope="store"] .sf-next-wallet-page main {
+  display: grid;
+  gap: 8px;
+}
+
+html[data-app-scope="store"] .sf-next-wallet-hero {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--theme-primary) 18%, var(--client-border));
+  border-radius: var(--client-card-radius);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--theme-primary) 11%, #ffffff) 0%, #ffffff 54%, color-mix(in srgb, var(--theme-price) 10%, #ffffff) 100%),
+    var(--client-surface);
+  padding: 18px 16px 14px;
+  box-shadow: var(--client-next-card-shadow);
+  text-align: center;
+}
+
+html[data-app-scope="store"] .sf-next-wallet-hero__label {
+  margin: 0;
+  color: color-mix(in srgb, var(--theme-text) 74%, var(--client-muted));
+  font-size: 13px;
+  font-weight: 760;
+  line-height: 1.2;
+}
+
+html[data-app-scope="store"] .sf-next-wallet-hero__amount {
+  display: block;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  color: var(--theme-text);
+  font-size: clamp(2.15rem, 9vw, 3rem);
+  font-weight: 950;
+  letter-spacing: 0;
+  line-height: 1;
+  text-align: center;
+}
+
+html[data-app-scope="store"] .sf-next-wallet-hero__meta {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 2px;
+}
+
+html[data-app-scope="store"] .sf-next-wallet-hero__meta span {
+  display: grid;
+  min-width: 0;
+  min-height: 58px;
+  place-items: center;
+  gap: 4px;
+  border: 1px solid color-mix(in srgb, var(--client-border) 76%, transparent);
+  border-radius: 16px;
+  background: color-mix(in srgb, #ffffff 72%, transparent);
+  padding: 10px 8px;
+  text-align: center;
+}
+
+html[data-app-scope="store"] .sf-next-wallet-hero__meta b {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--theme-text);
+  font-size: 15px;
+  font-weight: 900;
+  line-height: 1.15;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-app-scope="store"] .sf-next-wallet-hero__meta small {
+  display: block;
+  width: 100%;
+  color: var(--client-muted);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+}
+
+html[data-app-scope="store"] .sf-next-wallet-actions {
+  display: grid;
+  gap: 8px;
+}
+
+html[data-app-scope="store"] .sf-next-wallet-action {
+  display: grid;
+  min-height: 64px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid color-mix(in srgb, var(--client-border) 82%, transparent);
+  border-radius: var(--client-card-radius);
+  background: color-mix(in srgb, var(--client-surface) 96%, transparent);
+  padding: 12px 14px;
+  text-align: left;
+  box-shadow: var(--client-next-card-shadow);
+}
+
+html[data-app-scope="store"] .sf-next-wallet-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+html[data-app-scope="store"] .sf-next-wallet-action__icon {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--theme-primary) 10%, #ffffff);
+  color: var(--theme-primary);
+}
+
+html[data-app-scope="store"] .sf-next-wallet-action__copy {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+html[data-app-scope="store"] .sf-next-wallet-action__copy strong {
+  color: var(--theme-text);
+  font-size: 15px;
+  font-weight: 880;
+  line-height: 1.25;
+}
+
+html[data-app-scope="store"] .sf-next-wallet-action__copy small {
+  color: var(--client-muted);
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.3;
+}
+
+html[data-app-scope="store"] .sf-next-wallet-note {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  border: 1px solid color-mix(in srgb, var(--theme-primary) 18%, var(--client-border));
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--theme-primary) 5%, #ffffff);
+  padding: 10px 12px;
+  color: color-mix(in srgb, var(--theme-text) 78%, var(--client-muted));
+}
+
+html[data-app-scope="store"] .sf-next-wallet-note span {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--theme-primary) 10%, #ffffff);
+  color: var(--theme-primary);
+}
+
+html[data-app-scope="store"] .sf-next-wallet-note p {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 680;
+  line-height: 1.4;
+}

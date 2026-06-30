@@ -26,6 +26,7 @@ import {
 } from "./returnProgress";
 import { usePublicLocale, type PublicLocale } from "@/i18n/publicLocale";
 import StatusTimeline, { type StatusTimelineItem } from "@/modules/storefront-v2/design/components/StatusTimeline";
+import "@/styles/secondary-routes.css";
 
 const ORDER_REFUND_STATUS_LABELS: Record<PublicLocale, Record<string, string>> = {
   zh: {

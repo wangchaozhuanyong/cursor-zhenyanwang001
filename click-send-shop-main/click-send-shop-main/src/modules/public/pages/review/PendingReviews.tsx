@@ -9,6 +9,7 @@ import ProductCoverImage from "@/components/ProductCoverImage";
 import { THEME_PRODUCT_MEDIA_ASPECT_STYLE } from "@/constants/productMediaAspect";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 import { usePublicLocale } from "@/i18n/publicLocale";
+import "@/styles/pending-reviews.css";
 
 export default function PendingReviews() {
   const navigate = useNavigate();

@@ -1,0 +1,2636 @@
+/* Moved from src/styles/storefront-next.extended-routes.css */
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-page {
+  background: var(--sf-canvas) !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-layout {
+  max-width: min(100%, 76rem);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-stack,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-dashboard-main,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-dashboard-rail {
+  display: grid;
+  min-width: 0;
+  gap: var(--sf-space-3);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-stack > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 0 !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-dashboard-grid {
+  display: grid;
+  min-width: 0;
+  gap: var(--sf-space-3);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  border: 0 !important;
+  border-radius: var(--sf-radius-xl) !important;
+  background: var(--sf-graphite) !important;
+  color: #fff;
+  padding: 1.25rem !important;
+  box-shadow: none !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card::before {
+  position: absolute;
+  inset: auto -1.75rem -2rem auto;
+  width: 8rem;
+  height: 8rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--sf-accent) 22%, transparent);
+  content: "";
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card :where(.profile-vip-header, .profile-vip-name-row, .profile-vip-progress-meta, .profile-vip-actions) {
+  position: relative;
+  display: flex;
+  min-width: 0;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-vip-header {
+  align-items: center;
+  gap: var(--sf-space-3);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-vip-copy {
+  min-width: 0;
+  flex: 1;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-vip-name {
+  margin: 0;
+  overflow: hidden;
+  color: var(--sf-surface);
+  font-size: 1.25rem;
+  font-weight: 750;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-vip-subtitle,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-vip-progress-meta,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-vip-progress-meta span {
+  color: color-mix(in srgb, var(--sf-surface) 74%, var(--sf-graphite)) !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-vip-badge,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-vip-action {
+  border: 1px solid color-mix(in srgb, var(--sf-surface) 14%, transparent);
+  border-radius: var(--sf-radius-sm);
+  background: color-mix(in srgb, var(--sf-surface) 8%, transparent);
+  color: var(--sf-surface);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-vip-action--gold {
+  background: var(--sf-surface);
+  color: var(--sf-graphite);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-guest-card .profile-vip-header {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  min-width: 0;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--sf-space-3);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-guest-card .profile-guest-avatar {
+  display: grid;
+  width: 3.5rem;
+  height: 3.5rem;
+  place-items: center;
+  border-radius: 1.15rem;
+  background: color-mix(in srgb, var(--sf-surface) 92%, transparent);
+  color: var(--sf-price);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-guest-card .profile-guest-title {
+  color: var(--sf-surface);
+  font-size: 1.25rem;
+  font-weight: 860;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-guest-card .profile-guest-auth-actions {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: clamp(7.25rem, 31vw, 10rem);
+  min-width: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-guest-card .profile-guest-auth-actions .profile-vip-action {
+  min-width: 0;
+  min-height: 2.25rem;
+  height: 2.25rem;
+  justify-content: center;
+  border-radius: var(--sf-radius-full);
+  padding: 0 0.65rem;
+  font-size: var(--sf-font-sm);
+  font-weight: 760;
+  line-height: 1;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-guest-card .profile-guest-auth-actions .profile-vip-action--ghost {
+  background: color-mix(in srgb, var(--sf-surface) 10%, transparent) !important;
+  color: var(--sf-surface) !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-guest-card .profile-guest-highlights {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  min-width: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
+  margin-top: var(--sf-space-4);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-guest-card .profile-guest-highlight {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.18rem 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--sf-surface) 12%, transparent);
+  border-radius: var(--sf-radius-sm);
+  background: color-mix(in srgb, var(--sf-surface) 94%, transparent);
+  padding: 0.62rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-guest-card .profile-guest-highlight span {
+  grid-row: span 2;
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border-radius: 0.72rem;
+  background: var(--sf-accent-soft);
+  color: var(--sf-accent);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-guest-card .profile-guest-highlight b,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-guest-card .profile-guest-highlight small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-guest-card .profile-guest-highlight b {
+  color: var(--sf-ink);
+  font-size: var(--sf-font-xs);
+  font-weight: 820;
+  line-height: 1.25;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-guest-card .profile-guest-highlight small {
+  color: var(--sf-ink-secondary);
+  font-size: var(--sf-font-2xs);
+  line-height: 1.25;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-card {
+  min-width: 0;
+  border: 1px solid var(--sf-line) !important;
+  border-radius: var(--sf-radius-lg) !important;
+  background: var(--sf-surface) !important;
+  box-shadow: none !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-section-title {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sf-space-3);
+  margin-bottom: var(--sf-space-3);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-section-title h3 {
+  margin: 0;
+  color: var(--sf-ink);
+  font-size: var(--sf-font-lg);
+  font-weight: 700;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-section-title .profile-section-more {
+  color: var(--sf-accent);
+  font-size: var(--sf-font-xs);
+  font-weight: 700;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-page :where(.profile-order-grid, .profile-service-grid, .profile-asset-grid) {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--sf-space-2);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-page :where(.profile-order-action, .profile-service-action, .profile-asset-action, .profile-secondary-action) {
+  min-width: 0;
+  border: 1px solid var(--sf-line);
+  border-radius: var(--sf-radius-sm);
+  background: var(--sf-surface);
+  color: var(--sf-ink);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-page :where(.profile-order-action, .profile-service-action, .profile-asset-action) {
+  display: grid;
+  min-height: 4.75rem;
+  justify-items: center;
+  gap: 0.35rem;
+  padding: 0.75rem 0.35rem;
+  text-align: center;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-page :where(.profile-order-icon, .profile-service-icon, .profile-asset-icon, .profile-secondary-icon, .profile-trust-icon) {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border-radius: 0.75rem;
+  background: var(--sf-accent-soft);
+  color: var(--sf-accent);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-page :where(.profile-order-label, .profile-service-label, .profile-asset-label) {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--sf-ink-secondary);
+  font-size: var(--sf-font-2xs);
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-page .profile-count-badge {
+  position: absolute;
+  right: -0.28rem;
+  top: -0.28rem;
+  z-index: 2;
+  display: inline-flex;
+  min-width: 1.1rem;
+  height: 1.1rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--sf-surface);
+  border-radius: 999px;
+  background: var(--sf-price);
+  padding-inline: 0.26rem;
+  color: var(--sf-surface);
+  font-size: 0.64rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-page .profile-secondary-badge {
+  position: static;
+  min-width: 1.2rem;
+  height: 1.05rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-page .profile-asset-value {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--sf-ink);
+  font-size: var(--sf-font-sm);
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-page .profile-secondary-list {
+  display: grid;
+  min-width: 0;
+  gap: var(--sf-space-2);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-page .profile-secondary-action {
+  display: grid;
+  min-height: 3.5rem;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--sf-space-3);
+  padding: 0.75rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-trust-strip {
+  display: grid;
+  min-width: 0;
+  gap: var(--sf-space-2);
+  border: 1px solid var(--sf-line);
+  border-radius: var(--sf-radius-lg);
+  background: var(--sf-surface);
+  padding: var(--sf-space-3);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-trust-strip .profile-trust-entry {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--sf-space-3);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-logout-button {
+  min-height: 3rem;
+  border: 1px solid color-mix(in srgb, var(--sf-danger) 18%, var(--sf-line));
+  border-radius: var(--sf-radius-sm);
+  background: color-mix(in srgb, var(--sf-danger) 8%, var(--sf-surface));
+  color: var(--sf-danger);
+  font-weight: 700;
+}
+
+@media (max-width: 640px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-page :where(.profile-order-grid, .profile-service-grid, .profile-asset-grid) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-vip-progress {
+  border: 1px solid rgb(255 255 255 / 12%);
+  background: rgb(255 255 255 / 10%);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-vip-progress-meta,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-vip-progress-meta :where(span, b) {
+  color: rgb(246 249 246 / 92%) !important;
+  text-shadow: 0 1px 1px rgb(0 0 0 / 22%);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-page :where(.profile-order-label, .profile-service-label, .profile-asset-label) {
+  display: block;
+  min-height: 1.9em;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card {
+  display: grid;
+  gap: 1rem;
+  padding: 1.25rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card::before,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card::after,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-vip-watermark {
+  content: none !important;
+  display: none !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-vip-header {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-avatar-button {
+  position: relative;
+  min-width: 0;
+  padding: 0;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-avatar-ring {
+  display: grid;
+  width: 3.6rem;
+  height: 3.6rem;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--sf-surface) 18%, transparent) !important;
+  border-radius: 1.05rem !important;
+  background: color-mix(in srgb, var(--sf-surface) 9%, transparent) !important;
+  padding: 0.22rem !important;
+  box-shadow: none !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-avatar-ring :where(.profile-avatar-image, img),
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-avatar-fallback {
+  border-radius: 0.82rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-avatar-camera {
+  right: -0.2rem;
+  bottom: -0.15rem;
+  width: 1.35rem;
+  height: 1.35rem;
+  border: 2px solid var(--sf-graphite);
+  border-radius: 0.55rem;
+  background: var(--sf-surface) !important;
+  color: var(--sf-graphite) !important;
+  box-shadow: none;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-vip-name-row {
+  display: grid;
+  min-width: 0;
+  gap: 0.35rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-vip-name {
+  color: var(--sf-surface) !important;
+  font-size: 1.35rem;
+  font-weight: 820;
+  letter-spacing: 0;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-vip-badge {
+  width: fit-content;
+  min-height: 1.65rem;
+  border-color: color-mix(in srgb, var(--sf-surface) 14%, transparent) !important;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--sf-surface) 8%, transparent) !important;
+  padding: 0.25rem 0.55rem;
+  color: color-mix(in srgb, var(--sf-surface) 78%, var(--sf-graphite)) !important;
+  font-size: 0.72rem;
+  font-weight: 760;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-vip-notification {
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 1px solid color-mix(in srgb, var(--sf-surface) 14%, transparent) !important;
+  border-radius: 0.92rem;
+  background: color-mix(in srgb, var(--sf-surface) 8%, transparent) !important;
+  color: var(--sf-surface) !important;
+  box-shadow: none !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-vip-progress {
+  margin-top: 0 !important;
+  border: 1px solid color-mix(in srgb, var(--sf-surface) 12%, transparent) !important;
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--sf-surface) 7%, transparent) !important;
+  padding: 0.85rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-vip-progress-track {
+  height: 0.42rem;
+  margin-top: 0.55rem;
+  background: color-mix(in srgb, var(--sf-surface) 14%, transparent) !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-vip-progress-track span {
+  background: var(--sf-surface) !important;
+  box-shadow: none !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-card-assets {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.55rem;
+  border-top: 1px solid color-mix(in srgb, var(--sf-surface) 12%, transparent);
+  padding-top: 1rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-card-asset {
+  display: grid;
+  min-width: 0;
+  min-height: 4rem;
+  align-content: center;
+  gap: 0.2rem;
+  border: 1px solid color-mix(in srgb, var(--sf-surface) 12%, transparent) !important;
+  border-radius: 0.9rem !important;
+  background: color-mix(in srgb, var(--sf-surface) 7%, transparent) !important;
+  padding: 0.55rem 0.35rem;
+  text-align: center;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-card-asset-icon {
+  display: none !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-card-asset b {
+  overflow: hidden;
+  color: var(--sf-surface) !important;
+  font-size: 0.86rem;
+  font-weight: 820;
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-card-asset span:not(.profile-card-asset-icon) {
+  overflow: hidden;
+  color: #bfc7bf !important;
+  font-size: 0.68rem;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-vip-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin-top: 0 !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-vip-action {
+  min-height: 2.75rem;
+  border-radius: 0.95rem !important;
+  font-size: 0.86rem;
+  font-weight: 780;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-vip-action--gold {
+  border-color: #fff !important;
+  background: #fff !important;
+  color: var(--sf-graphite) !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-vip-action--ghost {
+  border-color: rgb(255 255 255 / 16%) !important;
+  background: rgb(255 255 255 / 8%) !important;
+  color: #fff !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-titlebar {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 3.2rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-titlebar h1 {
+  margin: 0;
+  color: var(--sf-ink);
+  font-size: 2rem;
+  font-weight: 900;
+  line-height: 1.05;
+  letter-spacing: 0;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-identity {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.9rem;
+  padding-block: 0.45rem 0.55rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-identity__avatar {
+  display: grid;
+  width: 4.75rem;
+  height: 4.75rem;
+  min-width: 0;
+  place-items: center;
+  overflow: hidden;
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--sf-accent) 14%, var(--sf-line));
+  color: var(--sf-ink);
+  padding: 0;
+  font-size: 1.8rem;
+  font-weight: 900;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-identity__avatar-image,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-identity__avatar-image img {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-identity__copy {
+  display: grid;
+  min-width: 0;
+  gap: 0.35rem;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  text-align: left;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-identity__copy strong,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-identity__copy span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-identity__copy strong {
+  color: var(--sf-ink);
+  font-size: 1.45rem;
+  font-weight: 870;
+  line-height: 1.12;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-identity__copy span {
+  color: var(--sf-ink-secondary);
+  font-size: 0.92rem;
+  font-weight: 560;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-identity__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-identity__icon-button {
+  display: grid;
+  width: 2.65rem;
+  height: 2.65rem;
+  min-width: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--sf-ink);
+  padding: 0;
+  box-shadow: none;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card {
+  cursor: pointer;
+  border-radius: 1.9rem !important;
+  padding: 1.12rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-vip-folio-head {
+  display: grid;
+  min-width: 0;
+  gap: 0.65rem;
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--sf-on-accent) 14%, transparent);
+  background: transparent;
+  padding: 0 0 0.95rem;
+  color: inherit;
+  text-align: left;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-vip-folio-head span {
+  color: color-mix(in srgb, var(--sf-on-accent) 66%, transparent);
+  font-size: 0.78rem;
+  font-weight: 850;
+  letter-spacing: 0.02em;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-vip-folio-head h2,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-vip-folio-head p {
+  margin: 0;
+  min-width: 0;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-vip-folio-head h2 {
+  color: var(--sf-on-accent);
+  font-size: 1.68rem;
+  font-weight: 900;
+  line-height: 1.08;
+  letter-spacing: 0;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-vip-folio-head p {
+  color: color-mix(in srgb, var(--sf-on-accent) 62%, transparent);
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-card-assets {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-top: 0;
+  padding-top: 0;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-card-asset {
+  min-height: 4.1rem;
+  border: 0 !important;
+  background: transparent !important;
+  gap: 0.55rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-card-asset-token {
+  display: grid;
+  width: 2.62rem;
+  height: 2.62rem;
+  place-items: center;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 8%);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-order-panel {
+  padding: 1rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-page .sf-next-profile-order-panel .profile-order-grid {
+  gap: 0.6rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-page .sf-next-profile-order-panel .profile-order-action {
+  min-height: 3.85rem;
+  gap: 0.25rem;
+  padding: 0.55rem 0.25rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-page .sf-next-profile-order-panel .profile-order-icon {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 0.65rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-page .sf-next-profile-order-panel .profile-order-label {
+  font-size: 0.68rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-asset-panel .sf-next-profile-section-title {
+  display: none;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-asset-panel {
+  padding: 0 !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-page .sf-next-profile-asset-panel .profile-asset-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-page .sf-next-profile-asset-panel .profile-asset-action {
+  min-height: 6.25rem;
+  border-width: 0 1px 0 0;
+  border-color: var(--sf-line);
+  border-radius: 0;
+  background: transparent;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-page .sf-next-profile-asset-panel .profile-asset-action:last-child {
+  border-right-width: 0;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-page .sf-next-profile-asset-panel .profile-asset-icon {
+  display: none;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-page .sf-next-profile-asset-panel .profile-asset-value {
+  font-size: 1.35rem;
+  font-weight: 900;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-page .sf-next-profile-asset-panel .profile-asset-label {
+  font-size: 0.86rem;
+  font-weight: 560;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-card,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-trust-strip {
+  border-radius: 1.05rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-page :where(.profile-order-action, .profile-service-action, .profile-secondary-action) {
+  transition: transform 160ms ease, border-color 160ms ease, background-color 160ms ease;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-page :where(.profile-order-action, .profile-service-action, .profile-secondary-action):active {
+  transform: scale(0.985);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-page :where(.profile-order-icon, .profile-service-icon, .profile-secondary-icon, .profile-trust-icon) {
+  border-radius: 0.75rem;
+  background: var(--sf-accent-soft) !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel {
+  --profile-invite-pass-bg: color-mix(in srgb, var(--sf-graphite) 84%, var(--theme-primary) 16%);
+  --profile-invite-pass-bg-deep: color-mix(in srgb, var(--sf-graphite) 92%, var(--theme-primary) 8%);
+  --profile-invite-pass-ink: color-mix(in srgb, var(--theme-surface) 90%, var(--theme-primary) 10%);
+  --profile-invite-pass-muted: color-mix(in srgb, var(--profile-invite-pass-ink) 62%, transparent);
+  --profile-invite-pass-soft: color-mix(in srgb, var(--profile-invite-pass-ink) 8%, transparent);
+  --profile-invite-pass-line: color-mix(in srgb, var(--profile-invite-pass-ink) 14%, transparent);
+  --profile-invite-pass-grid: color-mix(in srgb, var(--profile-invite-pass-ink) 10%, transparent);
+  border: 0;
+  border-radius: 1.15rem;
+  background: transparent;
+}
+
+@media (max-width: 767px) {
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel {
+    margin-top: calc(var(--sf-bottom-nav-total-height) + var(--sf-space-2));
+  }
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel > .ir-stage {
+  aspect-ratio: 390 / 222 !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-card {
+  border: 1px solid color-mix(in srgb, var(--profile-invite-pass-bg) 82%, var(--profile-invite-pass-ink) 18%) !important;
+  border-radius: 1.15rem !important;
+  background:
+    linear-gradient(90deg, var(--profile-invite-pass-grid) 1px, transparent 1px),
+    linear-gradient(180deg, var(--profile-invite-pass-grid) 1px, transparent 1px),
+    linear-gradient(145deg, var(--profile-invite-pass-bg), var(--profile-invite-pass-bg-deep)) !important;
+  background-size: 4.25rem 4.25rem, 4.25rem 4.25rem, auto !important;
+  box-shadow: none !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-card::before {
+  display: none;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-card::after {
+  left: 1.35rem;
+  right: 1.35rem;
+  bottom: auto;
+  top: 4.75rem;
+  height: 1px;
+  background: var(--profile-invite-pass-line);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel :where(.ir-safe-overlay, .ir-hero) {
+  display: none !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-badge {
+  left: 1.35rem;
+  top: 1.35rem;
+  height: auto;
+  min-width: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--profile-invite-pass-ink);
+  box-shadow: none;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-badgeIcon {
+  display: none;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-badgeText {
+  color: var(--profile-invite-pass-ink);
+  font-size: 0.82rem;
+  font-weight: 820;
+  letter-spacing: 0;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-title {
+  left: 1.35rem;
+  top: 5.75rem;
+  max-width: 50%;
+  color: var(--profile-invite-pass-ink);
+  font-size: clamp(1.42rem, 7.2cqw, 2.1rem);
+  font-weight: 860;
+  letter-spacing: 0;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-subtitle {
+  left: 1.35rem;
+  top: 8.85rem;
+  width: 50%;
+  color: var(--profile-invite-pass-muted);
+  font-size: clamp(0.72rem, 3.1cqw, 0.86rem);
+  font-weight: 620;
+  line-height: 1.45;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-stats {
+  right: 1.35rem;
+  top: 5.75rem;
+  width: 39%;
+  min-height: 5.8rem;
+  border: 1px solid var(--profile-invite-pass-line);
+  border-radius: 1rem;
+  background: var(--profile-invite-pass-soft);
+  padding: 0.55rem;
+  box-shadow: none;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-stat {
+  border-radius: 0.75rem;
+  background: var(--profile-invite-pass-soft);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-statLabel {
+  color: var(--profile-invite-pass-muted);
+  font-size: clamp(0.64rem, 2.7cqw, 0.76rem);
+  font-weight: 700;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-statValue {
+  color: var(--profile-invite-pass-ink);
+  font-size: clamp(0.86rem, 3.5cqw, 1rem);
+  font-weight: 830;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-actions {
+  left: 1.35rem;
+  bottom: 1.25rem;
+  width: calc(100% - 2.7rem);
+  gap: 0.5rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-action {
+  min-height: 2.42rem;
+  height: 2.42rem;
+  border: 1px solid var(--profile-invite-pass-line) !important;
+  border-radius: 0.85rem;
+  background: var(--profile-invite-pass-soft);
+  color: var(--profile-invite-pass-ink);
+  font-size: 0.78rem;
+  font-weight: 760;
+  box-shadow: none;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-action--primary {
+  border-color: var(--profile-invite-pass-ink) !important;
+  background: var(--profile-invite-pass-ink);
+  color: var(--profile-invite-pass-bg-deep);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-logout-button {
+  border-color: var(--sf-graphite);
+  background: var(--sf-graphite) !important;
+  color: #fff !important;
+}
+
+@media (max-width: 430px) {
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card {
+    padding: 1rem !important;
+  }
+}
+
+@media (max-width: 430px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-card-assets {
+    gap: 0.45rem;
+  }
+}
+
+@media (max-width: 430px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-card-asset {
+    min-height: 3.65rem;
+    border-radius: 0.78rem !important;
+  }
+}
+
+@media (max-width: 430px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-vip-name {
+    font-size: 1.12rem;
+  }
+}
+
+@media (max-width: 430px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel > .ir-stage {
+    aspect-ratio: 390 / 164 !important;
+  }
+}
+
+@media (max-width: 430px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-card::after {
+    top: 3.55rem;
+  }
+}
+
+@media (max-width: 430px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-badge {
+    left: 1.15rem;
+    top: 0.85rem;
+  }
+}
+
+@media (max-width: 430px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-subtitle {
+    display: none;
+  }
+}
+
+@media (max-width: 430px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-title {
+    top: 4.3rem;
+    max-width: 46%;
+    font-size: clamp(1.22rem, 6.2cqw, 1.72rem);
+  }
+}
+
+@media (max-width: 430px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-stats {
+    top: 3.55rem;
+    min-height: 2.45rem;
+    padding: 0.28rem;
+    gap: 0.28rem;
+  }
+}
+
+@media (max-width: 430px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-stat {
+    min-height: 1.82rem;
+    gap: 0.06rem;
+    padding: 0.25rem 0.22rem;
+  }
+}
+
+@media (max-width: 430px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-statLabel {
+    font-size: clamp(0.55rem, 2.1cqw, 0.64rem);
+  }
+}
+
+@media (max-width: 430px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-statValue {
+    font-size: clamp(0.7rem, 2.8cqw, 0.82rem);
+  }
+}
+
+@media (max-width: 430px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-actions {
+    bottom: 0.48rem;
+  }
+}
+
+@media (max-width: 430px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-action {
+    min-height: 2.05rem;
+    height: 2.05rem;
+  }
+}
+
+@media (max-width: 374px) {
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-card-assets {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Moved from src/styles/storefront-next.final-contract.css */
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-card-assets {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 0.42rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-card-asset {
+  display: grid !important;
+  grid-template-rows: auto auto !important;
+  place-items: center !important;
+  gap: 0.16rem !important;
+  min-width: 0 !important;
+  min-height: 3.2rem !important;
+  border: 1px solid color-mix(in srgb, var(--sf-canvas) 24%, transparent) !important;
+  border-radius: 0.82rem !important;
+  background: color-mix(in srgb, var(--sf-surface) 92%, transparent) !important;
+  padding: 0.45rem 0.28rem !important;
+  text-align: center !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-card-asset-value {
+  display: block !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  color: var(--sf-ink) !important;
+  font-size: clamp(0.86rem, 3.2vw, 1.05rem) !important;
+  font-weight: 850 !important;
+  line-height: 1.06 !important;
+  text-align: center !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-card-asset-label {
+  display: block !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  color: color-mix(in srgb, var(--sf-ink) 68%, transparent) !important;
+  font-size: 0.72rem !important;
+  font-weight: 680 !important;
+  line-height: 1.15 !important;
+  text-align: center !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-card-asset-token {
+  display: none !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-layout {
+  gap: 0.75rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-titlebar {
+  display: none !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-stack {
+  display: grid;
+  gap: 0.75rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-stack > * {
+  margin-block: 0 !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-dashboard-grid,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-dashboard-main,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-dashboard-rail {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-section-title {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  min-width: 0 !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-section-title h3 {
+  margin: 0 !important;
+  color: var(--sf-ink) !important;
+  font-size: 0.95rem !important;
+  font-weight: 820 !important;
+  line-height: 1.18 !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-trust-strip {
+  display: grid !important;
+  gap: 0.48rem !important;
+  border: 1px solid var(--sc-line) !important;
+  border-radius: var(--sc-card-radius) !important;
+  background: var(--sf-surface) !important;
+  padding: 0.65rem !important;
+  box-shadow: none !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-logout-button {
+  display: inline-flex !important;
+  width: 100% !important;
+  min-height: 2.75rem !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.45rem !important;
+  border: 1px solid color-mix(in srgb, var(--theme-danger) 22%, var(--sc-line)) !important;
+  border-radius: 0.78rem !important;
+  background: color-mix(in srgb, var(--theme-danger) 5%, var(--sf-surface)) !important;
+  color: var(--theme-danger) !important;
+  font-size: 0.82rem !important;
+  font-weight: 780 !important;
+  box-shadow: none !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"][data-theme] .sf-next-profile-hero-card .profile-guest-highlight,
+html[data-app-scope="store"][data-storefront-ui="next"][data-theme] .sf-next-profile-hero-card .profile-card-asset {
+  background: color-mix(in srgb, var(--sf-surface) 90%, transparent) !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"][data-theme] .sf-next-profile-hero-card .profile-guest-highlight :where(b, strong, span, small),
+html[data-app-scope="store"][data-storefront-ui="next"][data-theme] .sf-next-profile-hero-card .profile-card-asset :where(b, strong, span, small) {
+  color: var(--sf-ink) !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"][data-theme] .sf-next-profile-hero-card .profile-guest-highlight :where(svg, .profile-card-asset-icon),
+html[data-app-scope="store"][data-storefront-ui="next"][data-theme] .sf-next-profile-hero-card .profile-card-asset :where(svg, .profile-card-asset-icon) {
+  color: var(--sf-accent) !important;
+}
+
+@media (max-width: 767px) {
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-layout {
+    max-width: var(--sc-mobile-frame) !important;
+    padding-inline: var(--sc-page-x) !important;
+  }
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-card-assets {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 0.42rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-card-asset {
+  display: grid !important;
+  grid-template-rows: auto auto !important;
+  place-items: center !important;
+  gap: 0.16rem !important;
+  min-width: 0 !important;
+  min-height: 3.2rem !important;
+  padding: 0.45rem 0.28rem !important;
+  text-align: center !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-card-asset-value {
+  display: block !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  color: var(--sf-ink) !important;
+  font-size: clamp(0.86rem, 3.2vw, 1.05rem) !important;
+  font-weight: 850 !important;
+  line-height: 1.06 !important;
+  text-align: center !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-card-asset-label {
+  display: block !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  color: color-mix(in srgb, var(--sf-ink) 68%, transparent) !important;
+  font-size: 0.72rem !important;
+  font-weight: 680 !important;
+  line-height: 1.15 !important;
+  text-align: center !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-card-asset-token {
+  display: none !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-layout {
+  gap: var(--sc-module-gap) !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-stack > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 0 !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-section-title {
+  margin-bottom: var(--sc-module-gap-tight) !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-section-title h3 {
+  font-size: 0.94rem !important;
+  line-height: 1.15 !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-identity {
+  margin: 0 !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card {
+  padding: 0.95rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-logout-button {
+  margin-top: 0 !important;
+  min-height: 2.65rem !important;
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-layout {
+    max-width: var(--sc-mobile-frame) !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-dashboard-grid {
+    align-items: start !important;
+  }
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel {
+  --profile-invite-bg-a: color-mix(in srgb, var(--sf-ink) 92%, var(--sf-graphite-muted) 8%);
+  --profile-invite-bg-b: color-mix(in srgb, var(--sf-ink) 78%, var(--theme-primary) 22%);
+  --profile-invite-ink: color-mix(in srgb, var(--sf-canvas) 96%, white 4%);
+  --profile-invite-muted: color-mix(in srgb, var(--sf-canvas) 66%, transparent);
+  --profile-invite-line: color-mix(in srgb, var(--sf-canvas) 14%, transparent);
+  --profile-invite-panel: color-mix(in srgb, var(--sf-canvas) 10%, transparent);
+  --profile-invite-panel-strong: color-mix(in srgb, var(--sf-canvas) 16%, transparent);
+  margin: 0 !important;
+  overflow: visible !important;
+  border: 0 !important;
+  border-radius: 1rem !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel > .ir-stage {
+  position: relative !important;
+  container-type: inline-size !important;
+  box-sizing: border-box !important;
+  width: 100% !important;
+  max-width: none !important;
+  aspect-ratio: 390 / 176 !important;
+  min-height: 10.9rem !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  border-radius: 1rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-card {
+  position: absolute !important;
+  inset: 0 !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+  width: 100% !important;
+  height: 100% !important;
+  border: 1px solid color-mix(in srgb, var(--sf-canvas) 14%, transparent) !important;
+  border-radius: 1rem !important;
+  background:
+    radial-gradient(circle at 84% 18%, color-mix(in srgb, var(--sf-canvas) 14%, transparent), transparent 27%),
+    radial-gradient(circle at 10% 105%, color-mix(in srgb, var(--theme-primary) 18%, transparent), transparent 35%),
+    linear-gradient(142deg, var(--profile-invite-bg-a) 0%, var(--profile-invite-bg-b) 100%) !important;
+  background-size: auto !important;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--sf-canvas) 14%, transparent),
+    0 1rem 2rem -1.45rem color-mix(in srgb, var(--sf-ink) 55%, transparent) !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-card::before {
+  display: block !important;
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  pointer-events: none !important;
+  background:
+    linear-gradient(118deg, color-mix(in srgb, var(--sf-canvas) 11%, transparent), transparent 33%),
+    linear-gradient(90deg, transparent 0%, color-mix(in srgb, var(--sf-canvas) 4%, transparent) 58%, transparent 100%) !important;
+  background-size: auto !important;
+  opacity: 0.72 !important;
+  mask-image: none !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-card::after {
+  display: none !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel :where(.ir-safe-overlay, .ir-hero) {
+  display: none !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-badge {
+  position: absolute !important;
+  z-index: 3 !important;
+  left: 1.05rem !important;
+  top: 0.92rem !important;
+  height: auto !important;
+  min-width: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  padding: 0 !important;
+  color: var(--profile-invite-muted) !important;
+  box-shadow: none !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-badgeIcon {
+  display: none !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-badgeText {
+  color: var(--profile-invite-muted) !important;
+  font-size: 0.66rem !important;
+  font-weight: 780 !important;
+  letter-spacing: 0.04em !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-title {
+  position: absolute !important;
+  z-index: 3 !important;
+  left: 1.05rem !important;
+  top: 2.72rem !important;
+  max-width: 57% !important;
+  color: var(--profile-invite-ink) !important;
+  font-size: clamp(1.22rem, 5.45cqw, 1.5rem) !important;
+  font-weight: 860 !important;
+  line-height: 1.08 !important;
+  letter-spacing: 0 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-subtitle {
+  position: absolute !important;
+  z-index: 3 !important;
+  left: 1.05rem !important;
+  top: 4.76rem !important;
+  width: 53% !important;
+  margin: 0 !important;
+  display: -webkit-box !important;
+  overflow: hidden !important;
+  color: var(--profile-invite-muted) !important;
+  font-size: clamp(0.66rem, 2.62cqw, 0.76rem) !important;
+  font-weight: 560 !important;
+  line-height: 1.35 !important;
+  -webkit-box-orient: vertical !important;
+  -webkit-line-clamp: 2 !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-stats {
+  position: absolute !important;
+  z-index: 4 !important;
+  left: auto !important;
+  right: 0.86rem !important;
+  top: 2.74rem !important;
+  width: 36.5% !important;
+  min-height: 0 !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 0.38rem !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-stat {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  align-content: center !important;
+  justify-items: start !important;
+  min-height: 2.04rem !important;
+  border: 1px solid var(--profile-invite-line) !important;
+  border-radius: 0.72rem !important;
+  background: var(--profile-invite-panel) !important;
+  padding: 0.32rem 0.5rem !important;
+  text-align: left !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-statLabel {
+  max-width: 100% !important;
+  overflow: hidden !important;
+  color: var(--profile-invite-muted) !important;
+  font-size: 0.6rem !important;
+  font-weight: 640 !important;
+  line-height: 1.1 !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-statValue {
+  max-width: 100% !important;
+  overflow: hidden !important;
+  color: var(--profile-invite-ink) !important;
+  font-size: clamp(0.82rem, 3.1cqw, 0.95rem) !important;
+  font-weight: 830 !important;
+  line-height: 1.08 !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-actions {
+  position: absolute !important;
+  z-index: 4 !important;
+  right: auto !important;
+  left: 1.05rem !important;
+  bottom: 0.74rem !important;
+  width: calc(100% - 2.1rem) !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr) minmax(0, 1fr) !important;
+  gap: 0.42rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-action {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  height: 2.08rem !important;
+  min-height: 2.08rem !important;
+  border: 1px solid var(--profile-invite-line) !important;
+  border-radius: 0.66rem !important;
+  background: var(--profile-invite-panel) !important;
+  color: var(--profile-invite-ink) !important;
+  padding: 0 0.32rem !important;
+  box-shadow: none !important;
+  font-size: 0.7rem !important;
+  font-weight: 730 !important;
+  line-height: 1 !important;
+  letter-spacing: 0 !important;
+  white-space: nowrap !important;
+  transition: transform 150ms ease, background-color 150ms ease, border-color 150ms ease !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-action svg {
+  display: none !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-action:active {
+  transform: scale(0.985) !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-action--primary {
+  border-color: color-mix(in srgb, var(--sf-canvas) 80%, transparent) !important;
+  background: var(--profile-invite-ink) !important;
+  color: var(--profile-invite-bg-a) !important;
+  font-weight: 800 !important;
+}
+
+@media (max-width: 380px) {
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel > .ir-stage {
+    aspect-ratio: 366 / 192 !important;
+  }
+}
+
+@media (max-width: 380px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-subtitle {
+    width: 54% !important;
+  }
+}
+
+@media (max-width: 380px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-stats {
+    width: 37% !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-stack,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-dashboard-main,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-dashboard-rail {
+    gap: var(--sf-client-module-gap) !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-stack > :not([hidden]) ~ :not([hidden]) {
+    margin-top: var(--sf-client-module-gap) !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-trust-strip {
+    display: none !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel {
+    margin-top: 0 !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel > .ir-stage {
+    aspect-ratio: 390 / 172 !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-card {
+    border: 1px solid color-mix(in srgb, var(--sf-canvas) 16%, transparent) !important;
+    background:
+      radial-gradient(circle at 92% 18%, color-mix(in srgb, var(--sf-canvas) 14%, transparent) 0 3.2rem, transparent 3.35rem),
+      linear-gradient(135deg, color-mix(in srgb, var(--sf-ink) 96%, var(--sf-graphite-muted) 4%), color-mix(in srgb, var(--sf-ink) 78%, var(--theme-primary) 22%)) !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-card::before,
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-card::after {
+    opacity: 0.12 !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-title {
+    top: 2.82rem !important;
+    max-width: 58% !important;
+    font-size: clamp(1.14rem, 4.75cqw, 1.34rem) !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-subtitle {
+    top: 4.56rem !important;
+    width: 52% !important;
+    -webkit-line-clamp: 2 !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-stats {
+    right: 0.92rem !important;
+    top: 3.02rem !important;
+    width: 35% !important;
+    gap: 0.35rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-stat {
+    min-height: 2.08rem !important;
+    border-radius: 0.72rem !important;
+    background: color-mix(in srgb, var(--sf-canvas) 13%, transparent) !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-actions {
+    bottom: 0.68rem !important;
+    gap: 0.38rem !important;
+  }
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-layout {
+  padding-bottom: var(--sc-bottom-clearance) !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-page .sf-next-profile-card {
+  border-radius: 0.9rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-page :where(.profile-service-grid, .profile-secondary-list, .profile-order-grid, .profile-asset-grid) {
+  gap: 0.48rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-page :where(.profile-service-action, .profile-secondary-action, .profile-order-action, .profile-asset-action) {
+  min-height: 2.78rem !important;
+  border-radius: 0.7rem !important;
+  padding: 0.48rem 0.58rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-page :where(.profile-service-icon, .profile-secondary-icon, .profile-order-icon, .profile-asset-icon) {
+  width: 2.05rem !important;
+  min-width: 2.05rem !important;
+  height: 2.05rem !important;
+  border-radius: 0.6rem !important;
+}
+
+@media (min-width: 1024px) {
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-layout {
+    max-width: 58rem !important;
+  }
+}
+
+@media (min-width: 1024px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-guest-card {
+    min-height: 12rem !important;
+    border-radius: 1rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-layout {
+    gap: 0.58rem !important;
+    padding-top: 0.58rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card {
+    border-radius: 1rem !important;
+    padding: 0.92rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-guest-card {
+    min-height: 12rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-trust-strip {
+    display: none !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card {
+    padding: 0.72rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-guest-card {
+    min-height: auto !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-card {
+    padding: 0.78rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-layout {
+    gap: 0.72rem !important;
+    padding-inline: var(--sc-page-x) !important;
+    padding-bottom: var(--sc-bottom-clearance) !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-stack {
+    display: grid !important;
+    gap: 0.72rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-dashboard-grid,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-dashboard-main,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-dashboard-rail {
+    display: grid !important;
+    gap: 0.72rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-card {
+    border-radius: 0.92rem !important;
+    padding: 0.82rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-trust-strip {
+    display: none !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-card {
+    min-height: auto !important;
+    padding: 1rem !important;
+    border-radius: 1rem !important;
+    background:
+      radial-gradient(circle at 84% 20%, color-mix(in srgb, var(--profile-invite-pass-ink, var(--sf-canvas)) 10%, transparent), transparent 28%),
+      linear-gradient(145deg, color-mix(in srgb, var(--sf-ink) 88%, var(--sf-primary) 12%), color-mix(in srgb, var(--sf-ink) 96%, var(--sf-graphite))) !important;
+    background-size: auto !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-title {
+    max-width: 58% !important;
+    font-size: 1.35rem !important;
+    line-height: 1.1 !important;
+    text-wrap: balance !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-subtitle {
+    max-width: 64% !important;
+    -webkit-line-clamp: 2 !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-stats {
+    top: 0.98rem !important;
+    right: 0.92rem !important;
+    max-width: 42% !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-actions {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 0.42rem !important;
+    margin-top: 0.88rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-action {
+    min-height: 2.38rem !important;
+    border-radius: 999px !important;
+  }
+}
+
+@media (max-width: 767px) {
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-layout,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-stack,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-dashboard-grid,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-dashboard-main,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-dashboard-rail {
+    gap: var(--sc-section-gap) !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-card {
+    padding: var(--sc-card-pad) !important;
+  }
+}
+
+@media (max-width: 767px) {
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-layout,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-stack,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-dashboard-main {
+    gap: 0.72rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel {
+    margin-top: 0 !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel > .ir-stage {
+    aspect-ratio: auto !important;
+    min-height: 12.4rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-card {
+    min-height: 12.4rem !important;
+    padding: 1rem !important;
+    border-radius: 1rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-title {
+    max-width: 58% !important;
+    font-size: 1.45rem !important;
+    line-height: 1.08 !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-subtitle {
+    max-width: 58% !important;
+    -webkit-line-clamp: 2 !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-stats {
+    max-width: 40% !important;
+    min-height: 5rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-actions {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    bottom: 0.92rem !important;
+  }
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-card-asset {
+  background: color-mix(in srgb, var(--sf-surface) 90%, var(--sf-surface-muted) 10%) !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-card-asset-value {
+  color: var(--sf-ink) !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-card-asset-label {
+  color: color-mix(in srgb, var(--sf-ink) 62%, var(--sf-surface) 38%) !important;
+}
+
+@media (max-width: 767px) {
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-layout {
+    padding-bottom: var(--sc-bottom-clearance) !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-card,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-trust-strip {
+    border-radius: 1rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel > .ir-stage {
+    aspect-ratio: auto !important;
+    min-height: 16.25rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-card {
+    min-height: 16.25rem !important;
+    border-radius: 1rem !important;
+    background:
+      radial-gradient(circle at 86% 10%, color-mix(in srgb, var(--theme-primary) 20%, transparent) 0 4.5rem, transparent 4.8rem),
+      linear-gradient(145deg, var(--profile-invite-pass-bg), var(--profile-invite-pass-bg-deep)) !important;
+    background-size: auto !important;
+    padding: 0 !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-card::after {
+    top: 3.75rem !important;
+    left: 1rem !important;
+    right: 1rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-badge {
+    left: 1rem !important;
+    top: 0.92rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-title {
+    left: 1rem !important;
+    top: 4.55rem !important;
+    width: calc(100% - 2rem) !important;
+    max-width: none !important;
+    font-size: 1.42rem !important;
+    line-height: 1.12 !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-subtitle {
+    display: -webkit-box !important;
+    left: 1rem !important;
+    top: 6.55rem !important;
+    width: calc(100% - 2rem) !important;
+    max-width: none !important;
+    overflow: hidden !important;
+    font-size: 0.75rem !important;
+    line-height: 1.35 !important;
+    -webkit-box-orient: vertical !important;
+    -webkit-line-clamp: 2 !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-stats {
+    left: 1rem !important;
+    right: 1rem !important;
+    top: 9.05rem !important;
+    width: auto !important;
+    max-width: none !important;
+    min-height: 3.65rem !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    border-radius: 0.9rem !important;
+    padding: 0.38rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-stat {
+    min-height: 2.85rem !important;
+    gap: 0.08rem !important;
+    padding: 0.34rem 0.28rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-actions {
+    left: 1rem !important;
+    right: 1rem !important;
+    bottom: 0.9rem !important;
+    width: auto !important;
+    grid-template-columns: 1.1fr 0.9fr 0.9fr !important;
+    gap: 0.42rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-action {
+    min-height: 2.625rem !important;
+    height: 2.625rem !important;
+    border-radius: 0.8rem !important;
+    font-size: 0.78rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-page .profile-service-grid {
+    gap: 0.5rem !important;
+  }
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel {
+  overflow: visible !important;
+  border-radius: 1.05rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel > .ir-stage {
+  aspect-ratio: 390 / 188 !important;
+  overflow: visible !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-card {
+  border: 1px solid color-mix(in srgb, var(--sf-line) 22%, transparent) !important;
+  border-radius: 1.05rem !important;
+  background:
+    radial-gradient(circle at 82% 22%, color-mix(in srgb, var(--sf-accent) 15%, transparent), transparent 5.8rem),
+    linear-gradient(135deg, color-mix(in srgb, var(--sf-graphite) 94%, var(--sf-accent)), color-mix(in srgb, var(--sf-graphite) 82%, var(--sf-ink))) !important;
+  background-size: auto !important;
+  box-shadow: 0 1rem 2.6rem color-mix(in srgb, var(--sf-graphite) 13%, transparent) !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-card::before {
+  display: block !important;
+  inset: 0 !important;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--sf-canvas) 7%, transparent) 1px, transparent 1px),
+    linear-gradient(180deg, color-mix(in srgb, var(--sf-canvas) 5%, transparent) 1px, transparent 1px) !important;
+  background-size: 4.5rem 4.5rem !important;
+  mask-image: linear-gradient(135deg, transparent 0%, color-mix(in srgb, var(--sf-ink) 55%, transparent) 36%, transparent 86%) !important;
+  opacity: 0.55 !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-card::after {
+  left: 1rem !important;
+  right: 1rem !important;
+  top: 3.75rem !important;
+  background: color-mix(in srgb, white 15%, transparent) !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-badge {
+  left: 1rem !important;
+  top: 0.95rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-badgeText {
+  color: color-mix(in srgb, white 82%, var(--sf-accent)) !important;
+  font-size: 0.72rem !important;
+  font-weight: 800 !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-title {
+  left: 1rem !important;
+  top: 4.75rem !important;
+  max-width: 56% !important;
+  color: color-mix(in srgb, white 94%, var(--sf-accent)) !important;
+  font-size: clamp(1.2rem, 6.2cqw, 1.7rem) !important;
+  line-height: 1.06 !important;
+  white-space: normal !important;
+  text-wrap: balance;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-subtitle {
+  left: 1rem !important;
+  top: 7.4rem !important;
+  width: 56% !important;
+  display: -webkit-box !important;
+  color: color-mix(in srgb, white 67%, transparent) !important;
+  font-size: clamp(0.68rem, 2.65cqw, 0.78rem) !important;
+  line-height: 1.42 !important;
+  overflow: hidden !important;
+  -webkit-box-orient: vertical !important;
+  -webkit-line-clamp: 2 !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-stats {
+  right: 0.9rem !important;
+  top: 4.65rem !important;
+  left: auto !important;
+  width: 36.5% !important;
+  min-height: 4.55rem !important;
+  grid-template-columns: 1fr !important;
+  gap: 0.32rem !important;
+  border-color: color-mix(in srgb, white 13%, transparent) !important;
+  background: color-mix(in srgb, white 8%, transparent) !important;
+  padding: 0.36rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-stat {
+  min-height: 1.84rem !important;
+  align-items: flex-start !important;
+  border-radius: 0.64rem !important;
+  background: color-mix(in srgb, white 7%, transparent) !important;
+  padding: 0.34rem 0.46rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-statLabel {
+  color: color-mix(in srgb, white 58%, transparent) !important;
+  font-size: 0.58rem !important;
+  line-height: 1.1 !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-statValue {
+  color: color-mix(in srgb, white 92%, var(--sf-accent)) !important;
+  font-size: 0.82rem !important;
+  line-height: 1.04 !important;
+  text-align: left !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-actions {
+  left: 1rem !important;
+  right: 1rem !important;
+  bottom: 0.8rem !important;
+  width: auto !important;
+  gap: 0.42rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-action {
+  min-height: 2.08rem !important;
+  height: 2.08rem !important;
+  border-radius: 999px !important;
+  font-size: 0.72rem !important;
+  gap: 0.28rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-action svg {
+  width: 0.86rem !important;
+  height: 0.86rem !important;
+}
+
+@media (max-width: 374px) {
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-title {
+    max-width: 54% !important;
+    font-size: 1.08rem !important;
+  }
+}
+
+@media (max-width: 374px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-subtitle {
+    display: none !important;
+  }
+}
+
+@media (max-width: 374px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-stats {
+    width: 38% !important;
+  }
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-trust-strip {
+  display: none !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-stack,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-dashboard-grid,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-dashboard-main,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-dashboard-rail {
+  display: grid !important;
+  gap: var(--sc-section-gap) !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-stack > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 0 !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel {
+  border-radius: var(--sc-card-radius) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel > .ir-stage {
+  aspect-ratio: 390 / 172 !important;
+  min-height: 10.6rem !important;
+  overflow: hidden !important;
+  border-radius: var(--sc-card-radius) !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-card {
+  min-height: 100% !important;
+  border-radius: var(--sc-card-radius) !important;
+  background:
+    radial-gradient(circle at 82% 20%, color-mix(in srgb, var(--sf-accent) 18%, transparent) 0 3.4rem, transparent 3.55rem),
+    linear-gradient(135deg, color-mix(in srgb, var(--sf-graphite) 96%, var(--sf-graphite-muted) 4%), color-mix(in srgb, var(--sf-graphite) 84%, var(--sf-ink))) !important;
+  box-shadow: 0 0.9rem 2rem color-mix(in srgb, var(--sf-ink) 9%, transparent) !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-card::before,
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-card::after {
+  display: none !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-badge {
+  left: 0.95rem !important;
+  top: 0.82rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-title {
+  left: 0.95rem !important;
+  top: 2.92rem !important;
+  max-width: 57% !important;
+  font-size: clamp(1.18rem, 5.6cqw, 1.42rem) !important;
+  line-height: 1.08 !important;
+  white-space: normal !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-subtitle {
+  left: 0.95rem !important;
+  top: 4.82rem !important;
+  width: 54% !important;
+  font-size: clamp(0.66rem, 2.6cqw, 0.76rem) !important;
+  line-height: 1.36 !important;
+  -webkit-line-clamp: 2 !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-stats {
+  top: 3.02rem !important;
+  right: 0.82rem !important;
+  width: 35.5% !important;
+  min-height: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-stat {
+  min-height: 2rem !important;
+  border: 1px solid color-mix(in srgb, white 14%, transparent) !important;
+  background: color-mix(in srgb, white 9%, transparent) !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-actions {
+  left: 0.95rem !important;
+  right: 0.95rem !important;
+  bottom: 0.68rem !important;
+  grid-template-columns: minmax(0, 1.08fr) minmax(0, 1fr) minmax(0, 1fr) !important;
+  gap: 0.38rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-action {
+  height: 2.02rem !important;
+  min-height: 2.02rem !important;
+  border-radius: 999px !important;
+  font-size: 0.7rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-identity__copy {
+  display: flex !important;
+  min-width: 0 !important;
+  min-height: 2.75rem !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  justify-content: center !important;
+  gap: 0 !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-identity__copy strong {
+  max-width: 100% !important;
+  overflow: hidden !important;
+  color: var(--sf-ink) !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card {
+  cursor: default !important;
+  outline: none !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-vip-folio-head,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-card-asset {
+  cursor: pointer !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-vip-folio-head:focus-visible {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--sf-accent) 30%, transparent), var(--sc-soft-shadow) !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel {
+  margin-top: 0 !important;
+  overflow: visible !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel > .ir-stage {
+  width: 100% !important;
+  max-width: 100% !important;
+  aspect-ratio: auto !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-card {
+  position: relative !important;
+  inset: auto !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.12fr) minmax(6.7rem, 0.88fr) !important;
+  grid-template-areas:
+    "badge stats"
+    "title stats"
+    "subtitle stats"
+    "actions actions" !important;
+  gap: 0.62rem 0.72rem !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  border-radius: var(--sc-card-radius) !important;
+  padding: 0.95rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-safe-overlay,
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-hero {
+  display: none !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel :where(.ir-badge, .ir-title, .ir-subtitle, .ir-stats, .ir-actions) {
+  position: static !important;
+  z-index: 1 !important;
+  inset: auto !important;
+  width: auto !important;
+  max-width: none !important;
+  margin: 0 !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-badge {
+  grid-area: badge !important;
+  min-width: 0 !important;
+  justify-self: start !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-title {
+  grid-area: title !important;
+  color: color-mix(in srgb, var(--sf-on-accent) 96%, transparent) !important;
+  font-size: 1.28rem !important;
+  line-height: 1.12 !important;
+  white-space: normal !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-subtitle {
+  grid-area: subtitle !important;
+  display: -webkit-box !important;
+  overflow: hidden !important;
+  color: color-mix(in srgb, var(--sf-on-accent) 78%, transparent) !important;
+  font-size: 0.76rem !important;
+  line-height: 1.42 !important;
+  -webkit-box-orient: vertical !important;
+  -webkit-line-clamp: 2 !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-stats {
+  grid-area: stats !important;
+  display: grid !important;
+  align-self: stretch !important;
+  gap: 0.46rem !important;
+  min-height: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-stat {
+  min-height: 3.35rem !important;
+  border: 1px solid color-mix(in srgb, var(--sf-on-accent) 16%, transparent) !important;
+  border-radius: 0.78rem !important;
+  background: color-mix(in srgb, var(--sf-on-accent) 10%, transparent) !important;
+  padding: 0.48rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-statLabel {
+  color: color-mix(in srgb, var(--sf-on-accent) 72%, transparent) !important;
+  font-size: 0.68rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-statValue {
+  color: color-mix(in srgb, var(--sf-on-accent) 98%, transparent) !important;
+  font-size: 0.9rem !important;
+  letter-spacing: 0 !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-actions {
+  grid-area: actions !important;
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 0.46rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-action {
+  min-height: 2.42rem !important;
+  height: auto !important;
+  border-radius: 999px !important;
+  font-size: 0.74rem !important;
+}
+
+@media (max-width: 380px) {
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-card {
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-areas:
+      "badge"
+      "title"
+      "subtitle"
+      "stats"
+      "actions" !important;
+  }
+}
+
+@media (max-width: 380px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel {
+  margin-top: 0 !important;
+  overflow: visible !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel > .ir-stage {
+  aspect-ratio: auto !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-card {
+  position: relative !important;
+  inset: auto !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.12fr) minmax(6.7rem, 0.88fr) !important;
+  grid-template-areas:
+    "badge stats"
+    "title stats"
+    "subtitle stats"
+    "actions actions" !important;
+  gap: 0.62rem 0.72rem !important;
+  height: auto !important;
+  min-height: 0 !important;
+  padding: 0.95rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-badge,
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-title,
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-subtitle,
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-stats,
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-actions {
+  position: static !important;
+  inset: auto !important;
+  width: auto !important;
+  max-width: none !important;
+  margin: 0 !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-badge {
+  grid-area: badge !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-title {
+  grid-area: title !important;
+  white-space: normal !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-subtitle {
+  grid-area: subtitle !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-stats {
+  grid-area: stats !important;
+  align-self: stretch !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-actions {
+  grid-area: actions !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+}
+
+@media (max-width: 767px) {
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-identity__icon-button {
+    width: 2.75rem !important;
+    min-width: 2.75rem !important;
+    height: 2.75rem !important;
+    min-height: 2.75rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-action {
+    min-height: 2.75rem !important;
+  }
+}
+
+@media (max-width: 380px) {
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-card {
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-areas:
+      "badge"
+      "title"
+      "subtitle"
+      "stats"
+      "actions" !important;
+  }
+}
+
+@media (max-width: 380px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .profile-invite-reward-card.sf-next-profile-invite-panel .ir-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+/* Moved from src/styles/client-redesign.css */
+
+html[data-app-scope="store"][data-theme-member-card-style] .sf-next-profile-hero-card {
+  border-color: color-mix(in srgb, var(--theme-member-card-mid, var(--theme-primary)) 34%, var(--client-border));
+  background: var(--theme-member-card-bg);
+  color: var(--theme-member-card-foreground);
+  box-shadow:
+    0 22px 54px -38px color-mix(in srgb, var(--theme-member-card-mid, var(--theme-primary)) 56%, transparent),
+    inset 0 1px 0 color-mix(in srgb, white 24%, transparent);
+}
+
+html[data-app-scope="store"][data-theme-member-card-style] .sf-next-profile-hero-card :where(.profile-vip-name, .profile-vip-folio-head h2, .profile-card-asset b) {
+  color: var(--theme-member-card-foreground);
+}
+
+html[data-app-scope="store"][data-theme-member-card-style] .sf-next-profile-hero-card :where(.profile-vip-subtitle, .profile-vip-progress-meta, .profile-vip-folio-head p, .profile-card-asset span:not(.profile-card-asset-icon)) {
+  color: var(--theme-member-card-muted);
+}
+
+html[data-app-scope="store"][data-theme-member-card-style] .sf-next-profile-hero-card :where(.profile-vip-badge, .profile-vip-action, .profile-card-asset-token) {
+  border-color: color-mix(in srgb, var(--theme-member-card-foreground) 18%, transparent);
+  background: var(--theme-member-card-badge-bg);
+  color: var(--theme-member-card-badge-fg);
+}
+
+html[data-app-scope="store"][data-theme-member-card-style="light"] .sf-next-profile-hero-card,
+html[data-app-scope="store"][data-theme-member-card-style="fresh"] .sf-next-profile-hero-card {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--theme-member-card-mid, var(--theme-primary)) 10%, var(--client-surface)), var(--client-surface) 62%),
+    var(--client-surface);
+  color: var(--theme-text);
+}

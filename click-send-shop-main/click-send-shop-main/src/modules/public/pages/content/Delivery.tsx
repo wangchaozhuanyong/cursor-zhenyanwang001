@@ -12,6 +12,7 @@ import type { ContentPage } from "@/types/content";
 import { sanitizeCmsHtml } from "@/utils/cmsSanitizer";
 import { buildCanonical, stripHtml, truncateText } from "@/utils/seo";
 import { STORE_COPY } from "@/constants/storeCopy";
+import "@/styles/secondary-routes.css";
 
 const deliveryZones = [
   {

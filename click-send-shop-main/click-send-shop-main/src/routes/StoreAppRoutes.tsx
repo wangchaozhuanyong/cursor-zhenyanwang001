@@ -40,6 +40,8 @@ import { areClientDesignRoutesEnabled } from "@/utils/clientDesignRoutes";
 import {
   getRememberedStoreScrollPosition,
   getStoreScrollKey,
+  getStoreTabPathKey,
+  rememberStoreTabPath,
   rememberStoreScrollPosition,
 } from "@/utils/storeScrollRestoration";
 import { logPerf, markPerfStart, observeLongTasksAndLcp } from "@/utils/performanceDebug";
@@ -64,28 +66,15 @@ const CARD_EQUAL_MOBILE_FIX_STYLE_ID = "sf-next-card-equal-mobile-fix";
 const GLOBAL_WIDGET_DELAY_MS = 9000;
 const PRIVACY_TRACKING_DELAY_MS = 1000;
 const ENABLE_LEGACY_CARD_OVERLAP_FIX = false;
-const STORE_FAST_ROUTE_PRELOADS = [
-  "/categories",
-  "/search",
-  "/product/__preload__",
-  "/promotions/__preload__",
-];
+const STORE_BACKGROUND_ROUTE_PRELOAD_DELAY_MS = 6500;
+const STORE_BACKGROUND_ROUTE_PRELOAD_STEP_MS = 850;
+const STORE_FAST_ROUTE_PRELOADS: string[] = [];
 const CRITICAL_STORE_ROUTE_PRELOADS = [
   "/categories",
   "/search",
   "/promotions",
   "/cart",
-  "/checkout",
-  "/orders",
   "/profile",
-  "/coupons",
-  "/invite",
-  "/points",
-  "/points/gifts",
-  "/rewards",
-  "/wallet",
-  "/settings",
-  "/help",
 ];
 
 const CookieConsentBanner = lazy(() => import("@/components/CookieConsentBanner"));
@@ -114,6 +103,7 @@ function StoreScrollRestoration() {
   const scrollKey = getStoreScrollKey(location.pathname, location.search);
   const activeScrollKeyRef = useRef(scrollKey);
   const previousScrollKeyRef = useRef(scrollKey);
+  const previousPathnameRef = useRef(location.pathname);
   const hasHandledInitialRouteRef = useRef(false);
 
   useLayoutEffect(() => {
@@ -124,19 +114,29 @@ function StoreScrollRestoration() {
 
   useLayoutEffect(() => {
     const previousScrollKey = previousScrollKeyRef.current;
+    const previousPathname = previousPathnameRef.current;
     activeScrollKeyRef.current = scrollKey;
 
     if (hasHandledInitialRouteRef.current && previousScrollKey === scrollKey) {
+      previousPathnameRef.current = location.pathname;
       return;
     }
 
-    const shouldRestore = hasHandledInitialRouteRef.current && navigationType === "POP";
+    const previousTabKey = getStoreTabPathKey(previousPathname);
+    const currentTabKey = getStoreTabPathKey(location.pathname);
+    const isTabSwitch = Boolean(previousTabKey && currentTabKey && previousTabKey !== currentTabKey);
+    const shouldRestore = hasHandledInitialRouteRef.current && (navigationType === "POP" || isTabSwitch);
     const targetY = shouldRestore ? getRememberedStoreScrollPosition(scrollKey) ?? 0 : 0;
     const maxY = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
     window.scrollTo({ top: Math.min(targetY, maxY), left: 0, behavior: "auto" });
     previousScrollKeyRef.current = scrollKey;
+    previousPathnameRef.current = location.pathname;
     hasHandledInitialRouteRef.current = true;
-  }, [navigationType, scrollKey]);
+  }, [location.pathname, navigationType, scrollKey]);
+
+  useLayoutEffect(() => {
+    rememberStoreTabPath(location.pathname, location.search, location.hash);
+  }, [location.hash, location.pathname, location.search]);
 
   useEffect(() => {
     let ticking = false;
@@ -247,7 +247,7 @@ function StoreCriticalRoutePreloader() {
             const timer = window.setTimeout(() => {
               timers.delete(timer);
               preloadStoreRoute(path, "idle");
-            }, index * 120);
+            }, (index + 1) * STORE_BACKGROUND_ROUTE_PRELOAD_STEP_MS);
             timers.add(timer);
           });
       }).catch(() => undefined);
@@ -255,9 +255,9 @@ function StoreCriticalRoutePreloader() {
     const cancelIdle = scheduleIdleTask("store-critical-route-preload", () => {
       preloadCriticalRoutes();
     }, {
-      delayMs: 120,
-      timeoutMs: 1800,
-      jitterMs: 0,
+      delayMs: STORE_BACKGROUND_ROUTE_PRELOAD_DELAY_MS,
+      timeoutMs: 3500,
+      jitterMs: 500,
     });
 
     return () => {
@@ -658,6 +658,7 @@ function MainStoreRoutes() {
             <LanguageGate />
             <AgeGate />
             {ENABLE_LEGACY_CARD_OVERLAP_FIX ? <StoreCardOverlapFix /> : null}
+            <AppBootReady />
             <Suspense
               fallback={(
                 <DelayedRouteFallback
@@ -667,7 +668,6 @@ function MainStoreRoutes() {
                 />
               )}
             >
-              <AppBootReady />
               <Routes>
                 {renderFrontLayoutRoutes(capabilities)}
                 {renderStandalonePublicRoutes(capabilities)}

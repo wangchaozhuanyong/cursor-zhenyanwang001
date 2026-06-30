@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { formatRewardTransactionLabel, groupRewardRecordsByMonth } from "@/utils/rewardDisplayLabels";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import "@/styles/loyalty-routes.css";
 
 const PAGE_SIZE = 20;
 const DEFAULT_BALANCE_LABEL = "购物可用返现";

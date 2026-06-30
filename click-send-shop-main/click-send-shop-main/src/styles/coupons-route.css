@@ -1,0 +1,1398 @@
+/* Moved from src/styles/storefront-next.primitives.css */
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell {
+  background: var(--sf-canvas);
+  background-image: none;
+}
+
+.sf-next-coupon-footnote {
+  margin: var(--sf-space-2) var(--sf-space-3) 0;
+  overflow: hidden;
+  color: var(--sf-ink-secondary);
+  font-size: var(--sf-font-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sf-next-coupons-page-shell .sf-next-value-vault {
+  border-color: color-mix(in srgb, var(--sf-accent) 12%, var(--sf-line));
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 62%), transparent 52%),
+    var(--sf-surface);
+  box-shadow: var(--sf-shadow-xs);
+}
+
+.sf-next-coupons-page-shell .sf-next-value-vault__value {
+  background:
+    radial-gradient(circle at 70% 18%, rgb(255 255 255 / 52%), transparent 34%),
+    color-mix(in srgb, var(--sf-accent) 11%, var(--sf-surface-muted));
+}
+
+.sf-next-coupons-page-shell .sf-next-value-vault__content {
+  padding: 0.875rem 0.875rem 0.875rem 1rem;
+}
+
+.sf-next-coupons-page-shell .sf-next-value-vault__meta {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.sf-next-coupons-page-shell .sf-next-value-vault__topline .sf-next-button {
+  min-width: 4rem;
+  min-height: 2rem;
+  border-radius: var(--sf-radius-full);
+  padding: 0.5rem 0.75rem;
+}
+
+.sf-next-coupons-page-shell .sf-next-value-vault__code {
+  flex-wrap: nowrap;
+}
+
+.sf-next-coupons-page-shell .sf-next-value-vault__code .sf-next-icon-button {
+  width: 2.25rem;
+  height: 2.25rem;
+  min-width: 2.25rem;
+  min-height: 2.25rem;
+}
+
+.sf-next-coupon-hero {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sf-space-4);
+  border-color: var(--sf-line);
+  background: var(--sf-surface);
+  background-image: none;
+  padding: var(--sf-space-5);
+  box-shadow: none;
+}
+
+.sf-next-coupon-hero__summary {
+  display: grid;
+  min-width: 0;
+  gap: var(--sf-space-2);
+}
+
+.sf-next-coupon-hero__eyebrow {
+  color: var(--sf-ink-secondary);
+  font-size: var(--sf-font-lg);
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.sf-next-coupon-hero__value {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--sf-ink);
+  font-size: clamp(2.25rem, 11vw, 3rem);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.sf-next-coupon-hero__value span {
+  font-size: 0.84em;
+  font-weight: 780;
+}
+
+.sf-next-coupon-hero__aside {
+  display: grid;
+  flex: 0 0 auto;
+  justify-items: end;
+  gap: var(--sf-space-3);
+  color: var(--sf-warning);
+  font-size: var(--sf-font-sm);
+  font-weight: 700;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.sf-next-coupon-hero__cart {
+  min-height: 2.25rem;
+  border-radius: var(--sf-radius-full);
+  background: var(--sf-graphite);
+  color: #fff;
+  padding: 0.5rem 0.75rem;
+  font-size: var(--sf-font-xs);
+}
+
+.sf-next-coupon-view-switch {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sf-space-1);
+  margin-top: var(--sf-space-5);
+  border-radius: var(--sf-radius-md);
+  background: var(--sf-surface-muted);
+  padding: var(--sf-space-1);
+}
+
+.sf-next-coupon-view-switch__item {
+  min-width: 0;
+  min-height: 3rem;
+  border: 0;
+  border-radius: calc(var(--sf-radius-md) - var(--sf-space-1));
+  background: transparent;
+  color: var(--sf-ink-secondary);
+  padding: 0.75rem 0.875rem;
+  font-size: var(--sf-font-base);
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+  box-shadow: none;
+}
+
+.sf-next-coupon-view-switch__item.is-active {
+  background: var(--sf-surface);
+  color: var(--sf-ink);
+  box-shadow: var(--sf-shadow-xs);
+}
+
+.sf-next-coupon-status-rail {
+  margin-top: var(--sf-space-4);
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+.sf-next-coupon-status-rail__inner {
+  display: inline-flex;
+  min-width: 0;
+  gap: var(--sf-space-2);
+  padding-bottom: 0.125rem;
+}
+
+.sf-next-coupon-status-tab {
+  display: inline-flex;
+  min-width: 4.5rem;
+  min-height: 2.75rem;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--sf-line);
+  border-radius: var(--sf-radius-md);
+  background: var(--sf-surface);
+  color: var(--sf-ink-secondary);
+  padding: 0.625rem 1rem;
+  font-size: var(--sf-font-base);
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: none;
+}
+
+.sf-next-coupon-status-tab--active {
+  border-color: color-mix(in srgb, var(--sf-accent) 24%, var(--sf-line));
+  background: var(--sf-accent-soft);
+  color: var(--sf-accent);
+}
+
+.sf-next-coupon-category-pill {
+  display: inline-flex;
+  height: 2.5rem;
+  min-width: 5.625rem;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sf-space-2);
+  border: 1px solid var(--sf-line);
+  border-radius: var(--sf-radius-full);
+  padding: 0 0.875rem;
+  color: var(--sf-ink);
+  font-size: var(--sf-font-sm);
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: none;
+  transition:
+    background-color var(--sf-duration-standard) var(--sf-ease-standard),
+    border-color var(--sf-duration-standard) var(--sf-ease-standard),
+    color var(--sf-duration-standard) var(--sf-ease-standard);
+}
+
+.sf-next-coupon-category-pill--active {
+  border-color: color-mix(in srgb, var(--sf-accent) 40%, var(--sf-line));
+  background: var(--sf-accent);
+  color: var(--sf-on-accent);
+}
+
+.sf-next-coupon-category-pill--idle {
+  background: var(--sf-surface);
+}
+
+.sf-next-coupon-category-pill > span:last-child {
+  background: color-mix(in srgb, currentColor 12%, transparent);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-empty {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  gap: var(--sf-space-4);
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--sf-accent) 12%, var(--sf-line));
+  border-radius: var(--sf-radius-lg);
+  background:
+    radial-gradient(circle at 82% 18%, color-mix(in srgb, var(--sf-accent) 13%, transparent), transparent 9rem),
+    linear-gradient(180deg, rgb(255 255 255 / 78%), transparent 52%),
+    var(--sf-surface);
+  padding: var(--sf-space-4);
+  box-shadow: var(--sf-shadow-xs);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-empty::before {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(90deg, color-mix(in srgb, var(--sf-line) 62%, transparent) 1px, transparent 1px),
+    linear-gradient(180deg, color-mix(in srgb, var(--sf-line) 46%, transparent) 1px, transparent 1px);
+  background-size: 1.15rem 1.15rem;
+  content: "";
+  opacity: 0.18;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-empty > * {
+  position: relative;
+  z-index: 1;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-empty__pass {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sf-space-4);
+  overflow: hidden;
+  border-radius: calc(var(--sf-radius-lg) - 0.25rem);
+  background:
+    radial-gradient(circle at 88% 20%, color-mix(in srgb, var(--sf-accent) 28%, transparent), transparent 4rem),
+    linear-gradient(135deg, var(--sf-graphite), color-mix(in srgb, var(--sf-graphite) 82%, var(--sf-accent)));
+  color: #fff;
+  padding: var(--sf-space-4);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-empty__pass-label {
+  display: block;
+  color: rgb(255 255 255 / 68%);
+  font-size: var(--sf-font-xs);
+  font-weight: 700;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-empty__pass strong {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: clamp(2rem, 10vw, 2.75rem);
+  font-weight: 820;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-empty__pass svg {
+  flex: 0 0 auto;
+  opacity: 0.82;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-empty__content {
+  display: grid;
+  justify-items: center;
+  gap: var(--sf-space-2);
+  min-width: 0;
+  text-align: center;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-empty__icon {
+  display: grid;
+  width: 4rem;
+  height: 4rem;
+  place-items: center;
+  border-radius: var(--sf-radius-md);
+  background: color-mix(in srgb, var(--sf-accent) 10%, var(--sf-surface-muted));
+  color: var(--sf-accent);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-empty h2 {
+  margin: 0;
+  color: var(--sf-ink);
+  font-size: var(--sf-font-xl);
+  font-weight: 800;
+  line-height: 1.25;
+  text-wrap: balance;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-empty p {
+  max-width: 22rem;
+  margin: 0;
+  color: var(--sf-ink-secondary);
+  font-size: var(--sf-font-sm);
+  line-height: 1.55;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-empty__stats {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid var(--sf-line);
+  border-radius: var(--sf-radius-md);
+  background: rgb(255 255 255 / 56%);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-empty__stats span {
+  display: grid;
+  min-width: 0;
+  place-items: center;
+  gap: 0.25rem;
+  padding: 0.875rem 0.5rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-empty__stats span + span {
+  border-left: 1px solid var(--sf-line);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-empty__stats strong {
+  color: var(--sf-ink);
+  font-size: var(--sf-font-xl);
+  font-weight: 820;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-empty__stats em {
+  overflow: hidden;
+  max-width: 100%;
+  color: var(--sf-ink-secondary);
+  font-size: var(--sf-font-xs);
+  font-style: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-empty__actions {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--sf-space-2);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-empty__primary,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-empty__secondary {
+  min-height: 2.75rem;
+  min-width: min(100%, 8.75rem);
+  border-radius: var(--sf-radius-full);
+  padding: 0.75rem 1rem;
+  font-size: var(--sf-font-sm);
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-empty__primary {
+  background: var(--sf-graphite);
+  color: #fff;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-empty__secondary {
+  border: 1px solid var(--sf-line);
+  background: var(--sf-surface);
+  color: var(--sf-ink);
+}
+
+/* Moved from src/styles/storefront-next.extended-routes.css */
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-empty {
+  gap: 0.85rem;
+  padding: 0.95rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-empty::before {
+  opacity: 0.08;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-empty__pass {
+  border: 1px solid color-mix(in srgb, var(--sf-accent) 13%, var(--sf-line));
+  border-radius: var(--sf-radius-md);
+  background:
+    radial-gradient(circle at 86% 20%, color-mix(in srgb, var(--sf-accent) 12%, transparent), transparent 4.6rem),
+    var(--sf-surface-muted);
+  color: var(--sf-ink);
+  padding: 0.9rem 1rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-empty__pass-label {
+  color: var(--sf-ink-secondary);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-empty__pass strong {
+  margin-top: 0.2rem;
+  font-size: clamp(1.8rem, 8vw, 2.35rem);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-empty__pass svg {
+  width: 1.75rem;
+  height: 1.75rem;
+  color: var(--sf-accent);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-empty__content {
+  justify-items: start;
+  padding: 0.15rem 0.1rem;
+  text-align: left;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-empty__icon {
+  display: none;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-empty h2 {
+  font-size: 1.05rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-empty p {
+  max-width: none;
+  font-size: 0.86rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-empty__stats {
+  border-radius: 0.95rem;
+  background: color-mix(in srgb, var(--sf-surface) 74%, transparent);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-empty__stats span {
+  padding: 0.68rem 0.45rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-empty__stats strong {
+  font-size: 1rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-empty__actions {
+  justify-content: start;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-account-main {
+  display: grid;
+  gap: 0.75rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-hero {
+  min-height: 6.4rem;
+  border-radius: 1rem;
+  background:
+    linear-gradient(135deg, #1d231d, #263126 64%, #344134),
+    var(--sf-graphite) !important;
+  padding: 1rem;
+  color: #fff;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-hero::after {
+  opacity: 0.12;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-hero__eyebrow,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-hero__aside {
+  color: rgb(255 255 255 / 68%);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-hero__value {
+  color: #fff;
+  font-size: clamp(1.85rem, 8vw, 2.35rem);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-view-switch {
+  margin-top: 0;
+  border: 1px solid var(--sf-line);
+  border-radius: 0.95rem;
+  background: color-mix(in srgb, var(--sf-surface-muted) 74%, var(--sf-surface));
+  padding: 0.25rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-view-switch__item {
+  min-height: 2.4rem;
+  border-radius: 0.72rem;
+  font-size: 0.8125rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-view-switch__item.is-active {
+  background: var(--sf-surface);
+  color: var(--sf-accent);
+  box-shadow: 0 0.45rem 1.25rem rgb(28 38 31 / 7%);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-status-rail {
+  margin-top: 0;
+  padding-bottom: 0;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-status-rail__inner {
+  gap: 0.45rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-status-tab,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-category-pill {
+  min-height: 2.2rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 760;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-category-pill {
+  gap: 0.35rem;
+  padding-inline: 0.65rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault {
+  grid-template-columns: 5.1rem minmax(0, 1fr);
+  border-radius: 1rem;
+  background: var(--sf-surface) !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault__value {
+  min-height: 6.55rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault__amount {
+  font-size: 1.65rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault__content {
+  padding: 0.82rem 0.9rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-empty {
+  border-radius: 1rem;
+  background: var(--sf-surface) !important;
+}
+
+@media (max-width: 430px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-hero {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+}
+
+@media (max-width: 430px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-hero__aside {
+    align-items: end;
+    text-align: right;
+  }
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-category-rail {
+  max-width: 100%;
+  overflow: visible;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-category-rail__inner {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-category-pill {
+  width: 100%;
+  min-width: 0;
+  justify-content: center;
+  gap: 0.3rem;
+  padding-inline: 0.42rem;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-category-pill > span:first-of-type {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Moved from src/styles/storefront-next.final-contract.css */
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-category-pill {
+  min-width: max-content !important;
+  max-width: none !important;
+  padding-inline: 0.78rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-category-pill > span:last-child {
+  max-width: none !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell {
+  padding-bottom: var(--sc-bottom-clearance) !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-account-main {
+  padding-top: 0.75rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-hero {
+  margin-bottom: 0.42rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-category-rail {
+  margin-top: 0.65rem !important;
+  overflow-x: auto !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-category-rail__inner {
+  width: max-content !important;
+  min-width: 100% !important;
+  flex-wrap: nowrap !important;
+  gap: 0.42rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-category-pill {
+  height: 2.4rem !important;
+  min-width: max-content !important;
+  border-radius: 999px !important;
+  padding-inline: 0.72rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-account-main {
+  padding-top: 0.58rem !important;
+}
+
+@media (max-width: 767px) {
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-account-main {
+    padding-top: 0.75rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-page-header + main,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell main.sf-next-account-main {
+    margin-top: 0 !important;
+  }
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-hero {
+  min-height: 5.85rem !important;
+  margin-top: 0 !important;
+  margin-bottom: 0.5rem !important;
+  border-radius: 0.88rem !important;
+  overflow: hidden !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-hero__summary {
+  align-self: stretch !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-hero__value {
+  font-size: clamp(1.85rem, 8vw, 2.28rem) !important;
+  line-height: 1 !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-view-switch {
+  margin-top: 0.42rem !important;
+  border-radius: 0.88rem !important;
+  min-height: 2.82rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-category-rail {
+  margin-top: 0.48rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-category-rail__inner {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  gap: 0.36rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-category-pill {
+  min-height: 2.12rem !important;
+  height: 2.12rem !important;
+  padding-inline: 0.66rem !important;
+  font-size: 0.76rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-coupon-category-rail {
+  overflow: visible !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-coupon-category-rail__inner {
+  display: flex !important;
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 0.36rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-coupon-category-pill {
+  flex: 0 0 auto !important;
+  width: auto !important;
+  max-width: 8rem !important;
+  justify-content: center !important;
+  white-space: nowrap !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-account-main > div:has(> .sf-next-value-vault) {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 0.62rem !important;
+  margin-top: 0.62rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault {
+  width: 100% !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault__code {
+  display: grid !important;
+  grid-template-columns: auto minmax(0, 1fr) 2rem !important;
+  align-items: center !important;
+  column-gap: 0.5rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault__code-value {
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+@media (min-width: 1024px) {
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-account-main {
+    grid-template-columns: 15rem minmax(0, 42rem) !important;
+    max-width: 62rem !important;
+    gap: 1.2rem !important;
+  }
+}
+
+@media (min-width: 1024px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-account-main > section {
+    width: min(100%, 42rem) !important;
+  }
+}
+
+@media (min-width: 1024px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-account-main > section > div.mt-4 {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 0.72rem !important;
+  }
+}
+
+@media (min-width: 1024px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-account-main > section > div.mt-4 > div {
+    width: 100% !important;
+  }
+}
+
+@media (min-width: 1024px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault {
+    grid-template-columns: 6.2rem minmax(0, 1fr) !important;
+  }
+}
+
+@media (min-width: 1024px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault__content,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault__value {
+    min-height: 7.2rem !important;
+  }
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-page-header + main,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell main.sf-next-account-main {
+  padding-top: 1rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-hero {
+  margin-top: 0.28rem !important;
+  margin-bottom: 0.58rem !important;
+  overflow: hidden !important;
+}
+
+@media (max-width: 767px) {
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-hero {
+    min-height: 6rem !important;
+    padding: 0.9rem 1rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-hero__value {
+    font-size: 2rem !important;
+    line-height: 0.95 !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-page-header button[aria-label],
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-route-header button[aria-label] {
+    left: max(0.25rem, env(safe-area-inset-left, 0px)) !important;
+    width: 2.5rem !important;
+    min-width: 2.5rem !important;
+    height: 2.5rem !important;
+    min-height: 2.5rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-coupon-category-rail {
+    overflow: visible !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-coupon-category-rail__inner {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 0.36rem !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    overflow: visible !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-coupon-category-pill {
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 2.28rem !important;
+    border-radius: 999px !important;
+    padding-inline: 0.26rem !important;
+    font-size: 0.69rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault {
+    grid-template-columns: 4.1rem minmax(0, 1fr) !important;
+    border-radius: 0.78rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault__value,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault__content {
+    min-height: 6.65rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault__content {
+    padding: 0.76rem 0.72rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault__code {
+    display: grid !important;
+    grid-template-columns: auto minmax(0, 1fr) auto !important;
+    gap: 0.32rem !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault__code-value {
+    min-width: 0 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault :where(.sf-next-button, .sf-next-icon-button) {
+    min-height: 2.25rem !important;
+    height: 2.25rem !important;
+    border-radius: 999px !important;
+  }
+}
+
+@media (max-width: 767px) {
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-account-main {
+    padding-top: calc(3.25rem + env(safe-area-inset-top, 0px)) !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-coupon-hero {
+    margin-top: 0.62rem !important;
+    min-height: 6.25rem !important;
+    padding: 0.88rem !important;
+    border-radius: 0.9rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-coupon-hero__value {
+    font-size: 1.85rem !important;
+    line-height: 1 !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-coupon-view-switch {
+    margin-top: 0.48rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault {
+    min-height: 7rem !important;
+    box-shadow: 0 0.5rem 1.55rem color-mix(in srgb, var(--sf-ink) 7%, transparent) !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault :where(.sf-next-button, .sf-next-icon-button) {
+    min-height: 2.4rem !important;
+    height: 2.4rem !important;
+  }
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell {
+  padding-top: 0 !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-account-main {
+  padding-top: 0.62rem !important;
+}
+
+@media (max-width: 767px) {
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-account-main {
+    display: block !important;
+    padding-top: 0.62rem !important;
+    padding-inline: var(--sc-page-x) !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-coupon-hero {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    min-height: 5.15rem !important;
+    margin: 0 0 0.5rem !important;
+    padding: 0.78rem 0.86rem !important;
+    align-items: center !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-coupon-hero__eyebrow {
+    font-size: 0.76rem !important;
+    line-height: 1.1 !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-coupon-hero__value {
+    font-size: 1.74rem !important;
+    line-height: 1 !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-coupon-hero__value span {
+    font-size: 0.72rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-coupon-hero__aside {
+    max-width: 8.2rem !important;
+    font-size: 0.75rem !important;
+    line-height: 1.15 !important;
+    white-space: normal !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-coupon-view-switch {
+    min-height: 2.82rem !important;
+    margin-top: 0.46rem !important;
+    padding: 0.26rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-coupon-category-rail__inner {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 0.34rem !important;
+    width: 100% !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-coupon-category-pill {
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    padding-inline: 0.18rem !important;
+    font-size: 0.68rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault {
+    grid-template-columns: 3.95rem minmax(0, 1fr) !important;
+    min-height: 6.75rem !important;
+    border-radius: 0.82rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault__value,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault__content {
+    min-height: 6.75rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault__value {
+    padding-inline: 0.36rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault__amount {
+    font-size: 1.28rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault__content {
+    padding: 0.62rem 0.66rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault__topline {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault__topline :where(button, span:last-child) {
+    min-height: 2.2rem !important;
+    height: 2.2rem !important;
+    padding-inline: 0.68rem !important;
+    font-size: 0.74rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault__code {
+    grid-template-columns: auto minmax(0, 1fr) 2.34rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault__code .sf-next-icon-button {
+    width: 2.34rem !important;
+    min-width: 2.34rem !important;
+    height: 2.34rem !important;
+    min-height: 2.34rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-coupon-category-pill {
+    min-height: 2.5rem !important;
+    font-size: 0.72rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault {
+    grid-template-columns: 3.55rem minmax(0, 1fr) !important;
+    min-height: 6.45rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault__value,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault__content {
+    min-height: 6.45rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault__amount {
+    font-size: 1.38rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault__code {
+    grid-template-columns: auto minmax(0, 1fr) 2.5rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault__code .sf-next-icon-button {
+    width: 2.5rem !important;
+    min-width: 2.5rem !important;
+    height: 2.5rem !important;
+    min-height: 2.5rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault {
+    grid-template-columns: 4.25rem minmax(0, 1fr) !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault__value,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault__content {
+    min-height: 7.35rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault__content {
+    display: grid !important;
+    align-content: start !important;
+    padding: 0.78rem 0.78rem 0.78rem 0.86rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault__topline {
+    gap: 0.45rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault__topline .sf-next-button {
+    min-height: 2.5rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault__title {
+    display: -webkit-box !important;
+    overflow: hidden !important;
+    white-space: normal !important;
+    -webkit-box-orient: vertical !important;
+    -webkit-line-clamp: 2 !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault__value,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault__content {
+    min-height: 7.7rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell :where(.relative):has(> .sf-next-value-vault) {
+    overflow: visible !important;
+  }
+}
+
+@media (min-width: 768px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell :where(.relative):has(> .sf-next-value-vault) {
+    overflow: visible !important;
+  }
+}
+
+@media (min-width: 768px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault {
+    min-height: 13.4rem !important;
+    overflow: visible !important;
+  }
+}
+
+@media (min-width: 768px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault__value,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault__content {
+    min-height: 12rem !important;
+  }
+}
+
+@media (min-width: 768px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell button {
+    min-height: 40px !important;
+  }
+}
+
+@media (min-width: 768px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell :where(
+    button.sf-next-coupon-category-pill,
+    button.sf-next-button,
+    button.app-unified-button
+  ) {
+    height: 40px !important;
+  }
+}
+
+@media (min-width: 768px) {
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell button.sf-next-icon-button {
+    width: 40px !important;
+    min-width: 40px !important;
+    height: 40px !important;
+    min-height: 40px !important;
+  }
+}
+
+@media (min-width: 768px) {
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-coupon-hero__value {
+    display: inline-flex !important;
+    align-items: center !important;
+    min-height: 2.75rem !important;
+    line-height: 1.12 !important;
+    overflow: visible !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-account-main {
+    padding-top: 0.62rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-coupon-hero {
+    margin-bottom: 0.58rem !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-status-rail,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-category-rail {
+    margin-inline: 0 !important;
+    padding-inline: 0 !important;
+  }
+}
+
+@media (max-width: 767px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault {
+    border-radius: 0.94rem !important;
+    box-shadow: 0 0.7rem 1.55rem color-mix(in srgb, var(--sf-ink) 5%, transparent) !important;
+  }
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault {
+  isolation: isolate;
+  border: 1px solid color-mix(in srgb, var(--sf-line) 82%, transparent) !important;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--sf-surface) 98%, transparent), color-mix(in srgb, var(--sf-surface-muted) 34%, var(--sf-surface))),
+    var(--sf-surface) !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault::before {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 0 50%, var(--sf-canvas) 0 0.34rem, transparent 0.36rem),
+    radial-gradient(circle at 100% 50%, var(--sf-canvas) 0 0.34rem, transparent 0.36rem);
+  content: "";
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault__value {
+  border-right-color: color-mix(in srgb, var(--sf-accent) 22%, var(--sf-line)) !important;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--sf-accent) 9%, white), color-mix(in srgb, var(--sf-accent) 5%, var(--sf-surface-muted))) !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault__kind {
+  color: color-mix(in srgb, var(--sf-accent) 72%, var(--sf-ink-secondary)) !important;
+  font-weight: 760 !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault__title {
+  color: var(--sf-ink) !important;
+  font-weight: 820 !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault__meta,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault__date {
+  color: color-mix(in srgb, var(--sf-ink-secondary) 92%, var(--sf-ink)) !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault__topline {
+  color: color-mix(in srgb, var(--sf-success) 80%, var(--sf-ink)) !important;
+  font-weight: 780 !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault__topline :where(button, span:last-child) {
+  border-radius: 999px !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault__code {
+  border-top-color: color-mix(in srgb, var(--sf-line) 80%, transparent) !important;
+}

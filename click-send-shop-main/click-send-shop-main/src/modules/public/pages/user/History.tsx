@@ -10,6 +10,7 @@ import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { BottomSheetConfirm } from "@/modules/micro-interactions";
 import { usePublicLocale } from "@/i18n/publicLocale";
 import AccountProductCard, { AccountProductCardSkeleton } from "./components/AccountProductCard";
+import "@/styles/secondary-routes.css";
 
 export default function History() {
   const navigate = useNavigate();

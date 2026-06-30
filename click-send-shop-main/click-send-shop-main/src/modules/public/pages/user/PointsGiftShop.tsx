@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import RatioImage from "@/components/client/RatioImage";
 import { THEME_PRODUCT_MEDIA_ASPECT_STYLE, THEME_PRODUCT_MEDIA_RATIO } from "@/constants/productMediaAspect";
+import "@/styles/loyalty-routes.css";
 
 function GiftCard({
   gift,

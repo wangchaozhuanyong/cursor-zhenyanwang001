@@ -27,6 +27,7 @@ import { formatDateTime } from "@/utils/formatDateTime";
 import { isLoggedIn } from "@/utils/token";
 import { usePublicLocale } from "@/i18n/publicLocale";
 import { useHorizontalActiveScroll } from "@/hooks/useHorizontalActiveScroll";
+import "@/styles/secondary-routes.css";
 
 type FeedbackForm = {
   type: FeedbackType;

@@ -27,6 +27,7 @@ import { normalizeBirthdayValue, resolveBirthdayLockedState } from "@/utils/birt
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import StableImage from "@/components/ui/StableImage";
 import { usePublicLocale } from "@/i18n/publicLocale";
+import "@/styles/secondary-routes.css";
 
 const CARD = "sf-next-settings-card";
 const SECTION_TITLE = "sf-next-settings-section-title";

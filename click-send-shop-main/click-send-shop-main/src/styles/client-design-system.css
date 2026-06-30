@@ -1,0 +1,357 @@
+/* Silent Commerce design coverage routes: 41-system / 42-coupon-detail / 43-share-detail / 44-states. */
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-design-page {
+  background: var(--sf-canvas);
+  color: var(--sf-ink);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-design-page__main {
+  max-width: 48rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-design-page__intro {
+  margin: 0 0 3.2rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-design-page__intro p {
+  margin: 0;
+  max-width: 29rem;
+  color: var(--sf-muted);
+  font-size: clamp(1.08rem, 4.9vw, 1.38rem);
+  font-weight: 520;
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-design-section {
+  margin-top: 3.4rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-design-section:first-child {
+  margin-top: 0;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-design-section h2 {
+  margin: 0 0 1.55rem;
+  color: var(--sf-ink);
+  font-size: clamp(1.45rem, 7vw, 2.05rem);
+  font-weight: 860;
+  line-height: 1.12;
+  letter-spacing: 0;
+  text-wrap: balance;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-design-system-swatches {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-design-system-swatch {
+  display: grid;
+  min-width: 0;
+  justify-items: center;
+  gap: 0.78rem;
+  color: var(--sf-muted);
+  font-size: 0.9rem;
+  font-weight: 560;
+  line-height: 1.2;
+  text-align: center;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-design-system-swatch__chip {
+  display: block;
+  width: min(100%, 3.9rem);
+  aspect-ratio: 1;
+  border: 1px solid var(--sf-line-strong);
+  border-radius: 1.05rem;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 70%);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-design-system-swatch__chip--canvas {
+  background: var(--sf-canvas);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-design-system-swatch__chip--surface {
+  background: var(--sf-surface);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-design-system-swatch__chip--ink {
+  background: var(--sf-ink);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-design-system-swatch__chip--accent {
+  background: var(--sf-accent);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-design-system-swatch__chip--price {
+  background: var(--sf-price);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-design-system-spacing {
+  display: grid;
+  gap: 1.38rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-design-system-spacing__row {
+  display: grid;
+  grid-template-columns: 2.4rem minmax(0, 1fr);
+  align-items: center;
+  gap: 1rem;
+  color: var(--sf-muted);
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-design-system-spacing__row i {
+  display: block;
+  height: 0.66rem;
+  max-width: 100%;
+  border-radius: 999px;
+  background: var(--sf-ink);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-design-system-buttons {
+  display: grid;
+  gap: 1rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-design-system-buttons .sf-next-button {
+  min-height: 4.15rem;
+  justify-content: center;
+  border-radius: 1.05rem;
+  font-size: 1.12rem;
+  font-weight: 820;
+  white-space: nowrap;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-design-coupon-list {
+  display: grid;
+  gap: 1.15rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-design-coupon-list .sf-next-value-vault {
+  min-height: 8.2rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-design-rule-list {
+  display: grid;
+  gap: 1.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--sf-muted);
+  font-size: 1.05rem;
+  font-weight: 520;
+  line-height: 1.5;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-design-rule-list li {
+  display: grid;
+  grid-template-columns: 0.55rem minmax(0, 1fr);
+  gap: 1rem;
+  min-width: 0;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-design-rule-list li::before {
+  width: 0.55rem;
+  height: 0.55rem;
+  margin-top: 0.48rem;
+  border-radius: 999px;
+  background: var(--sf-accent);
+  content: "";
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-share-detail-feedback {
+  display: grid;
+  gap: 0.8rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-share-detail-feedback__row {
+  display: grid;
+  grid-template-columns: 4.25rem minmax(0, 1fr);
+  align-items: center;
+  gap: 1rem;
+  min-width: 0;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-share-detail-feedback__row > span {
+  display: grid;
+  width: 4.25rem;
+  aspect-ratio: 1;
+  place-items: center;
+  border-radius: 1.05rem;
+  background: color-mix(in srgb, var(--sf-accent) 13%, var(--sf-surface-muted));
+  color: var(--sf-accent);
+  font-size: 1.08rem;
+  font-weight: 860;
+  font-variant-numeric: tabular-nums;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-share-detail-feedback__row div {
+  min-width: 0;
+  border-bottom: 1px solid var(--sf-line);
+  padding: 0.6rem 0 1.05rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-share-detail-feedback__row h3,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-share-detail-feedback__row p {
+  margin: 0;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-share-detail-feedback__row h3 {
+  color: var(--sf-ink);
+  font-size: 1.1rem;
+  font-weight: 820;
+  line-height: 1.25;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-share-detail-feedback__row p {
+  margin-top: 0.35rem;
+  color: var(--sf-muted);
+  font-size: 0.98rem;
+  line-height: 1.45;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-share-detail-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border: 1px solid var(--sf-line-strong);
+  border-radius: 1.25rem;
+  background: var(--sf-surface);
+  overflow: hidden;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-share-detail-stats span {
+  display: grid;
+  min-width: 0;
+  gap: 0.35rem;
+  padding: 1.25rem 1rem;
+  text-align: center;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-share-detail-stats span + span {
+  border-left: 1px solid var(--sf-line);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-share-detail-stats strong {
+  color: var(--sf-ink);
+  font-size: 1.45rem;
+  font-weight: 860;
+  font-variant-numeric: tabular-nums;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-share-detail-stats em {
+  color: var(--sf-muted);
+  font-size: 0.9rem;
+  font-style: normal;
+  font-weight: 520;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-design-state-skeleton {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.78rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-design-state-skeleton div {
+  display: grid;
+  min-width: 0;
+  gap: 0.68rem;
+  border: 1px solid var(--sf-line);
+  border-radius: 1.05rem;
+  background: var(--sf-surface);
+  padding: 0.68rem;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 76%);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-design-state-skeleton i,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-design-state-skeleton b,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-design-state-skeleton em {
+  display: block;
+  min-width: 0;
+  border-radius: 0.95rem;
+  background:
+    linear-gradient(
+      100deg,
+      color-mix(in srgb, var(--sf-graphite) 12%, var(--sf-surface-muted)) 0%,
+      color-mix(in srgb, var(--sf-accent) 19%, var(--sf-surface-muted)) 48%,
+      color-mix(in srgb, var(--sf-graphite) 12%, var(--sf-surface-muted)) 100%
+    );
+  background-size: 180% 100%;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 58%);
+  overflow: hidden;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-design-state-skeleton i {
+  aspect-ratio: 4 / 3;
+  max-height: 6.8rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-design-state-skeleton b {
+  height: 0.92rem;
+  width: 88%;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-design-state-skeleton em {
+  height: 0.92rem;
+  width: 54%;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-design-state-error {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.9rem;
+  min-height: 4.5rem;
+  border: 1px solid var(--sf-line-strong);
+  border-radius: 1.15rem;
+  background: var(--sf-surface);
+  padding: 0.9rem 1rem;
+  color: var(--sf-price);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-design-state-error strong {
+  min-width: 0;
+  color: var(--sf-ink);
+  font-size: 1.05rem;
+  font-weight: 820;
+  line-height: 1.25;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-design-state-error .sf-next-button {
+  min-height: 2.65rem;
+  white-space: nowrap;
+}
+
+@media (min-width: 768px) {
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-design-page__main {
+    padding-top: 2rem;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-design-page__intro {
+    margin-bottom: 4rem;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-design-coupon-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 374px) {
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-design-system-swatches {
+    gap: 0.62rem;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-design-system-swatch {
+    font-size: 0.76rem;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-share-detail-feedback__row {
+    grid-template-columns: 3.45rem minmax(0, 1fr);
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-share-detail-feedback__row > span {
+    width: 3.45rem;
+  }
+}

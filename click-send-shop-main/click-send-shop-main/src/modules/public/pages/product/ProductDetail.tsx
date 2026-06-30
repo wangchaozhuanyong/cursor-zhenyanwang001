@@ -63,6 +63,7 @@ import {
   storefrontOptionalDisplayText,
   storefrontProductNameFallback,
 } from "@/utils/storefrontCopySanitizer";
+import "@/styles/product-detail-route.css";
 
 export default function ProductDetail() {
   const { id } = useParams();

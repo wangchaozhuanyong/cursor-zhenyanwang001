@@ -9,6 +9,7 @@ import { useLoyaltyVisibility } from "@/hooks/useLoyaltyVisibility";
 import { usePublicLocale } from "@/i18n/publicLocale";
 import * as rewardService from "@/services/rewardService";
 import { isLoyaltyFeatureEnabled } from "@/utils/loyaltyFeatureVisibility";
+import "@/styles/loyalty-routes.css";
 
 function money(value: unknown) {
   const n = Number(value);

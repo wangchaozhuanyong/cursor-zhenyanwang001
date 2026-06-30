@@ -42,9 +42,9 @@ export default function CartPromotionNudge({ campaign, amount, evaluation, class
           ) : null}
         </div>
         {engineMessage.percent != null ? (
-          <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--theme-price)_14%,var(--theme-border))]">
+          <div className="sf-next-cart-promotion-nudge__progress mt-3 h-1.5 overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--theme-price)_14%,var(--theme-border))]">
             <div
-              className="h-full rounded-full bg-[var(--theme-price)] transition-[width]"
+              className="sf-next-cart-promotion-nudge__progress-value h-full rounded-full bg-[var(--theme-price)] transition-[width]"
               style={{ width: `${engineMessage.percent}%` }}
             />
           </div>
@@ -105,9 +105,9 @@ export default function CartPromotionNudge({ campaign, amount, evaluation, class
           </UnifiedButton>
         ) : null}
       </div>
-      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--theme-price)_14%,var(--theme-border))]">
+      <div className="sf-next-cart-promotion-nudge__progress mt-3 h-1.5 overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--theme-price)_14%,var(--theme-border))]">
         <div
-          className="h-full rounded-full bg-[var(--theme-price)] transition-[width]"
+          className="sf-next-cart-promotion-nudge__progress-value h-full rounded-full bg-[var(--theme-price)] transition-[width]"
           style={{ width: `${percent}%` }}
         />
       </div>

@@ -17,6 +17,7 @@ import * as productService from "@/services/productService";
 import { useProductStore } from "@/stores/useProductStore";
 import { NEW_ARRIVAL_CATEGORY_PATH } from "@/constants/newArrivalNavigation";
 import { appendThemePreviewParams } from "@/utils/themePreviewParams";
+import { navigateWithStoreTransition } from "@/utils/storeNavigationTransition";
 import { storefrontCategoryName } from "@/utils/storefrontCopySanitizer";
 import type { ProductTag } from "@/types/product";
 
@@ -73,9 +74,9 @@ export default function StoreTabHeader({
   };
   const submitSearch = (value: string) => {
     const keyword = value.trim();
-    navigate(appendThemePreviewParams(keyword ? `/search?keyword=${encodeURIComponent(keyword)}` : "/search"));
+    navigateWithStoreTransition(navigate, appendThemePreviewParams(keyword ? `/search?keyword=${encodeURIComponent(keyword)}` : "/search"));
   };
-  const goNotifications = () => navigate("/notifications");
+  const goNotifications = () => navigateWithStoreTransition(navigate, "/notifications");
 
   useEffect(() => {
     if (searchMode !== "navigate") return;
@@ -85,15 +86,15 @@ export default function StoreTabHeader({
 
   const searchCategoryOptions = useMemo(() => buildStoreSearchCategoryOptions({
     categories,
-    onAll: () => navigate(appendThemePreviewParams("/categories")),
-    onNew: () => navigate(appendThemePreviewParams(NEW_ARRIVAL_CATEGORY_PATH)),
-    onCategorySelect: (category) => navigate(appendThemePreviewParams(`/categories?cat=${encodeURIComponent(category.id)}`)),
+    onAll: () => navigateWithStoreTransition(navigate, appendThemePreviewParams("/categories")),
+    onNew: () => navigateWithStoreTransition(navigate, appendThemePreviewParams(NEW_ARRIVAL_CATEGORY_PATH)),
+    onCategorySelect: (category) => navigateWithStoreTransition(navigate, appendThemePreviewParams(`/categories?cat=${encodeURIComponent(category.id)}`)),
   }), [categories, navigate]);
 
   const searchTagOptions = useMemo<StoreSearchTagOption[]>(() => searchTags.map((tag) => ({
     id: tag.id,
     label: storefrontCategoryName(tag.name),
-    onSelect: () => navigate(appendThemePreviewParams(`/categories?tag_id=${encodeURIComponent(tag.id)}`)),
+    onSelect: () => navigateWithStoreTransition(navigate, appendThemePreviewParams(`/categories?tag_id=${encodeURIComponent(tag.id)}`)),
   })), [navigate, searchTags]);
 
   const nameClass = cn(
@@ -116,7 +117,7 @@ export default function StoreTabHeader({
         <UnifiedButton
           type="button"
           className="flex shrink-0 cursor-pointer items-center gap-1.5 border-0 bg-transparent p-0"
-          onClick={() => navigate("/")}
+          onClick={() => navigateWithStoreTransition(navigate, "/")}
           aria-label={`${siteName} 首页`}
         >
           {shouldReserveLogoSpace ? <StoreBrandLogo src={logoSrc} siteName={siteName} fallbackText="" /> : null}

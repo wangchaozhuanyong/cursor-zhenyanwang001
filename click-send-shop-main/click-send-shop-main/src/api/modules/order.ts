@@ -28,7 +28,7 @@ export function previewOrder(params: SubmitOrderParams) {
 }
 
 export function checkoutCoupons(params: SubmitOrderParams) {
-  return post<CheckoutCouponsResult>("/orders/checkout/coupons", params);
+  return post<CheckoutCouponsResult>("/orders/checkout/coupons", params, { loadingMode: "silent" });
 }
 
 export function recordCheckoutAbandonment(params: CheckoutAbandonmentPayload) {

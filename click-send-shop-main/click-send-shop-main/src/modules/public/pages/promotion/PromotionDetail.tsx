@@ -238,6 +238,18 @@ function formatShortRange(start?: string | null, end?: string | null) {
   return `${formatShortDate(start)} - ${formatShortDate(end)}`;
 }
 
+function promotionScopeLabel(scopeType: string | null | undefined, t: (key: string) => string) {
+  const normalized = String(scopeType || "all").trim();
+  const labels: Record<string, string> = {
+    all: t("promotion.scopeAll"),
+    category: t("promotion.scopeCategory"),
+    product: t("promotion.scopeProduct"),
+    new_user: t("promotion.scopeNewUser"),
+    old_user: t("promotion.scopeOldUser"),
+  };
+  return labels[normalized] || t("promotion.applyScope");
+}
+
 function couponVaultKind(type: string): ValueVaultKind {
   if (type === "percentage") return "percentage";
   if (type === "shipping") return "shipping";
@@ -335,33 +347,28 @@ export default function PromotionDetail() {
         value: countdownLabel,
       },
       {
-        id: "stackable",
-        label: t("promotion.stackable"),
-        value: promotion.stackable ? t("promotion.stackableYes") : t("promotion.stackableNo"),
+        id: "status",
+        label: t("promotion.status"),
+        value: statusLabel,
       },
       {
         id: "scope",
         label: t("promotion.applyScope"),
-        value: itemCount > 0 ? `${itemCount} 件商品` : promotion.scope_type || "all",
+        value: itemCount > 0 ? `${itemCount} 件商品` : promotionScopeLabel(promotion.scope_type, t),
       },
     ];
-  }, [countdownLabel, itemCount, promotion, t]);
-  const displayRules = useMemo(() => {
-    const seen = new Set<string>();
-    return [...rules, ...policies]
-      .filter((entry) => {
-        const id = `${entry.key}:${entry.value}`;
-        if (seen.has(id)) return false;
-        seen.add(id);
-        return true;
-      })
-      .slice(0, 6);
-  }, [policies, rules]);
+  }, [countdownLabel, itemCount, promotion, statusLabel, t]);
+  const hasRules = rules.length > 0 || policies.length > 0;
   const displayPromotionTitle = promotion
     ? storefrontDisplayText(promotion.title, `${promotionTypeLabel(promotion.type)}活动`)
     : "";
   const displayPromotionDescription = promotion
     ? storefrontDisplayText(promotion.description || promotion.subtitle, t("promotion.detailFallback"))
+    : "";
+  const displayPromotionSubtitle = promotion
+    ? storefrontOptionalDisplayText(promotion.subtitle)
+      || storefrontOptionalDisplayText(promotion.description)
+      || t("promotion.detailFallback")
     : "";
   const displayPromoLabel = promotion ? storefrontOptionalDisplayText(promotion.promo_label) : undefined;
 
@@ -465,141 +472,178 @@ export default function PromotionDetail() {
         </button>
       </div>
 
-      <section className="sf-next-promotion-detail-hero">
-        {promotion.cover_image ? (
-          <div className="sf-next-promotion-detail-hero__media">
-            <img src={promotion.cover_image} alt={displayPromotionTitle} />
-          </div>
-        ) : (
-          <div className="sf-next-promotion-detail-hero__media sf-next-promotion-detail-hero__media--placeholder" aria-hidden="true">
-            <span />
-            <i />
-            <b />
-          </div>
-        )}
-      </section>
+      <div className="sf-next-promotion-detail-layout">
+        <div className="sf-next-promotion-detail-main">
+          <section className="sf-next-promotion-detail-hero">
+            {promotion.cover_image ? (
+              <div className="sf-next-promotion-detail-hero__media">
+                <img src={promotion.cover_image} alt={displayPromotionTitle} />
+              </div>
+            ) : (
+              <div className="sf-next-promotion-detail-hero__media sf-next-promotion-detail-hero__media--placeholder" aria-hidden="true">
+                <span />
+                <i />
+                <b />
+              </div>
+            )}
+          </section>
 
-      <section className="sf-next-promotion-detail-intro">
-        <div className="sf-next-promotion-detail-hero__badges">
-          <span>{promotionTypeLabel(promotion.type)}</span>
-          <b>{statusLabel}</b>
-          {displayPromoLabel ? <em>{displayPromoLabel}</em> : null}
-        </div>
-        <h2>{displayPromotionTitle}</h2>
-        <p>{displayPromotionDescription || t("promotion.detailFallback")}</p>
-      </section>
-
-      <section className="sf-next-promotion-detail-summary" aria-label="活动摘要">
-        {summaryItems.map((item) => (
-          <div key={item.id}>
-            <span>{item.label}</span>
-            <strong>{item.value}</strong>
-          </div>
-        ))}
-      </section>
-
-      {coupons.length ? (
-        <section className="sf-next-promotion-detail-benefits">
-          <div className="sf-next-promotion-detail-section-head">
-            <div>
-              <h2>{t("promotion.couponRewards")}</h2>
-              <p>{t("promotion.couponRewardsHint")}</p>
+          <section className="sf-next-promotion-detail-intro">
+            <div className="sf-next-promotion-detail-hero__badges">
+              <span>{promotionTypeLabel(promotion.type)}</span>
+              <b>{statusLabel}</b>
+              {displayPromoLabel ? <em>{displayPromoLabel}</em> : null}
             </div>
-            <Link className="sf-next-promotion-detail-section-link" to={localizedPath("/coupons")}>
-              <TicketPercent size={16} />
-              {t("promotion.goCoupons")}
-            </Link>
-          </div>
+            <h2>{displayPromotionTitle}</h2>
+          </section>
 
-          <div className="sf-next-promotion-detail-benefits__list">
-            {coupons.map((coupon) => {
-              const actionState = getActionState(coupon);
-              return (
-                <ValueVaultCoupon
-                  key={coupon.id}
-                  kind={couponVaultKind(coupon.type)}
-                  status={couponVaultStatus(actionState.claimStatus)}
-                  title={coupon.title}
-                  value={couponVaultValue(coupon)}
-                  meta={`${t("promotion.minSpend")} ${money(coupon.min_amount)}`}
-                  validText={`${formatDate(coupon.start_date)} - ${formatDate(coupon.end_date)}`}
-                  unavailableReason={actionState.reason}
-                  actionLabel={claimingId === coupon.id ? t("promotion.claimingCoupon") : actionState.actionLabel}
-                  loading={claimingId === coupon.id}
-                  disabled={actionState.disabled || claimingId === coupon.id}
-                  onAction={() => void handleClaimCoupon(coupon)}
-                />
-              );
-            })}
-          </div>
-        </section>
-      ) : null}
-
-      {promotion.items?.length ? (
-        <section className="sf-next-promotion-detail-products">
-          <div className="sf-next-promotion-detail-section-head">
-            <div>
-              <h2>{t("promotion.items")}</h2>
-              <p>{itemCount} 件商品</p>
-            </div>
-          </div>
-          <div className="sf-next-promotion-detail-products__list">
-            {promotion.items.map((item) => (
-              <Link className="sf-next-promotion-detail-product-row" key={item.product_id} to={localizedPath(`/product/${item.product_id}`)}>
-                {item.cover_image ? (
-                  <div className="sf-next-promotion-detail-product-row__media">
-                    <img className="h-full w-full object-cover" src={item.cover_image} alt={storefrontDisplayText(item.product_name, "活动商品")} />
-                  </div>
-                ) : null}
-                <div className="sf-next-promotion-detail-product-row__content">
-                  <h3 className="line-clamp-2 text-sm font-semibold text-[var(--theme-text)]">{storefrontDisplayText(item.product_name, "活动商品")}</h3>
-                  <div className="sf-next-promotion-detail-product-row__price">
-                    {item.activity_price > 0 ? <strong className="text-[var(--theme-price)]">{money(item.activity_price)}</strong> : null}
-                    {item.product_price > item.activity_price && item.activity_price > 0 ? (
-                      <span className="text-[var(--theme-text-muted)] line-through">{money(item.product_price)}</span>
-                    ) : null}
-                    {item.saving_amount > 0 ? (
-                      <span className="sf-next-promotion-detail-product-row__save">
-                        {t("promotion.save")} {money(item.saving_amount)}
-                      </span>
-                    ) : null}
-                  </div>
-                  <div className="sf-next-promotion-detail-product-row__stock">
-                    <span>{t("promotion.sold")} {item.sold_count}</span>
-                    <span>{item.sold_out ? t("promotion.soldOut") : `${t("promotion.stock")} ${item.remaining_stock}`}</span>
-                  </div>
-                  <div className="sf-next-promotion-detail-product-row__progress">
-                    <div
-                      className="sf-next-promotion-detail-product-row__progress-fill"
-                      style={{ width: `${clampPercent(item.stock_progress_percent)}%` }}
-                    />
-                  </div>
-                  {item.limit_per_user > 0 ? (
-                    <p className="sf-next-promotion-detail-product-row__limit">{t("promotion.limitPerUser")} {item.limit_per_user}</p>
-                  ) : null}
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
-      ) : null}
-
-      {displayRules.length ? (
-        <section className="sf-next-promotion-detail-rules">
-          <h2>{t("promotion.ruleEntries")}</h2>
-          <ol>
-            {displayRules.map((rule, index) => (
-              <li key={`${rule.key}-${index}`}>
-                <span>{String(index + 1).padStart(2, "0")}</span>
+          {coupons.length ? (
+            <section className="sf-next-promotion-detail-benefits">
+              <div className="sf-next-promotion-detail-section-head">
                 <div>
-                  <strong>{rule.key}</strong>
-                  <p>{rule.value}</p>
+                  <h2>{t("promotion.couponRewards")}</h2>
+                  <p>{t("promotion.couponRewardsHint")}</p>
                 </div>
-              </li>
+                <Link className="sf-next-promotion-detail-section-link" to={localizedPath("/coupons")}>
+                  <TicketPercent size={16} />
+                  {t("promotion.goCoupons")}
+                </Link>
+              </div>
+
+              <div className="sf-next-promotion-detail-benefits__list">
+                {coupons.map((coupon) => {
+                  const actionState = getActionState(coupon);
+                  return (
+                    <ValueVaultCoupon
+                      key={coupon.id}
+                      kind={couponVaultKind(coupon.type)}
+                      status={couponVaultStatus(actionState.claimStatus)}
+                      title={coupon.title}
+                      value={couponVaultValue(coupon)}
+                      meta={`${t("promotion.minSpend")} ${money(coupon.min_amount)}`}
+                      validText={`${formatDate(coupon.start_date)} - ${formatDate(coupon.end_date)}`}
+                      unavailableReason={actionState.reason}
+                      actionLabel={claimingId === coupon.id ? t("promotion.claimingCoupon") : actionState.actionLabel}
+                      loading={claimingId === coupon.id}
+                      disabled={actionState.disabled || claimingId === coupon.id}
+                      onAction={() => void handleClaimCoupon(coupon)}
+                    />
+                  );
+                })}
+              </div>
+            </section>
+          ) : null}
+
+          {promotion.items?.length ? (
+            <section className="sf-next-promotion-detail-products">
+              <div className="sf-next-promotion-detail-section-head">
+                <div>
+                  <h2>{t("promotion.items")}</h2>
+                  <p>{itemCount} 件商品</p>
+                </div>
+              </div>
+              <div className="sf-next-promotion-detail-products__list">
+                {promotion.items.map((item) => (
+                  <Link className="sf-next-promotion-detail-product-row" key={item.product_id} to={localizedPath(`/product/${item.product_id}`)}>
+                    <div className="sf-next-promotion-detail-product-row__media">
+                      {item.cover_image ? (
+                        <img className="h-full w-full object-cover" src={item.cover_image} alt={storefrontDisplayText(item.product_name, "活动商品")} />
+                      ) : (
+                        <ShoppingBag size={22} aria-hidden />
+                      )}
+                    </div>
+                    <div className="sf-next-promotion-detail-product-row__content">
+                      <h3 className="line-clamp-2 text-sm font-semibold text-[var(--theme-text)]">{storefrontDisplayText(item.product_name, "活动商品")}</h3>
+                      <div className="sf-next-promotion-detail-product-row__price">
+                        {item.activity_price > 0 ? <strong className="text-[var(--theme-price)]">{money(item.activity_price)}</strong> : null}
+                        {item.product_price > item.activity_price && item.activity_price > 0 ? (
+                          <span className="text-[var(--theme-text-muted)] line-through">{money(item.product_price)}</span>
+                        ) : null}
+                        {item.saving_amount > 0 ? (
+                          <span className="sf-next-promotion-detail-product-row__save">
+                            {t("promotion.save")} {money(item.saving_amount)}
+                          </span>
+                        ) : null}
+                      </div>
+                      <div className="sf-next-promotion-detail-product-row__stock">
+                        <span>{t("promotion.sold")} {item.sold_count}</span>
+                        <span>{item.sold_out ? t("promotion.soldOut") : `${t("promotion.stock")} ${item.remaining_stock}`}</span>
+                      </div>
+                      <div className="sf-next-promotion-detail-product-row__progress">
+                        <div
+                          className="sf-next-promotion-detail-product-row__progress-fill"
+                          style={{ width: `${clampPercent(item.stock_progress_percent)}%` }}
+                        />
+                      </div>
+                      {item.limit_per_user > 0 ? (
+                        <p className="sf-next-promotion-detail-product-row__limit">{t("promotion.limitPerUser")} {item.limit_per_user}</p>
+                      ) : null}
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          ) : null}
+        </div>
+
+        <aside className="sf-next-promotion-detail-sidebar" aria-label="活动信息">
+          <section className="sf-next-promotion-detail-subcopy sf-next-promotion-detail-card">
+            <div className="sf-next-promotion-detail-subcopy__meta">
+              <span>{t("promotion.headerEyebrow")}</span>
+              <b>{statusLabel}</b>
+            </div>
+            <p>{displayPromotionSubtitle}</p>
+          </section>
+
+          <section className="sf-next-promotion-detail-summary sf-next-promotion-detail-card" aria-label="活动摘要">
+            {summaryItems.map((item) => (
+              <div key={item.id}>
+                <span>{item.label}</span>
+                <strong>{item.value}</strong>
+              </div>
             ))}
-          </ol>
-        </section>
-      ) : null}
+          </section>
+
+          {hasRules ? (
+            <section className="sf-next-promotion-detail-rules sf-next-promotion-detail-card">
+              <div className="sf-next-promotion-detail-section-head sf-next-promotion-detail-section-head--stacked">
+                <div>
+                  <h2>{t("promotion.ruleEntries")}</h2>
+                  <p>{t("promotion.detailFallback")}</p>
+                </div>
+              </div>
+
+              {rules.length ? (
+                <div className="sf-next-promotion-detail-rules__group">
+                  <p className="sf-next-promotion-detail-rules__group-title">{t("promotion.ruleEntries")}</p>
+                  <dl className="sf-next-promotion-detail-rule-list">
+                    {rules.map((rule, index) => (
+                      <div className="sf-next-promotion-detail-rule-row" key={`${rule.key}-${index}`}>
+                        <dt>{rule.key}</dt>
+                        <dd>{rule.value}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
+              ) : null}
+
+              {policies.length ? (
+                <div className="sf-next-promotion-detail-rules__group">
+                  <p className="sf-next-promotion-detail-rules__group-title">{t("promotion.policyEntries")}</p>
+                  <dl className="sf-next-promotion-detail-rule-list sf-next-promotion-detail-rule-list--policy">
+                    {policies.map((rule, index) => (
+                      <div className="sf-next-promotion-detail-rule-row" key={`${rule.key}-${index}`}>
+                        <dt>{rule.key}</dt>
+                        <dd>{rule.value}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
+              ) : null}
+            </section>
+          ) : null}
+        </aside>
+      </div>
     </main>
     </>
   );

@@ -1,5 +1,5 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
-import { BadgePercent, Heart, Minus, Pin, Plus, Share2, Trash2, ShoppingBag, Loader2, Check, LogIn, ShieldCheck, Sparkles, X } from "lucide-react";
+import { Fragment, useEffect, useMemo, useState } from "react";
+import { BadgePercent, Heart, Minus, Pin, Plus, Share2, Trash2, ShoppingBag, Loader2, Check, LogIn, ShieldCheck, X } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import StorePageHeader from "@/components/store/StorePageHeader";
 import { STORE_MOBILE_PAGE_HEADER_CLASS } from "@/constants/storeLayout";
@@ -35,6 +35,19 @@ import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 
 const CART_ACTION_WIDTH = 244;
 const CART_ACTION_REVEAL_THRESHOLD = 64;
+const CART_PREVIEW_CACHE_TTL_MS = 30_000;
+
+const cartPreviewCache = new Map<string, { preview: CartPromotionPreview; savedAt: number }>();
+
+function getCachedCartPreview(signature: string) {
+  const cached = cartPreviewCache.get(signature);
+  if (!cached) return null;
+  if (Date.now() - cached.savedAt > CART_PREVIEW_CACHE_TTL_MS) {
+    cartPreviewCache.delete(signature);
+    return null;
+  }
+  return cached.preview;
+}
 
 export default function Cart() {
   const { localizedPath, t } = usePublicLocale();
@@ -57,7 +70,6 @@ export default function Cart() {
     setSelectAll,
     totalAmountSelected,
     totalItemsSelected,
-    hasLoaded,
   } = useCartStore();
   const selection = useCartStore((s) => s.selection);
   const isFavoriteProduct = useFavoritesStore((s) => s.isFavorite);
@@ -74,7 +86,6 @@ export default function Cart() {
   const [cartPreviewError, setCartPreviewError] = useState<string | null>(null);
   const [selectedCoupon, setSelectedCoupon] = useState<CheckoutPickerCoupon | null>(null);
   const [couponSelectionTouched, setCouponSelectionTouched] = useState(false);
-  const backgroundSyncStartedRef = useRef(false);
 
   const selectedCount = items.filter((i) => selection[cartLineKey(i.product.id, i.variant_id)] !== false).length;
   const allSelected = items.length > 0 && selectedCount === items.length;
@@ -167,17 +178,18 @@ export default function Cart() {
 
   useEffect(() => {
     void loadCart();
-    if (backgroundSyncStartedRef.current || (!hasLoaded && items.length === 0)) return;
-    backgroundSyncStartedRef.current = true;
-    const timer = window.setTimeout(() => {
-      void loadCart({ force: true });
-    }, 500);
-    return () => window.clearTimeout(timer);
-  }, [hasLoaded, items.length, loadCart]);
+  }, [loadCart]);
 
   useEffect(() => {
     if (!isLoggedIn() || items.length === 0) {
       setCartPreview(null);
+      setCartPreviewLoading(false);
+      setCartPreviewError(null);
+      return;
+    }
+    const cachedPreview = getCachedCartPreview(cartPreviewSignature);
+    if (cachedPreview) {
+      setCartPreview(cachedPreview);
       setCartPreviewLoading(false);
       setCartPreviewError(null);
       return;
@@ -187,7 +199,10 @@ export default function Cart() {
     setCartPreviewError(null);
     fetchCartPromotionPreview()
       .then((preview) => {
-        if (!cancelled) setCartPreview(preview);
+        if (!cancelled) {
+          cartPreviewCache.set(cartPreviewSignature, { preview, savedAt: Date.now() });
+          setCartPreview(preview);
+        }
       })
       .catch((err) => {
         if (!cancelled) {
@@ -435,17 +450,6 @@ export default function Cart() {
               </div>
             ) : (
               <>
-              <div className="sf-next-cart-section-head" aria-label="购物车商品选择">
-                <span>购物车商品</span>
-                <UnifiedButton
-                  type="button"
-                  onClick={() => setSelectAll(!allSelected)}
-                  className="sf-next-cart-select-all"
-                  aria-pressed={allSelected}
-                >
-                  {allSelected ? "取消全选" : "全选"}
-                </UnifiedButton>
-              </div>
               <div
                 className="sf-next-cart-list"
                 style={{ border: 0, borderRadius: 0, background: "transparent", boxShadow: "none" }}
@@ -1020,6 +1024,17 @@ function CartDiscountPanel({
 }) {
   const loading = couponsLoading || previewLoading;
   const hasDiscount = estimatedDiscount > 0;
+  const hasBreakdown = activityDiscount > 0 || selectedCouponDiscount > 0 || Boolean(selectedCoupon);
+  const discountHeadline = loading && !hasDiscount
+    ? t("cart.autoDiscountChecking")
+    : hasDiscount
+      ? `${t("cart.autoDiscountSaved")} RM ${formatCartMoney(estimatedDiscount)}`
+      : t("cart.autoDiscountNone");
+  const detailNote = !canUseCartPreviewDiscount
+    ? t("cart.selectedSubsetDiscountNote")
+    : previewError
+      ? previewError
+      : t("cart.discountEstimateNote");
   const selectedCouponLabel = selectedCoupon
     ? `${t("cart.selectedCoupon")}：${selectedCoupon.title}`
     : couponsLoading
@@ -1030,19 +1045,10 @@ function CartDiscountPanel({
 
   return (
     <section className="sf-next-cart-discount-panel" aria-label={t("cart.discountDetails")}>
-      <div className="sf-next-cart-discount-panel__head">
-        <span className="sf-next-cart-discount-panel__icon" aria-hidden>
-          <Sparkles size={17} />
-        </span>
+      <div className="sf-next-cart-discount-panel__head" data-has-discount={hasDiscount ? "true" : "false"}>
         <div className="sf-next-cart-discount-panel__copy">
           <p>{t("cart.autoDiscountTitle")}</p>
-          <strong>
-            {loading && !hasDiscount
-              ? t("cart.autoDiscountChecking")
-              : hasDiscount
-                ? `${t("cart.autoDiscountSaved")} RM ${formatCartMoney(estimatedDiscount)}`
-                : t("cart.autoDiscountNone")}
-          </strong>
+          <strong>{discountHeadline}</strong>
           <small>{selectedCouponLabel}</small>
         </div>
         <div className="sf-next-cart-discount-panel__total">
@@ -1051,37 +1057,35 @@ function CartDiscountPanel({
         </div>
       </div>
 
-      <div className="sf-next-cart-discount-panel__rows">
+      <div className="sf-next-cart-discount-panel__rows" data-has-breakdown={hasBreakdown ? "true" : "false"}>
         {activityDiscount > 0 ? (
-          <div>
+          <div className="sf-next-cart-discount-panel__row">
             <span>{t("cart.activityDiscount")}</span>
             <strong>-RM {formatCartMoney(activityDiscount)}</strong>
           </div>
         ) : null}
-        {selectedCouponDiscount > 0 ? (
-          <div>
+        {selectedCoupon ? (
+          <div className="sf-next-cart-discount-panel__row">
             <span>{t("cart.couponDiscount")}</span>
-            <strong>-RM {formatCartMoney(selectedCouponDiscount)}</strong>
+            <strong data-muted={selectedCouponDiscount > 0 ? undefined : "true"}>
+              {selectedCouponDiscount > 0 ? `-RM ${formatCartMoney(selectedCouponDiscount)}` : t("cart.discountPending")}
+            </strong>
           </div>
         ) : null}
-        {!canUseCartPreviewDiscount ? (
-          <p>{t("cart.selectedSubsetDiscountNote")}</p>
-        ) : previewError ? (
-          <p>{previewError}</p>
-        ) : (
-          <p>{t("cart.discountEstimateNote")}</p>
-        )}
+        <p className="sf-next-cart-discount-panel__note">{detailNote}</p>
       </div>
 
-      <CouponPicker
-        embedded
-        totalAmount={selectedAmount}
-        selectedCouponId={selectedCoupon?.id ?? null}
-        onSelect={onCouponSelect}
-        coupons={coupons}
-        unusableCoupons={unusableCoupons}
-        loading={couponsLoading}
-      />
+      <div className="sf-next-cart-discount-panel__coupon-slot">
+        <CouponPicker
+          embedded
+          totalAmount={selectedAmount}
+          selectedCouponId={selectedCoupon?.id ?? null}
+          onSelect={onCouponSelect}
+          coupons={coupons}
+          unusableCoupons={unusableCoupons}
+          loading={couponsLoading}
+        />
+      </div>
 
       {canUseCartPreviewDiscount && promotionEvaluation ? (
         <CartPromotionNudge

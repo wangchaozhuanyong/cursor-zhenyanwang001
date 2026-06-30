@@ -147,7 +147,8 @@ export default function CouponPicker({ totalAmount, shippingFee = 0, selectedCou
   const usableCount = coupons.filter(isUsable).length;
   const close = () => setOpen(false);
   const listProps = { coupons, unusableCoupons, selectedCouponId, selected, totalAmount, onSelect, onClose: close, getDiscountAmount, isUsable, getAmountParts, getMinSpendText };
-  const statusLabel = loading ? "同步可用优惠" : selected ? `-RM ${getDiscountAmount(selected)}` : usableCount > 0 ? `${usableCount} 张可用` : "暂无可用";
+  const selectedDiscountAmount = selected ? getDiscountAmount(selected) : 0;
+  const statusLabel = loading ? "同步可用优惠" : selected ? (selectedDiscountAmount > 0 ? `-RM ${selectedDiscountAmount}` : "结算页确认") : usableCount > 0 ? `${usableCount} 张可用` : "暂无可用";
 
   return (
     <div className={embedded ? "" : "sf-next-surface-card overflow-hidden rounded-2xl border border-[var(--theme-border)]"}>
@@ -181,7 +182,9 @@ export default function CouponPicker({ totalAmount, shippingFee = 0, selectedCou
               {loading ? (
                 <Loader2 size={14} className="animate-spin text-[var(--theme-text-muted-on-surface)]" />
               ) : selected ? (
-                <span className="rounded-full bg-[color-mix(in_srgb,var(--theme-price)_14%,var(--theme-surface))] px-3 py-1 text-sm font-bold text-theme-price">-RM {getDiscountAmount(selected)}</span>
+                <span className="rounded-full bg-[color-mix(in_srgb,var(--theme-price)_14%,var(--theme-surface))] px-3 py-1 text-sm font-bold text-theme-price">
+                  {selectedDiscountAmount > 0 ? `-RM ${selectedDiscountAmount}` : "结算页确认"}
+                </span>
               ) : usableCount > 0 ? (
                 <span className="rounded-full bg-[color-mix(in_srgb,var(--theme-danger)_12%,var(--theme-surface))] px-2.5 py-1 text-[11px] font-medium text-[var(--theme-danger)]">{usableCount} 张可用</span>
               ) : (

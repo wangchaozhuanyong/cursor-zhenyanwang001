@@ -15,7 +15,6 @@ import { NEW_ARRIVAL_CATEGORY_PATH } from "@/constants/newArrivalNavigation";
 
 type NewArrivalForm = {
   newArrivalSectionTitle: string;
-  newArrivalSectionSubtitle: string;
   newArrivalDisplayCount: string;
   newArrivalShowPrice: string;
   newArrivalOnlyInStock: string;
@@ -23,7 +22,6 @@ type NewArrivalForm = {
 
 const empty: NewArrivalForm = {
   newArrivalSectionTitle: "",
-  newArrivalSectionSubtitle: "",
   newArrivalDisplayCount: "8",
   newArrivalShowPrice: "1",
   newArrivalOnlyInStock: "1",
@@ -63,7 +61,6 @@ export default function AdminHomeOpsNewArrivalPanel({ onDirtyChange }: Props) {
     const data = settingsQuery.data;
     const nextForm = {
       newArrivalSectionTitle: data?.newArrivalSectionTitle ?? "",
-      newArrivalSectionSubtitle: data?.newArrivalSectionSubtitle ?? "",
       newArrivalDisplayCount: data?.newArrivalDisplayCount ?? "8",
       newArrivalShowPrice: data?.newArrivalShowPrice ?? "1",
       newArrivalOnlyInStock: data?.newArrivalOnlyInStock ?? "1",
@@ -91,6 +88,7 @@ export default function AdminHomeOpsNewArrivalPanel({ onDirtyChange }: Props) {
       };
       await updateSiteSettings({
         ...nextForm,
+        newArrivalSectionSubtitle: "",
       });
       setForm(nextForm);
       setBaseline(serializeNewArrivalForm(nextForm));
@@ -124,7 +122,7 @@ export default function AdminHomeOpsNewArrivalPanel({ onDirtyChange }: Props) {
             <AdminFieldHint text="系统固定跳转到分类页顶部「新品」入口，不再单独维护新品专题页。" />
           </div>
         </div>
-        <label className="flex flex-col gap-1">
+        <label className="flex flex-col gap-1 md:col-span-2">
           <span className="text-xs font-medium text-muted-foreground"><Tx>模块标题</Tx></span>
           <input
             className="rounded-xl border border-border bg-background px-3 py-2 text-sm"
@@ -132,16 +130,6 @@ export default function AdminHomeOpsNewArrivalPanel({ onDirtyChange }: Props) {
             value={form.newArrivalSectionTitle}
             onChange={(e) => setForm((f) => ({ ...f, newArrivalSectionTitle: e.target.value }))}
             placeholder={tText("新品上市")}
-          />
-        </label>
-        <label className="flex flex-col gap-1">
-          <span className="text-xs font-medium text-muted-foreground"><Tx>模块副标题</Tx></span>
-          <input
-            className="rounded-xl border border-border bg-background px-3 py-2 text-sm"
-            disabled={loading}
-            value={form.newArrivalSectionSubtitle}
-            onChange={(e) => setForm((f) => ({ ...f, newArrivalSectionSubtitle: e.target.value }))}
-            placeholder={tText("选填；前台当前未展示时可留空")}
           />
         </label>
         <label className="flex flex-col gap-1">

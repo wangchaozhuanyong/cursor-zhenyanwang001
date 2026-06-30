@@ -110,6 +110,7 @@ export default function HomeHeroV2({
   return (
     <section
       data-storefront-home-hero
+      data-hero-has-banner={hasBanner ? "true" : "false"}
       data-hero-layout={themeConfig.homeLayout}
       data-hero-banner-style={themeConfig.bannerStyle}
       className="sf-next-home-hero"

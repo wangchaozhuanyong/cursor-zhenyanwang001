@@ -508,12 +508,6 @@ export default function Categories() {
         </section>
 
         <section className="sf-next-listing-section" aria-label={productSectionTitle}>
-          <div className="sf-next-listing-head">
-            <h2>{productSectionTitle}</h2>
-            <span className="sf-next-listing-count" aria-live="polite">
-              {pagination.total > 0 ? `${pagination.total} 款` : ""}
-            </span>
-          </div>
           <CategoryBannerCard category={activeCategoryBanner} />
           {subCategories.length > 0 && activeRootId ? (
             <StoreCategorySubcategorySelector

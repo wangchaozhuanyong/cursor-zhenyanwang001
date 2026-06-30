@@ -1,10 +1,15 @@
-import HomeNavIcon from "@/components/store/HomeNavIcon";
-import type { CategoryKingkongItem } from "@/components/CategoryKingkongRow";
 import { cn } from "@/lib/utils";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
+type StoreCategoryPrimaryNavItem = {
+  id: string;
+  label: string;
+  active: boolean;
+  onClick: () => void;
+};
+
 type StoreCategoryPrimaryNavProps = {
-  items: CategoryKingkongItem[];
+  items: StoreCategoryPrimaryNavItem[];
   loading: boolean;
 };
 
@@ -24,9 +29,6 @@ export default function StoreCategoryPrimaryNav({ items, loading }: StoreCategor
               className={cn("sf-next-category-pill", item.active && "is-active")}
               onClick={item.onClick}
             >
-              <span className="sf-next-category-pill__icon" aria-hidden>
-                <HomeNavIcon value={item.iconValue} imageClassName="sf-next-category-pill__icon-image" />
-              </span>
               <span className="sf-next-category-pill__label">{item.label}</span>
             </UnifiedButton>
           ))}

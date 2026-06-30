@@ -129,7 +129,13 @@ export const useCartStore = create<CartState>()(
       loadCart: async (options = {}) => {
         if (!isLoggedIn()) return;
         if (cartLoadInflight) return cartLoadInflight;
-        if (!options.force && (get().hasLoaded || hasSessionCartLoad())) return;
+        if (!options.force) {
+          if (get().hasLoaded) return;
+          if (hasSessionCartLoad()) {
+            set({ loading: false, error: null, hasLoaded: true });
+            return;
+          }
+        }
 
         cartLoadInflight = (async () => {
           set({ loading: get().items.length === 0, error: null });

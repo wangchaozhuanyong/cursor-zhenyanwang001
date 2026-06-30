@@ -35,6 +35,7 @@ import { NEW_ARRIVAL_CATEGORY_PATH } from "@/constants/newArrivalNavigation";
 import { getHomeModuleTitle, isHomeModuleEnabled } from "@/constants/homeModules";
 import { STORE_COPY } from "@/constants/storeCopy";
 import { usePublicLocale } from "@/i18n/publicLocale";
+import { navigateWithStoreTransition } from "@/utils/storeNavigationTransition";
 import type { FooterNavItem, HomeNavItem } from "@/types/content";
 import { filterVisibleHomeNavItems } from "@/utils/homeNavCapabilities";
 import { normalizeHomeNavText, openHomeNavItemTarget } from "@/utils/homeNavTarget";
@@ -164,7 +165,6 @@ export default function StoreHomeV2() {
     () => siteInfo.newArrivalSectionTitle?.trim() || getHomeModuleTitle(homeModules, "new_arrivals", "新品上市"),
     [homeModules, siteInfo.newArrivalSectionTitle],
   );
-  const newArrivalSubtitle = siteInfo.newArrivalSectionSubtitle?.trim() || undefined;
   const newArrivalProducts = useMemo(
     () => uniqueProducts(newProducts, newArrivalDisplayCount),
     [newArrivalDisplayCount, newProducts],
@@ -208,7 +208,7 @@ export default function StoreHomeV2() {
       window.open(path, "_blank", "noopener,noreferrer");
       return;
     }
-    navigate(appendThemePreviewParams(localizedPath(path)));
+    navigateWithStoreTransition(navigate, appendThemePreviewParams(localizedPath(path)));
   };
 
   const buildCampaignEventContext = useCallback(
@@ -310,7 +310,6 @@ export default function StoreHomeV2() {
         {siteCapabilities.mallEnabled && showNewArrivals ? (
           <HomeProductSectionV2
             title={newArrivalTitle}
-            subtitle={newArrivalSubtitle}
             products={newArrivalProducts}
             loading={homeLoading && newArrivalProducts.length === 0}
             skeletonCount={newArrivalDisplayCount}

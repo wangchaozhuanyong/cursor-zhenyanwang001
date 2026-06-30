@@ -2,7 +2,11 @@ import { get, post, put, del } from "@/api/request";
 import type { CartItem, CartPromotionPreview } from "@/types/cart";
 
 export function getCart() {
-  return get<CartItem[]>("/cart", undefined, { skipAuthRetry: true, suppressAuthExpired: true });
+  return get<CartItem[]>("/cart", undefined, {
+    skipAuthRetry: true,
+    suppressAuthExpired: true,
+    loadingMode: "silent",
+  });
 }
 
 export function getCartPreview() {

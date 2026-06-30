@@ -251,5 +251,7 @@ describe("useCartStore", () => {
     await useCartStore.getState().loadCart();
 
     expect(cartService.fetchCart).toHaveBeenCalledTimes(1);
+    expect(useCartStore.getState().hasLoaded).toBe(true);
+    expect(useCartStore.getState().loading).toBe(false);
   });
 });

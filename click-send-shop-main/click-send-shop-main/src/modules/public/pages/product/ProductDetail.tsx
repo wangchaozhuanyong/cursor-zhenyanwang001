@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { ArrowLeft, BadgePercent, ChevronRight, Headphones, PackageCheck, ShieldCheck } from "lucide-react";
+import { ArrowLeft, BadgePercent, ChevronRight, Headphones, Heart, PackageCheck, ShieldCheck } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useProductStore } from "@/stores/useProductStore";
 import { useCartStore } from "@/stores/useCartStore";
@@ -16,7 +16,7 @@ import { STORE_DETAIL_STICKY_TOP_CLASS } from "@/constants/storeLayout";
 import { STORE_COPY } from "@/constants/storeCopy";
 import { useProductDetailHeaderSolid } from "@/hooks/useProductDetailHeaderSolid";
 import ProductTagList from "@/components/ProductTagList";
-import { AppModal, FavoriteMotionButton } from "@/modules/micro-interactions";
+import { AppModal } from "@/modules/micro-interactions";
 import ProductVariantSheet from "@/components/product/ProductVariantSheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
@@ -815,25 +815,24 @@ function DetailPurchaseBar({
   return (
     <div className="sf-next-product-purchase-bar flex items-stretch gap-3" data-mode={mode}>
       <div className="sf-next-product-purchase-bar__utility flex shrink-0 items-center gap-4 pr-1">
-        <div className="flex min-w-[2.75rem] flex-col items-center gap-0.5 text-[var(--theme-text-muted)]">
-          <FavoriteMotionButton
-            active={isFavorite}
-            onClick={onFavorite}
-            className="sf-next-product-mini-action-icon !h-9 !w-9"
-            size={18}
-          />
+        <UnifiedButton
+          type="button"
+          onClick={onFavorite}
+          aria-pressed={isFavorite}
+          aria-label={isFavorite ? "取消收藏" : "收藏"}
+          className={cn("sf-next-product-utility-action", isFavorite && "is-active")}
+        >
+          <Heart aria-hidden="true" className="sf-next-product-utility-action__icon" />
           <span className="text-[10px]">{isFavorite ? "已收藏" : "收藏"}</span>
-        </div>
+        </UnifiedButton>
         {mode === "desktop" ? (
           <UnifiedButton
             type="button"
             onClick={onCustomerService}
-            className="flex min-w-[2.75rem] flex-col items-center gap-0.5 text-[var(--theme-text-muted)]"
+            className="sf-next-product-utility-action"
             aria-label="联系客服"
           >
-            <span className="sf-next-product-mini-action-icon flex h-9 w-9 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)]">
-              <Headphones size={18} strokeWidth={2} aria-hidden="true" />
-            </span>
+            <Headphones aria-hidden="true" className="sf-next-product-utility-action__icon" />
             <span className="text-[10px]">客服</span>
           </UnifiedButton>
         ) : null}

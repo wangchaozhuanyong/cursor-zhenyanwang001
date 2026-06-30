@@ -1,12 +1,20 @@
-import type { ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { ArrowLeft, Share2, ShoppingCart } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
-import StoreSearchField from "@/components/store/StoreSearchField";
+import { StoreSearchDrawer, StoreSearchLauncher } from "@/components/store/StoreSearchDrawer";
+import { buildStoreSearchCategoryOptions, type StoreSearchTagOption } from "@/components/store/storeSearchOptions";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { STORE_COPY } from "@/constants/storeCopy";
+import { NEW_ARRIVAL_CATEGORY_PATH } from "@/constants/newArrivalNavigation";
 import { getStoreHeaderSurfaceClass } from "@/utils/storeHeaderSurface";
+import { navigateWithStoreTransition } from "@/utils/storeNavigationTransition";
+import { appendThemePreviewParams } from "@/utils/themePreviewParams";
+import { storefrontCategoryName } from "@/utils/storefrontCopySanitizer";
+import { useProductStore } from "@/stores/useProductStore";
 import { cn } from "@/lib/utils";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import * as productService from "@/services/productService";
+import type { ProductTag } from "@/types/product";
 
 export type ProductDetailStickyHeaderProps = {
   /** 吸顶实底：主图滚出顶区后为 true；沉浸透明为 false */
@@ -68,9 +76,41 @@ export default function ProductDetailStickyHeader({
   const navigate = useNavigate();
   const location = useLocation();
   const { themeConfig } = useThemeRuntime();
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
+  const [searchTags, setSearchTags] = useState<ProductTag[]>([]);
+  const categories = useProductStore((state) => state.categories);
+  const loadCategories = useProductStore((state) => state.loadCategories);
   const surfaceClass = getStoreHeaderSurfaceClass(themeConfig);
   const stateFrom = (location.state as { from?: string } | null)?.from;
   const searchBackTarget = stateFrom?.startsWith("/") && !stateFrom.startsWith("/search") ? stateFrom : "/";
+  const openRoute = useCallback((path: string) => {
+    navigateWithStoreTransition(navigate, appendThemePreviewParams(path));
+  }, [navigate]);
+  const submitSearch = useCallback((value: string) => {
+    const keyword = value.trim();
+    const target = keyword ? `/search?keyword=${encodeURIComponent(keyword)}` : "/search";
+    navigateWithStoreTransition(navigate, appendThemePreviewParams(target), { replace: true, state: { from: searchBackTarget } });
+  }, [navigate, searchBackTarget]);
+
+  useEffect(() => {
+    if (!searchOpen) return;
+    void loadCategories();
+    productService.fetchProductTags(16).then(setSearchTags).catch(() => setSearchTags([]));
+  }, [loadCategories, searchOpen]);
+
+  const searchCategoryOptions = useMemo(() => buildStoreSearchCategoryOptions({
+    categories,
+    onAll: () => openRoute("/categories"),
+    onNew: () => openRoute(NEW_ARRIVAL_CATEGORY_PATH),
+    onCategorySelect: (category) => openRoute(`/categories?cat=${encodeURIComponent(category.id)}`),
+  }), [categories, openRoute]);
+
+  const searchTagOptions = useMemo<StoreSearchTagOption[]>(() => searchTags.map((tag) => ({
+    id: tag.id,
+    label: storefrontCategoryName(tag.name),
+    onSelect: () => openRoute(`/categories?tag_id=${encodeURIComponent(tag.id)}`),
+  })), [openRoute, searchTags]);
 
   const BackBtn = solid ? SolidIconButton : ImmersiveIconButton;
   const ActionBtn = solid ? SolidIconButton : ImmersiveIconButton;
@@ -98,11 +138,11 @@ export default function ProductDetailStickyHeader({
             solid ? "max-w-[999px] opacity-100" : "pointer-events-none max-w-0 opacity-0",
           )}
         >
-          <StoreSearchField
-            mode="navigate"
-            size="compact"
+          <StoreSearchLauncher
+            className="sf-next-product-sticky-search-launcher"
+            value={searchValue}
             placeholder={STORE_COPY.searchPlaceholder}
-            onNavigate={() => navigate("/search", { replace: true, state: { from: searchBackTarget } })}
+            onClick={() => setSearchOpen(true)}
           />
         </div>
 
@@ -115,6 +155,17 @@ export default function ProductDetailStickyHeader({
           </ActionBtn>
         </div>
       </div>
+      <StoreSearchDrawer
+        open={searchOpen}
+        value={searchValue}
+        placeholder={STORE_COPY.searchPlaceholder}
+        categories={searchCategoryOptions}
+        tags={searchTagOptions}
+        onClose={() => setSearchOpen(false)}
+        onSubmit={submitSearch}
+        onValueChange={setSearchValue}
+        onClear={() => setSearchValue("")}
+      />
     </header>
   );
 }

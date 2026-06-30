@@ -1553,3 +1553,15 @@ html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-card but
     align-items: flex-start !important;
   }
 }
+
+/* Keep category search mapped to the same launcher pattern as the home page. */
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-category-search-trigger.sf-next-store-search-launcher {
+  display: inline-flex !important;
+  grid-template-columns: none !important;
+  min-height: 44px !important;
+  border-radius: 999px !important;
+  background: color-mix(in srgb, var(--sf-surface) 92%, var(--sf-canvas)) !important;
+  box-shadow:
+    0 0.75rem 1.6rem color-mix(in srgb, var(--sf-ink) 5%, transparent),
+    inset 0 1px 0 color-mix(in srgb, white 54%, transparent) !important;
+}

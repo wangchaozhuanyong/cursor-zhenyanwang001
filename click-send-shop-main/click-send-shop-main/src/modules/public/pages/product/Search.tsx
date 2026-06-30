@@ -285,9 +285,6 @@ export default function Search() {
             className="sf-next-search-page-launcher"
             onClick={() => setSearchDrawerOpen(true)}
           />
-          <UnifiedButton type="button" className="sf-next-search-nav-button" aria-label="打开搜索" onClick={() => setSearchDrawerOpen(true)}>
-            <SearchIcon size={22} aria-hidden />
-          </UnifiedButton>
         </div>
       </header>
 

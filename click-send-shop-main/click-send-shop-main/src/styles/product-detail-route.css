@@ -863,6 +863,11 @@ html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-product-detail-
   box-shadow: none !important;
 }
 
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-product-detail-page .sf-next-product-sticky-search-launcher {
+  min-height: 44px !important;
+  border-radius: 999px !important;
+}
+
 html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-product-mini-action-icon {
   width: 2.25rem !important;
   min-width: 2.25rem !important;

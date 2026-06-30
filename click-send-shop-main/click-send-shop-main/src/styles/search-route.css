@@ -627,3 +627,13 @@ html[data-app-scope="store"] .sf-next-search-empty {
     height: 44px !important;
   }
 }
+
+/* Keep the search page entry mapped to the same launcher used by the home page. */
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-search-page .sf-next-search-bar {
+  grid-template-columns: 44px minmax(0, 1fr) !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-search-page .sf-next-search-page-launcher {
+  min-height: 44px !important;
+  border-radius: 999px !important;
+}

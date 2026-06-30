@@ -49,12 +49,8 @@ export default function ProductReviews({ vm }: ProductReviewsProps) {
     <section className="sf-next-product-reviews" aria-label="商品评价">
       <div className="sf-next-product-reviews__head">
         <div>
-          <span>
-            <MessageSquareText size={15} aria-hidden />
-            商品评价
-          </span>
-          <h2>真实购买反馈</h2>
-          <p>{reviewActionHint}</p>
+          <h2>商品评价</h2>
+          <p>真实购买反馈 · {reviewActionHint}</p>
         </div>
         <UnifiedButton type="button" onClick={openReview} className="sf-next-product-reviews__write">
           <PenLine size={14} aria-hidden />

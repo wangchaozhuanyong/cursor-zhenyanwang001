@@ -768,8 +768,10 @@ html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .
   border-radius: inherit !important;
   box-sizing: border-box !important;
   padding: 0 !important;
-  object-fit: cover !important;
+  background: transparent !important;
+  object-fit: contain !important;
   object-position: center !important;
+  box-shadow: none !important;
 }
 
 html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-product-card--list .sf-next-product-card__info,

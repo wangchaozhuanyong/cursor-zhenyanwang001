@@ -18,7 +18,6 @@ import { useProductDetailHeaderSolid } from "@/hooks/useProductDetailHeaderSolid
 import ProductTagList from "@/components/ProductTagList";
 import { AppModal, FavoriteMotionButton } from "@/modules/micro-interactions";
 import ProductVariantSheet from "@/components/product/ProductVariantSheet";
-import TrustInfo from "@/components/TrustInfo";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
@@ -574,11 +573,6 @@ export default function ProductDetail() {
               </DesktopPurchaseActionCard>
             </div>
 
-            {/* TrustInfo - 信任三件套（详情页使用 card 强转化样式） */}
-            <div className="sf-next-product-trust-card mt-6 px-[var(--store-page-x)] md:px-0">
-              <TrustInfo variant="card" />
-            </div>
-
             <ProductDetailContentPanel
               sections={detailSections}
             />
@@ -711,10 +705,6 @@ function ProductDetailContentPanel({
   return (
     <section className="sf-next-product-content-panel" aria-labelledby="product-detail-content-heading">
       <div className="sf-next-product-content-panel__head">
-        <span>
-          <ShieldCheck size={15} aria-hidden />
-          商品详情
-        </span>
         <h2 id="product-detail-content-heading">商品详情</h2>
       </div>
       <div className="sf-next-product-content-panel__list">

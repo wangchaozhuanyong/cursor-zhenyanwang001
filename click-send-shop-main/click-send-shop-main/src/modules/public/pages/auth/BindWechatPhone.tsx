@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { ArrowLeft, KeyRound, ShieldCheck } from "lucide-react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { useAuthStore } from "@/stores/useAuthStore";
 import * as authService from "@/services/authService";
 import { toast } from "sonner";
@@ -11,13 +11,14 @@ import { FormFieldShake } from "@/modules/micro-interactions";
 import CountryPhoneInput from "@/components/auth/CountryPhoneInput";
 import { validatePhoneForCountry } from "@/utils/authValidation";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
 const INPUT_CLASS =
   "w-full rounded-2xl border border-border bg-card py-3.5 text-base text-foreground placeholder:text-muted-foreground focus:border-[var(--theme-primary)] focus:outline-none focus:ring-2 focus:ring-[color-mix(in_srgb,var(--theme-primary)_22%,transparent)] transition-[border-color,box-shadow]";
 
 export default function BindWechatPhone() {
   useDocumentTitle("绑定手机号");
-  const navigate = useNavigate();
+  const navigate = useStorefrontNavigate();
   const [searchParams] = useSearchParams();
   const pendingToken = searchParams.get("pendingWechatToken") || "";
   const authStore = useAuthStore();

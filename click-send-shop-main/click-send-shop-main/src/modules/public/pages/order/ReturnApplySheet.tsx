@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+
 import { toast } from "sonner";
 import { ImagePlus, Loader2, X } from "lucide-react";
 import * as orderService from "@/services/orderService";
@@ -12,6 +12,7 @@ import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import StableImage from "@/components/ui/StableImage";
 import { usePublicLocale, type PublicLocale } from "@/i18n/publicLocale";
 import { getReturnTypeLabel } from "./returnProgress";
+import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
 const RETURN_TYPES: ReturnType[] = [
   "refund",
@@ -137,7 +138,7 @@ type Props = {
 };
 
 export default function ReturnApplySheet({ orderId, open, onClose, onSuccess }: Props) {
-  const navigate = useNavigate();
+  const navigate = useStorefrontNavigate();
   const { localizedPath, locale } = usePublicLocale();
   const copy = RETURN_APPLY_COPY[locale];
   const fileInputRef = useRef<HTMLInputElement>(null);

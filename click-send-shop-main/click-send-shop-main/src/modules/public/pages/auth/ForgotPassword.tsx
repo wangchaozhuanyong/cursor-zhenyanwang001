@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { ArrowLeft, KeyRound, Loader2, Lock, ShieldCheck } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+
 import { toast } from "sonner";
 import CountryPhoneInput from "@/components/auth/CountryPhoneInput";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
@@ -10,9 +10,10 @@ import { usePublicLocale } from "@/i18n/publicLocale";
 import * as authService from "@/services/authService";
 import { authErrorMessage, validatePhoneForCountry, validateStrongPassword, type SupportedCountryCode } from "@/utils/authValidation";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
+import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
 export default function ForgotPassword() {
-  const navigate = useNavigate();
+  const navigate = useStorefrontNavigate();
   const { localizedPath } = usePublicLocale();
   const [countryCode, setCountryCode] = useState<SupportedCountryCode>("+60");
   const [phone, setPhone] = useState("");

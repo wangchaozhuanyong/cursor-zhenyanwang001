@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
 import { ArrowRight, Clock, Gift, Tag, TicketPercent } from "lucide-react";
+import StorefrontQuietLoading from "@/components/storefront-motion/StorefrontQuietLoading";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { cn } from "@/lib/utils";
 import StorefrontTitleRow from "../components/StorefrontTitleRow";
@@ -14,8 +15,6 @@ type HomePrimaryCampaignV2Props = {
   onCampaignImpression?: (campaign: StorefrontCampaignVm, position: string) => void;
   onCampaignClick?: (campaign: StorefrontCampaignVm, position: string) => void;
 };
-
-const CAMPAIGN_SKELETON_COUNT = 4;
 
 export default function HomePrimaryCampaignV2({
   campaigns,
@@ -76,24 +75,7 @@ export default function HomePrimaryCampaignV2({
             </UnifiedButton>
           )}
         />
-        <div className="sf-next-campaign-list">
-          {Array.from({ length: CAMPAIGN_SKELETON_COUNT }).map((_, index) => (
-            <div
-              key={index}
-              className="sf-next-campaign-card sf-next-campaign-card--loading"
-              data-campaign-priority={index === 0 ? "primary" : "secondary"}
-              aria-hidden="true"
-            >
-              <span className="sf-next-campaign-card__icon skeleton-base skeleton-shimmer" />
-              <span className="sf-next-campaign-card__copy">
-                <span className="skeleton-base skeleton-shimmer block h-4 w-24 rounded-full" />
-                <span className="skeleton-base skeleton-shimmer block h-5 w-4/5 max-w-full rounded-full" />
-                <span className="skeleton-base skeleton-shimmer block h-3 w-3/5 max-w-full rounded-full" />
-              </span>
-              <span className="sf-next-campaign-card__action skeleton-base skeleton-shimmer" />
-            </div>
-          ))}
-        </div>
+        <StorefrontQuietLoading label="活动优惠加载中" className="sf-motion-inline-loading--shelf" />
       </section>
     );
   }

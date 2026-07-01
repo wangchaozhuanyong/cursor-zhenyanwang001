@@ -1,6 +1,6 @@
 import { MapPin, PackageCheck, ShieldCheck, Truck } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+
 import SeoHead from "@/components/SeoHead";
 import StoreStandardPageShell from "@/components/store/StoreStandardPageShell";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
@@ -13,6 +13,7 @@ import { sanitizeCmsHtml } from "@/utils/cmsSanitizer";
 import { buildCanonical, stripHtml, truncateText } from "@/utils/seo";
 import { STORE_COPY } from "@/constants/storeCopy";
 import "@/styles/secondary-routes.css";
+import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
 const deliveryZones = [
   {
@@ -57,7 +58,7 @@ function isShippingPlaceholderBody(body?: string | null): boolean {
 
 export default function Delivery() {
   const goBack = useGoBack("/");
-  const navigate = useNavigate();
+  const navigate = useStorefrontNavigate();
   const { localizedPath } = usePublicLocale();
   const siteInfo = useSiteInfo();
   const siteName = siteInfo.siteName || STORE_COPY.brandName;

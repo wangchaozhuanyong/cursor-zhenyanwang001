@@ -1,8 +1,8 @@
 import { PackageSearch } from "lucide-react";
+import StorefrontQuietLoading from "@/components/storefront-motion/StorefrontQuietLoading";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import type { Product } from "@/types/product";
 import ProductCardV2 from "../product/ProductCardV2";
-import ProductCardV2Skeleton from "../product/ProductCardV2Skeleton";
 import StorefrontTitleRow from "../components/StorefrontTitleRow";
 
 type HomeProductSectionV2Props = {
@@ -10,7 +10,6 @@ type HomeProductSectionV2Props = {
   subtitle?: string;
   products: Product[];
   loading?: boolean;
-  skeletonCount?: number;
   actionLabel?: string;
   actionPath?: string;
   emptyText?: string;
@@ -26,7 +25,6 @@ export default function HomeProductSectionV2({
   subtitle,
   products,
   loading = false,
-  skeletonCount = 4,
   actionLabel = "更多",
   actionPath = "/categories",
   emptyText = "暂无商品",
@@ -37,7 +35,6 @@ export default function HomeProductSectionV2({
   onNavigate,
 }: HomeProductSectionV2Props) {
   const visibleProducts = previewLimit && previewLimit > 0 ? products.slice(0, previewLimit) : products;
-  const effectiveSkeletonCount = previewLimit && previewLimit > 0 ? Math.min(skeletonCount, previewLimit) : skeletonCount;
 
   return (
     <section className={["sf-next-product-shelf min-w-0", className].filter(Boolean).join(" ")}>
@@ -58,12 +55,11 @@ export default function HomeProductSectionV2({
           )}
         />
       </div>
-      <div className="sf-next-product-grid sf-next-product-shelf__grid">
-        {loading
-          ? Array.from({ length: effectiveSkeletonCount }).map((_, index) => (
-              <ProductCardV2Skeleton key={`home-v2-skeleton-${title}-${index}`} />
-            ))
-          : visibleProducts.map((product, index) => (
+      {loading ? (
+        <StorefrontQuietLoading label={`${title}加载中`} className="sf-motion-inline-loading--shelf" />
+      ) : (
+        <div className="sf-next-product-grid sf-next-product-shelf__grid">
+          {visibleProducts.map((product, index) => (
               <ProductCardV2
                 key={product.id}
                 product={product}
@@ -71,7 +67,8 @@ export default function HomeProductSectionV2({
                 showPrice={showPrice}
               />
           ))}
-      </div>
+        </div>
+      )}
       {!loading && products.length === 0 ? (
         <div className="sf-next-product-shelf__empty">
           <p>{emptyText}</p>

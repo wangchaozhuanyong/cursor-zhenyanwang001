@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { ClipboardList, Copy, CreditCard, PackageCheck, RefreshCw, Truck, WalletCards } from "lucide-react";
 import { toast } from "sonner";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
+import StorefrontQuietLoading from "@/components/storefront-motion/StorefrontQuietLoading";
 import { OrderAutoConfirmCountdown } from "@/components/order/OrderAutoConfirmCountdown";
 import ReviewComposerSheet from "@/components/review/ReviewComposerSheet";
 import { AppModal, BottomSheetConfirm, usePreferBottomSheet } from "@/modules/micro-interactions";
@@ -36,6 +37,7 @@ import {
   labelPendingPaymentActionLocalized,
 } from "./orderPageLocale";
 import "@/styles/orders-route.css";
+import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
 const moreActionBtn =
   "flex w-full items-center justify-between rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-3 text-left text-sm font-semibold text-[var(--theme-text)]";
@@ -103,7 +105,7 @@ function OrderDetailQuickActions({
   onRepurchase,
   className,
 }: OrderDetailQuickActionsProps) {
-  const navigate = useNavigate();
+  const navigate = useStorefrontNavigate();
   const { localizedPath, locale } = usePublicLocale();
   const copy = getOrderCopy(locale);
   return (
@@ -146,45 +148,13 @@ function canViewLogistics(order: Order) {
   return order.status === "shipped" || order.status === "completed" || order.status === "refunded";
 }
 
-function OrderDetailLoadingSkeleton() {
-  return (
-    <div className="sf-next-order-detail-loading" aria-busy="true" aria-label="订单详情加载中">
-      <section className="sf-next-order-detail-hero sf-next-order-detail-loading-hero">
-        <div className="sf-next-skeleton sf-next-order-detail-loading-icon" />
-        <div className="min-w-0 flex-1">
-          <div className="sf-next-skeleton sf-next-order-detail-loading-line is-eyebrow" />
-          <div className="sf-next-skeleton sf-next-order-detail-loading-line is-title" />
-          <div className="sf-next-skeleton sf-next-order-detail-loading-line is-subtitle" />
-        </div>
-      </section>
-
-      <section className="sf-next-order-detail-products sf-next-order-detail-loading-card">
-        <div className="sf-next-order-detail-section-head">
-          <div className="sf-next-skeleton sf-next-order-detail-loading-line is-section" />
-        </div>
-        <div className="sf-next-order-detail-product-row">
-          <div className="sf-next-skeleton sf-next-order-detail-product-media" />
-          <div className="min-w-0 flex-1">
-            <div className="sf-next-skeleton sf-next-order-detail-loading-line is-product-title" />
-            <div className="sf-next-skeleton sf-next-order-detail-loading-line is-product-meta" />
-          </div>
-          <div className="sf-next-skeleton sf-next-order-detail-loading-line is-product-price" />
-        </div>
-      </section>
-
-      <section className="sf-next-order-detail-price-card sf-next-order-detail-loading-card">
-        <div className="sf-next-skeleton sf-next-order-detail-loading-line is-section" />
-        <div className="sf-next-skeleton sf-next-order-detail-loading-line is-row" />
-        <div className="sf-next-skeleton sf-next-order-detail-loading-line is-row" />
-        <div className="sf-next-skeleton sf-next-order-detail-loading-line is-total" />
-      </section>
-    </div>
-  );
+function OrderDetailQuietLoading() {
+  return <StorefrontQuietLoading label="订单详情加载中" className="sf-motion-inline-loading--detail" />;
 }
 
 export default function OrderDetail() {
   const { id } = useParams();
-  const navigate = useNavigate();
+  const navigate = useStorefrontNavigate();
   const { localizedPath, locale } = usePublicLocale();
   const copy = getOrderCopy(locale);
   const goBack = useGoBack(localizedPath("/orders"));
@@ -422,7 +392,7 @@ export default function OrderDetail() {
         className="sf-next-page sf-next-order-detail-page"
         mainClassName="pb-[calc(88px+env(safe-area-inset-bottom,0px))] md:pb-0 xl:pb-12"
       >
-        <OrderDetailLoadingSkeleton />
+        <OrderDetailQuietLoading />
       </StoreAccountLayout>
     );
   }

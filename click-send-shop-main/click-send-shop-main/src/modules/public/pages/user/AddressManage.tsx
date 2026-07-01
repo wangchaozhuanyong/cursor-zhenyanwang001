@@ -9,6 +9,7 @@ import { MALAYSIA_STATES } from "@/types/address";
 import { formatAddressForDisplay } from "@/services/addressService";
 import { THEME_ACCENT_CHIP_CLASS } from "@/utils/themeVisuals";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
+import StorefrontQuietLoading from "@/components/storefront-motion/StorefrontQuietLoading";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { usePublicLocale } from "@/i18n/publicLocale";
 import "@/styles/secondary-routes.css";
@@ -123,7 +124,7 @@ export default function AddressManage() {
         mainClassName="sf-next-account-main pb-24 sm:py-4 md:pb-12"
       >
         {addressLoading && addresses.length === 0 ? (
-          <AddressLoadingSkeleton label={t("address.loading")} />
+          <AddressQuietLoading label={t("address.loading")} />
         ) : addresses.length === 0 ? (
           <section className="sf-next-state-panel sf-next-address-empty">
             <span className="sf-next-state-panel__icon" aria-hidden>
@@ -271,24 +272,6 @@ function AddressField({ label, children }: { label: string; children: ReactNode 
   );
 }
 
-function AddressLoadingSkeleton({ label }: { label: string }) {
-  return (
-    <section className="sf-next-address-loading" aria-busy="true" aria-label={label}>
-      {Array.from({ length: 3 }).map((_, index) => (
-        <article key={index} className="sf-next-address-loading-card">
-          <div className="sf-next-skeleton sf-next-address-loading-pin" />
-          <div className="sf-next-address-loading-copy">
-            <div className="sf-next-skeleton sf-next-address-loading-line is-title" />
-            <div className="sf-next-skeleton sf-next-address-loading-line is-phone" />
-            <div className="sf-next-skeleton sf-next-address-loading-line is-address" />
-          </div>
-          <div className="sf-next-address-loading-actions">
-            <div className="sf-next-skeleton sf-next-address-loading-action" />
-            <div className="sf-next-skeleton sf-next-address-loading-action" />
-          </div>
-        </article>
-      ))}
-      <span className="sr-only">{label}</span>
-    </section>
-  );
+function AddressQuietLoading({ label }: { label: string }) {
+  return <StorefrontQuietLoading label={label} className="sf-motion-inline-loading--account" />;
 }

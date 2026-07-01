@@ -830,6 +830,21 @@ html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-promo-folio__ac
   font-weight: 760;
   text-decoration: none;
 }
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-promo-folio__loading-line {
+  position: absolute;
+  right: var(--sf-space-5);
+  bottom: var(--sf-space-4);
+  left: var(--sf-space-5);
+  height: 1px;
+  overflow: hidden;
+  border-radius: var(--sf-radius-full);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--sf-accent) 70%, var(--sf-line)),
+    transparent
+  );
+}
 html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-promo-filters {
   display: flex;
   min-width: 0;
@@ -873,6 +888,21 @@ html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-promo-list {
   min-width: 0;
   grid-template-columns: repeat(1, minmax(0, 1fr));
   gap: var(--sf-space-3);
+}
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-promo-list--loading {
+  min-height: 14.25rem;
+  place-items: center;
+}
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-promo-list__loading-line {
+  width: min(38vw, 11rem);
+  height: 1px;
+  border-radius: var(--sf-radius-full);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--sf-accent) 70%, var(--sf-line)),
+    transparent
+  );
 }
 html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-promo-card {
   display: flex;

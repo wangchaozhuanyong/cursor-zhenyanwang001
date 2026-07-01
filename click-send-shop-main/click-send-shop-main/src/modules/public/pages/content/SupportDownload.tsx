@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { ArrowLeft, ArrowRight, Clock3, Copy, PlusSquare } from "lucide-react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import SeoHead from "@/components/SeoHead";
 import StorePageHeader from "@/components/store/StorePageHeader";
 import WeChatIcon from "@/components/icons/WeChatIcon";
@@ -29,6 +29,7 @@ import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { useHorizontalActiveScroll } from "@/hooks/useHorizontalActiveScroll";
 import { useGoBack } from "@/hooks/useGoBack";
 import "@/styles/support-download.css";
+import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
 type SupportDownloadView = SupportChannelType | "download";
 type SupportDownloadProps = {
@@ -79,7 +80,7 @@ export default function SupportDownload({ installMode = false }: SupportDownload
   const siteInfo = useSiteInfo();
   const siteInfoLoaded = useSiteInfoLoaded();
   const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
+  const navigate = useStorefrontNavigate();
   const config = useMemo(
     () => parseSupportDownloadConfig(siteInfo.supportDownloadConfig),
     [siteInfo.supportDownloadConfig],

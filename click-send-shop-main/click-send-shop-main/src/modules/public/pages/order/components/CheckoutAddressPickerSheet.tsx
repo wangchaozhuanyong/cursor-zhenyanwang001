@@ -1,11 +1,12 @@
 import { Check } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+
 import type { Address } from "@/types/address";
 import { formatAddressForDisplay } from "@/services/addressService";
 import { AppModal } from "@/modules/micro-interactions";
 import { cn } from "@/lib/utils";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { usePublicLocale } from "@/i18n/publicLocale";
+import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
 type Props = {
   open: boolean;
@@ -16,7 +17,7 @@ type Props = {
 };
 
 export function CheckoutAddressPickerSheet({ open, onClose, addresses, selectedId, onSelect }: Props) {
-  const navigate = useNavigate();
+  const navigate = useStorefrontNavigate();
   const { localizedPath, t } = usePublicLocale();
 
   const pick = (addr: Address) => {

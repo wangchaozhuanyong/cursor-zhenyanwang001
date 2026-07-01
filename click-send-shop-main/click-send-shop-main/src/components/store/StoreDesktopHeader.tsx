@@ -1,6 +1,6 @@
 import { BadgePercent, Headphones, Home, LayoutGrid, ShoppingCart, User } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState, type MouseEvent } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import DeferredStoreCartBadge from "@/components/store/DeferredStoreCartBadge";
 import { StoreSearchDrawer, StoreSearchLauncher } from "@/components/store/StoreSearchDrawer";
 import { buildStoreSearchCategoryOptions, type StoreSearchTagOption } from "@/components/store/storeSearchOptions";
@@ -24,6 +24,7 @@ import { stripPublicLocaleFromPathname, usePublicLocale } from "@/i18n/publicLoc
 import { NEW_ARRIVAL_CATEGORY_PATH } from "@/constants/newArrivalNavigation";
 import { storefrontCategoryName } from "@/utils/storefrontCopySanitizer";
 import type { ProductTag } from "@/types/product";
+import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
 type NavItem = { path: string; label: string; icon: typeof Home; enabled?: boolean };
 
@@ -36,7 +37,7 @@ function isPlainLeftClick(event: MouseEvent<HTMLElement>) {
 }
 
 export default function StoreDesktopHeader({ className }: { className?: string }) {
-  const navigate = useNavigate();
+  const navigate = useStorefrontNavigate();
   const location = useLocation();
   const siteInfo = useSiteInfo();
   const siteInfoLoaded = useSiteInfoLoaded();

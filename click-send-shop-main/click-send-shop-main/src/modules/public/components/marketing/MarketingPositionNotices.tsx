@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+
 import { ChevronRight, Tag } from "lucide-react";
 import * as marketingService from "@/services/marketingService";
 import type { MarketingActivitySummary } from "@/services/marketingService";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
 type Props = {
   position: "cart_notice" | "checkout_notice" | "profile_center";
@@ -11,7 +12,7 @@ type Props = {
 };
 
 export default function MarketingPositionNotices({ position, className = "" }: Props) {
-  const navigate = useNavigate();
+  const navigate = useStorefrontNavigate();
   const [notices, setNotices] = useState<MarketingActivitySummary[]>([]);
 
   useEffect(() => {

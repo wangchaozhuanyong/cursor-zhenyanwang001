@@ -3,11 +3,11 @@ import {
   RefreshCw,
   Users,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import SeoHead from "@/components/SeoHead";
 import HomeTrustBar from "@/components/HomeTrustBar";
 import HomeNavIcon from "@/components/store/HomeNavIcon";
+import StorefrontQuietLoading from "@/components/storefront-motion/StorefrontQuietLoading";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useHomeBanners } from "@/hooks/useHomeBanners";
@@ -52,12 +52,13 @@ import HomeHeroV2 from "./HomeHeroV2";
 import HomePrimaryCampaignV2 from "./HomePrimaryCampaignV2";
 import HomeProductSectionV2 from "./HomeProductSectionV2";
 import { buildHomeCampaignEntrances, dedupeFooterNav, parseFooterNav, uniqueProducts } from "./homeV2Utils";
+import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
 const GuestMobileFooter = lazy(() => import("@/components/GuestMobileFooter"));
 
 export default function StoreHomeV2() {
   useDocumentTitle(undefined);
-  const navigate = useNavigate();
+  const navigate = useStorefrontNavigate();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const audience = isAuthenticated ? "member" : "guest";
   const siteInfo = useSiteInfo();
@@ -312,7 +313,6 @@ export default function StoreHomeV2() {
             title={newArrivalTitle}
             products={newArrivalProducts}
             loading={homeLoading && newArrivalProducts.length === 0}
-            skeletonCount={newArrivalDisplayCount}
             actionLabel="查看新品"
             actionPath={NEW_ARRIVAL_CATEGORY_PATH}
             emptyText="新品正在整理中，可以先看分类。"
@@ -328,7 +328,6 @@ export default function StoreHomeV2() {
             title={getHomeModuleTitle(homeModules, "guest_recommend", "精选商品")}
             products={guestProducts}
             loading={homeLoading && guestProducts.length === 0}
-            skeletonCount={homeModules.guestRecommendMax}
             actionLabel="全部商品"
             emptyText="精选商品暂时没有更新，可以先进入分类浏览。"
             emptyActionLabel="浏览分类"
@@ -350,7 +349,6 @@ export default function StoreHomeV2() {
             title={getHomeModuleTitle(homeModules, "hot_sales", "今日热销")}
             products={hotHomeProducts}
             loading={homeLoading && hotHomeProducts.length === 0}
-            skeletonCount={homeModules.hotBatchSize}
             actionLabel="热销榜"
             actionPath="/categories?sort=sales_desc"
             emptyText="热销榜暂时没有数据，可以先看全部商品。"
@@ -365,7 +363,6 @@ export default function StoreHomeV2() {
             title={getHomeModuleTitle(homeModules, "recommend", "猜你喜欢")}
             products={memberRecommendations}
             loading={homeLoading && memberRecommendations.length === 0}
-            skeletonCount={homeModules.recBatchSize}
             actionLabel="更多推荐"
             emptyText="还没有足够的浏览记录生成推荐，可以先看看热销商品。"
             emptyActionLabel="看热销"
@@ -438,20 +435,15 @@ function HomeQuickEntryPanel({
     <section
       className="sf-next-quick-entry"
       aria-label="快捷入口"
+      aria-busy={!ready ? true : undefined}
       data-home-nav-source="admin-home-ops"
       data-command-count={ready ? actions.length : 10}
     >
-      <div className="sf-next-quick-entry__grid">
-        {!ready
-          ? Array.from({ length: 10 }).map((_, index) => (
-              <div key={index} className="sf-next-quick-entry__item sf-next-quick-entry__item--loading" aria-hidden>
-                <span className="sf-next-quick-entry__icon skeleton-base skeleton-shimmer" />
-                <span className="sf-next-quick-entry__copy">
-                  <span className="skeleton-base skeleton-shimmer h-3 w-14 rounded-full" />
-                </span>
-              </div>
-            ))
-          : actions.map((action) => (
+      {!ready ? (
+        <StorefrontQuietLoading label="快捷入口加载中" className="sf-motion-inline-loading--shelf" />
+      ) : (
+        <div className="sf-next-quick-entry__grid">
+          {actions.map((action) => (
               <UnifiedButton
                 key={action.id}
                 type="button"
@@ -469,8 +461,9 @@ function HomeQuickEntryPanel({
                   <strong>{normalizeHomeNavText(action.title, "分类")}</strong>
                 </span>
               </UnifiedButton>
-            ))}
-      </div>
+          ))}
+        </div>
+      )}
     </section>
   );
 }

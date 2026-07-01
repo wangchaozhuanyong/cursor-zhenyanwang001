@@ -1,5 +1,4 @@
 import { useCallback } from "react";
-import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { ensureStoreSession } from "@/lib/ensureStoreSession";
 import { useAuthStore } from "@/stores/useAuthStore";
@@ -9,6 +8,7 @@ import { invalidateMyCouponsStoreCache } from "@/stores/useMyCouponsStore";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import type { CouponClaimStatus } from "@/types/coupon";
 import { ApiError } from "@/types/common";
+import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
 export type CouponActionSource = {
   id: string;
@@ -90,7 +90,7 @@ export function getCouponActionState(coupon: CouponActionSource, isAuthenticated
 }
 
 export function useCouponAction(defaultFrom = "/coupons") {
-  const navigate = useNavigate();
+  const navigate = useStorefrontNavigate();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const claimCoupon = useCouponStore((s) => s.claimCoupon);
 

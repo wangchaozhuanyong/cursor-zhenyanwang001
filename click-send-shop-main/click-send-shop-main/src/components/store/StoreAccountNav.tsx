@@ -1,10 +1,11 @@
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { buildAccountFeaturesByKeys, type AccountFeatureKey } from "@/features/account/accountFeatureRegistry";
 import { useStoreNavigationGuard } from "@/features/navigation/useStoreNavigationGuard";
 import { isLoggedIn } from "@/utils/token";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { stripPublicLocaleFromPathname, usePublicLocale } from "@/i18n/publicLocale";
+import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
 function isNavActive(pathname: string, path: string): boolean {
   const base = path.split("?")[0];
@@ -14,7 +15,7 @@ function isNavActive(pathname: string, path: string): boolean {
 }
 
 export default function StoreAccountNav({ className }: { className?: string }) {
-  const navigate = useNavigate();
+  const navigate = useStorefrontNavigate();
   const location = useLocation();
   const { localizedPath, t } = usePublicLocale();
   const { capabilities, loyaltyConfig, navigateFeature } = useStoreNavigationGuard();

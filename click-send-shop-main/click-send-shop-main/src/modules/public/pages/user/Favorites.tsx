@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { Heart, LogIn, Plus, ShoppingCart, Store, Trash2 } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
 import { useCartStore } from "@/stores/useCartStore";
 import { isLoggedIn } from "@/utils/token";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
+import StorefrontQuietLoading from "@/components/storefront-motion/StorefrontQuietLoading";
 import { toast } from "sonner";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { usePublicLocale } from "@/i18n/publicLocale";
@@ -16,9 +17,10 @@ import StorefrontPrice from "@/modules/storefront-v2/components/StorefrontPrice"
 import { buildProductCardV2Model } from "@/modules/storefront-v2/product/productCardV2Model";
 import { cn } from "@/lib/utils";
 import "@/styles/secondary-routes.css";
+import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
 export default function Favorites() {
-  const navigate = useNavigate();
+  const navigate = useStorefrontNavigate();
   const { localizedPath } = usePublicLocale();
   const { favoriteProducts, loadFavorites, loading, toggleFavorite } = useFavoritesStore();
   const addItem = useCartStore((s) => s.addItem);
@@ -59,12 +61,7 @@ export default function Favorites() {
         {loading && favoriteProducts.length === 0 ? (
           <>
             <FavoriteListHeader count={0} />
-            <div className="sf-next-favorite-grid">
-              <FavoriteProductTileSkeleton />
-              <FavoriteProductTileSkeleton />
-              <FavoriteProductTileSkeleton />
-              <FavoriteProductTileSkeleton />
-            </div>
+            <StorefrontQuietLoading label="收藏加载中" className="sf-motion-inline-loading--account" />
           </>
         ) : favoriteProducts.length === 0 ? (
           <>
@@ -216,19 +213,5 @@ function FavoriteProductTile({
         </UnifiedButton>
       </div>
     </article>
-  );
-}
-
-function FavoriteProductTileSkeleton() {
-  return (
-    <div className="sf-next-favorite-tile" aria-hidden="true">
-      <div className="sf-next-favorite-tile__media sf-next-skeleton aspect-square" />
-      <div className="sf-next-skeleton mt-3 h-4 w-5/6" />
-      <div className="sf-next-skeleton mt-2 h-3 w-2/3" />
-      <div className="mt-auto flex items-center justify-between pt-4">
-        <div className="sf-next-skeleton h-5 w-16" />
-        <div className="sf-next-skeleton h-10 w-10 rounded-full" />
-      </div>
-    </div>
   );
 }

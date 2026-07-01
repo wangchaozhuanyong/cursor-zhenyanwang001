@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { ArrowLeft, ChevronRight, Search as SearchIcon, X } from "lucide-react";
 import ProductCoverImage from "@/components/ProductCoverImage";
 import { StoreSearchDrawer, StoreSearchLauncher } from "@/components/store/StoreSearchDrawer";
@@ -28,6 +28,7 @@ import { appendThemePreviewParams } from "@/utils/themePreviewParams";
 import { storefrontCategoryName } from "@/utils/storefrontCopySanitizer";
 import type { Product, ProductListParams, ProductTag } from "@/types/product";
 import "@/styles/search-route.css";
+import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
 const HISTORY_KEY = "search_history";
 const MAX_HISTORY = 10;
@@ -82,7 +83,7 @@ function uniqueProductsById(items: Product[], limit: number) {
 
 export default function Search() {
   const goBack = useGoBack("/");
-  const navigate = useNavigate();
+  const navigate = useStorefrontNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const clientStyle = useClientDesignStyle();
   const siteInfo = useSiteInfo();
@@ -151,7 +152,7 @@ export default function Search() {
   }, [searchProductParams]);
   const searchQueryReady = !searchProductParams || readySearchQueryKey === searchQueryKey;
   const visibleProducts = searchQueryReady ? products : [];
-  const showFullSkeleton = Boolean(searchProductParams) && (!searchQueryReady || (loading && visibleProducts.length === 0));
+  const showQuietLoading = Boolean(searchProductParams) && (!searchQueryReady || (loading && visibleProducts.length === 0));
   const showSoftRefreshing = searchQueryReady && listRefreshing && visibleProducts.length > 0;
 
   useEffect(() => {
@@ -343,10 +344,9 @@ export default function Search() {
             <SilkProductGrid
               products={visibleProducts}
               className={productGridClass}
-              skeletonCount={6}
               siteContext={productCardSiteContext}
               itemKeyPrefix={`search:${submittedQuery.trim()}`}
-              showFullSkeleton={showFullSkeleton}
+              showQuietLoading={showQuietLoading}
               showSoftRefreshing={showSoftRefreshing}
               emptyState={
                 <section className="sf-next-state-panel sf-next-search-empty">

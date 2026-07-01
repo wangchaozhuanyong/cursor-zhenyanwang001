@@ -1,19 +1,21 @@
 import { useEffect, useState } from "react";
 import { BadgePercent, Clock, History as HistoryIcon, LogIn, PackageCheck, Search, Trash2 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+
 import { useHistoryStore } from "@/stores/useHistoryStore";
 import { isLoggedIn } from "@/utils/token";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
+import StorefrontQuietLoading from "@/components/storefront-motion/StorefrontQuietLoading";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { BottomSheetConfirm } from "@/modules/micro-interactions";
 import { usePublicLocale } from "@/i18n/publicLocale";
-import AccountProductCard, { AccountProductCardSkeleton } from "./components/AccountProductCard";
+import AccountProductCard from "./components/AccountProductCard";
 import "@/styles/secondary-routes.css";
+import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
 export default function History() {
-  const navigate = useNavigate();
+  const navigate = useStorefrontNavigate();
   const { localizedPath } = usePublicLocale();
   const { history, loading, loadHistory, clearHistory } = useHistoryStore();
   const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
@@ -74,12 +76,7 @@ export default function History() {
           </section>
         ) : null}
         {loading && history.length === 0 ? (
-          <div className="grid gap-3 md:grid-cols-2">
-            <AccountProductCardSkeleton variant="history" />
-            <AccountProductCardSkeleton variant="history" />
-            <AccountProductCardSkeleton variant="history" />
-            <AccountProductCardSkeleton variant="history" />
-          </div>
+          <StorefrontQuietLoading label="浏览历史加载中" className="sf-motion-inline-loading--account" />
         ) : history.length === 0 ? (
           <section className="sf-next-state-panel">
             <span className="sf-next-state-panel__icon" aria-hidden>

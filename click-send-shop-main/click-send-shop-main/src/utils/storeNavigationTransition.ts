@@ -1,5 +1,11 @@
 import type { NavigateFunction, NavigateOptions, To } from "react-router-dom";
 import { createPath } from "react-router-dom";
+import {
+  beginStorefrontRouteTransition,
+  failStorefrontRouteTransition,
+  isStorefrontMotionNavigationLocked,
+} from "@/components/storefront-motion/useStorefrontMotionState";
+import { getStorefrontTransitionKind } from "@/components/storefront-motion/getStorefrontTransitionKind";
 import { rememberCurrentStoreScrollPosition } from "@/utils/storeScrollRestoration";
 
 const NAVIGATION_HARD_FALLBACK_MS = 900;
@@ -11,13 +17,23 @@ export function navigateWithStoreTransition(
 ) {
   rememberCurrentStoreScrollPosition();
   if (typeof to === "number") {
+    if (isStorefrontMotionNavigationLocked()) return;
     navigate(to);
     return;
   }
 
   const fallbackTarget = resolveHardFallbackTarget(to);
   const beforePath = currentRoutePath();
-  navigate(to, options);
+  if (fallbackTarget && beforePath !== fallbackTarget.routePath) {
+    beginStorefrontRouteTransition(fallbackTarget.routePath, getStorefrontTransitionKind(fallbackTarget.routePath));
+  }
+
+  try {
+    navigate(to, options);
+  } catch (error) {
+    failStorefrontRouteTransition(error instanceof Error ? error.message : "页面切换失败");
+    throw error;
+  }
 
   if (!fallbackTarget || beforePath === fallbackTarget.routePath) return;
 

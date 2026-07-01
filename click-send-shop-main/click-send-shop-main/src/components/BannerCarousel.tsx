@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties, type Keyb
 import { ArrowRight } from "lucide-react";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { useMotionConfig } from "@/modules/micro-interactions/hooks/useMotionConfig";
-import { useNavigate } from "react-router-dom";
 import { getBannerContainerClassName } from "@/utils/themeVisuals";
 import { trackEventLazy } from "@/services/trackEventLazy";
 import { getBannerCtaText } from "@/utils/bannerCta";
@@ -17,6 +16,7 @@ import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import RatioImage, { type ClientImageRatio } from "@/components/client/RatioImage";
 import { getBannerCopyToneFromImage, type BannerCopyTone } from "@/utils/bannerTextTone";
 import { hasLoadedImage, markImageLoaded, rememberLoadedImageFromElement } from "@/utils/imageLoadMemory";
+import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
 interface BannerCarouselProps {
   banners: Banner[];
@@ -152,7 +152,7 @@ export default function BannerCarousel({
   const [slideDirection, setSlideDirection] = useState<SlideDirection>("forward");
   const activeImageRef = useRef<HTMLImageElement | null>(null);
   const copyPanelRef = useRef<HTMLDivElement | null>(null);
-  const navigate = useNavigate();
+  const navigate = useStorefrontNavigate();
   const activeImageReady = !activeImage || activeImageLoaded || activeImageFailed;
   const resolvedAutoRotateMs = typeof autoRotateMs === "number" && Number.isFinite(autoRotateMs)
     ? Math.min(20_000, Math.max(3_000, Math.trunc(Number(autoRotateMs))))
@@ -269,7 +269,7 @@ export default function BannerCarousel({
         style={{ aspectRatio: BANNER_ASPECT_CSS, borderRadius: "var(--theme-radius)" }}
         aria-busy="true"
       >
-        <div className="absolute inset-0 skeleton-base skeleton-shimmer" />
+        <div className="sf-image-loading-base sf-image-loading-shimmer absolute inset-0" />
         <div className="sf-next-banner-loading-copy" aria-hidden>
           <span className="sf-next-banner-loading-kicker" />
           <span className="sf-next-banner-loading-title" />
@@ -382,7 +382,7 @@ export default function BannerCarousel({
     >
       <div className="absolute inset-0">
         <div
-          className={`absolute inset-0 skeleton-base skeleton-shimmer transition-opacity duration-300 ${
+          className={`sf-image-loading-base sf-image-loading-shimmer absolute inset-0 transition-opacity duration-300 ${
             activeImageReady ? "opacity-0" : "opacity-100"
           }`}
           aria-hidden

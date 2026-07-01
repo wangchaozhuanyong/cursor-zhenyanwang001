@@ -2,7 +2,7 @@ import { formatDateTime } from "@/utils/formatDateTime";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowRight, CircleHelp, Clock, Gift, Loader2, ShoppingBag, TrendingDown, TrendingUp, Users, Wallet } from "lucide-react";
 import { useGoBack } from "@/hooks/useGoBack";
-import { useNavigate } from "react-router-dom";
+
 import { motion } from "framer-motion";
 import * as rewardService from "@/services/rewardService";
 import { useLoyaltyVisibility } from "@/hooks/useLoyaltyVisibility";
@@ -19,6 +19,7 @@ import { formatRewardTransactionLabel, groupRewardRecordsByMonth } from "@/utils
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import "@/styles/loyalty-routes.css";
+import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
 const PAGE_SIZE = 20;
 const DEFAULT_BALANCE_LABEL = "购物可用返现";
@@ -40,7 +41,7 @@ function money(value: unknown) {
 
 export default function Rewards() {
   const goBack = useGoBack();
-  const navigate = useNavigate();
+  const navigate = useStorefrontNavigate();
   const { config: loyaltyConfig, loading: loyaltyLoading } = useLoyaltyVisibility();
   const [config, setConfig] = useState<RewardConfig | null>(null);
   const [records, setRecords] = useState<RewardTransaction[]>([]);

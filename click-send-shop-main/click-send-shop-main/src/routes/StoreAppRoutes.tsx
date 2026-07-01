@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Navigate, Outlet, Route, Routes, useLocation, useNavigationType, useParams } from "react-router-dom";
-import { RouterLoadingBridge, TopProgressBar } from "@/components/ui/top-progress-bar";
+import { TopProgressBar } from "@/components/ui/top-progress-bar";
 import AppRouteFallback, { DelayedRouteFallback, HomeShellSkeleton, StoreOutletFallback } from "@/components/AppRouteFallback";
 import AppBootReady from "@/components/AppBootReady";
 import RouteSeoGuard from "@/components/RouteSeoGuard";
@@ -9,6 +9,7 @@ import RouteBackTracker from "@/components/RouteBackTracker";
 import AgeGate from "@/components/compliance/AgeGate";
 import LanguageGate from "@/components/LanguageGate";
 import FrontLayout from "@/layouts/FrontLayout";
+import BottomNav from "@/components/BottomNav";
 import FeatureUnavailable from "@/modules/public/pages/error/FeatureUnavailable";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import AuthSessionSync from "@/components/AuthSessionSync";
@@ -61,6 +62,9 @@ import {
   ClientDesignSystem, ClientCouponDetailDesign, ClientShareDetailDesign, ClientStatesDesign,
 } from "@/routes/publicLazyPages";
 import RouteStatePanel from "@/modules/storefront-v2/design/components/RouteStatePanel";
+import StorefrontMotionBoundary from "@/components/storefront-motion/StorefrontMotionBoundary";
+import StorefrontProgressThread from "@/components/storefront-motion/StorefrontProgressThread";
+import StorefrontRouteVeil from "@/components/storefront-motion/StorefrontRouteVeil";
 
 const CARD_EQUAL_MOBILE_FIX_STYLE_ID = "sf-next-card-equal-mobile-fix";
 const GLOBAL_WIDGET_DELAY_MS = 9000;
@@ -84,17 +88,18 @@ const RouteAnalyticsTracker = lazy(() => import("@/components/RouteAnalyticsTrac
 const ChinaBrowserCompatNotice = lazy(() => import("@/components/ChinaBrowserCompatNotice"));
 const PwaUpdateToast = lazy(() => import("@/components/PwaUpdateToast"));
 
-function getStoreProgressRouteKey(location: { pathname: string; search: string }) {
-  if (isStoreTabPath(location.pathname)) return null;
-  return `${location.pathname}${location.search}`;
-}
-
 function shouldDeferNonCriticalWidgets(pathname: string) {
   return !/^\/(cart|checkout|orders|payment|login)(\/|$)/.test(stripPublicLocaleFromPathname(pathname));
 }
 
 function shouldSuppressMarketingPopups(pathname: string) {
   return /^\/(checkout|cart|orders|payment)(\/|$)/.test(stripPublicLocaleFromPathname(pathname));
+}
+
+function StorefrontBottomNavHost() {
+  const location = useLocation();
+  if (!isStoreTabPath(stripPublicLocaleFromPathname(location.pathname))) return null;
+  return <BottomNav />;
 }
 
 function StoreScrollRestoration() {
@@ -641,9 +646,10 @@ function MainStoreRoutes() {
     <ErrorBoundary resetKey={`${location.pathname}${location.search}`}>
       <QueryClientProvider client={queryClient}>
         <ModalLayerProvider>
-          <DownloadConfirmProvider>
+            <DownloadConfirmProvider>
             <TopProgressBar />
-            <RouterLoadingBridge getRouteKey={getStoreProgressRouteKey} />
+            <StorefrontProgressThread />
+            <StorefrontRouteVeil />
             <AuthSessionSync />
             <SiteIdentitySync />
             <ReferralInviteSync />
@@ -659,29 +665,32 @@ function MainStoreRoutes() {
             <AgeGate />
             {ENABLE_LEGACY_CARD_OVERLAP_FIX ? <StoreCardOverlapFix /> : null}
             <AppBootReady />
-            <Suspense
-              fallback={(
-                <DelayedRouteFallback
-                  key={routeFallbackKey}
-                  fallback={<StoreOutletFallback />}
-                  delayMs={routeFallbackDelayMs}
-                />
-              )}
-            >
-              <Routes>
-                {renderFrontLayoutRoutes(capabilities)}
-                {renderStandalonePublicRoutes(capabilities)}
+            <StorefrontMotionBoundary>
+              <Suspense
+                fallback={(
+                  <DelayedRouteFallback
+                    key={routeFallbackKey}
+                    fallback={<StoreOutletFallback />}
+                    delayMs={routeFallbackDelayMs}
+                  />
+                )}
+              >
+                <Routes>
+                  {renderFrontLayoutRoutes(capabilities)}
+                  {renderStandalonePublicRoutes(capabilities)}
 
-                <Route path="/:locale" element={<PublicLocaleRouteScope multilingualEnabled={capabilities.storefrontMultilingualEnabled} />}>
-                  {renderFrontLayoutRoutes(capabilities, true)}
-                  {renderStandalonePublicRoutes(capabilities, true)}
+                  <Route path="/:locale" element={<PublicLocaleRouteScope multilingualEnabled={capabilities.storefrontMultilingualEnabled} />}>
+                    {renderFrontLayoutRoutes(capabilities, true)}
+                    {renderStandalonePublicRoutes(capabilities, true)}
+                    <Route path="*" element={<NotFound />} />
+                  </Route>
+
+                  <Route path="/admin/*" element={<NotFound />} />
                   <Route path="*" element={<NotFound />} />
-                </Route>
-
-                <Route path="/admin/*" element={<NotFound />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Suspense>
+                </Routes>
+              </Suspense>
+            </StorefrontMotionBoundary>
+            <StorefrontBottomNavHost />
             <DeferredGlobalMount delayMs={PRIVACY_TRACKING_DELAY_MS}>
               <Suspense fallback={null}>
                 <SonnerToaster />

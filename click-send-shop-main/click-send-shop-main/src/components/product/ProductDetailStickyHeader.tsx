@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { ArrowLeft, Share2, ShoppingCart } from "lucide-react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { StoreSearchDrawer, StoreSearchLauncher } from "@/components/store/StoreSearchDrawer";
 import { buildStoreSearchCategoryOptions, type StoreSearchTagOption } from "@/components/store/storeSearchOptions";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import * as productService from "@/services/productService";
 import type { ProductTag } from "@/types/product";
+import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
 export type ProductDetailStickyHeaderProps = {
   /** 吸顶实底：主图滚出顶区后为 true；沉浸透明为 false */
@@ -73,7 +74,7 @@ export default function ProductDetailStickyHeader({
   onShare,
   onCart,
 }: ProductDetailStickyHeaderProps) {
-  const navigate = useNavigate();
+  const navigate = useStorefrontNavigate();
   const location = useLocation();
   const { themeConfig } = useThemeRuntime();
   const [searchOpen, setSearchOpen] = useState(false);

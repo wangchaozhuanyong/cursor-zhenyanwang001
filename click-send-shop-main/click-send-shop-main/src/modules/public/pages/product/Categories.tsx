@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { Search, X } from "lucide-react";
 import { useProductStore } from "@/stores/useProductStore";
 import { STORE_COPY } from "@/constants/storeCopy";
@@ -37,6 +37,7 @@ import {
 } from "@/constants/newArrivalNavigation";
 import { storefrontCategoryName } from "@/utils/storefrontCopySanitizer";
 import "@/styles/storefront-next.category.css";
+import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
 const INLINE_SUBCATEGORY_LIMIT = 6;
 
@@ -44,7 +45,7 @@ export default function Categories() {
   const clientStyle = useClientDesignStyle();
   const siteInfo = useSiteInfo();
   const siteCapabilities = useSiteCapabilities();
-  const navigate = useNavigate();
+  const navigate = useStorefrontNavigate();
   const productCardSiteContext = useMemo(
     () => ({
       restrictedComplianceEnabled: siteCapabilities.restrictedProductComplianceEnabled,
@@ -357,7 +358,7 @@ export default function Categories() {
     : activeCategoryName ? buildCanonical("/categories", `cat=${activeCat}`, { keepParams: ["cat"] }) : buildCanonical("/categories");
   const productQueryReady = readyProductQueryKey === productQueryKey;
   const visibleProducts = productQueryReady ? products : [];
-  const showFullSkeleton = Boolean(productListParams) && (!productQueryReady || (loading && visibleProducts.length === 0));
+  const showQuietLoading = Boolean(productListParams) && (!productQueryReady || (loading && visibleProducts.length === 0));
   const showSoftRefreshing =
     productQueryReady
     && listRefreshing
@@ -370,7 +371,7 @@ export default function Categories() {
     totalPages: pagination.totalPages,
   });
   const useCompactProductShell =
-    !showFullSkeleton
+    !showQuietLoading
     && visibleProducts.length > 0
     && visibleProducts.length <= 2
     && !hasMoreProducts;
@@ -565,10 +566,9 @@ export default function Categories() {
               useCompactProductShell && "sf-next-category-product-shell--compact",
             )}
             displayMode="list"
-            skeletonCount={8}
             siteContext={productCardSiteContext}
             itemKeyPrefix={`category:${isNew ? "new" : activeCat}`}
-            showFullSkeleton={showFullSkeleton}
+            showQuietLoading={showQuietLoading}
             showSoftRefreshing={showSoftRefreshing}
             emptyState={
               !error ? (

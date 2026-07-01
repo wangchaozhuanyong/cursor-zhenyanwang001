@@ -28,7 +28,6 @@ import "@/styles/promotions-route.css";
 type PromotionFilter = PromotionType | "";
 const PROMOTIONS_BASE_PATH = "/promotions";
 const PROMOTION_LIST_TTL_MS = 5 * 60 * 1000;
-const PROMOTION_LOADING_CARD_COUNT = 3;
 
 const promotionListCache = new Map<string, { list: StorefrontPromotion[]; cachedAt: number }>();
 
@@ -415,33 +414,14 @@ function PromotionStatePanel({
   );
 }
 
-function PromotionSkeleton({ className = "" }: { className?: string }) {
-  return (
-    <div className={cn("sf-next-promo-card sf-next-promo-card--skeleton", className)}>
-      <div className="sf-next-promo-card__media skeleton-base skeleton-shimmer" />
-      <div className="mt-3">
-        <div className="flex items-center justify-between gap-3">
-          <div className="skeleton-base skeleton-shimmer h-6 w-20 rounded-full" />
-          <div className="skeleton-base skeleton-shimmer h-6 w-14 rounded-full" />
-        </div>
-        <div className="mt-3 space-y-2">
-          <div className="skeleton-base skeleton-shimmer h-4 w-24 rounded-full" />
-          <div className="skeleton-base skeleton-shimmer h-6 w-4/5 rounded" />
-          <div className="skeleton-base skeleton-shimmer h-4 w-24 rounded-full" />
-          <div className="skeleton-base skeleton-shimmer h-4 w-full rounded" />
-          <div className="skeleton-base skeleton-shimmer h-4 w-3/5 rounded" />
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function PromotionsFolio({
   list,
   selectedType,
+  loading = false,
 }: {
   list: StorefrontPromotion[];
   selectedType: PromotionFilter;
+  loading?: boolean;
 }) {
   const { localizedPath, promotionTypeLabel, t } = usePublicLocale();
   const featured = list[0];
@@ -457,7 +437,7 @@ function PromotionsFolio({
   const actionLabel = selectedType ? fallbackCopy.actionLabel : featured ? promotionActionLabel(featured.type) : fallbackCopy.actionLabel;
 
   return (
-    <section className="sf-next-promo-folio" aria-label="活动概览">
+    <section className="sf-next-promo-folio" aria-label="活动概览" aria-busy={loading ? true : undefined}>
       <div className="sf-next-promo-folio__copy">
         <span className="sf-next-promo-folio__eyebrow">
           <Gift size={15} aria-hidden />
@@ -489,28 +469,15 @@ function PromotionsFolio({
         {actionLabel}
         <ArrowRight size={16} aria-hidden />
       </Link>
+      {loading ? <span className="sf-next-promo-folio__loading-line" aria-hidden /> : null}
     </section>
   );
 }
 
-function PromotionsFolioSkeleton() {
+function PromotionsLoadingLine() {
   return (
-    <section className="sf-next-promo-folio sf-next-promo-folio--loading" aria-busy="true" aria-label="活动概览加载中">
-      <div className="sf-next-promo-folio__copy">
-        <span className="sf-next-promo-folio__eyebrow skeleton-base skeleton-shimmer" />
-        <span className="sf-next-promo-folio__title-skeleton skeleton-base skeleton-shimmer" />
-        <span className="sf-next-promo-folio__text-skeleton skeleton-base skeleton-shimmer" />
-      </div>
-      <div className="sf-next-promo-folio__stats" aria-hidden="true">
-        {Array.from({ length: 3 }).map((_, index) => (
-          <span key={index}>
-            <i className="skeleton-base skeleton-shimmer" />
-            <strong className="skeleton-base skeleton-shimmer" />
-            <small className="skeleton-base skeleton-shimmer" />
-          </span>
-        ))}
-      </div>
-      <span className="sf-next-promo-folio__action skeleton-base skeleton-shimmer" aria-hidden="true" />
+    <section className="sf-next-promo-list sf-next-promo-list--loading" aria-busy="true" aria-label="活动加载中">
+      <span className="sf-next-promo-list__loading-line" aria-hidden="true" />
     </section>
   );
 }
@@ -579,7 +546,7 @@ export default function Promotions() {
     };
   }, []);
 
-  const showFullSkeleton = loading && list.length === 0;
+  const showInitialLoading = loading && list.length === 0;
   const folioList = selectedType ? list : overviewList.length ? overviewList : list;
 
   return (
@@ -598,11 +565,11 @@ export default function Promotions() {
       />
 
       <main className="sf-next-container sf-next-promotions-main">
-        {showFullSkeleton && !folioList.length ? (
-          <PromotionsFolioSkeleton />
-        ) : (
-          <PromotionsFolio list={folioList} selectedType={selectedType} />
-        )}
+        <PromotionsFolio
+          list={folioList}
+          selectedType={selectedType}
+          loading={showInitialLoading && !folioList.length}
+        />
 
         <nav
           className="sf-next-promo-filters no-scrollbar"
@@ -629,12 +596,8 @@ export default function Promotions() {
             );
           })}
         </nav>
-        {showFullSkeleton ? (
-          <section className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3" aria-busy="true" aria-label={t("common.loadingPromotions")}>
-            {Array.from({ length: PROMOTION_LOADING_CARD_COUNT }).map((_, index) => (
-              <PromotionSkeleton key={index} className={index > 0 ? "hidden sm:block" : ""} />
-            ))}
-          </section>
+        {showInitialLoading ? (
+          <PromotionsLoadingLine />
         ) : error && list.length === 0 ? (
           <PromotionStatePanel kind="error" onRetry={() => void load()} />
         ) : list.length ? (

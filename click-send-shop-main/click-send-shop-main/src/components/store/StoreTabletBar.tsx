@@ -1,6 +1,6 @@
 import { BadgePercent, Home, LayoutGrid, Search, ShoppingCart, User } from "lucide-react";
 import type { MouseEvent } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import DeferredStoreCartBadge from "@/components/store/DeferredStoreCartBadge";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { useSiteInfo, useSiteInfoLoaded } from "@/hooks/useSiteInfo";
@@ -17,6 +17,7 @@ import { getRememberedStoreTabPath } from "@/utils/storeScrollRestoration";
 import StoreBrandLogo from "@/components/store/StoreBrandLogo";
 import StoreLanguageSwitcher from "@/components/store/StoreLanguageSwitcher";
 import { stripPublicLocaleFromPathname, usePublicLocale } from "@/i18n/publicLocale";
+import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
 type TabletNavItem = {
   path: string;
@@ -35,7 +36,7 @@ function isPlainLeftClick(event: MouseEvent<HTMLElement>) {
 }
 
 export default function StoreTabletBar({ className }: { className?: string }) {
-  const navigate = useNavigate();
+  const navigate = useStorefrontNavigate();
   const location = useLocation();
   const siteInfo = useSiteInfo();
   const siteInfoLoaded = useSiteInfoLoaded();

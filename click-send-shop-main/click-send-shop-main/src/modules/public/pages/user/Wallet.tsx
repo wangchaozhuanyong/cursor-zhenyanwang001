@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { ArrowRight, Clock3, ReceiptText, Users } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { useGoBack } from "@/hooks/useGoBack";
@@ -10,6 +10,7 @@ import { usePublicLocale } from "@/i18n/publicLocale";
 import * as rewardService from "@/services/rewardService";
 import { isLoyaltyFeatureEnabled } from "@/utils/loyaltyFeatureVisibility";
 import "@/styles/loyalty-routes.css";
+import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
 function money(value: unknown) {
   const n = Number(value);
@@ -18,7 +19,7 @@ function money(value: unknown) {
 
 export default function Wallet() {
   const goBack = useGoBack("/profile");
-  const navigate = useNavigate();
+  const navigate = useStorefrontNavigate();
   const { localizedPath } = usePublicLocale();
   const capabilities = useSiteCapabilities();
   const { config: loyaltyConfig } = useLoyaltyVisibility();

@@ -1,7 +1,7 @@
-import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { usePublicLocale } from "@/i18n/publicLocale";
+import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
 type LoginAgreementFooterProps = {
   mode: "login" | "register";
@@ -19,7 +19,7 @@ export function LoginAgreementFooter({
   hiddenOnKeyboard = false,
   className,
 }: LoginAgreementFooterProps) {
-  const navigate = useNavigate();
+  const navigate = useStorefrontNavigate();
   const { localizedPath, t } = usePublicLocale();
 
   return (

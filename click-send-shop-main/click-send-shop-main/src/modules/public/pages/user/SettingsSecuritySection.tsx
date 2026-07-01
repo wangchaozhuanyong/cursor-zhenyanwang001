@@ -1,11 +1,12 @@
 import { useCallback, useId, useState, type FormEvent, type ReactNode } from "react";
 import { ChevronRight, Lock, Trash2 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+
 import { toast } from "sonner";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import * as userService from "@/services/userService";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
 const CARD =
   "rounded-[1.25rem] border border-[color-mix(in_srgb,var(--theme-border)_72%,transparent)] bg-[var(--theme-surface)] p-4 shadow-[var(--theme-shadow)]";
@@ -105,7 +106,7 @@ function SecurityActionRow({
 
 export default function SettingsSecuritySection() {
   const sectionId = useId();
-  const navigate = useNavigate();
+  const navigate = useStorefrontNavigate();
 
   const [activePanel, setActivePanel] = useState<SecurityPanel | null>(null);
   const [panelBusy, setPanelBusy] = useState(false);

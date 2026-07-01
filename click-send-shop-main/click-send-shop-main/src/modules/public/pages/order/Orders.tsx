@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { RefreshCw, SearchX, ShoppingBag } from "lucide-react";
-import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
+import StorefrontQuietLoading from "@/components/storefront-motion/StorefrontQuietLoading";
 import { OrderPaymentCountdown } from "@/components/order/OrderPaymentCountdown";
 import { OrderAutoConfirmCountdown } from "@/components/order/OrderAutoConfirmCountdown";
 import type { Order, OrderSummary, OrderTab } from "@/types/order";
@@ -30,6 +31,7 @@ import {
   labelPendingPaymentActionLocalized,
 } from "./orderPageLocale";
 import "@/styles/orders-route.css";
+import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
 const ORDER_TAB_KEYS: OrderTab[] = ["all", "pending_payment", "paid", "shipped", "pending_review", "completed", "after_sale", "cancelled"];
 
@@ -118,38 +120,12 @@ function money(value: unknown) {
   return Number.isFinite(amount) ? amount.toFixed(2) : "0.00";
 }
 
-function OrdersLoadingSkeleton() {
-  return (
-    <div className="sf-next-orders-loading-stack" aria-busy="true" aria-label="订单加载中">
-      {Array.from({ length: 2 }).map((_, index) => (
-        <article key={index} className="sf-next-order-card sf-next-order-card--skeleton">
-          <div className="sf-next-order-card__head">
-            <div className="min-w-0">
-              <div className="sf-next-skeleton sf-next-order-skeleton-line is-order" />
-              <div className="sf-next-skeleton sf-next-order-skeleton-line is-date" />
-            </div>
-            <div className="sf-next-skeleton sf-next-order-skeleton-pill" />
-          </div>
-          <div className="sf-next-order-product-row">
-            <div className="sf-next-skeleton sf-next-order-product-media" />
-            <div className="sf-next-order-product-content">
-              <div className="sf-next-skeleton sf-next-order-skeleton-line is-title" />
-              <div className="sf-next-skeleton sf-next-order-skeleton-line is-variant" />
-              <div className="sf-next-skeleton sf-next-order-skeleton-line is-price" />
-            </div>
-          </div>
-          <div className="sf-next-order-skeleton-actions">
-            <div className="sf-next-skeleton sf-next-order-skeleton-button" />
-            <div className="sf-next-skeleton sf-next-order-skeleton-button is-primary" />
-          </div>
-        </article>
-      ))}
-    </div>
-  );
+function OrdersQuietLoading() {
+  return <StorefrontQuietLoading label="订单加载中" className="sf-motion-inline-loading--account" />;
 }
 
 export default function Orders() {
-  const navigate = useNavigate();
+  const navigate = useStorefrontNavigate();
   const { localizedPath, locale } = usePublicLocale();
   const copy = getOrderCopy(locale);
   const location = useLocation();
@@ -342,7 +318,7 @@ export default function Orders() {
           </div>
         </div>
 
-        {loading ? <OrdersLoadingSkeleton /> : null}
+        {loading ? <OrdersQuietLoading /> : null}
         {error ? (
           <section className="sf-next-state-panel sf-next-orders-state" role="alert">
             <span className="sf-next-state-panel__icon" aria-hidden>

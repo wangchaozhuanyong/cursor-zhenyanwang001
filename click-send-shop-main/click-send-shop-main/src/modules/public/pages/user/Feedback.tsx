@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import {
   AlertCircle,
   Bug,
@@ -28,6 +28,7 @@ import { isLoggedIn } from "@/utils/token";
 import { usePublicLocale } from "@/i18n/publicLocale";
 import { useHorizontalActiveScroll } from "@/hooks/useHorizontalActiveScroll";
 import "@/styles/secondary-routes.css";
+import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
 type FeedbackForm = {
   type: FeedbackType;
@@ -197,7 +198,7 @@ function FeedbackRecordList({ items }: { items: UserFeedback[] }) {
 }
 
 export default function Feedback() {
-  const navigate = useNavigate();
+  const navigate = useStorefrontNavigate();
   const location = useLocation();
   const { localizedPath } = usePublicLocale();
   const queryClient = useQueryClient();

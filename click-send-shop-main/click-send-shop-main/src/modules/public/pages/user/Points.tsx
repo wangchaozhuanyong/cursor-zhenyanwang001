@@ -8,7 +8,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { useGoBack } from "@/hooks/useGoBack";
-import { useNavigate } from "react-router-dom";
+
 import { useUserStore } from "@/stores/useUserStore";
 import { usePointsStore } from "@/stores/usePointsStore";
 import { fetchPointsConfig, signIn } from "@/services/pointsService";
@@ -27,6 +27,7 @@ import { formatPointsRecordLabel } from "@/utils/pointsDisplayLabels";
 import { cn } from "@/lib/utils";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import "@/styles/loyalty-routes.css";
+import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
 const POINTS_ERROR_LABELS: Record<string, string> = {
   "Already signed in today": "今天已经签到过了",
@@ -311,7 +312,7 @@ function PointsRecordRow({
 
 export default function Points() {
   const goBack = useGoBack();
-  const navigate = useNavigate();
+  const navigate = useStorefrontNavigate();
   const { pointsBalance, loadProfile } = useUserStore();
   const { balance, records, loading, loadingMore, loadMoreError, error, hasMore, loadPointsData, loadMore } =
     usePointsStore();

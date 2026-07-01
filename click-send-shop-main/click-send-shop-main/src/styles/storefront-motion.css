@@ -1,0 +1,176 @@
+html[data-app-scope="store"] .sf-motion-progress-thread {
+  pointer-events: none;
+  position: fixed;
+  inset: max(env(safe-area-inset-top), 0px) 0 auto;
+  z-index: 121;
+  height: 1px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--theme-border) 55%, transparent);
+  opacity: 1;
+  transition: opacity 220ms ease;
+}
+
+html[data-app-scope="store"] .sf-motion-progress-thread__bar {
+  display: block;
+  height: 100%;
+  min-width: 2.5rem;
+  background: var(--theme-primary);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--theme-primary) 38%, transparent);
+  transition: width 220ms cubic-bezier(0.22, 1, 0.36, 1), background-color 160ms ease;
+}
+
+html[data-app-scope="store"] .sf-motion-progress-thread[data-state="settling"] .sf-motion-progress-thread__bar {
+  transition-duration: 170ms;
+}
+
+html[data-app-scope="store"] .sf-motion-progress-thread[data-state="error"] .sf-motion-progress-thread__bar {
+  background: var(--theme-danger);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--theme-danger) 38%, transparent);
+}
+
+html[data-app-scope="store"] .sf-motion-boundary {
+  min-width: 0;
+  transition: opacity 220ms ease, transform 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+html[data-app-scope="store"] .sf-next-store-shell::after {
+  content: none;
+  display: none;
+}
+
+html[data-app-scope="store"] .sf-motion-boundary--retained {
+  pointer-events: none;
+  user-select: none;
+  opacity: 0.96;
+}
+
+html[data-app-scope="store"] .sf-motion-boundary--protected {
+  pointer-events: none;
+  user-select: none;
+  opacity: 0;
+}
+
+html[data-app-scope="store"] .sf-motion-boundary--settling {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+html[data-app-scope="store"] .sf-motion-route-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 119;
+  display: grid;
+  place-items: center;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-bg) 96%, transparent), var(--theme-bg)),
+    var(--theme-bg);
+}
+
+html[data-app-scope="store"] .sf-motion-route-veil__line {
+  width: min(42vw, 12rem);
+  height: 1px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--theme-border) 62%, transparent);
+}
+
+html[data-app-scope="store"] .sf-motion-route-veil__line::after {
+  content: "";
+  display: block;
+  width: 42%;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--theme-primary);
+  transform: translateX(138%);
+  transition: transform 900ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+html[data-app-scope="store"] .sf-motion-fallback-canvas {
+  display: grid;
+  min-height: 100dvh;
+  place-items: center;
+  padding: max(env(safe-area-inset-top), 0px) var(--store-page-x, 1rem) max(env(safe-area-inset-bottom), 0px);
+  background: var(--theme-bg);
+  color: var(--theme-text);
+}
+
+html[data-app-scope="store"] .sf-motion-fallback-canvas__line {
+  display: block;
+  width: min(38vw, 10rem);
+  height: 1px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--theme-primary) 74%, var(--theme-border)),
+    transparent
+  );
+}
+
+html[data-app-scope="store"] .sf-motion-inline-loading {
+  display: grid;
+  min-height: 8rem;
+  min-width: 0;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--theme-border) 58%, transparent);
+  border-radius: 0.95rem;
+  background: color-mix(in srgb, var(--theme-surface) 82%, transparent);
+}
+
+html[data-app-scope="store"] .sf-motion-inline-loading__line {
+  display: block;
+  width: min(34vw, 8.5rem);
+  height: 1px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--theme-border) 64%, transparent);
+}
+
+html[data-app-scope="store"] .sf-motion-inline-loading__line::after {
+  content: "";
+  display: block;
+  width: 42%;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--theme-primary);
+  transform: translateX(138%);
+  transition: transform 900ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+html[data-app-scope="store"] .sf-motion-inline-loading--product-grid {
+  min-height: 14rem;
+}
+
+html[data-app-scope="store"] .sf-motion-inline-loading--product-list {
+  min-height: 12rem;
+}
+
+html[data-app-scope="store"] .sf-motion-inline-loading--shelf {
+  min-height: 10rem;
+}
+
+html[data-app-scope="store"] .sf-motion-inline-loading--account {
+  min-height: 9rem;
+}
+
+html[data-app-scope="store"] .sf-motion-inline-loading--content {
+  min-height: 12rem;
+}
+
+html[data-app-scope="store"] .sf-motion-inline-loading--detail {
+  min-height: 16rem;
+}
+
+html[data-app-scope="store"] .sf-next-bottom-nav-item[data-pending="true"] .sf-next-bottom-nav-icon {
+  background: color-mix(in srgb, var(--theme-primary) 10%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--theme-primary) 24%, transparent);
+}
+
+html[data-app-scope="store"] .sf-next-bottom-nav-item[data-pending="true"] .sf-next-bottom-nav-label,
+html[data-app-scope="store"] .sf-next-bottom-nav-item[data-pending="true"] svg {
+  color: color-mix(in srgb, var(--theme-primary) 82%, var(--theme-text-muted));
+}
+
+html[data-app-scope="store"] .sf-next-bottom-nav-item[aria-disabled="true"] {
+  cursor: default;
+}

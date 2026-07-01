@@ -8,6 +8,7 @@ import {
   isSafeInternalPath,
   isSamePath,
 } from "@/lib/navigationHistory";
+import { isStorefrontMotionNavigationLocked } from "@/components/storefront-motion/useStorefrontMotionState";
 import { readRouteBack } from "@/utils/routeBackState";
 
 type BackLocationState = {
@@ -35,6 +36,8 @@ export function useStableBack({ fallbackPath, targetPath }: StableBackOptions) {
   const location = useLocation();
 
   return useCallback(() => {
+    if (isStorefrontMotionNavigationLocked()) return;
+
     const currentPath = buildLocationPath(location);
     const state = location.state as BackLocationState;
 

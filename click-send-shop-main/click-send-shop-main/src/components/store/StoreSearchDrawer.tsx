@@ -1,10 +1,12 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { ArrowLeft, ChevronRight, Clock3, Search, Tags, X } from "lucide-react";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import type { StoreSearchCategoryOption, StoreSearchTagOption } from "@/components/store/storeSearchOptions";
 import { STORE_COPY } from "@/constants/storeCopy";
 import { cn } from "@/lib/utils";
+import { useOverlayDismiss } from "@/modules/micro-interactions/hooks/useOverlayDismiss";
+import { useModalLayer } from "@/modules/micro-interactions/modal/ModalLayerProvider";
 import { fetchHotSearchTerms, fetchSearchSuggestions } from "@/services/searchService";
 import type { HotSearchTerm, SearchSuggestion } from "@/types/search";
 
@@ -68,21 +70,48 @@ export function StoreSearchDrawer({
   const [history, setHistory] = useState<string[]>([]);
   const [hotTerms, setHotTerms] = useState<HotSearchTerm[]>([]);
   const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
+  const drawerRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const returnFocusRef = useRef<HTMLElement | null>(null);
   const suggestTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const { overlayZ, isTop } = useModalLayer(open);
+
+  useOverlayDismiss({
+    open,
+    onClose,
+    isTop,
+    lockBody: true,
+    closeOnEscape: true,
+    returnFocusRef,
+    contentRef: drawerRef,
+    trapFocus: true,
+  });
+
+  useLayoutEffect(() => {
+    if (!open) return;
+    returnFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const root = document.getElementById("root");
+    if (!root) return;
+    const hadInert = root.hasAttribute("inert");
+    const previousAriaHidden = root.getAttribute("aria-hidden");
+    root.setAttribute("inert", "");
+    root.setAttribute("aria-hidden", "true");
+
+    return () => {
+      if (!hadInert) root.removeAttribute("inert");
+      if (previousAriaHidden === null) {
+        root.removeAttribute("aria-hidden");
+      } else {
+        root.setAttribute("aria-hidden", previousAriaHidden);
+      }
+    };
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
     setDraft(value);
     setHistory(readSearchHistory());
     const timer = window.setTimeout(() => inputRef.current?.focus(), 100);
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", handleKeyDown);
 
     fetchHotSearchTerms(MAX_HOT_TERMS)
       .then(setHotTerms)
@@ -90,10 +119,8 @@ export function StoreSearchDrawer({
 
     return () => {
       window.clearTimeout(timer);
-      document.body.style.overflow = previousOverflow;
-      document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [onClose, open, value]);
+  }, [open, value]);
 
   useEffect(() => {
     if (!open) return;
@@ -140,7 +167,15 @@ export function StoreSearchDrawer({
   };
 
   const drawer = (
-    <div className="sf-next-store-search-drawer" role="dialog" aria-modal="true" aria-label="搜索商品、服务或品牌">
+    <div
+      ref={drawerRef}
+      className="sf-next-store-search-drawer"
+      role="dialog"
+      aria-modal="true"
+      aria-label="搜索商品、服务或品牌"
+      tabIndex={-1}
+      style={{ zIndex: overlayZ }}
+    >
       <button type="button" className="sf-next-store-search-drawer__scrim" onClick={onClose} aria-label="关闭搜索" />
       <aside className="sf-next-store-search-drawer__sheet">
         <form

@@ -1,10 +1,11 @@
 import { Headphones, Home, Settings } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
+import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
 export default function FeatureUnavailable() {
-  const navigate = useNavigate();
+  const navigate = useStorefrontNavigate();
   const capabilities = useSiteCapabilities();
   const supportPath = capabilities.customerServiceDownloadEnabled ? "/support-download?tab=support" : "/help";
 

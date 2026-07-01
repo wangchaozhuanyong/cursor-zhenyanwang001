@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { AlertTriangle, ClipboardList, Copy, ExternalLink, MapPin, PackageCheck, RefreshCw, Truck } from "lucide-react";
 import { toast } from "sonner";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
+import StorefrontQuietLoading from "@/components/storefront-motion/StorefrontQuietLoading";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import * as orderService from "@/services/orderService";
 import type { Order } from "@/types/order";
@@ -160,11 +161,7 @@ export default function OrderLogistics() {
       mainClassName="sf-next-logistics-main"
     >
       {loading ? (
-        <section className="sf-next-logistics-card sf-next-logistics-loading" aria-busy="true" aria-label={copy.loading}>
-          <div className="sf-next-skeleton sf-next-logistics-loading__hero" />
-          <div className="sf-next-skeleton sf-next-logistics-loading__line" />
-          <div className="sf-next-skeleton sf-next-logistics-loading__line is-short" />
-        </section>
+        <StorefrontQuietLoading label={copy.loading} className="sf-motion-inline-loading--detail" />
       ) : null}
 
       {!loading && error ? (

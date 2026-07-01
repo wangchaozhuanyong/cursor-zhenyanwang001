@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+
 import { CheckCircle2, MessageSquareText, PackageCheck, RefreshCw, Star } from "lucide-react";
 import * as reviewService from "@/services/reviewService";
 import type { PendingReviewItem } from "@/types/review";
@@ -10,9 +10,10 @@ import { THEME_PRODUCT_MEDIA_ASPECT_STYLE } from "@/constants/productMediaAspect
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 import { usePublicLocale } from "@/i18n/publicLocale";
 import "@/styles/pending-reviews.css";
+import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
 export default function PendingReviews() {
-  const navigate = useNavigate();
+  const navigate = useStorefrontNavigate();
   const { localizedPath } = usePublicLocale();
   const [items, setItems] = useState<PendingReviewItem[]>([]);
   const [loading, setLoading] = useState(true);

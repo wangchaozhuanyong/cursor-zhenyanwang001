@@ -1,5 +1,5 @@
 import { useState, useEffect, forwardRef, useCallback, useRef } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { BadgePercent, Crown, Gift, Loader2, RefreshCw, ShoppingBag, Sparkles, Ticket, Truck } from "lucide-react";
 import { useGoBack } from "@/hooks/useGoBack";
 import { motion } from "framer-motion";
@@ -27,6 +27,7 @@ import { copyToClipboard } from "@/utils/clipboard";
 import { toast } from "sonner";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import "@/styles/coupons-route.css";
+import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
 type DisplayStatus = "available" | "claimed" | "pending" | "used" | "expired" | "invalidated";
 
@@ -222,7 +223,7 @@ function getValueVaultValue(coupon: DisplayCoupon) {
 }
 
 export default function Coupons() {
-  const navigate = useNavigate();
+  const navigate = useStorefrontNavigate();
   const { localizedPath, t } = usePublicLocale();
   const location = useLocation() as { state?: { pageView?: PageView } | null };
   const goBack = useGoBack(localizedPath("/profile"));

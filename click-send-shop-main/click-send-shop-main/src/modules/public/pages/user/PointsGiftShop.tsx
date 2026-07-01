@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CheckCircle2, Gift, Loader2, PackageCheck, SlidersHorizontal, Sparkles } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+
 import { useUserStore } from "@/stores/useUserStore";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { useLoyaltyVisibility } from "@/hooks/useLoyaltyVisibility";
@@ -18,6 +18,7 @@ import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import RatioImage from "@/components/client/RatioImage";
 import { THEME_PRODUCT_MEDIA_ASPECT_STYLE, THEME_PRODUCT_MEDIA_RATIO } from "@/constants/productMediaAspect";
 import "@/styles/loyalty-routes.css";
+import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
 function GiftCard({
   gift,
@@ -83,7 +84,7 @@ function GiftCard({
 }
 
 export default function PointsGiftShop() {
-  const navigate = useNavigate();
+  const navigate = useStorefrontNavigate();
   const capabilities = useSiteCapabilities();
   const { config: loyaltyConfig, loading: loyaltyLoading } = useLoyaltyVisibility();
   const { pointsBalance, loadProfile, loadAddresses, addresses, getDefaultAddress, addressLoading } = useUserStore();

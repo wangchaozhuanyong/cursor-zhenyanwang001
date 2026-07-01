@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+
 import { useCartStore } from "@/stores/useCartStore";
 import { useNotificationStore } from "@/stores/useNotificationStore";
 import * as rewardWalletService from "@/services/rewardService";
@@ -20,9 +20,10 @@ import { useCheckoutAbandonment } from "./useCheckoutAbandonment";
 import { useCheckoutSstPreview } from "./useCheckoutSstPreview";
 import { hasUsableOnlinePaymentChannel } from "@/utils/checkoutPaymentMethod";
 import { usePublicLocale } from "@/i18n/publicLocale";
+import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
 export function useCheckoutPage() {
-  const navigate = useNavigate();
+  const navigate = useStorefrontNavigate();
   const { localizedPath, t } = usePublicLocale();
   const unreadCount = useNotificationStore((s) => s.unreadCount);
   const fetchUnreadCount = useNotificationStore((s) => s.fetchUnreadCount);

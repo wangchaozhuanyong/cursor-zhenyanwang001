@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import SilkRefreshOverlay from "@/components/motion/SilkRefreshOverlay";
+import StorefrontQuietLoading from "@/components/storefront-motion/StorefrontQuietLoading";
 import { cn } from "@/lib/utils";
 import type { Product } from "@/types/product";
 import ProductCardV2 from "@/modules/storefront-v2/product/ProductCardV2";
-import ProductCardV2Skeleton from "@/modules/storefront-v2/product/ProductCardV2Skeleton";
 import type { ProductCardSiteContext } from "@/components/ProductCard";
 
 const INITIAL_PRODUCT_RENDER_LIMIT = 24;
@@ -20,8 +20,7 @@ type SilkProductGridProps = {
   className: string;
   shellClassName?: string;
   displayMode?: "theme" | "list";
-  skeletonCount?: number;
-  showFullSkeleton?: boolean;
+  showQuietLoading?: boolean;
   showSoftRefreshing?: boolean;
   emptyState?: ReactNode;
   itemKeyPrefix?: string;
@@ -34,8 +33,7 @@ export default function SilkProductGrid({
   className,
   shellClassName,
   displayMode = "theme",
-  skeletonCount = 8,
-  showFullSkeleton = false,
+  showQuietLoading = false,
   showSoftRefreshing = false,
   emptyState,
   itemKeyPrefix = "product",
@@ -82,21 +80,27 @@ export default function SilkProductGrid({
   return (
     <div className={cn("relative min-h-[12rem]", shellClassName)}>
       <SilkRefreshOverlay show={showDelayedRefreshNotice} label="正在刷新商品" />
-      <div className={cn(className, showDelayedRefreshNotice && "opacity-95")}>
-        {showFullSkeleton
-          ? Array.from({ length: skeletonCount }).map((_, i) => (
-              <ProductCardV2Skeleton key={`silk-skeleton-${i}`} variant={isListView ? "list" : "grid"} />
-            ))
-          : visibleProducts.map((product, index) => (
+      {showQuietLoading ? (
+        <StorefrontQuietLoading
+          label="商品加载中"
+          className={cn(
+            "sf-motion-inline-loading--product-grid",
+            isListView && "sf-motion-inline-loading--product-list",
+          )}
+        />
+      ) : (
+        <div className={cn(className, showDelayedRefreshNotice && "opacity-95")}>
+          {visibleProducts.map((product, index) => (
               <ProductCardV2
                 key={`${itemKeyPrefix}:${index}:${product.id}`}
                 product={product}
                 index={index}
                 variant={isListView ? "list" : "grid"}
               />
-            ))}
-        {!showFullSkeleton && products.length === 0 ? emptyState : null}
-      </div>
+          ))}
+          {products.length === 0 ? emptyState : null}
+        </div>
+      )}
     </div>
   );
 }

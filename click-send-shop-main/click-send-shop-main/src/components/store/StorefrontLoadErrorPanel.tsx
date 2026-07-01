@@ -1,9 +1,9 @@
 import { RefreshCw, Headphones, Grid3X3 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import { storefrontDisplayErrorMessage, storefrontErrorHint } from "@/utils/storefrontError";
 import { THEME_ALERT_ERROR_SOFT } from "@/utils/themeVisuals";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { usePublicLocale } from "@/i18n/publicLocale";
+import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
 type Props = {
   message: string;
@@ -20,7 +20,7 @@ export default function StorefrontLoadErrorPanel({
   showContactSupport = true,
   compact = false,
 }: Props) {
-  const navigate = useNavigate();
+  const navigate = useStorefrontNavigate();
   const { localizedPath, t } = usePublicLocale();
   const hint = storefrontErrorHint(message);
   const displayMessage = storefrontDisplayErrorMessage(message);

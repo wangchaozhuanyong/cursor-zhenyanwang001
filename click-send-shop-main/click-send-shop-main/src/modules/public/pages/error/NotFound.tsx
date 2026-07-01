@@ -1,13 +1,14 @@
-import { useNavigate } from "react-router-dom";
+
 import { useEffect } from "react";
 import { ArrowLeft, Home, RotateCw, SearchX } from "lucide-react";
 import { motion } from "framer-motion";
 import { trackEvent } from "@/services/analyticsService";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { useStableBack } from "@/hooks/useStableBack";
+import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
 export default function NotFound() {
-  const navigate = useNavigate();
+  const navigate = useStorefrontNavigate();
   const stableBack = useStableBack({ fallbackPath: "/" });
 
   useEffect(() => {

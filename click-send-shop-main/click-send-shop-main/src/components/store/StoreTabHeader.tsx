@@ -1,6 +1,5 @@
 import { Bell } from "lucide-react";
 import { lazy, Suspense, useEffect, useMemo, useState, type ReactNode } from "react";
-import { useNavigate } from "react-router-dom";
 import StoreSearchField from "@/components/store/StoreSearchField";
 import { StoreSearchDrawer, StoreSearchLauncher } from "@/components/store/StoreSearchDrawer";
 import { buildStoreSearchCategoryOptions, type StoreSearchTagOption } from "@/components/store/storeSearchOptions";
@@ -20,6 +19,7 @@ import { appendThemePreviewParams } from "@/utils/themePreviewParams";
 import { navigateWithStoreTransition } from "@/utils/storeNavigationTransition";
 import { storefrontCategoryName } from "@/utils/storefrontCopySanitizer";
 import type { ProductTag } from "@/types/product";
+import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
 const StoreNotificationAction = lazy(() => import("@/components/store/StoreNotificationAction"));
 
@@ -54,7 +54,7 @@ export default function StoreTabHeader({
   position = "sticky",
   className,
 }: StoreTabHeaderProps) {
-  const navigate = useNavigate();
+  const navigate = useStorefrontNavigate();
   const siteInfo = useSiteInfo();
   const siteInfoLoaded = useSiteInfoLoaded();
   const { themeConfig } = useThemeRuntime();

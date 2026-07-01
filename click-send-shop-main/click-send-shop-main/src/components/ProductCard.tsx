@@ -1,5 +1,5 @@
 import { memo, useEffect, useRef, type ReactNode } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import type { MouseEvent } from "react";
 import type { Product } from "@/types/product";
 import { AnimatedSection } from "@/modules/micro-interactions/components/AnimatedSection";
@@ -21,6 +21,7 @@ import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { THEME_PRODUCT_MEDIA_ASPECT_STYLE } from "@/constants/productMediaAspect";
 import type { ThemeConfig } from "@/types/theme";
 import { NEW_ARRIVAL_CATEGORY_PATH } from "@/constants/newArrivalNavigation";
+import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
 export type ProductCardSiteContext = {
   restrictedComplianceEnabled: boolean;
@@ -172,7 +173,7 @@ function ProductCardInner({
   animate = true,
   lightMedia = false,
 }: Props & { siteContext: ProductCardSiteContext; themeConfig: ThemeConfig }) {
-  const navigate = useNavigate();
+  const navigate = useStorefrontNavigate();
   const location = useLocation();
   const impressionRef = useRef<HTMLDivElement | null>(null);
   const impressionSentRef = useRef(false);

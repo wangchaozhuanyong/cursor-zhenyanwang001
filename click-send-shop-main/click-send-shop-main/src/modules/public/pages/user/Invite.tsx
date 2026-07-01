@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { Copy, Download, Gift, QrCode, Share2, Users } from "lucide-react";
 import { formatDateTime } from "@/utils/formatDateTime";
 import { useGoBack } from "@/hooks/useGoBack";
-import { useNavigate } from "react-router-dom";
+
 import { useUserStore } from "@/stores/useUserStore";
 import { toast } from "sonner";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
@@ -17,6 +17,7 @@ import { useThemeQrColors } from "@/hooks/useThemeQrColors";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 import SharePassCard from "@/modules/storefront-v2/design/components/SharePassCard";
 import logoIconUrl from "@/assets/logo-icon.png";
+import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
 const POSTER_WIDTH = 1080;
 const POSTER_HEIGHT = 1440;
@@ -370,7 +371,7 @@ async function createPosterCanvas({
 }
 
 export default function Invite() {
-  const navigate = useNavigate();
+  const navigate = useStorefrontNavigate();
   const goBack = useGoBack();
   const { inviteCode, parentInviteCode, loadProfile } = useUserStore();
   const qrColors = useThemeQrColors();

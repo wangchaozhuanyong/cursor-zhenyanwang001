@@ -1,24 +1,23 @@
 import { useState, useEffect, useRef } from "react";
 import { ArrowLeft, BadgePercent, ChevronRight, Headphones, Heart, PackageCheck, ShieldCheck } from "lucide-react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useProductStore } from "@/stores/useProductStore";
 import { useCartStore } from "@/stores/useCartStore";
 import { useHistoryStore } from "@/stores/useHistoryStore";
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
 import ProductCardV2 from "@/modules/storefront-v2/product/ProductCardV2";
 import StorePriceAmount from "@/components/store/StorePriceAmount";
+import StorefrontQuietLoading from "@/components/storefront-motion/StorefrontQuietLoading";
 import ProductReviews from "@/components/ProductReviews";
 import { useProductReviews } from "@/hooks/useProductReviews";
 import ProductImageGallery from "@/components/ProductImageGallery";
 import ProductDetailStickyHeader from "@/components/product/ProductDetailStickyHeader";
-import { THEME_PRODUCT_MEDIA_ASPECT_STYLE } from "@/constants/productMediaAspect";
 import { STORE_DETAIL_STICKY_TOP_CLASS } from "@/constants/storeLayout";
 import { STORE_COPY } from "@/constants/storeCopy";
 import { useProductDetailHeaderSolid } from "@/hooks/useProductDetailHeaderSolid";
 import ProductTagList from "@/components/ProductTagList";
 import { AppModal } from "@/modules/micro-interactions";
 import ProductVariantSheet from "@/components/product/ProductVariantSheet";
-import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
@@ -63,10 +62,11 @@ import {
   storefrontProductNameFallback,
 } from "@/utils/storefrontCopySanitizer";
 import "@/styles/product-detail-route.css";
+import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
 export default function ProductDetail() {
   const { id } = useParams();
-  const navigate = useNavigate();
+  const navigate = useStorefrontNavigate();
   const { localizedPath } = usePublicLocale();
   const goBack = useGoBack(localizedPath("/"));
   const addItem = useCartStore((s) => s.addItem);
@@ -184,15 +184,8 @@ export default function ProductDetail() {
           onShare={() => {}}
           onCart={() => navigate(localizedPath("/cart"))}
         />
-        <div className="relative">
-          <Skeleton className="w-full" style={THEME_PRODUCT_MEDIA_ASPECT_STYLE} />
-        </div>
         <div className="mx-auto w-full max-w-screen-xl px-[var(--store-page-x)] pt-[var(--store-page-y)] md:px-6 md:py-10">
-          <div className="space-y-3 md:max-w-xl">
-            <Skeleton className="h-8 w-24" />
-            <Skeleton className="h-6 w-full" />
-            <Skeleton className="h-4 w-2/3" />
-          </div>
+          <StorefrontQuietLoading label="商品详情加载中" className="sf-motion-inline-loading--detail" />
         </div>
       </div>
     );
@@ -592,17 +585,7 @@ export default function ProductDetail() {
               </span>
             </div>
             {relatedProductsLoading ? (
-              <div className={`${productGridClass} md:gap-5`}>
-                {Array.from({ length: 4 }).map((_, index) => (
-                  <div key={index} className="overflow-hidden rounded-[1.125rem] border border-[color-mix(in_srgb,var(--theme-border)_84%,transparent)] bg-[var(--theme-surface)] p-1.5 shadow-sm">
-                    <Skeleton className="w-full rounded-[0.95rem]" style={THEME_PRODUCT_MEDIA_ASPECT_STYLE} />
-                    <div className="space-y-2 px-1.5 pb-2 pt-3">
-                      <Skeleton className="h-4 w-3/4" />
-                      <Skeleton className="h-4 w-1/2" />
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <StorefrontQuietLoading label="推荐商品加载中" className="sf-motion-inline-loading--shelf" />
             ) : (
               <div className={`${productGridClass} md:gap-5`}>
                 {relatedProducts.map((p, i) => (

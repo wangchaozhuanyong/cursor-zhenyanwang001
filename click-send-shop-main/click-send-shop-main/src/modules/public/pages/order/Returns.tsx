@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { ChevronRight, Clock3, FileText, PackageCheck, Plus, RefreshCw } from "lucide-react";
 import { useGoBack } from "@/hooks/useGoBack";
 import * as returnService from "@/services/returnService";
@@ -24,6 +24,7 @@ import ProductCoverImage from "@/components/ProductCoverImage";
 import { usePublicLocale, type PublicLocale } from "@/i18n/publicLocale";
 import { useHorizontalActiveScroll } from "@/hooks/useHorizontalActiveScroll";
 import "@/styles/secondary-routes.css";
+import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
 const RETURNS_COPY: Record<PublicLocale, {
   title: string;
@@ -73,7 +74,7 @@ export default function Returns() {
   const { localizedPath, locale } = usePublicLocale();
   const copy = RETURNS_COPY[locale];
   const goBack = useGoBack(localizedPath("/profile"));
-  const navigate = useNavigate();
+  const navigate = useStorefrontNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const applyOrderId = searchParams.get("apply")?.trim() || null;
 

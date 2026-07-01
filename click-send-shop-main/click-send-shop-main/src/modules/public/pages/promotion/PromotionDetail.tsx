@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import {
   ArrowLeft,
   BadgePercent,
   CheckCircle2,
-  Loader2,
   RefreshCw,
   Share2,
   ShieldCheck,
@@ -14,6 +13,7 @@ import {
 import SeoHead from "@/components/SeoHead";
 import * as marketingService from "@/services/marketingService";
 import type { StorefrontPromotion, StorefrontPromotionCoupon } from "@/services/marketingService";
+import StorefrontQuietLoading from "@/components/storefront-motion/StorefrontQuietLoading";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { useCouponAction } from "@/features/coupon/useCouponAction";
 import { usePublicLocale } from "@/i18n/publicLocale";
@@ -25,6 +25,7 @@ import ValueVaultCoupon, {
   type ValueVaultStatus,
 } from "@/modules/storefront-v2/design/components/ValueVaultCoupon";
 import "@/styles/promotions-route.css";
+import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
 const PROMOTIONS_BASE_PATH = "/promotions";
 
@@ -279,7 +280,7 @@ function couponClaimStatusAfterSuccess(status: CouponClaimStatus = "already_clai
 
 export default function PromotionDetail() {
   const { slug = "" } = useParams();
-  const navigate = useNavigate();
+  const navigate = useStorefrontNavigate();
   const { formatDate, localizedPath, promotionTypeLabel, t } = usePublicLocale();
   const detailPath = localizedPath(`${PROMOTIONS_BASE_PATH}/${slug}`);
   const { claim: claimCoupon, getActionState } = useCouponAction(detailPath);
@@ -416,12 +417,7 @@ export default function PromotionDetail() {
   if (loading) {
     return (
       <main className="sf-next-page-shell sf-next-page sf-next-route-page sf-next-promotion-detail-page">
-        <div className="sf-next-promotion-detail-loading" role="status" aria-label={t("promotion.loading")}>
-          <span className="sf-next-skeleton sf-next-promotion-detail-loading__hero" />
-          <span className="sf-next-skeleton sf-next-promotion-detail-loading__line" />
-          <span className="sf-next-skeleton sf-next-promotion-detail-loading__line is-short" />
-          <Loader2 aria-hidden="true" className="sf-next-promotion-detail-loading__spinner" />
-        </div>
+        <StorefrontQuietLoading label={t("promotion.loading")} className="sf-motion-inline-loading--detail" />
       </main>
     );
   }

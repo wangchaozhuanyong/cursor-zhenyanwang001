@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { BadgePercent, Heart, Minus, Pin, Plus, Share2, Trash2, ShoppingBag, Loader2, Check, LogIn, ShieldCheck, X } from "lucide-react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import StorePageHeader from "@/components/store/StorePageHeader";
 import { STORE_MOBILE_PAGE_HEADER_CLASS } from "@/constants/storeLayout";
 import { THEME_PRODUCT_MEDIA_ASPECT_STYLE } from "@/constants/productMediaAspect";
@@ -32,6 +32,7 @@ import { fetchCartPromotionPreview } from "@/services/cartService";
 import { estimateCartWeightKg } from "@/lib/shippingFee";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import "@/styles/cart-route.css";
+import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
 const CART_ACTION_WIDTH = 244;
 const CART_ACTION_REVEAL_THRESHOLD = 64;
@@ -52,7 +53,7 @@ function getCachedCartPreview(signature: string) {
 export default function Cart() {
   const { localizedPath, t } = usePublicLocale();
   useDocumentTitle(t("common.cart"));
-  const navigate = useNavigate();
+  const navigate = useStorefrontNavigate();
   const location = useLocation();
   const currentPath = `${location.pathname}${location.search}${location.hash}`;
   const capabilities = useSiteCapabilities();

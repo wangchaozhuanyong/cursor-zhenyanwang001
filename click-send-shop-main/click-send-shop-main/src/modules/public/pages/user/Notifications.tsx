@@ -14,7 +14,7 @@ import {
   ShieldCheck,
   RefreshCw,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+
 import { useGoBack } from "@/hooks/useGoBack";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNotificationStore } from "@/stores/useNotificationStore";
@@ -34,6 +34,7 @@ import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 import { AppModal } from "@/modules/micro-interactions";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { useHorizontalActiveScroll } from "@/hooks/useHorizontalActiveScroll";
+import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
 const typeConfig: Record<NotificationType, { icon: typeof Bell; color: string }> = {
   order: { icon: Package, color: THEME_BADGE_PRIMARY },
@@ -74,7 +75,7 @@ function getNotificationFilter(type: NotificationType): Exclude<NotificationFilt
 }
 
 export default function Notifications() {
-  const navigate = useNavigate();
+  const navigate = useStorefrontNavigate();
   const goBack = useGoBack();
   const { notifications, unreadCount, loading, error, loadNotifications, markAsRead, markAllAsRead } =
     useNotificationStore();

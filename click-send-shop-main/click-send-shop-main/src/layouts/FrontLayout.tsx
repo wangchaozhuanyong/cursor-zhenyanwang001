@@ -1,9 +1,7 @@
 import React, { Suspense, useEffect } from "react";
 import { Outlet, useLocation } from "react-router-dom";
-import BottomNav from "@/components/BottomNav";
 import { DelayedRouteFallback } from "@/components/AppRouteFallback";
 import FrontPageTransition from "@/components/FrontPageTransition";
-import { useMediaQuery } from "@/hooks/useMediaQuery";
 import StoreShell from "@/layouts/StoreShell";
 import { isStoreTabPath } from "@/utils/storeBottomInset";
 import { stripPublicLocaleFromPathname } from "@/i18n/publicLocale";
@@ -14,7 +12,6 @@ import { stripPublicLocaleFromPathname } from "@/i18n/publicLocale";
  */
 const FrontLayout = React.forwardRef<HTMLDivElement>((_, ref) => {
   const location = useLocation();
-  const isMobile = useMediaQuery("(max-width: 767px)");
 
   useEffect(() => {
     const path = stripPublicLocaleFromPathname(location.pathname);
@@ -39,7 +36,6 @@ const FrontLayout = React.forwardRef<HTMLDivElement>((_, ref) => {
             </Suspense>
           </FrontPageTransition>
         </div>
-        {isMobile ? <BottomNav /> : null}
       </StoreShell>
     </div>
   );

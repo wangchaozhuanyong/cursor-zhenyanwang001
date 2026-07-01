@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, type CSSProperties, type KeyboardEvent } from "react";
 import { AlertCircle, ArrowLeft, Eye, EyeOff, Lock, User, KeyRound } from "lucide-react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useUserStore } from "@/stores/useUserStore";
 import * as authService from "@/services/authService";
@@ -38,6 +38,7 @@ import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { resolveAuthRedirectTarget, resolveLoginCancelTarget } from "@/utils/authRedirect";
 import { buildRoutePath, readRouteBack } from "@/utils/routeBackState";
 import { stripPublicLocaleFromPathname, usePublicLocale } from "@/i18n/publicLocale";
+import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
 const REMEMBER_KEY = "login_remembered_phone";
 /** text-base(16px) 避免 iOS 聚焦时自动缩放视口导致整页闪动 */
@@ -51,7 +52,7 @@ type CredentialMode = "password" | "otp";
 type AuthNavigationState = { from?: string; fromState?: unknown; cancelFrom?: string };
 
 export default function Login() {
-  const navigate = useNavigate();
+  const navigate = useStorefrontNavigate();
   const location = useLocation();
   const { localizedPath, t } = usePublicLocale();
   const canonicalPathname = stripPublicLocaleFromPathname(location.pathname);

@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import {
   getAccountFeature,
@@ -13,9 +13,10 @@ import { useLoyaltyVisibility } from "@/hooks/useLoyaltyVisibility";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { preloadStoreRoute } from "@/utils/storeRoutePreload";
 import { usePublicLocale } from "@/i18n/publicLocale";
+import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
 export function useStoreNavigationGuard() {
-  const navigate = useNavigate();
+  const navigate = useStorefrontNavigate();
   const location = useLocation();
   const capabilities = useSiteCapabilities();
   const capabilitiesReady = useSiteCapabilitiesReady();

@@ -7,6 +7,7 @@ import { useGoBack } from "@/hooks/useGoBack";
 import ContactUsContent from "./ContactUsContent";
 import SeoHead from "@/components/SeoHead";
 import StoreStandardPageShell from "@/components/store/StoreStandardPageShell";
+import StorefrontQuietLoading from "@/components/storefront-motion/StorefrontQuietLoading";
 import { buildCanonical, stripHtml, truncateText } from "@/utils/seo";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { sanitizeCmsHtml } from "@/utils/cmsSanitizer";
@@ -77,13 +78,7 @@ export default function ContentCmsPage() {
       />
       <div className="sf-next-content-stack">
         {loading ? (
-          <section className="sf-next-content-skeleton" aria-busy="true" aria-label="内容加载中">
-            <div className="sf-next-skeleton sf-next-content-skeleton__title" />
-            <div className="sf-next-skeleton sf-next-content-skeleton__meta" />
-            <div className="sf-next-skeleton sf-next-content-skeleton__line" />
-            <div className="sf-next-skeleton sf-next-content-skeleton__line" />
-            <div className="sf-next-skeleton sf-next-content-skeleton__line is-short" />
-          </section>
+          <StorefrontQuietLoading label="内容加载中" className="sf-motion-inline-loading--content" />
         ) : null}
 
         {error && !loading ? (

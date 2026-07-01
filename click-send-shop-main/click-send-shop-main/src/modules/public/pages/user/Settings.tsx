@@ -1,7 +1,7 @@
 import { formatDateTime } from "@/utils/formatDateTime";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { CalendarDays, Camera, MessageCircle, Phone, UserRound } from "lucide-react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import WeChatIcon from "@/components/icons/WeChatIcon";
 import { THIRD_PARTY_LOGIN_ENABLED } from "@/constants/authLogin";
 import * as meService from "@/services/meService";
@@ -28,6 +28,7 @@ import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import StableImage from "@/components/ui/StableImage";
 import { usePublicLocale } from "@/i18n/publicLocale";
 import "@/styles/secondary-routes.css";
+import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
 const CARD = "sf-next-settings-card";
 const SECTION_TITLE = "sf-next-settings-section-title";
@@ -53,7 +54,7 @@ function IconBubble({ children }: { children: ReactNode }) {
 }
 
 export default function Settings() {
-  const navigate = useNavigate();
+  const navigate = useStorefrontNavigate();
   const { localizedPath } = usePublicLocale();
   const [searchParams] = useSearchParams();
   const goBack = useGoBack();

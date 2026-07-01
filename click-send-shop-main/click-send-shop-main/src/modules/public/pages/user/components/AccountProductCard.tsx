@@ -92,28 +92,6 @@ export default function AccountProductCard({
   );
 }
 
-export function AccountProductCardSkeleton({ variant = "default" }: { variant?: "default" | "history" }) {
-  const isHistory = variant === "history";
-  return (
-    <div
-      className={cn(
-        "sf-next-account-product-card rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 shadow-[var(--theme-shadow)]",
-        isHistory && "sf-next-account-product-card--history",
-      )}
-    >
-      <div className="sf-next-account-product-card__row grid grid-cols-[5.75rem_minmax(0,1fr)] gap-3 sm:grid-cols-[7rem_minmax(0,1fr)]">
-        <div className="sf-next-account-product-card__media aspect-square animate-pulse rounded-xl bg-[color-mix(in_srgb,var(--theme-border)_50%,transparent)]" />
-        <div className={cn("sf-next-account-product-card__content min-w-0", isHistory ? "grid" : "space-y-2")}>
-          <div className="h-4 w-5/6 animate-pulse rounded bg-[color-mix(in_srgb,var(--theme-border)_50%,transparent)]" />
-          <div className="h-4 w-2/3 animate-pulse rounded bg-[color-mix(in_srgb,var(--theme-border)_40%,transparent)]" />
-          <div className="h-3 w-1/2 animate-pulse rounded bg-[color-mix(in_srgb,var(--theme-border)_35%,transparent)]" />
-          <div className="h-5 w-24 animate-pulse rounded bg-[color-mix(in_srgb,var(--theme-price)_14%,transparent)]" />
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function DecisionMetaRow({ items }: { items: string[] }) {
   if (!items.length) return <div className="sf-next-account-product-card__meta mt-1.5 min-h-[1rem]" />;
   return (

@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 import { AnimatedPage } from "@/modules/micro-interactions/components/AnimatedPage";
 import { isStoreTabPath } from "@/utils/storeBottomInset";
 import { shouldDisableStoreRouteTransform } from "@/utils/frontPageTransition";
+import { useStorefrontMotionState } from "@/components/storefront-motion/useStorefrontMotionState";
 
 /**
  * 底栏 Tab 之间切换不做整页 exit/wait 动画，避免父级 min-h-0 + absolute 退出导致白屏。
@@ -10,13 +11,18 @@ import { shouldDisableStoreRouteTransform } from "@/utils/frontPageTransition";
  */
 export default function FrontPageTransition({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
+  const motion = useStorefrontMotionState();
   const isTabRoute = isStoreTabPath(pathname);
   const disableTransform = shouldDisableStoreRouteTransform(pathname);
+  const className = [
+    isTabRoute ? "sf-next-tab-route-transition" : "",
+    `sf-motion-page--${motion.phase}`,
+  ].filter(Boolean).join(" ");
 
   return (
     <AnimatedPage
-      className={isTabRoute ? "sf-next-tab-route-transition" : undefined}
-      disableAnimation={isTabRoute}
+      className={className}
+      disableAnimation={isTabRoute || motion.phase === "pending"}
       disableTransform={disableTransform}
     >
       {children}

@@ -1,5 +1,5 @@
 import { Check, Copy, LoaderCircle, LockKeyhole } from "lucide-react";
-import type { ReactNode } from "react";
+import type { MouseEvent, ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -74,6 +74,12 @@ export default function ValueVaultCoupon({
         ? "使用"
         : statusLabel[status]);
 
+  const runNestedAction = (event: MouseEvent<HTMLButtonElement>, action: (() => void) | undefined) => {
+    event.preventDefault();
+    event.stopPropagation();
+    action?.();
+  };
+
   return (
     <article
       className={cn("sf-next-value-vault", className)}
@@ -117,7 +123,7 @@ export default function ValueVaultCoupon({
             <button
               type="button"
               className="sf-next-button sf-next-button--quiet"
-              onClick={onAction}
+              onClick={(event) => runNestedAction(event, onAction)}
             >
               {resolvedActionLabel}
             </button>
@@ -160,7 +166,7 @@ export default function ValueVaultCoupon({
               className="sf-next-button sf-next-icon-button sf-next-button--quiet"
               aria-label="复制优惠码"
               disabled={!onCopyCode}
-              onClick={() => onCopyCode?.(code)}
+              onClick={(event) => runNestedAction(event, () => onCopyCode?.(code))}
             >
               <Copy aria-hidden="true" size={17} />
             </button>

@@ -6,6 +6,9 @@ const repoPath = require.resolve('../src/modules/admin/repository/adminCouponCam
 const couponRepoPath = require.resolve('../src/modules/admin/repository/adminCoupon.repository');
 const auditLogPath = require.resolve('../src/utils/auditLog');
 
+const ACTIVE_CAMPAIGN_START_AT = '2026-06-01 00:00:00';
+const ACTIVE_CAMPAIGN_END_AT = '2999-12-31 23:59:59';
+
 function clearServiceCache() {
   for (const path of [servicePath, repoPath, couponRepoPath, auditLogPath]) {
     delete require.cache[path];
@@ -23,8 +26,8 @@ function loadCouponCampaignService(options = {}) {
     subtitle: '',
     description: '',
     cover_image: '',
-    start_at: '2026-06-01 00:00:00',
-    end_at: '2026-06-30 23:59:59',
+    start_at: ACTIVE_CAMPAIGN_START_AT,
+    end_at: ACTIVE_CAMPAIGN_END_AT,
     status: 'active',
     disabled: 0,
     display_positions: JSON.stringify(['home_coupon_zone']),
@@ -150,8 +153,8 @@ test('coupon campaign runtime status keeps archived separate from disabled', () 
   assert.equal(service.runtimeStatus({
     status: 'archived',
     disabled: 1,
-    start_at: '2026-06-01 00:00:00',
-    end_at: '2026-06-30 23:59:59',
+    start_at: ACTIVE_CAMPAIGN_START_AT,
+    end_at: ACTIVE_CAMPAIGN_END_AT,
   }), 'archived');
 });
 

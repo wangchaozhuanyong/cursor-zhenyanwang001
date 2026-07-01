@@ -444,23 +444,23 @@ function HomeQuickEntryPanel({
       ) : (
         <div className="sf-next-quick-entry__grid">
           {actions.map((action) => (
-              <UnifiedButton
-                key={action.id}
-                type="button"
-                onClick={() => openHomeNavItemTarget(action, capabilities, onNavigate, toast.error)}
-                className="sf-next-quick-entry__item"
-              >
-                <span className="sf-next-quick-entry__icon">
-                  <HomeNavIcon
-                    value={action.icon_url}
-                    className="sf-next-quick-entry__icon-media"
-                    imageClassName="sf-next-quick-entry__icon-image"
-                  />
-                </span>
-                <span className="sf-next-quick-entry__copy">
-                  <strong>{normalizeHomeNavText(action.title, "分类")}</strong>
-                </span>
-              </UnifiedButton>
+            <UnifiedButton
+              key={action.id}
+              type="button"
+              onClick={() => openHomeNavItemTarget(action, capabilities, onNavigate, toast.error)}
+              className="sf-next-quick-entry__item"
+            >
+              <span className="sf-next-quick-entry__icon">
+                <HomeNavIcon
+                  value={action.icon_url}
+                  className="sf-next-quick-entry__icon-media"
+                  imageClassName="sf-next-quick-entry__icon-image"
+                />
+              </span>
+              <span className="sf-next-quick-entry__copy">
+                <strong>{normalizeHomeNavText(action.title, "分类")}</strong>
+              </span>
+            </UnifiedButton>
           ))}
         </div>
       )}

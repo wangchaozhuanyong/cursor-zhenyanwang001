@@ -11,7 +11,7 @@ import { navigateWithStoreTransition } from "@/utils/storeNavigationTransition";
 import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
 import { STORE_COPY } from "@/constants/storeCopy";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
-import { preloadStoreRoute } from "@/utils/storeRoutePreload";
+import { preloadStoreRouteLazy } from "@/utils/preloadStoreRouteLazy";
 import { isStoreNavPathVisible } from "@/utils/storeNavVisibility";
 import { getRememberedStoreTabPath } from "@/utils/storeScrollRestoration";
 import StoreBrandLogo from "@/components/store/StoreBrandLogo";
@@ -28,7 +28,7 @@ type TabletNavItem = {
 };
 
 function preloadTabletRoute(path: string) {
-  preloadStoreRoute(path);
+  void preloadStoreRouteLazy(path, "intent");
 }
 
 function isPlainLeftClick(event: MouseEvent<HTMLElement>) {
@@ -63,7 +63,6 @@ export default function StoreTabletBar({ className }: { className?: string }) {
   };
 
   const openRoute = (path: string) => {
-    preloadTabletRoute(path);
     navigateWithStoreTransition(navigate, localizedPath(getRememberedStoreTabPath(path)));
   };
 

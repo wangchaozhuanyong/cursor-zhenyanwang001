@@ -14,7 +14,7 @@ import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
 import { STORE_COPY } from "@/constants/storeCopy";
 import { isLoggedIn } from "@/utils/token";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
-import { preloadStoreRoute } from "@/utils/storeRoutePreload";
+import { preloadStoreRouteLazy } from "@/utils/preloadStoreRouteLazy";
 import { isStoreNavPathVisible } from "@/utils/storeNavVisibility";
 import StoreBrandLogo from "@/components/store/StoreBrandLogo";
 import StoreLanguageSwitcher from "@/components/store/StoreLanguageSwitcher";
@@ -29,7 +29,7 @@ import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefr
 type NavItem = { path: string; label: string; icon: typeof Home; enabled?: boolean };
 
 function preloadHeaderRoute(path: string) {
-  preloadStoreRoute(path);
+  void preloadStoreRouteLazy(path, "intent");
 }
 
 function isPlainLeftClick(event: MouseEvent<HTMLElement>) {
@@ -81,7 +81,6 @@ export default function StoreDesktopHeader({ className }: { className?: string }
   };
 
   const openRoute = useCallback((path: string) => {
-    preloadHeaderRoute(path);
     navigateWithStoreTransition(navigate, localizedPath(path));
   }, [localizedPath, navigate]);
 

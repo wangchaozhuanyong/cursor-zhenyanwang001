@@ -12,7 +12,7 @@ import { scheduleIdleTask } from "@/utils/idleScheduler";
 type UseHomeBannersOpts = { fetchRemote?: boolean };
 const BANNER_CACHE_KEY = `home_banners_cache_${HOME_BANNER_ASSET_REVISION}`;
 const BANNER_CACHE_TTL_MS = 60_000;
-const BANNER_BACKGROUND_REFRESH_DELAY_MS = 9_000;
+const BANNER_BACKGROUND_REFRESH_DELAY_MS = 16_000;
 
 function sanitizeBanners(list: Banner[]): Banner[] {
   if (!Array.isArray(list)) return [];

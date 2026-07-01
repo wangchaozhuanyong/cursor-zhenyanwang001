@@ -3095,6 +3095,8 @@ html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-history-page .s
 }
 
 html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-history-page .sf-next-account-product-card--history .sf-next-account-product-card__media {
+  width: 5.15rem !important;
+  height: 5.15rem !important;
   aspect-ratio: 1 / 1 !important;
   border: 0 !important;
   border-radius: 0.76rem !important;

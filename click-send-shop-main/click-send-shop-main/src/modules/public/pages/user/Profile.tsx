@@ -28,7 +28,6 @@ import type { OrderSummary } from "@/types/order";
 import { formatUnreadBadge } from "@/utils/notificationBadge";
 import { THIRD_PARTY_LOGIN_ENABLED } from "@/constants/authLogin";
 import { computeUpgradeProgress } from "@/utils/memberBenefitPresentation";
-import { preloadStoreRoute } from "@/utils/storeRoutePreload";
 import { scheduleIdleTask } from "@/utils/idleScheduler";
 import {
   buildAccountFeaturesByKeys,
@@ -240,15 +239,7 @@ export default function Profile() {
 
   const afterSaleCount = Math.max(orderSummary?.after_sale ?? 0, activeReturnCount);
 
-  const rewardsEnabled = isLoyaltyFeatureEnabled("reward", capabilities, loyaltyConfig);
   const inviteEnabled = isLoyaltyFeatureEnabled("referral", capabilities, loyaltyConfig);
-
-  useEffect(() => {
-    if (!loggedIn) return;
-    preloadStoreRoute("/wallet", "idle");
-    if (inviteEnabled) preloadStoreRoute("/invite", "idle");
-    if (rewardsEnabled) preloadStoreRoute("/rewards", "idle");
-  }, [inviteEnabled, loggedIn, rewardsEnabled]);
 
   const memberProgress = useMemo(() => {
     const currentGrowth = Number(memberBenefits?.current_growth_value ?? pointsBalance ?? 0);

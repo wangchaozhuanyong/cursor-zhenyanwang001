@@ -11,7 +11,6 @@ import {
 import { useSiteCapabilities, useSiteCapabilitiesReady } from "@/hooks/useSiteCapabilities";
 import { useLoyaltyVisibility } from "@/hooks/useLoyaltyVisibility";
 import { useAuthStore } from "@/stores/useAuthStore";
-import { preloadStoreRoute } from "@/utils/storeRoutePreload";
 import { usePublicLocale } from "@/i18n/publicLocale";
 import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
@@ -49,7 +48,6 @@ export function useStoreNavigationGuard() {
       toast.info(options.disabledReason || "功能暂未开放");
       return false;
     }
-    void preloadStoreRoute(path).catch(() => {});
     navigate(target, { state: { from: localizedPath(from), ...(options.state || {}) } });
     return true;
   }, [authHydrated, isAuthenticated, localizedPath, location.pathname, location.search, navigate]);

@@ -10,7 +10,7 @@ import { isStoreNavPathVisible } from "@/utils/storeNavVisibility";
 import { shouldHideBottomNav } from "./bottomNavVisibility";
 import { navigateWithStoreTransition } from "@/utils/storeNavigationTransition";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
-import { preloadStoreRoute } from "@/utils/storeRoutePreload";
+import { preloadStoreRouteLazy } from "@/utils/preloadStoreRouteLazy";
 import { getRememberedStoreTabPath, rememberCurrentStoreScrollPosition } from "@/utils/storeScrollRestoration";
 import { stripPublicLocaleFromPathname, usePublicLocale } from "@/i18n/publicLocale";
 import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
@@ -27,12 +27,8 @@ type ActivePointer = {
   maxMove: number;
 };
 
-function preloadTabRoute(path: string) {
-  return preloadStoreRoute(path, "intent") ?? Promise.resolve();
-}
-
 function preloadIdleTabRoute(path: string) {
-  preloadStoreRoute(path, "idle");
+  void preloadStoreRouteLazy(path, "idle");
 }
 
 function shouldActivateOnPointerDown(pointerType: string) {
@@ -103,7 +99,6 @@ export default function BottomNav() {
     if (last && last.path === path && now - last.at < 400) return;
     lastNavTapRef.current = { path, at: now };
     setIntentPath(path);
-    void preloadTabRoute(path);
     handleNavigate(path);
     window.setTimeout(() => {
       setIntentPath((value) => (value === path ? null : value));
@@ -154,7 +149,6 @@ export default function BottomNav() {
       maxMove: 0,
     };
     setIntentPath(path);
-    void preloadTabRoute(path);
     if (shouldActivateOnPointerDown(event.pointerType)) {
       activateTab(path);
     }

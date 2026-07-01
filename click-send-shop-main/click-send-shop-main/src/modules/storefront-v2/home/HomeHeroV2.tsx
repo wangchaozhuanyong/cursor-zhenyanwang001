@@ -84,8 +84,17 @@ export default function HomeHeroV2({
   }, [hasBanner]);
 
   useEffect(() => {
-    productService.fetchProductTags(16).then(setSearchTags).catch(() => setSearchTags([]));
-  }, []);
+    if (!searchOpen || searchTags.length > 0) return;
+    let cancelled = false;
+    productService.fetchProductTags(16).then((tags) => {
+      if (!cancelled) setSearchTags(tags);
+    }).catch(() => {
+      if (!cancelled) setSearchTags([]);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [searchOpen, searchTags.length]);
 
   const openSearchPage = (value = keyword) => {
     const trimmed = value.trim();

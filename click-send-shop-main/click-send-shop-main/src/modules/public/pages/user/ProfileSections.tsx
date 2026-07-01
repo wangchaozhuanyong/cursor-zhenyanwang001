@@ -219,7 +219,6 @@ export function ProfileHeroCard({
       >
         <span>会员权益</span>
         <h2>{memberLevelName}</h2>
-        <p>权益以当前会员配置为准</p>
       </UnifiedButton>
 
       {folioAssets.length ? (

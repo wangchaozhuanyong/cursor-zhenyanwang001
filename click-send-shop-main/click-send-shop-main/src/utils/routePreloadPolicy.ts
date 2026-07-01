@@ -31,7 +31,9 @@ function isConstrainedDevice(nav: NavigatorWithConnection | undefined) {
 function isSmallTouchViewport() {
   if (typeof navigator === "undefined" || typeof window === "undefined") return false;
   const minScreen = Math.min(window.screen?.width || window.innerWidth, window.screen?.height || window.innerHeight);
-  return navigator.maxTouchPoints > 0 && minScreen > 0 && minScreen <= 480;
+  const minViewport = Math.min(window.innerWidth || minScreen, window.innerHeight || minScreen);
+  const compactEdge = Math.min(minScreen || minViewport, minViewport || minScreen);
+  return navigator.maxTouchPoints > 0 && compactEdge > 0 && compactEdge <= 768;
 }
 
 export function shouldSkipRoutePreload(priority: RoutePreloadPriority = "intent") {
@@ -41,14 +43,15 @@ export function shouldSkipRoutePreload(priority: RoutePreloadPriority = "intent"
 
   const connection = getNetworkInformation();
   const nav = typeof navigator === "undefined" ? undefined : (navigator as NavigatorWithConnection);
+  if (connection?.saveData) return true;
+  if (priority === "idle" && isSmallTouchViewport()) return true;
+
   if (!connection) {
     if (isConstrainedDevice(nav)) {
       return priority !== "immediate";
     }
-    if (priority === "idle" && isSmallTouchViewport()) return true;
     return false;
   }
-  if (connection.saveData) return true;
 
   const effectiveType = (connection.effectiveType || "").toLowerCase();
   if (effectiveType === "slow-2g" || effectiveType === "2g") return true;

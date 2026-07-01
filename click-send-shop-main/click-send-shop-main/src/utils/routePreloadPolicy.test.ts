@@ -43,6 +43,14 @@ describe("shouldSkipRoutePreload", () => {
     expect(shouldSkipRoutePreload("immediate")).toBe(false);
   });
 
+  it("skips idle route preloads on small touch screens even when network looks fast", () => {
+    defineValue(navigator, "connection", { effectiveType: "4g" });
+
+    expect(shouldSkipRoutePreload("idle")).toBe(true);
+    expect(shouldSkipRoutePreload("intent")).toBe(false);
+    expect(shouldSkipRoutePreload("immediate")).toBe(false);
+  });
+
   it("skips non-immediate preloads on constrained devices", () => {
     defineValue(navigator, "hardwareConcurrency", 4);
 

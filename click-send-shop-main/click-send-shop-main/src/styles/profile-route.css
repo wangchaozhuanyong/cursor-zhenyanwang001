@@ -2753,3 +2753,72 @@ html[data-app-scope="store"][data-storefront-ui="next"][data-theme-member-card-s
   color: var(--theme-member-card-muted, color-mix(in srgb, var(--sf-on-accent) 72%, transparent)) !important;
   opacity: 1 !important;
 }
+
+/* Final profile hero polish: no secondary benefit note, and one coherent asset tone. */
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-vip-folio-head p {
+  display: none !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-card-assets {
+  gap: 0.46rem !important;
+  margin-top: 0.72rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-card-asset {
+  min-height: 3.35rem !important;
+  border-color: color-mix(in srgb, var(--sf-on-accent) 24%, transparent) !important;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--sf-on-accent) 18%, transparent),
+      color-mix(in srgb, var(--sf-on-accent) 9%, transparent)
+    ) !important;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--sf-on-accent) 22%, transparent),
+    0 10px 20px -18px color-mix(in srgb, black 46%, transparent) !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-card-asset-value {
+  color: var(--sf-on-accent) !important;
+  opacity: 0.98 !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-card-asset-label {
+  color: color-mix(in srgb, var(--sf-on-accent) 76%, transparent) !important;
+  opacity: 1 !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"][data-theme-member-card-style] .sf-next-profile-hero-card .profile-card-asset {
+  border-color: color-mix(in srgb, var(--sf-on-accent) 24%, transparent) !important;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--sf-on-accent) 18%, transparent),
+      color-mix(in srgb, var(--sf-on-accent) 9%, transparent)
+    ) !important;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--sf-on-accent) 22%, transparent),
+    0 10px 20px -18px color-mix(in srgb, black 46%, transparent) !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"][data-theme-member-card-style] .sf-next-profile-hero-card .profile-card-asset-value {
+  color: var(--sf-on-accent) !important;
+  opacity: 0.98 !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"][data-theme-member-card-style] .sf-next-profile-hero-card .profile-card-asset-label {
+  color: color-mix(in srgb, var(--sf-on-accent) 76%, transparent) !important;
+  opacity: 1 !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-card-asset .profile-card-asset-value,
+html[data-app-scope="store"][data-storefront-ui="next"][data-theme] .sf-next-profile-hero-card .profile-card-asset .profile-card-asset-value,
+html[data-app-scope="store"][data-storefront-ui="next"][data-theme-member-card-style] .sf-next-profile-hero-card .profile-card-asset .profile-card-asset-value {
+  color: var(--sf-on-accent) !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-card-asset .profile-card-asset-label,
+html[data-app-scope="store"][data-storefront-ui="next"][data-theme] .sf-next-profile-hero-card .profile-card-asset .profile-card-asset-label,
+html[data-app-scope="store"][data-storefront-ui="next"][data-theme-member-card-style] .sf-next-profile-hero-card .profile-card-asset .profile-card-asset-label {
+  color: color-mix(in srgb, var(--sf-on-accent) 76%, transparent) !important;
+}

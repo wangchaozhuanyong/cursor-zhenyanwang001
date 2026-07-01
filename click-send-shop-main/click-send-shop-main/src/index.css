@@ -2972,27 +2972,6 @@ html[data-app-scope="store"] {
   --store-category-panel: color-mix(in srgb, var(--theme-surface) 88%, transparent);
 }
 
-html[data-app-scope="store"] .sf-next-category-page {
-  background:
-    radial-gradient(circle at 8% 0%, color-mix(in srgb, var(--theme-price) 18%, transparent), transparent 28rem),
-    radial-gradient(circle at 92% 8%, color-mix(in srgb, var(--theme-primary) 10%, transparent), transparent 24rem),
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-surface) 92%, var(--theme-bg)) 0%, var(--theme-bg) 100%);
-}
-
-html[data-app-scope="store"] .sf-next-category-page .sf-next-category-rail {
-  border-color: color-mix(in srgb, var(--theme-price) 16%, transparent);
-  background: transparent;
-}
-
-html[data-app-scope="store"] .sf-next-category-page .sf-next-category-rail::before {
-  background: linear-gradient(90deg, color-mix(in srgb, var(--theme-surface) 94%, var(--theme-bg)), transparent);
-}
-
-html[data-app-scope="store"] .sf-next-category-page .sf-next-category-rail::after {
-  width: 2.5rem;
-  background: linear-gradient(270deg, color-mix(in srgb, var(--theme-surface) 94%, var(--theme-bg)), transparent);
-}
-
 html[data-app-scope="store"] .sf-next-category-tile,
 html[data-app-scope="store"] .sf-next-category-tile-skeleton {
   width: clamp(4.85rem, 20.4vw, 5.15rem);
@@ -3081,12 +3060,6 @@ html[data-app-scope="store"] .sf-next-category-tile.is-active .sf-next-category-
   font-weight: var(--store-emphasis-weight);
 }
 
-html[data-app-scope="store"] .sf-next-sort-pill {
-  color: var(--store-text-secondary);
-  font-weight: var(--store-control-weight);
-  letter-spacing: 0;
-}
-
 html[data-app-scope="store"] .sf-next-category-rail--plain .sf-next-category-tile,
 html[data-app-scope="store"] .sf-next-category-rail--plain .sf-next-category-tile-skeleton {
   border: 0 !important;
@@ -3101,165 +3074,6 @@ html[data-app-scope="store"] .sf-next-category-rail--plain .sf-next-category-til
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, white 54%, transparent),
     0 8px 18px -20px color-mix(in srgb, var(--theme-price) 34%, transparent) !important;
-}
-
-html[data-app-scope="store"] .sf-next-sortbar {
-  min-height: 2.75rem;
-  border-color: color-mix(in srgb, var(--theme-price) 16%, var(--theme-border));
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-surface) 82%, transparent), color-mix(in srgb, var(--theme-bg) 64%, transparent)),
-    color-mix(in srgb, var(--theme-surface) 76%, transparent);
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, white 66%, transparent),
-    0 12px 24px -24px color-mix(in srgb, var(--theme-price) 26%, transparent);
-}
-
-html[data-app-scope="store"] .sf-next-sort-pill.is-active {
-  position: relative;
-  color: var(--theme-price-foreground);
-  font-weight: var(--store-emphasis-weight);
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-price) 82%, white), var(--theme-price)),
-    var(--store-category-gold);
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, white 34%, transparent),
-    0 9px 16px -14px color-mix(in srgb, var(--theme-price) 58%, transparent);
-}
-
-html[data-app-scope="store"] .sf-next-sort-pill.is-active::after {
-  position: absolute;
-  right: 0.76rem;
-  bottom: 0.18rem;
-  left: 0.76rem;
-  height: 2px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--theme-price-foreground) 84%, transparent);
-  content: "";
-}
-
-html[data-app-scope="store"] .sf-next-category-tool-icon,
-html[data-app-scope="store"] .sf-next-filter-button {
-  border-color: color-mix(in srgb, var(--theme-price) 20%, var(--theme-border));
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-surface) 90%, transparent), color-mix(in srgb, var(--theme-bg) 78%, transparent)),
-    color-mix(in srgb, var(--theme-surface) 84%, transparent);
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, white 70%, transparent),
-    0 16px 28px -24px color-mix(in srgb, var(--theme-price) 38%, transparent);
-}
-
-html[data-app-scope="store"] .sf-next-filter-button span {
-  background: var(--theme-danger);
-  color: var(--theme-danger-foreground);
-}
-
-html[data-app-scope="store"] .sf-next-filter-input {
-  border-color: color-mix(in srgb, var(--theme-price) 22%, var(--theme-border));
-  background: color-mix(in srgb, var(--theme-surface) 90%, transparent);
-  color: var(--store-category-ink);
-}
-
-html[data-app-scope="store"] .sf-next-filter-input:focus {
-  border-color: color-mix(in srgb, var(--theme-price) 62%, var(--theme-border));
-  outline: none;
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-price) 14%, transparent);
-}
-
-html[data-app-scope="store"] .sf-next-filter-chip {
-  border-color: color-mix(in srgb, var(--theme-price) 20%, var(--theme-border));
-  background: color-mix(in srgb, var(--theme-surface) 86%, transparent);
-  color: var(--store-category-muted);
-}
-
-html[data-app-scope="store"] .sf-next-filter-chip.is-active,
-html[data-app-scope="store"] .sf-next-filter-confirm-button {
-  border-color: transparent;
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-price) 84%, white), var(--theme-price)),
-    var(--store-category-gold);
-  color: var(--theme-price-foreground);
-  box-shadow: 0 14px 26px -20px color-mix(in srgb, var(--theme-price) 64%, transparent);
-}
-
-html[data-app-scope="store"] .sf-next-filter-reset-button {
-  border-color: color-mix(in srgb, var(--theme-price) 22%, var(--theme-border));
-  background: color-mix(in srgb, var(--theme-surface) 82%, transparent);
-  color: var(--store-category-ink);
-}
-
-html[data-app-scope="store"] .sf-next-category-page .sf-next-product-grid {
-  gap: clamp(0.78rem, 2.4vw, 1.2rem);
-  padding-top: 0.25rem;
-}
-
-html[data-app-scope="store"] .sf-next-category-page .sf-next-product-card {
-  border-radius: 1.35rem;
-  border-color: color-mix(in srgb, hsl(var(--product-border)) 82%, transparent);
-  background:
-    linear-gradient(180deg, color-mix(in srgb, hsl(var(--product-card)) 94%, white), color-mix(in srgb, hsl(var(--product-card)) 82%, transparent)),
-    hsl(var(--product-card));
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, white 90%, transparent),
-    0 20px 42px -34px color-mix(in srgb, var(--shadow-color) 42%, transparent);
-}
-
-html[data-app-scope="store"] .sf-next-category-page .sf-next-product-card::before {
-  background:
-    linear-gradient(180deg, color-mix(in srgb, white 42%, transparent), transparent 34%),
-    radial-gradient(circle at 82% 0%, color-mix(in srgb, var(--highlight-color) 12%, transparent), transparent 42%);
-  opacity: 0.48;
-}
-
-html[data-app-scope="store"] .sf-next-category-page .sf-next-product-card > .sf-next-product-card__media {
-  width: 100%;
-  margin: 0;
-  border: 0;
-  border-radius: 0;
-  background: hsl(var(--product-image-bg));
-}
-
-html[data-app-scope="store"] .sf-next-category-page .sf-next-product-card > .sf-next-product-card__media img {
-  object-fit: cover;
-  padding: 0;
-}
-
-html[data-app-scope="store"] .sf-next-category-page .sf-next-product-card__info {
-  padding: 0.85rem 0.95rem 0.95rem;
-}
-
-html[data-app-scope="store"] .sf-next-category-page .sf-next-product-card__title {
-  color: var(--store-text-main);
-  font-size: clamp(0.86rem, 3.35vw, 1rem);
-  font-weight: var(--sf-card-title-weight);
-  letter-spacing: 0;
-}
-
-html[data-app-scope="store"] .sf-next-category-page .sf-next-product-card__meta .sf-next-price__amount {
-  color: var(--theme-price);
-  font-weight: var(--store-price-weight);
-}
-
-html[data-app-scope="store"] .sf-next-category-page .sf-next-product-card__meta .sf-next-product-card__caption {
-  color: var(--store-text-muted-soft);
-  font-weight: 400;
-}
-
-html[data-app-scope="store"] .sf-next-category-page .store-badge {
-  min-height: 22px;
-  border-radius: 999px;
-  padding-inline: 0.5rem;
-  font-size: 10px;
-  font-weight: var(--store-emphasis-weight);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.34),
-    0 8px 16px -14px rgba(76, 48, 13, 0.42);
-}
-
-@media (hover: hover) and (pointer: fine) {
-  html[data-app-scope="store"] .sf-next-category-tile:hover,
-  html[data-app-scope="store"] .sf-next-category-page .sf-next-product-card:hover {
-    transform: translateY(-2px);
-  }
 }
 
 html[data-app-scope="store"] .sf-next-coupon-card {
@@ -4869,11 +4683,6 @@ html[data-app-scope="store"] .sf-next-product-card img {
   filter: saturate(1.02) contrast(1.01);
 }
 
-html[data-app-scope="store"] .sf-next-category-page {
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--market-paper) 74%, var(--theme-bg)) 0%, var(--theme-bg) 27rem, color-mix(in srgb, var(--market-paper-deep) 28%, var(--theme-bg)) 100%);
-}
-
 /* Store home V2 visual refinement: scoped to the current homepage only. */
 
 @media (min-width: 768px) and (max-width: 1279px) {
@@ -5113,10 +4922,6 @@ html[data-app-scope="store"] .sf-next-category-page {
     width: 2.55rem;
     min-width: 2.55rem;
     height: 2.55rem;
-  }
-
-  html[data-app-scope="store"] .sf-next-category-toolbar {
-    padding: 0.15rem 0;
   }
 
   html[data-app-scope="store"] .sf-next-cart-page main {

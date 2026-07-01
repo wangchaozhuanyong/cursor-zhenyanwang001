@@ -1,11 +1,14 @@
-import { useId, useState } from "react";
+import { lazy, Suspense, useId, useState } from "react";
 import { Ticket, ChevronRight, Check, Loader2 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
 import PremiumCouponCard from "@/components/PremiumCouponCard";
 import type { CheckoutPickerCoupon } from "@/types/coupon";
 import { formatCouponExpireText } from "@/utils/couponDisplay";
-import { AppModal, usePreferBottomSheet } from "@/modules/micro-interactions";
+import { usePreferBottomSheet } from "@/modules/micro-interactions/modal/usePreferBottomSheet";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+
+const LazyCouponAppModal = lazy(() =>
+  import("@/modules/micro-interactions/components/AppModal").then((module) => ({ default: module.AppModal })),
+);
 
 interface CouponPickerProps {
   totalAmount: number;
@@ -72,7 +75,7 @@ function CouponListBody(props: {
         const isSelected = selectedCouponId === coupon.id;
         const amount = getAmountParts(coupon);
         return (
-          <motion.div key={coupon.id} whileTap={usable ? { scale: 0.98 } : undefined} className="relative">
+          <div key={coupon.id} className="relative">
             <PremiumCouponCard
               colorScheme="invite"
               layout="compact"
@@ -90,18 +93,18 @@ function CouponListBody(props: {
               }}
             />
             {usable && isSelected ? (
-              <motion.div className="pointer-events-none absolute right-3 top-3 z-20">
+              <div className="pointer-events-none absolute right-3 top-3 z-20">
                 <div className="flex h-6 w-6 items-center justify-center rounded-full btn-theme-price">
                   <Check size={14} />
                 </div>
-              </motion.div>
+              </div>
             ) : null}
             {!usable && (
               <p className="mt-1 px-2 text-[11px] text-[var(--theme-danger)]">
                 {coupon.reason || (totalAmount < coupon.condition ? `还差 RM ${coupon.condition - totalAmount} 可用` : "当前订单无运费可抵扣")}
               </p>
             )}
-          </motion.div>
+          </div>
         );
       })}
 
@@ -197,20 +200,20 @@ export default function CouponPicker({ totalAmount, shippingFee = 0, selectedCou
       </UnifiedButton>
 
       {isMobileSheet ? (
-        <AppModal tier="standard" open={open} onClose={close} title="选择优惠券" height="90vh">
-          <CouponListBody {...listProps} />
-        </AppModal>
-      ) : (
-        <AnimatePresence>
-          {open && (
-            <motion.div id={listId} initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25 }} className="overflow-hidden">
-              <div className="space-y-2 border-t border-[var(--theme-border)] px-4 pb-4 pt-3">
-                <CouponListBody {...listProps} />
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      )}
+        open ? (
+          <Suspense fallback={null}>
+            <LazyCouponAppModal tier="standard" open onClose={close} title="选择优惠券" height="90vh">
+              <CouponListBody {...listProps} />
+            </LazyCouponAppModal>
+          </Suspense>
+        ) : null
+      ) : open ? (
+        <div id={listId} className="overflow-hidden">
+          <div className="space-y-2 border-t border-[var(--theme-border)] px-4 pb-4 pt-3">
+            <CouponListBody {...listProps} />
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Copy, Download, Gift, QrCode, Share2, Users } from "lucide-react";
+import "@/styles/storefront-next.extended-routes.css";
 import { formatDateTime } from "@/utils/formatDateTime";
 import { useGoBack } from "@/hooks/useGoBack";
 

@@ -1,7 +1,5 @@
-import type { ReactNode } from "react";
+import { lazy, Suspense, type ReactNode } from "react";
 import { useLocation } from "react-router-dom";
-import StoreDesktopHeader from "@/components/store/StoreDesktopHeader";
-import StoreTabletBar from "@/components/store/StoreTabletBar";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { isStoreTabPath } from "@/utils/storeBottomInset";
 import { stripPublicLocaleFromPathname } from "@/i18n/publicLocale";
@@ -9,6 +7,9 @@ import { stripPublicLocaleFromPathname } from "@/i18n/publicLocale";
 type StoreShellProps = {
   children: ReactNode;
 };
+
+const StoreDesktopHeader = lazy(() => import("@/components/store/StoreDesktopHeader"));
+const StoreTabletBar = lazy(() => import("@/components/store/StoreTabletBar"));
 
 /** 前台宽屏壳层：仅 tablet / desktop 追加顶栏，不改变 <768px 布局 */
 export default function StoreShell({ children }: StoreShellProps) {
@@ -23,10 +24,14 @@ export default function StoreShell({ children }: StoreShellProps) {
   return (
     <div className="sf-next-store-shell relative min-h-[100dvh] min-w-0 overflow-x-clip">
       {!hideChrome && isDesktop ? (
-        <StoreDesktopHeader className={fixedHeaderClassName} />
+        <Suspense fallback={null}>
+          <StoreDesktopHeader className={fixedHeaderClassName} />
+        </Suspense>
       ) : null}
       {!hideChrome && isTab && isTablet ? (
-        <StoreTabletBar className={fixedHeaderClassName} />
+        <Suspense fallback={null}>
+          <StoreTabletBar className={fixedHeaderClassName} />
+        </Suspense>
       ) : null}
       <div className="sf-next-store-shell__body min-w-0">{children}</div>
     </div>

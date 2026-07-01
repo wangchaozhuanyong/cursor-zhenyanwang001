@@ -380,6 +380,43 @@ html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-filter
   white-space: nowrap !important;
 }
 
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-filter-button span {
+  background: var(--theme-danger);
+  color: var(--theme-danger-foreground);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-filter-input {
+  border-color: var(--sc-line);
+  background: color-mix(in srgb, var(--sf-surface) 94%, var(--sf-canvas));
+  color: var(--sf-ink);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-filter-input:focus {
+  border-color: color-mix(in srgb, var(--sf-ink) 42%, var(--sc-line));
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--sf-ink) 10%, transparent);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-filter-chip {
+  border-color: var(--sc-line);
+  background: color-mix(in srgb, var(--sf-surface) 92%, var(--sf-canvas));
+  color: var(--sf-ink-secondary);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-filter-chip.is-active,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-filter-confirm-button {
+  border-color: transparent;
+  background: var(--sf-ink);
+  color: var(--sf-canvas);
+  box-shadow: 0 0.7rem 1.2rem color-mix(in srgb, var(--sf-ink) 14%, transparent);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-filter-reset-button {
+  border-color: var(--sc-line);
+  background: color-mix(in srgb, var(--sf-surface) 92%, var(--sf-canvas));
+  color: var(--sf-ink);
+}
+
 html[data-app-scope="store"][data-storefront-ui="next"] :where(
   .sf-next-coupon-view-switch__item,
   .sf-next-coupon-status-tab,

@@ -3,7 +3,7 @@ import type { StoreCartBadgeCountProps } from "@/components/store/StoreCartBadge
 import { scheduleIdleTask } from "@/utils/idleScheduler";
 
 const StoreCartBadgeCount = lazy(() => import("@/components/store/StoreCartBadgeCount"));
-const CART_BADGE_DELAY_MS = 9000;
+const CART_BADGE_DELAY_MS = 18_000;
 
 export default function DeferredStoreCartBadge(props: StoreCartBadgeCountProps) {
   const [mounted, setMounted] = useState(false);

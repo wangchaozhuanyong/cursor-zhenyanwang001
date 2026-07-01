@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { AlertCircle, CheckCircle2, Loader2, LogIn, RefreshCw, ShoppingBag, MessageCircle } from "lucide-react";
+import "@/styles/storefront-next.extended-routes.css";
 import * as orderService from "@/services/orderService";
 import type { Order } from "@/types/order";
 import { ORDER_STATUS } from "@/constants/statusDictionary";

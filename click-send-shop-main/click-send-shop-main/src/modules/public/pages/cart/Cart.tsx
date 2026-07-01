@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, lazy, Suspense, useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
 import { BadgePercent, Heart, Minus, Pin, Plus, Share2, Trash2, ShoppingBag, Loader2, Check, LogIn, ShieldCheck, X } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import StorePageHeader from "@/components/store/StorePageHeader";
@@ -13,9 +13,6 @@ import type { SubmitOrderParams } from "@/types/order";
 import { isLoggedIn } from "@/utils/token";
 import { copyToClipboard } from "@/utils/clipboard";
 import TrustInfo from "@/components/TrustInfo";
-import { motion, AnimatePresence } from "framer-motion";
-import { AnimatedNumber, AppModal, BottomSheetConfirm, SquishButton } from "@/modules/micro-interactions";
-import { toast } from "sonner";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { parseSstEnabled } from "@/utils/sstTax";
@@ -25,9 +22,6 @@ import StorePriceAmount from "@/components/store/StorePriceAmount";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { DesktopPurchaseCard, DesktopPurchaseTwoColumn } from "@/components/store/DesktopPurchasePattern";
 import { usePublicLocale } from "@/i18n/publicLocale";
-import CouponPicker from "@/components/CouponPicker";
-import { useCheckoutPickerCoupons } from "@/hooks/useCheckoutPickerCoupons";
-import { estimateCheckoutCouponDiscount } from "@/modules/public/pages/order/utils/checkoutCouponDiscount";
 import { fetchCartPromotionPreview } from "@/services/cartService";
 import { estimateCartWeightKg } from "@/lib/shippingFee";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
@@ -37,8 +31,40 @@ import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefr
 const CART_ACTION_WIDTH = 244;
 const CART_ACTION_REVEAL_THRESHOLD = 64;
 const CART_PREVIEW_CACHE_TTL_MS = 30_000;
+const CART_SWIPE_VERTICAL_TOLERANCE = 36;
+
+const LazyCartAppModal = lazy(() =>
+  import("@/modules/micro-interactions/components/AppModal").then((module) => ({ default: module.AppModal })),
+);
+const LazyCartBottomSheetConfirm = lazy(() =>
+  import("@/modules/micro-interactions/components/BottomSheetConfirm").then((module) => ({
+    default: module.BottomSheetConfirm,
+  })),
+);
+const LazyCouponPicker = lazy(() => import("@/components/CouponPicker"));
 
 const cartPreviewCache = new Map<string, { preview: CartPromotionPreview; savedAt: number }>();
+
+type CartSwipeState = {
+  lineKey: string;
+  pointerId: number;
+  startX: number;
+  startY: number;
+};
+
+type CartCheckoutCouponsState = {
+  coupons: CheckoutPickerCoupon[];
+  unusableCoupons: CheckoutPickerCoupon[];
+  loading: boolean;
+  loadedRequestKey: string;
+};
+
+function showCartToast(type: "success" | "error", message: string, options?: { duration?: number }) {
+  window.dispatchEvent(new Event("storefront:toast-needed"));
+  void import("sonner").then(({ toast }) => {
+    toast[type](message, options);
+  });
+}
 
 function getCachedCartPreview(signature: string) {
   const cached = cartPreviewCache.get(signature);
@@ -57,6 +83,7 @@ export default function Cart() {
   const location = useLocation();
   const currentPath = `${location.pathname}${location.search}${location.hash}`;
   const capabilities = useSiteCapabilities();
+  const swipeRef = useRef<CartSwipeState | null>(null);
   const {
     items,
     loading,
@@ -131,7 +158,7 @@ export default function Cart() {
     coupons: cartCoupons,
     unusableCoupons: cartUnusableCoupons,
     loading: rawCartCouponsLoading,
-  } = useCheckoutPickerCoupons(selectedAmount, couponPreviewParams);
+  } = useCartCheckoutCoupons(selectedAmount, couponPreviewParams);
   const cartCouponsLoading = capabilities.couponEnabled && Boolean(couponPreviewParams) ? rawCartCouponsLoading : false;
   const usableCartCoupons = useMemo(
     () => cartCoupons.filter((coupon) => isCartCouponUsable(coupon, selectedAmount)),
@@ -235,9 +262,35 @@ export default function Cart() {
     setSelectedCoupon(coupon);
   };
 
+  const handleCartSwipeStart = (event: PointerEvent<HTMLDivElement>, lineKey: string) => {
+    if (event.pointerType !== "touch" && event.pointerType !== "pen") return;
+    swipeRef.current = {
+      lineKey,
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+    };
+  };
+
+  const handleCartSwipeEnd = (event: PointerEvent<HTMLDivElement>, lineKey: string) => {
+    const swipe = swipeRef.current;
+    if (!swipe || swipe.lineKey !== lineKey || swipe.pointerId !== event.pointerId) return;
+    swipeRef.current = null;
+    const dx = event.clientX - swipe.startX;
+    const dy = Math.abs(event.clientY - swipe.startY);
+    if (dy > CART_SWIPE_VERTICAL_TOLERANCE || Math.abs(dx) < CART_ACTION_REVEAL_THRESHOLD) return;
+    setOpenActionKey(dx < 0 ? lineKey : null);
+  };
+
+  const handleCartSwipeCancel = (event: PointerEvent<HTMLDivElement>) => {
+    if (swipeRef.current?.pointerId === event.pointerId) {
+      swipeRef.current = null;
+    }
+  };
+
   const handleCheckout = () => {
     if (totalItemsSelected() === 0) {
-      toast.error(t("cart.selectItemsFirst"));
+      showCartToast("error", t("cart.selectItemsFirst"));
       return;
     }
     const couponId = couponSelectionTouched && !selectedCoupon ? "none" : selectedCoupon?.id;
@@ -268,9 +321,9 @@ export default function Cart() {
     try {
       await pinItemToTop(item.product.id, item.variant_id);
       closeItemActions();
-      toast.success(t("cart.pinned"));
+      showCartToast("success", t("cart.pinned"));
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : t("cart.pinFailed"));
+      showCartToast("error", e instanceof Error ? e.message : t("cart.pinFailed"));
     }
   };
 
@@ -281,9 +334,9 @@ export default function Cart() {
       }
       await removeItem(item.product.id, item.variant_id);
       closeItemActions();
-      toast.success(t("cart.movedToFavorites"));
+      showCartToast("success", t("cart.movedToFavorites"));
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : t("cart.moveToFavoritesFailed"));
+      showCartToast("error", e instanceof Error ? e.message : t("cart.moveToFavoritesFailed"));
     }
   };
 
@@ -307,28 +360,28 @@ export default function Cart() {
 
     const copied = await copyToClipboard(url);
     closeItemActions();
-    toast[copied ? "success" : "error"](copied ? t("cart.linkCopied") : t("cart.shareFailed"));
+    showCartToast(copied ? "success" : "error", copied ? t("cart.linkCopied") : t("cart.shareFailed"));
   };
 
   const commitQuantitySelection = async (nextQty: number) => {
     if (!quantityTargetItem) return;
     const normalizedQty = Math.floor(nextQty);
     if (!Number.isFinite(normalizedQty) || normalizedQty < 1) {
-      toast.error(t("cart.invalidQuantity"));
+      showCartToast("error", t("cart.invalidQuantity"));
       return;
     }
     const safeQty = Math.min(normalizedQty, quantityTargetMax);
     if (safeQty !== normalizedQty) {
-      toast.error(`${t("cart.maxQuantityToast")} ${quantityTargetMax} ${t("cart.quantityUnit")}`);
+      showCartToast("error", `${t("cart.maxQuantityToast")} ${quantityTargetMax} ${t("cart.quantityUnit")}`);
       setQuantityDraft(String(safeQty));
       return;
     }
     try {
       await updateQty(quantityTargetItem.product.id, safeQty, quantityTargetItem.variant_id);
-      toast.success(`${t("cart.quantityUpdated")} ${safeQty}`);
+      showCartToast("success", `${t("cart.quantityUpdated")} ${safeQty}`);
       closeQuantitySelector();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : t("cart.updateQuantityFailed"));
+      showCartToast("error", e instanceof Error ? e.message : t("cart.updateQuantityFailed"));
     }
   };
 
@@ -387,19 +440,18 @@ export default function Cart() {
                   <div className="flex items-baseline justify-between">
                     <span className="text-sm text-foreground">{t("cart.total")}</span>
                     <span className="text-[18px] font-extrabold text-[var(--theme-price)] sm:text-xl">
-                      <AnimatedNumber value={estimatedPayable} decimals={2} format={(n) => `RM ${n.toFixed(2)}`} />
+                      RM {formatCartMoney(estimatedPayable)}
                     </span>
                   </div>
                 </div>
-                <SquishButton
+                <UnifiedButton
                   type="button"
-                  variant="gold"
                   onClick={handleCheckout}
                   disabled={selectedQty === 0}
                   className="mt-5 w-full rounded-full py-3.5 text-sm font-bold transition-all hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50 !min-h-0"
                 >
                   {checkoutLabel}
-                </SquishButton>
+                </UnifiedButton>
                 <div className="mt-4">
                   <TrustInfo />
                 </div>
@@ -450,9 +502,8 @@ export default function Cart() {
               >
                 {/* 桌面：列表头 + 全选 */}
                 <div className="hidden items-center justify-between border-b border-[var(--theme-border)] px-1 py-3 md:flex">
-                  <SquishButton
+                  <UnifiedButton
                     type="button"
-                    variant="ghost"
                     onClick={() => setSelectAll(!allSelected)}
                     className="flex items-center gap-2 rounded-none bg-transparent text-sm text-muted-foreground hover:text-foreground !min-h-0 !px-0 !py-0"
                   >
@@ -471,10 +522,9 @@ export default function Cart() {
                       )}
                     </span>
                     {t("cart.selectAll")} ({selectedCount}/{items.length})
-                  </SquishButton>
+                  </UnifiedButton>
                 </div>
-                <AnimatePresence>
-                  {sortedCartItems.map((item, index) => {
+                {sortedCartItems.map((item, index) => {
                     const lineKey = cartLineKey(item.product.id, item.variant_id);
                     const selected = isSelected(item.product.id, item.variant_id);
                     const actionsOpen = openActionKey === lineKey;
@@ -491,14 +541,12 @@ export default function Cart() {
                         <small>{unavailableCount} 件</small>
                       </div>
                     ) : null}
-                    <motion.div
-                      exit={{ opacity: 0, x: -100 }}
+                    <div
                       className="sf-next-cart-item relative flex min-w-0 gap-2.5 py-4 sm:gap-3 md:py-5"
                       data-unavailable={unavailableReason ? "true" : undefined}
                     >
-                      <SquishButton
+                      <UnifiedButton
                         type="button"
-                        variant="ghost"
                         onClick={() => {
                           closeItemActions();
                           toggleSelect(item.product.id, item.variant_id);
@@ -515,7 +563,7 @@ export default function Cart() {
                         >
                           {selected && <Check size={15} strokeWidth={3} />}
                         </span>
-                      </SquishButton>
+                      </UnifiedButton>
                       <div className="relative min-w-0 flex-1 overflow-hidden">
                         <div
                           className={`absolute inset-y-1 right-0 flex overflow-hidden rounded-r-2xl border border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-surface)_70%,var(--theme-bg))] transition-opacity ${
@@ -568,20 +616,16 @@ export default function Cart() {
                             <span>{t("cart.delete")}</span>
                           </UnifiedButton>
                         </div>
-                        <motion.div
-                          drag="x"
-                          dragConstraints={{ left: -CART_ACTION_WIDTH, right: 0 }}
-                          dragDirectionLock
-                          dragElastic={0.04}
-                          onDragStart={() => setOpenActionKey(lineKey)}
-                          onDragEnd={(_, info) => {
-                            const shouldOpen = info.offset.x < -CART_ACTION_REVEAL_THRESHOLD || info.velocity.x < -420;
-                            const shouldClose = info.offset.x > CART_ACTION_REVEAL_THRESHOLD || info.velocity.x > 420;
-                            setOpenActionKey(shouldClose ? null : shouldOpen ? lineKey : actionsOpen ? lineKey : null);
-                          }}
-                          animate={{ x: actionsOpen ? -CART_ACTION_WIDTH : 0 }}
-                          transition={{ type: "spring", stiffness: 420, damping: 36 }}
+                        <div
+                          onPointerDown={(event) => handleCartSwipeStart(event, lineKey)}
+                          onPointerUp={(event) => handleCartSwipeEnd(event, lineKey)}
+                          onPointerCancel={handleCartSwipeCancel}
                           className="sf-next-cart-item-row relative z-10 flex min-w-0 gap-2.5 bg-transparent py-0.5 sm:gap-3"
+                          style={{
+                            transform: actionsOpen ? `translateX(-${CART_ACTION_WIDTH}px)` : "translateX(0)",
+                            transition: "transform 180ms ease",
+                            touchAction: "pan-y",
+                          }}
                         >
                           <UnifiedButton
                             type="button"
@@ -630,21 +674,20 @@ export default function Cart() {
                                 amountClassName="text-[15px] font-extrabold leading-tight sm:text-base"
                               />
                               <div className="sf-next-cart-qty-control flex h-9 shrink-0 items-center overflow-hidden rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)]">
-                                <SquishButton
+                                <UnifiedButton
                                   type="button"
-                                  variant="ghost"
                                   onClick={async () => {
                                     try {
                                       await updateQty(item.product.id, item.qty - 1, item.variant_id);
                                     } catch (e) {
-                                      toast.error(e instanceof Error ? e.message : t("cart.updateQuantityFailed"));
+                                      showCartToast("error", e instanceof Error ? e.message : t("cart.updateQuantityFailed"));
                                     }
                                   }}
                                   className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-transparent active:bg-[var(--theme-bg)] !p-0"
                                   aria-label={t("cart.quantityReduced")}
                                 >
                                   <Minus size={14} className="text-foreground" />
-                                </SquishButton>
+                                </UnifiedButton>
                                 <UnifiedButton
                                   type="button"
                                   onClick={() => openQuantitySelector(item)}
@@ -653,21 +696,20 @@ export default function Cart() {
                                 >
                                   {item.qty}
                                 </UnifiedButton>
-                                <SquishButton
+                                <UnifiedButton
                                   type="button"
-                                  variant="ghost"
                                   onClick={async () => {
                                     try {
                                       await updateQty(item.product.id, item.qty + 1, item.variant_id);
                                     } catch (e) {
-                                      toast.error(e instanceof Error ? e.message : t("cart.updateQuantityFailed"));
+                                      showCartToast("error", e instanceof Error ? e.message : t("cart.updateQuantityFailed"));
                                     }
                                   }}
                                   className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-transparent active:bg-[var(--theme-bg)] !p-0"
                                   aria-label={t("cart.quantityIncreased")}
                                 >
                                   <Plus size={14} className="text-foreground" />
-                                </SquishButton>
+                                </UnifiedButton>
                               </div>
                             </div>
                             <div className="mt-3 hidden flex-wrap items-center gap-2 md:flex">
@@ -712,7 +754,7 @@ export default function Cart() {
                               </UnifiedButton>
                             </div>
                           </div>
-                        </motion.div>
+                        </div>
                       </div>
                       {!isLastItem && (
                         <span
@@ -721,11 +763,10 @@ export default function Cart() {
                           style={{ background: "linear-gradient(90deg, transparent, var(--theme-border), transparent)" }}
                         />
                       )}
-                    </motion.div>
+                    </div>
                     </Fragment>
                     );
                   })}
-                </AnimatePresence>
               </div>
               <div className="sf-next-cart-discount-section">
                 <CartDiscountPanel
@@ -777,9 +818,8 @@ export default function Cart() {
       {items.length > 0 && (
         <div className="sf-next-cart-checkout-bar md:hidden">
           <div className="sf-next-cart-checkout-bar__inner">
-            <SquishButton
+            <UnifiedButton
               type="button"
-              variant="ghost"
               onClick={() => setSelectAll(!allSelected)}
               aria-pressed={allSelected}
               className="sf-next-cart-checkout-select flex shrink-0 items-center justify-center gap-1.5 rounded-none bg-transparent text-xs font-semibold text-[var(--theme-text-muted)] !min-h-0 !px-0 !py-0"
@@ -797,11 +837,11 @@ export default function Cart() {
                 {!allSelected && someSelected && <span className="h-2 w-2 rounded-sm bg-[var(--theme-price)]" />}
               </span>
               {t("cart.selectAll")}
-            </SquishButton>
+            </UnifiedButton>
             <div className="sf-next-cart-checkout-total min-w-0 flex-1" aria-live="polite">
               <span className="sf-next-cart-checkout-total__label">{estimatedDiscount > 0 ? t("cart.estimatedPayable") : t("cart.total")}</span>
               <span className="sf-next-cart-checkout-total__price">
-                <AnimatedNumber value={estimatedPayable} decimals={2} format={(n) => `RM ${n.toFixed(2)}`} />
+                RM {formatCartMoney(estimatedPayable)}
               </span>
               {estimatedDiscount > 0 ? (
                 <span className="sf-next-cart-checkout-total__discount">
@@ -809,114 +849,224 @@ export default function Cart() {
                 </span>
               ) : null}
             </div>
-            <SquishButton
+            <UnifiedButton
               type="button"
-              variant="gold"
               onClick={handleCheckout}
               disabled={selectedQty === 0}
               className="sf-next-cart-checkout-button shrink-0 text-sm font-bold transition-all disabled:cursor-not-allowed disabled:opacity-50 !min-h-0"
             >
               {checkoutLabel}
-            </SquishButton>
+            </UnifiedButton>
           </div>
         </div>
       )}
 
-      <BottomSheetConfirm
-        open={Boolean(deleteTarget)}
-        onClose={() => setDeleteTarget(null)}
-        title={t("cart.removeConfirmTitle")}
-        description={
-          deleteTarget
-            ? `${t("cart.removeConfirmPrefix")}「${deleteTarget.name}」${t("cart.removeConfirmSuffix")}`
-            : undefined
-        }
-        confirmText={t("cart.delete")}
-        danger
-        onConfirm={async () => {
-          if (!deleteTarget) return;
-          await removeItem(deleteTarget.productId, deleteTarget.variantId);
-          toast.success(t("cart.removed"), { duration: 2000 });
-        }}
-      />
-      <AppModal
-        tier="standard"
-        open={Boolean(quantityTargetItem)}
-        onClose={closeQuantitySelector}
-        title={t("cart.quantityTitle")}
-        height="auto"
-        stickyFooter
-        showHandle={false}
-        footer={
-          <div className="grid grid-cols-2 gap-2">
-            <UnifiedButton
-              type="button"
-              onClick={closeQuantitySelector}
-              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 text-sm font-semibold text-[var(--theme-text)]"
-            >
-              <X size={16} aria-hidden />
-              {t("common.cancel")}
-            </UnifiedButton>
-            <SquishButton
-              type="button"
-              variant="gold"
-              onClick={() => {
-                const parsed = Number.parseInt(quantityDraft.replace(/[^\d]/g, ""), 10);
-                void commitQuantitySelection(parsed);
-              }}
-              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-4 text-sm font-semibold"
-            >
-              <Check size={16} aria-hidden />
-              {t("common.confirm")}
-            </SquishButton>
-          </div>
-        }
-      >
-        {quantityTargetItem ? (
-          <div className="space-y-4">
-            <div className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-3">
-              <p className="line-clamp-2 text-sm font-semibold text-[var(--theme-text)]">
-                {quantityTargetItem.product.name}
-              </p>
-              <p className="mt-1 text-xs text-[var(--theme-text-muted)]">
-                {t("cart.currentQuantityPrefix")} {quantityTargetItem.qty} {t("cart.quantityUnit")} ·{" "}
-                {t("cart.maxQuantityPrefix")} {quantityTargetMax} {t("cart.quantityUnit")}
-              </p>
-            </div>
-            <div className="grid grid-cols-5 gap-2">
-              {quantityOptions.map((option) => (
+      {deleteTarget ? (
+        <Suspense fallback={null}>
+          <LazyCartBottomSheetConfirm
+            open
+            onClose={() => setDeleteTarget(null)}
+            title={t("cart.removeConfirmTitle")}
+            description={`${t("cart.removeConfirmPrefix")}「${deleteTarget.name}」${t("cart.removeConfirmSuffix")}`}
+            confirmText={t("cart.delete")}
+            danger
+            onConfirm={async () => {
+              await removeItem(deleteTarget.productId, deleteTarget.variantId);
+              showCartToast("success", t("cart.removed"), { duration: 2000 });
+            }}
+          />
+        </Suspense>
+      ) : null}
+      {quantityTargetItem ? (
+        <Suspense fallback={null}>
+          <LazyCartAppModal
+            tier="standard"
+            open
+            onClose={closeQuantitySelector}
+            title={t("cart.quantityTitle")}
+            height="auto"
+            stickyFooter
+            showHandle={false}
+            footer={
+              <div className="grid grid-cols-2 gap-2">
                 <UnifiedButton
-                  key={option}
                   type="button"
-                  aria-pressed={Number(quantityDraft) === option}
-                  onClick={() => void commitQuantitySelection(option)}
-                  className={`min-h-11 rounded-2xl border text-sm font-semibold tabular-nums ${
-                    Number(quantityDraft) === option
-                      ? "border-[var(--theme-price)] bg-[color-mix(in_srgb,var(--theme-price)_12%,var(--theme-surface))] text-[var(--theme-price)]"
-                      : "border-[var(--theme-border)] bg-[var(--theme-surface)] text-[var(--theme-text)]"
-                  }`}
+                  onClick={closeQuantitySelector}
+                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 text-sm font-semibold text-[var(--theme-text)]"
                 >
-                  {option}
+                  <X size={16} aria-hidden />
+                  {t("common.cancel")}
                 </UnifiedButton>
-              ))}
+                <UnifiedButton
+                  type="button"
+                  onClick={() => {
+                    const parsed = Number.parseInt(quantityDraft.replace(/[^\d]/g, ""), 10);
+                    void commitQuantitySelection(parsed);
+                  }}
+                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-4 text-sm font-semibold"
+                >
+                  <Check size={16} aria-hidden />
+                  {t("common.confirm")}
+                </UnifiedButton>
+              </div>
+            }
+          >
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-3">
+                <p className="line-clamp-2 text-sm font-semibold text-[var(--theme-text)]">
+                  {quantityTargetItem.product.name}
+                </p>
+                <p className="mt-1 text-xs text-[var(--theme-text-muted)]">
+                  {t("cart.currentQuantityPrefix")} {quantityTargetItem.qty} {t("cart.quantityUnit")} ·{" "}
+                  {t("cart.maxQuantityPrefix")} {quantityTargetMax} {t("cart.quantityUnit")}
+                </p>
+              </div>
+              <div className="grid grid-cols-5 gap-2">
+                {quantityOptions.map((option) => (
+                  <UnifiedButton
+                    key={option}
+                    type="button"
+                    aria-pressed={Number(quantityDraft) === option}
+                    onClick={() => void commitQuantitySelection(option)}
+                    className={`min-h-11 rounded-2xl border text-sm font-semibold tabular-nums ${
+                      Number(quantityDraft) === option
+                        ? "border-[var(--theme-price)] bg-[color-mix(in_srgb,var(--theme-price)_12%,var(--theme-surface))] text-[var(--theme-price)]"
+                        : "border-[var(--theme-border)] bg-[var(--theme-surface)] text-[var(--theme-text)]"
+                    }`}
+                  >
+                    {option}
+                  </UnifiedButton>
+                ))}
+              </div>
+              <label className="block text-sm font-semibold text-[var(--theme-text)]">
+                {t("cart.customQuantity")}
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={quantityDraft}
+                  onChange={(event) => setQuantityDraft(event.target.value.replace(/[^\d]/g, ""))}
+                  className="mt-2 h-12 w-full rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 text-center text-base font-semibold tabular-nums text-[var(--theme-text)] outline-none focus:border-[var(--theme-price)] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--theme-price)_18%,transparent)]"
+                  aria-label={t("cart.customQuantityAria")}
+                />
+              </label>
             </div>
-            <label className="block text-sm font-semibold text-[var(--theme-text)]">
-              {t("cart.customQuantity")}
-              <input
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                value={quantityDraft}
-                onChange={(event) => setQuantityDraft(event.target.value.replace(/[^\d]/g, ""))}
-                className="mt-2 h-12 w-full rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 text-center text-base font-semibold tabular-nums text-[var(--theme-text)] outline-none focus:border-[var(--theme-price)] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--theme-price)_18%,transparent)]"
-                aria-label={t("cart.customQuantityAria")}
-              />
-            </label>
-          </div>
-        ) : null}
-      </AppModal>
+          </LazyCartAppModal>
+        </Suspense>
+      ) : null}
     </div>
   );
+}
+
+function useCartCheckoutCoupons(orderAmount: number, checkoutParams?: SubmitOrderParams | null) {
+  const [state, setState] = useState<CartCheckoutCouponsState>({
+    coupons: [],
+    unusableCoupons: [],
+    loading: false,
+    loadedRequestKey: "",
+  });
+  const requestKey = useMemo(
+    () => (checkoutParams ? JSON.stringify({ orderAmount, checkoutParams }) : ""),
+    [checkoutParams, orderAmount],
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!checkoutParams) {
+      setState({
+        coupons: [],
+        unusableCoupons: [],
+        loading: orderAmount > 0,
+        loadedRequestKey: "",
+      });
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    setState((current) => ({
+      ...current,
+      loading: true,
+      loadedRequestKey: "",
+    }));
+
+    import("@/services/orderService")
+      .then(({ checkoutCoupons }) => checkoutCoupons(checkoutParams))
+      .then((res) => {
+        if (cancelled) return;
+        setState({
+          coupons: (res.usable || []).map((row, idx) => mapCartServerCoupon(row as unknown as Record<string, unknown>, idx, true)),
+          unusableCoupons: (res.unusable || []).map((row, idx) => mapCartServerCoupon(row as unknown as Record<string, unknown>, idx, false)),
+          loading: false,
+          loadedRequestKey: requestKey,
+        });
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setState({
+            coupons: [],
+            unusableCoupons: [],
+            loading: false,
+            loadedRequestKey: requestKey,
+          });
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [orderAmount, checkoutParams, requestKey]);
+
+  const ready = !checkoutParams || state.loadedRequestKey === requestKey;
+
+  return {
+    coupons: state.coupons,
+    unusableCoupons: state.unusableCoupons,
+    loading: state.loading || !ready,
+    ready,
+  };
+}
+
+function parseCartCouponScopeList(raw: unknown): string[] {
+  if (Array.isArray(raw)) return raw.map((item) => String(item).trim()).filter(Boolean);
+  if (typeof raw !== "string" || !raw.trim()) return [];
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (Array.isArray(parsed)) return parsed.map((item) => String(item).trim()).filter(Boolean);
+  } catch {
+    // fall through to comma-separated parsing
+  }
+  return raw.split(",").map((item) => item.trim()).filter(Boolean);
+}
+
+function formatCartCouponScopeText(scopeType?: string, categoryNames?: string[], categoryIds?: string[]) {
+  if (scopeType === "category") {
+    if (Array.isArray(categoryNames) && categoryNames.length > 0) return `适用范围：${categoryNames.join("、")}`;
+    if (Array.isArray(categoryIds) && categoryIds.length > 0) return `适用范围：指定分类（${categoryIds.length}个）`;
+    return "适用范围：指定分类";
+  }
+  return "适用范围：全场商品";
+}
+
+function mapCartServerCoupon(row: Record<string, unknown>, idx: number, usable: boolean): CheckoutPickerCoupon {
+  const type = row.type === "percentage" ? "percentage" : row.type === "shipping" ? "shipping" : "fixed";
+  const scopeType = row.scope_type === "category" ? "category" : "all";
+  const categoryNames = parseCartCouponScopeList(row.category_names);
+  const categoryIds = parseCartCouponScopeList(row.category_ids);
+  return {
+    id: String(row.user_coupon_id || row.id || ""),
+    couponId: row.coupon_id ? String(row.coupon_id) : undefined,
+    title: String(row.title || ""),
+    discount: Number(row.value || 0),
+    discountType: type,
+    condition: Number(row.min_amount || 0),
+    expire: String(row.valid_until || ""),
+    variantIndex: idx,
+    usable,
+    reason: typeof row.reason === "string" ? row.reason : undefined,
+    discountAmount: Number(row.discount_amount || 0),
+    scopeText: formatCartCouponScopeText(scopeType, categoryNames, categoryIds),
+  };
 }
 
 function getCartQuantityMax(item: CartItem) {
@@ -944,7 +1094,10 @@ function isCartCouponUsable(coupon: CheckoutPickerCoupon, amount: number) {
 }
 
 function getCartCouponDiscount(coupon: CheckoutPickerCoupon, amount: number) {
-  return estimateCheckoutCouponDiscount(coupon, amount, 0);
+  if (coupon.discountAmount != null && coupon.discountAmount > 0) return coupon.discountAmount;
+  if (coupon.discountType === "percentage") return Math.min(amount, Math.floor((amount * coupon.discount) / 100));
+  if (coupon.discountType === "shipping") return 0;
+  return Math.min(amount, coupon.discount);
 }
 
 function getCartLineDealLabel(item: CartItem, t: (key: string) => string) {
@@ -1028,15 +1181,17 @@ function CartDiscountPanel({
       </div>
 
       <div className="sf-next-cart-discount-panel__coupon-slot">
-        <CouponPicker
-          embedded
-          totalAmount={selectedAmount}
-          selectedCouponId={selectedCoupon?.id ?? null}
-          onSelect={onCouponSelect}
-          coupons={coupons}
-          unusableCoupons={unusableCoupons}
-          loading={couponsLoading}
-        />
+        <Suspense fallback={null}>
+          <LazyCouponPicker
+            embedded
+            totalAmount={selectedAmount}
+            selectedCouponId={selectedCoupon?.id ?? null}
+            onSelect={onCouponSelect}
+            coupons={coupons}
+            unusableCoupons={unusableCoupons}
+            loading={couponsLoading}
+          />
+        </Suspense>
       </div>
     </section>
   );

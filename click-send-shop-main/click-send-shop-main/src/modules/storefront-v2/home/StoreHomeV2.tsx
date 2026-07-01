@@ -3,6 +3,8 @@ import {
   RefreshCw,
   Users,
 } from "lucide-react";
+import "@/styles/client-redesign.css";
+import "@/styles/storefront-next.extended-routes.css";
 import { toast } from "sonner";
 import SeoHead from "@/components/SeoHead";
 import HomeTrustBar from "@/components/HomeTrustBar";

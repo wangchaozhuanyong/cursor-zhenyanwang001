@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { ArrowLeft, KeyRound, Loader2, Lock, ShieldCheck } from "lucide-react";
+import "@/styles/storefront-next.extended-routes.css";
 
 import { toast } from "sonner";
 import CountryPhoneInput from "@/components/auth/CountryPhoneInput";

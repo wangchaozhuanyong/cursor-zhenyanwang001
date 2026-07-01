@@ -220,6 +220,86 @@ html[data-app-scope="store"][data-storefront-ui="next"] .skeleton-shimmer::after
   letter-spacing: 0.04em;
 }
 
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-loyalty-route-loading {
+  display: grid;
+  min-height: 100svh;
+  place-items: start center;
+  background: var(--sf-canvas) !important;
+  padding: calc(env(safe-area-inset-top, 0px) + var(--sf-space-8)) var(--sf-page-gutter) var(--sf-space-8);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-loyalty-route-loading .sf-next-route-state {
+  width: min(100%, 26rem);
+  margin-top: var(--sf-space-8);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-capability-route-loading {
+  display: grid;
+  min-height: min(60svh, 34rem);
+  place-items: start center;
+  padding: calc(env(safe-area-inset-top, 0px) + var(--sf-space-8)) var(--sf-page-gutter) var(--sf-space-8);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-capability-route-loading .sf-next-route-state {
+  width: min(100%, 26rem);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-route-state {
+  display: grid;
+  min-width: 0;
+  justify-items: center;
+  border: 1px solid var(--sf-line);
+  border-radius: var(--sf-radius-lg);
+  background: var(--sf-surface);
+  padding: 2rem var(--sf-space-5);
+  text-align: center;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-route-state__icon {
+  display: grid;
+  width: 4rem;
+  height: 4rem;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--sf-accent-soft);
+  color: var(--sf-accent);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-route-state[data-tone="success"] .sf-next-route-state__icon {
+  background: color-mix(in srgb, var(--sf-success) 12%, var(--sf-surface));
+  color: var(--sf-success);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-route-state[data-tone="error"] .sf-next-route-state__icon {
+  background: color-mix(in srgb, var(--sf-danger) 10%, var(--sf-surface));
+  color: var(--sf-danger);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-route-state__title {
+  margin: 1rem 0 0;
+  color: var(--sf-ink);
+  font-size: var(--sf-font-xl);
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-route-state__description {
+  max-width: 28rem;
+  margin: 0.5rem 0 0;
+  color: var(--sf-ink-secondary);
+  font-size: var(--sf-font-sm);
+  line-height: 1.65;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-route-state__actions {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--sf-space-3);
+  margin-top: 1.25rem;
+}
+
 .sf-next-value-vault__amount {
   margin-top: 0.125rem;
   font-size: 1.875rem;

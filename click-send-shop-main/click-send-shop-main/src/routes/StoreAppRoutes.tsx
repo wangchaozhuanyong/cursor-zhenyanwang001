@@ -67,9 +67,10 @@ import StorefrontProgressThread from "@/components/storefront-motion/StorefrontP
 import StorefrontRouteVeil from "@/components/storefront-motion/StorefrontRouteVeil";
 
 const CARD_EQUAL_MOBILE_FIX_STYLE_ID = "sf-next-card-equal-mobile-fix";
-const GLOBAL_WIDGET_DELAY_MS = 9000;
-const PRIVACY_TRACKING_DELAY_MS = 1000;
+const GLOBAL_WIDGET_DELAY_MS = 18_000;
+const HIGH_INTENT_WIDGET_DELAY_MS = 3_000;
 const ENABLE_LEGACY_CARD_OVERLAP_FIX = false;
+const STOREFRONT_TOAST_NEEDED_EVENT = "storefront:toast-needed";
 
 const CookieConsentBanner = lazy(() => import("@/components/CookieConsentBanner"));
 const TrackingManager = lazy(() => import("@/components/TrackingManager"));
@@ -281,6 +282,31 @@ function DeferredGlobalMount({ children, delayMs = GLOBAL_WIDGET_DELAY_MS }: { c
     });
   }, [delayMs]);
   return mounted ? <>{children}</> : null;
+}
+
+function DeferredToastHost({ delayMs = GLOBAL_WIDGET_DELAY_MS }: { delayMs?: number }) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    if (mounted) return undefined;
+    const mount = () => setMounted(true);
+    const cancelIdle = scheduleIdleTask("deferred-toast-host", mount, {
+      delayMs,
+      timeoutMs: 5000,
+      jitterMs: 2500,
+    });
+    window.addEventListener(STOREFRONT_TOAST_NEEDED_EVENT, mount);
+    return () => {
+      cancelIdle();
+      window.removeEventListener(STOREFRONT_TOAST_NEEDED_EVENT, mount);
+    };
+  }, [delayMs, mounted]);
+
+  return mounted ? (
+    <Suspense fallback={null}>
+      <SonnerToaster />
+    </Suspense>
+  ) : null;
 }
 
 function AppScopeSync() {
@@ -588,7 +614,7 @@ function MainStoreRoutes() {
   const capabilities = useSiteCapabilities();
   const suppressMarketingPopups = shouldSuppressMarketingPopups(location.pathname);
   const deferNonCriticalWidgets = shouldDeferNonCriticalWidgets(location.pathname);
-  const nonCriticalWidgetDelayMs = deferNonCriticalWidgets ? GLOBAL_WIDGET_DELAY_MS : 3000;
+  const nonCriticalWidgetDelayMs = deferNonCriticalWidgets ? GLOBAL_WIDGET_DELAY_MS : HIGH_INTENT_WIDGET_DELAY_MS;
   const routeFallbackKey = `${location.pathname}${location.search}`;
   const routeFallbackDelayMs = location.pathname.startsWith("/product/") ? 520 : 320;
 
@@ -640,11 +666,7 @@ function MainStoreRoutes() {
               </Suspense>
             </StorefrontMotionBoundary>
             <StorefrontBottomNavHost />
-            <DeferredGlobalMount delayMs={PRIVACY_TRACKING_DELAY_MS}>
-              <Suspense fallback={null}>
-                <SonnerToaster />
-              </Suspense>
-            </DeferredGlobalMount>
+            <DeferredToastHost delayMs={nonCriticalWidgetDelayMs} />
             <DeferredGlobalMount delayMs={nonCriticalWidgetDelayMs}>
               <Suspense fallback={null}>
                 <TrackingManager />

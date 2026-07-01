@@ -10,7 +10,6 @@ import { isStoreNavPathVisible } from "@/utils/storeNavVisibility";
 import { shouldHideBottomNav } from "./bottomNavVisibility";
 import { navigateWithStoreTransition } from "@/utils/storeNavigationTransition";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
-import { preloadStoreRouteLazy } from "@/utils/preloadStoreRouteLazy";
 import { getRememberedStoreTabPath, rememberCurrentStoreScrollPosition } from "@/utils/storeScrollRestoration";
 import { stripPublicLocaleFromPathname, usePublicLocale } from "@/i18n/publicLocale";
 import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
@@ -27,8 +26,19 @@ type ActivePointer = {
   maxMove: number;
 };
 
+function isSmallTouchViewportForIdlePreload() {
+  if (typeof navigator === "undefined" || typeof window === "undefined") return false;
+  const minScreen = Math.min(window.screen?.width || window.innerWidth, window.screen?.height || window.innerHeight);
+  const minViewport = Math.min(window.innerWidth || minScreen, window.innerHeight || minScreen);
+  const compactEdge = Math.min(minScreen || minViewport, minViewport || minScreen);
+  return navigator.maxTouchPoints > 0 && compactEdge > 0 && compactEdge <= 768;
+}
+
 function preloadIdleTabRoute(path: string) {
-  void preloadStoreRouteLazy(path, "idle");
+  if (isSmallTouchViewportForIdlePreload()) return;
+  void import("@/utils/preloadStoreRouteLazy")
+    .then(({ preloadStoreRouteLazy }) => preloadStoreRouteLazy(path, "idle"))
+    .catch(() => undefined);
 }
 
 function shouldActivateOnPointerDown(pointerType: string) {

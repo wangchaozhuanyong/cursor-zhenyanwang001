@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, type CSSProperties, type KeyboardEvent } from "react";
 import { AlertCircle, ArrowLeft, Eye, EyeOff, Lock, User, KeyRound } from "lucide-react";
 import { useLocation } from "react-router-dom";
+import "@/styles/storefront-next.extended-routes.css";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useUserStore } from "@/stores/useUserStore";
 import * as authService from "@/services/authService";

@@ -1,5 +1,6 @@
 import { formatDateTime } from "@/utils/formatDateTime";
 import { useEffect, useState } from "react";
+import "@/styles/storefront-next.extended-routes.css";
 import {
   Bell,
   Package,

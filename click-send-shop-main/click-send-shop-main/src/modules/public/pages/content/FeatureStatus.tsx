@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { BadgeCheck, BadgeX, CreditCard, Gift, PackageCheck, ShieldCheck, SlidersHorizontal, UserRound } from "lucide-react";
+import "@/styles/storefront-next.extended-routes.css";
 import SeoHead from "@/components/SeoHead";
 import StoreStandardPageShell from "@/components/store/StoreStandardPageShell";
 import { useGoBack } from "@/hooks/useGoBack";

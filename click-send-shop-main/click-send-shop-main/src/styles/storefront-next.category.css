@@ -1565,3 +1565,32 @@ html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .
     0 0.75rem 1.6rem color-mix(in srgb, var(--sf-ink) 5%, transparent),
     inset 0 1px 0 color-mix(in srgb, white 54%, transparent) !important;
 }
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-listing-sort-shell {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  overflow: visible !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-listing-sortbar.sf-next-sortbar {
+  gap: 0.34rem !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-listing-sortbar .sf-next-sort-pill {
+  border: 0 !important;
+  border-radius: 0.72rem !important;
+  background: color-mix(in srgb, var(--sf-surface) 84%, var(--sf-canvas)) !important;
+  box-shadow: none !important;
+  color: var(--sf-ink-secondary) !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .sf-next-listing-sortbar .sf-next-sort-pill.is-active {
+  background: var(--sf-ink) !important;
+  color: var(--sf-canvas) !important;
+}

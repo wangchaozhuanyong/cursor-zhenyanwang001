@@ -11,7 +11,6 @@ import { stripHtml, truncateText } from "@/utils/seo";
 import { sanitizeCmsHtml } from "@/utils/cmsSanitizer";
 import { isAboutPlaceholderBody } from "@/constants/helpCenterConfig";
 import { STORE_COPY } from "@/constants/storeCopy";
-import BalanceFolio from "@/modules/storefront-v2/design/components/BalanceFolio";
 import "@/styles/secondary-routes.css";
 
 const informationItems = [
@@ -66,17 +65,16 @@ export default function About() {
       />
 
       <div className="sf-next-content-stack">
-        <BalanceFolio
-          eyebrow="SILENT COMMERCE"
-          value={siteName}
-          caption={siteInfo.siteSlogan || STORE_COPY.siteSlogan}
-          meta={[
-            { label: "内容来源", value: cmsBody ? "CMS" : "站点配置" },
-            { label: "页面状态", value: "公开" },
-            { label: "服务范围", value: "商城" },
-          ]}
-          className="sf-next-about-folio"
-        />
+        <section className="sf-next-about-hero" aria-label="平台信息">
+          <span>平台信息</span>
+          <h1>{siteName}</h1>
+          <p>{siteInfo.siteSlogan || STORE_COPY.siteSlogan}</p>
+          <div className="sf-next-about-hero__meta">
+            <b>内容来源：{cmsBody ? "CMS" : "站点配置"}</b>
+            <b>页面状态：公开</b>
+            <b>服务范围：商城</b>
+          </div>
+        </section>
 
         {cmsBody ? (
           <article className="sf-next-body-text sf-next-content-article" dangerouslySetInnerHTML={{ __html: sanitizeCmsHtml(cmsBody) }} />

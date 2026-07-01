@@ -441,9 +441,6 @@ function HomeQuickEntryPanel({
       data-home-nav-source="admin-home-ops"
       data-command-count={ready ? actions.length : 10}
     >
-      <div className="sf-next-quick-entry__header">
-        <h2>快捷入口</h2>
-      </div>
       <div className="sf-next-quick-entry__grid">
         {!ready
           ? Array.from({ length: 10 }).map((_, index) => (
@@ -494,7 +491,6 @@ function HomeInviteEntry({
       </div>
       <div className="sf-next-home-invite__copy">
         <h2>{title}</h2>
-        <p>{authenticated ? "分享邀请码，查看奖励与邀请记录" : "登录后生成专属邀请卡"}</p>
       </div>
       <UnifiedButton
         type="button"

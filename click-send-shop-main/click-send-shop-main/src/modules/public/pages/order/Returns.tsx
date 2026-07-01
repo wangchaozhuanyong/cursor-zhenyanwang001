@@ -10,7 +10,6 @@ import { formatDateTime } from "@/utils/formatDateTime";
 import ReturnApplySheet from "./ReturnApplySheet";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { THEME_PRODUCT_MEDIA_ASPECT_STYLE } from "@/constants/productMediaAspect";
-import afterSaleProgressHero from "./assets/after-sale-progress-hero.webp";
 import {
   type ReturnFilterKey,
   getBuyerReturnAction,
@@ -153,36 +152,28 @@ export default function Returns() {
       mainClassName="sf-next-account-main sm:px-4 xl:py-6"
     >
       <main className="mx-auto w-full max-w-3xl space-y-4 text-sm">
-        <section className="sf-next-returns-hero relative overflow-hidden rounded-[28px] border border-[color-mix(in_srgb,var(--theme-primary)_14%,var(--theme-border))] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--theme-primary)_10%,var(--theme-surface))_0%,var(--theme-surface)_56%,color-mix(in_srgb,var(--theme-primary)_7%,var(--theme-surface))_100%)] p-5 shadow-[0_18px_45px_rgba(15,23,42,0.08)] sm:p-6">
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_82%_36%,color-mix(in_srgb,var(--theme-primary)_18%,transparent),transparent_34%),radial-gradient(circle_at_18%_16%,rgba(255,255,255,0.9),transparent_34%)]" aria-hidden />
-          <img
-            src={afterSaleProgressHero}
-            alt=""
-            aria-hidden="true"
-            className="pointer-events-none absolute bottom-2 right-[-2.5rem] z-0 h-[78%] max-h-[12.5rem] w-auto select-none object-contain opacity-95 [mask-image:linear-gradient(to_right,transparent_0%,rgba(0,0,0,0.2)_28%,black_48%)] [-webkit-mask-image:linear-gradient(to_right,transparent_0%,rgba(0,0,0,0.2)_28%,black_48%)] sm:bottom-0 sm:right-0 sm:max-h-[15rem]"
-            draggable={false}
-          />
-          <div className="relative z-10 flex min-h-[11.5rem] max-w-[68%] flex-col justify-center sm:min-h-[13.5rem] sm:max-w-[60%]">
-            <h1 className="text-2xl font-semibold leading-tight text-foreground sm:text-3xl">{copy.heroTitle}</h1>
-            <p className="mt-3 text-sm leading-6 text-muted-foreground sm:text-base">{copy.heroDescription}</p>
-            <div className="mt-5 flex flex-wrap gap-2">
-              <UnifiedButton
-                type="button"
-                onClick={() => void loadList()}
-                className="inline-flex min-h-11 items-center gap-2 rounded-full border border-[color-mix(in_srgb,var(--theme-border)_80%,white)] bg-[var(--theme-surface)] px-3.5 py-2 text-sm font-medium shadow-sm"
-              >
-                <RefreshCw size={17} className={loading ? "animate-spin" : ""} />
-                {copy.refresh}
-              </UnifiedButton>
-              <UnifiedButton
-                type="button"
-                className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[var(--theme-primary)] px-3.5 py-2 text-sm font-medium text-[var(--theme-primary-foreground)] shadow-sm"
-                onClick={() => setApplyOpen(true)}
-              >
-                <Plus size={17} />
-                {copy.apply}
-              </UnifiedButton>
-            </div>
+        <section className="sf-next-returns-hero sf-next-returns-hero--compact">
+          <div className="sf-next-returns-hero__copy">
+            <h1>{copy.heroTitle}</h1>
+            <p>{copy.heroDescription}</p>
+          </div>
+          <div className="sf-next-returns-hero__actions">
+            <UnifiedButton
+              type="button"
+              onClick={() => void loadList()}
+              className="sf-next-returns-hero__button"
+            >
+              <RefreshCw size={17} className={loading ? "animate-spin" : ""} />
+              {copy.refresh}
+            </UnifiedButton>
+            <UnifiedButton
+              type="button"
+              className="sf-next-returns-hero__button sf-next-returns-hero__button--primary"
+              onClick={() => setApplyOpen(true)}
+            >
+              <Plus size={17} />
+              {copy.apply}
+            </UnifiedButton>
           </div>
         </section>
 

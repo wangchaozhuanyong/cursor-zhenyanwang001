@@ -260,7 +260,7 @@ export default function Settings() {
 
       <SectionBlock title="基础信息">
         <div className="space-y-4">
-          <div className="flex gap-3">
+          <div className="sf-next-settings-form-row">
             <IconBubble>
               <UserRound size={20} />
             </IconBubble>
@@ -276,7 +276,7 @@ export default function Settings() {
           </div>
 
           <div className={DIVIDER}>
-            <div className="flex gap-3">
+            <div className="sf-next-settings-form-row">
               <IconBubble>
                 <CalendarDays size={20} />
               </IconBubble>
@@ -301,7 +301,7 @@ export default function Settings() {
 
       <SectionBlock title="联系方式">
         <div className="space-y-5">
-          <div className="flex gap-3">
+          <div className="sf-next-settings-form-row">
             <IconBubble>
               <Phone size={20} />
             </IconBubble>
@@ -321,7 +321,7 @@ export default function Settings() {
           </div>
 
           <div className={DIVIDER}>
-            <div className="flex gap-3">
+            <div className="sf-next-settings-form-row">
               <IconBubble>
                 <WeChatIcon size={20} />
               </IconBubble>
@@ -338,7 +338,7 @@ export default function Settings() {
           </div>
 
           <div className={DIVIDER}>
-            <div className="flex gap-3">
+            <div className="sf-next-settings-form-row">
               <IconBubble>
                 <MessageCircle size={20} />
               </IconBubble>

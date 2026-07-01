@@ -164,16 +164,21 @@ export default function Notifications() {
       <StoreAccountLayout
         title={notificationTitle}
         onBack={goBack}
-        rightSlot={
-          unreadCount > 0 ? (
-            <UnifiedButton type="button" onClick={markAllAsRead} className="flex items-center gap-1 text-xs text-theme-price active:opacity-70">
-              <Check size={14} /> 全部已读
-            </UnifiedButton>
-          ) : undefined
-        }
         className="sf-next-page sf-next-route-page sf-next-account-route-page sf-next-notifications-page"
         mainClassName="sf-next-account-main sm:px-4 xl:py-6"
       >
+        <div className="sf-next-notifications-toolbar">
+          <div>
+            <strong>消息分类</strong>
+            <span>{unreadCount > 0 ? `还有 ${unreadCount} 条未读` : "暂无未读消息"}</span>
+          </div>
+          {unreadCount > 0 ? (
+            <UnifiedButton type="button" onClick={markAllAsRead} className="sf-next-notifications-mark-read">
+              <Check size={15} aria-hidden />
+              <span>全部已读</span>
+            </UnifiedButton>
+          ) : null}
+        </div>
         <div ref={filtersRef} className="sf-next-notifications-filters no-scrollbar">
           {NOTIFICATION_FILTERS.map((item) => {
             const Icon = item.icon;

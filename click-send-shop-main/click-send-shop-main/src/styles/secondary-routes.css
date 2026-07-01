@@ -3042,3 +3042,264 @@ html[data-app-scope="store"] .sf-next-return-detail-page .sf-next-empty-state__a
     margin-top: 12px;
   }
 }
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-history-group__head {
+  align-items: center;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-history-group__head h2 {
+  margin-top: 0;
+  font-size: 1.08rem;
+  line-height: 1.18;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-history-group__head small {
+  display: block;
+  margin-top: 0.24rem;
+  font-size: 0.76rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-history-clear-inline {
+  display: inline-flex;
+  min-height: 2.1rem;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  border: 1px solid color-mix(in srgb, var(--sf-danger) 20%, var(--sf-line));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--sf-danger) 7%, var(--sf-surface));
+  color: var(--sf-danger);
+  padding: 0 0.7rem;
+  font-size: 0.76rem;
+  font-weight: 780;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-history-page .sf-next-account-product-grid {
+  display: grid;
+  gap: 0.62rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-history-page .sf-next-account-product-card--history {
+  border: 1px solid var(--sf-line) !important;
+  border-radius: 0.95rem !important;
+  background: var(--sf-surface) !important;
+  padding: 0.62rem !important;
+  box-shadow: none !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-history-page .sf-next-account-product-card--history .sf-next-account-product-card__row {
+  grid-template-columns: 5.15rem minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 0.78rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-history-page .sf-next-account-product-card--history .sf-next-account-product-card__media {
+  aspect-ratio: 1 / 1 !important;
+  border: 0 !important;
+  border-radius: 0.76rem !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-history-page .sf-next-account-product-card--history .sf-next-account-product-card__content {
+  min-height: 5.15rem;
+  justify-content: space-between;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-history-page .sf-next-account-product-card--history .sf-next-account-product-card__title {
+  font-size: 0.86rem !important;
+  line-height: 1.32 !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-history-page .sf-next-account-product-card--history .sf-next-account-product-card__price {
+  padding-top: 0.4rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-settings-form-row {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: 2.75rem minmax(0, 1fr);
+  align-items: start;
+  gap: 0.82rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-settings-form-row .sf-next-settings-icon {
+  margin-top: 1.5rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-settings-page .sf-next-settings-status-strip span {
+  border-color: rgb(255 255 255 / 20%) !important;
+  background: rgb(255 255 255 / 12%) !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-settings-page .sf-next-settings-status-strip b {
+  color: rgb(255 255 255 / 72%) !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-settings-page .sf-next-settings-status-strip strong {
+  color: #fff !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-returns-hero--compact {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 1rem !important;
+  border: 1px solid var(--sf-line) !important;
+  border-radius: 1rem !important;
+  background: var(--sf-surface) !important;
+  padding: 1rem !important;
+  box-shadow: none !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-returns-hero__copy {
+  min-width: 0;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-returns-hero__copy h1,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-returns-hero__copy p {
+  margin: 0;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-returns-hero__copy h1 {
+  color: var(--sf-ink) !important;
+  font-size: 1.05rem !important;
+  font-weight: 840 !important;
+  line-height: 1.2 !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-returns-hero__copy p {
+  margin-top: 0.35rem;
+  color: var(--sf-ink-secondary) !important;
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-returns-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-returns-hero__button {
+  display: inline-flex;
+  min-height: 2.45rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.34rem;
+  border: 1px solid var(--sf-line);
+  border-radius: 999px;
+  background: var(--sf-surface-muted);
+  color: var(--sf-ink);
+  padding: 0 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 780;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-returns-hero__button--primary {
+  border-color: var(--sf-ink);
+  background: var(--sf-ink);
+  color: var(--sf-canvas);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-help-stack {
+  gap: 0.82rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-help-quick-grid {
+  grid-template-columns: 1fr !important;
+  gap: 0.5rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-help-quick-card {
+  min-height: 3.35rem !important;
+  grid-template-columns: 2rem minmax(0, 1fr) auto !important;
+  align-content: center !important;
+  align-items: center !important;
+  gap: 0.65rem !important;
+  padding: 0.72rem 0.82rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-help-quick-card small {
+  justify-self: end;
+  white-space: nowrap;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-help-faq-section .sf-next-help-faq__trigger {
+  min-height: 3.65rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-help-feedback-link {
+  min-height: 3rem !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-about-hero {
+  display: grid;
+  gap: 0.6rem;
+  border: 1px solid var(--sf-line);
+  border-radius: 1rem;
+  background: var(--sf-surface);
+  padding: 1rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-about-hero span {
+  color: var(--sf-ink-secondary);
+  font-size: 0.74rem;
+  font-weight: 780;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-about-hero h1,
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-about-hero p {
+  margin: 0;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-about-hero h1 {
+  color: var(--sf-ink) !important;
+  font-size: 1.9rem !important;
+  font-weight: 900 !important;
+  line-height: 1.08 !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-about-hero p {
+  color: var(--sf-ink-secondary);
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-about-hero__meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+  border-top: 1px solid var(--sf-line);
+  padding-top: 0.7rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-about-hero__meta b {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--sf-ink);
+  font-size: 0.72rem;
+  font-weight: 760;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 767px) {
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-returns-hero--compact {
+    grid-template-columns: 1fr !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-returns-hero__actions {
+    justify-content: stretch;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-returns-hero__button {
+    flex: 1 1 0;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-about-hero__meta {
+    grid-template-columns: 1fr;
+  }
+}

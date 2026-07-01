@@ -47,7 +47,7 @@ export default function ProductSortBar({ value, onChange, hideNewest = false, cl
     <div
       ref={sortBarRef}
       className={cn(
-        "sf-next-sortbar no-scrollbar flex min-w-0 items-center gap-1.5 overflow-x-auto overflow-y-hidden scroll-smooth rounded-full border px-1 py-1 [-webkit-overflow-scrolling:touch] sm:gap-2 sm:px-1.5",
+        "sf-next-sortbar no-scrollbar flex min-w-0 items-center gap-1.5 overflow-x-auto overflow-y-hidden scroll-smooth px-0 py-0 [-webkit-overflow-scrolling:touch] sm:gap-2",
         className,
       )}
     >

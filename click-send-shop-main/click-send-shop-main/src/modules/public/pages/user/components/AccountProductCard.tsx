@@ -54,7 +54,7 @@ export default function AccountProductCard({
             fetchPriority={index === 0 ? "high" : "low"}
             sizes="112px"
           />
-          {vm.badges.length ? (
+          {!isHistory && vm.badges.length ? (
             <div className="absolute left-1.5 top-1.5 flex max-w-[calc(100%-12px)] flex-wrap gap-1">
               {vm.badges.slice(0, 2).map((badge) => (
                 <StorefrontBadge key={badge.key} tone={badge.tone}>
@@ -68,12 +68,15 @@ export default function AccountProductCard({
 
         <div className="sf-next-account-product-card__content flex min-w-0 flex-col">
           <Link to={href} className="sf-next-account-product-card__title-link min-w-0" aria-label={`查看 ${vm.name}`}>
-            <h3 className="sf-next-account-product-card__title line-clamp-2 min-h-[2.5rem] text-sm font-semibold leading-5 text-[var(--theme-text)]">
+            <h3 className={cn(
+              "sf-next-account-product-card__title line-clamp-2 text-sm font-semibold leading-5 text-[var(--theme-text)]",
+              isHistory ? "min-h-0" : "min-h-[2.5rem]",
+            )}>
               {vm.name}
             </h3>
           </Link>
-          <DecisionMetaRow items={vm.decisionTexts} />
-          <ActivityProgressBar percent={vm.activityProgressPercent} text={vm.activityProgressText} />
+          {!isHistory ? <DecisionMetaRow items={vm.decisionTexts} /> : null}
+          {!isHistory ? <ActivityProgressBar percent={vm.activityProgressPercent} text={vm.activityProgressText} /> : null}
           <div className="sf-next-account-product-card__price mt-auto pt-2">
             <StorefrontPrice className="sf-next-account-product-card__price-line" amount={vm.priceText} originalAmount={vm.originalPriceText} />
           </div>

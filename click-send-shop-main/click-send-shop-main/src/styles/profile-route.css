@@ -2677,3 +2677,56 @@ html[data-app-scope="store"][data-theme-member-card-style="fresh"] .sf-next-prof
     touch-action: manipulation;
   }
 }
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-vip-header {
+  padding-bottom: 0.1rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-vip-profile-trigger {
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  text-align: left;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-vip-header-actions {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.35rem;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-avatar-camera {
+  position: absolute;
+  display: grid;
+  place-items: center;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-vip-folio-head {
+  gap: 0.45rem;
+  border-bottom-color: color-mix(in srgb, var(--sf-on-accent) 18%, transparent) !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-vip-folio-head span {
+  color: color-mix(in srgb, var(--sf-on-accent) 78%, transparent) !important;
+  letter-spacing: 0;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-card-asset {
+  justify-items: center !important;
+  border-color: color-mix(in srgb, var(--sf-on-accent) 26%, transparent) !important;
+  background: color-mix(in srgb, var(--sf-on-accent) 20%, transparent) !important;
+  text-align: center !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-card-asset-value {
+  color: var(--sf-on-accent) !important;
+  opacity: 1 !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-profile-hero-card .profile-card-asset-label {
+  color: color-mix(in srgb, var(--sf-on-accent) 82%, transparent) !important;
+  opacity: 1 !important;
+}

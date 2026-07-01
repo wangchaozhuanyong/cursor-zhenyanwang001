@@ -28,13 +28,6 @@ export default function History() {
     <>
       <StoreAccountLayout
         title="浏览历史"
-        rightSlot={
-          history.length > 0 ? (
-            <UnifiedButton type="button" onClick={() => setClearConfirmOpen(true)} className="flex items-center gap-1 text-xs text-[var(--theme-danger)] active:opacity-70">
-              <Trash2 size={14} /> 清空
-            </UnifiedButton>
-          ) : undefined
-        }
         className="sf-next-page sf-next-route-page sf-next-account-route-page sf-next-history-page pb-6"
         mainClassName="sf-next-account-main sm:px-4 xl:py-6"
       >
@@ -107,10 +100,17 @@ export default function History() {
           <section className="sf-next-history-group" aria-label="最近浏览商品">
             <div className="sf-next-history-group__head">
               <div>
-                <span>History</span>
                 <h2>最近浏览</h2>
+                <small>按最近访问顺序展示</small>
               </div>
-              <small>按最近访问顺序展示</small>
+              <UnifiedButton
+                type="button"
+                onClick={() => setClearConfirmOpen(true)}
+                className="sf-next-history-clear-inline"
+              >
+                <Trash2 size={15} aria-hidden />
+                <span>清空</span>
+              </UnifiedButton>
             </div>
             <div className="sf-next-account-product-grid">
               <AnimatePresence>

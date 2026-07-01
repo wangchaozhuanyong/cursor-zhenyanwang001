@@ -41,7 +41,6 @@ import {
   PROFILE_MENU_TAP,
   ProfileGuestCard,
   ProfileHeroCard,
-  ProfileIdentityHeader,
   ProfileInviteRewardCard,
   ProfileLogoutButton,
   ProfileOrderPanel,
@@ -343,7 +342,6 @@ export default function Profile() {
       "history",
       "returns",
       "support",
-      "install",
     ], accountFeatureCtx, "mobile"),
     [accountFeatureCtx],
   );
@@ -382,15 +380,6 @@ export default function Profile() {
             />
           ) : (
             <>
-              <ProfileIdentityHeader
-                logoSrc={logoSrc}
-                avatar={avatar}
-                userName={userName}
-                unreadCount={unreadCount}
-                onMessageClick={() => navigateStorePath("/notifications", { requireAuth: true, from: "/profile" })}
-                onProfileClick={() => handleFeatureNavigate("settings", "/settings", true)}
-                onAvatarClick={() => avatarInputRef.current?.click()}
-              />
               <ProfileHeroCard
                 logoSrc={logoSrc}
                 avatar={avatar}

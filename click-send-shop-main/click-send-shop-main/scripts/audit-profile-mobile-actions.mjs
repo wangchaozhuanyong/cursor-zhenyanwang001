@@ -20,7 +20,6 @@ const NAV_EXPECTATIONS = [
   { key: "favorites", expectedPath: "/favorites" },
   { key: "history", expectedPath: "/history" },
   { key: "support", expectedPath: "/support-download", expectedSearch: { tab: "support" } },
-  { key: "install", expectedPath: "/support-download", expectedSearch: { tab: "download" } },
   { key: "help", expectedPath: "/help" },
   { key: "feedback", expectedPath: "/feedback" },
   { key: "about", expectedPath: "/about" },
@@ -64,6 +63,7 @@ async function pickBaseUrl() {
   if (process.env.BASE_URL) return normalizeBaseUrl(process.env.BASE_URL);
 
   const candidates = [
+    "http://127.0.0.1:4175",
     "http://127.0.0.1:4174",
     "http://127.0.0.1:4173",
     "http://127.0.0.1:5177",

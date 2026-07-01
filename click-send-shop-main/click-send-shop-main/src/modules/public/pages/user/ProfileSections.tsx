@@ -145,10 +145,17 @@ export function ProfileIdentityHeader({
 }
 
 export function ProfileHeroCard({
+  logoSrc,
+  avatar,
+  userName,
   memberLevelName,
   assets,
+  unreadCount,
+  onMessageClick,
   onMemberLevelClick,
+  onProfileClick,
   onAssetNavigate,
+  onAvatarClick,
 }: {
   logoSrc: string;
   avatar?: string;
@@ -165,17 +172,52 @@ export function ProfileHeroCard({
   onAvatarClick: () => void;
 }) {
   const folioAssets = (assets || []).slice(0, 3);
+  const displayName = formatProfileHeroName(userName);
+  const avatarSrc = avatar || profileVipAvatarImage || logoSrc;
 
   return (
     <section className="sf-next-profile-hero-card" aria-label={`${memberLevelName}会员权益`}>
       <span className="profile-vip-watermark" aria-hidden="true" />
+      <div className="profile-vip-header" aria-label="账户资料">
+        <UnifiedButton type="button" onClick={onAvatarClick} className="profile-avatar-button" aria-label="更换头像">
+          <span className="profile-avatar-ring">
+            {avatarSrc ? (
+              <StableImage
+                src={avatarSrc}
+                alt={userName}
+                className="profile-avatar-image h-full w-full"
+                imgClassName="h-full w-full object-cover"
+              />
+            ) : (
+              <span className="profile-avatar-fallback">{userName.slice(0, 1)}</span>
+            )}
+          </span>
+          <span className="profile-avatar-camera" aria-hidden>
+            <Pencil size={12} />
+          </span>
+        </UnifiedButton>
+        <button type="button" onClick={onProfileClick} className="profile-vip-name-row profile-vip-profile-trigger">
+          <span className="profile-vip-name" title={userName} aria-label={userName}>{displayName}</span>
+          <span className="profile-vip-badge">{memberLevelName}</span>
+        </button>
+        <div className="profile-vip-header-actions">
+          <NotificationIconButton
+            unreadCount={unreadCount}
+            onClick={onMessageClick}
+            className="profile-vip-notification"
+          />
+          <UnifiedButton type="button" onClick={onProfileClick} className="profile-vip-notification" aria-label="编辑资料">
+            <Pencil size={18} aria-hidden />
+          </UnifiedButton>
+        </div>
+      </div>
       <UnifiedButton
         type="button"
         onClick={onMemberLevelClick}
         className="profile-vip-folio-head"
         aria-label={`查看${memberLevelName}会员权益`}
       >
-        <span>MEMBER FOLIO</span>
+        <span>会员权益</span>
         <h2>{memberLevelName}</h2>
         <p>权益以当前会员配置为准</p>
       </UnifiedButton>

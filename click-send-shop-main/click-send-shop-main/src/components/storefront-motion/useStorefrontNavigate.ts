@@ -12,7 +12,6 @@ import {
   isStorefrontMotionNavigationLocked,
 } from "./useStorefrontMotionState";
 import { getStorefrontTransitionKind } from "./getStorefrontTransitionKind";
-import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
 function resolveStorefrontTarget(to: To) {
   if (typeof window === "undefined") return null;

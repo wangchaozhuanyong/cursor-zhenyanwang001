@@ -3,6 +3,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { MemoryRouter, useLocation } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import BottomNav from "./BottomNav";
+import { initializeStorefrontMotionLocation } from "@/components/storefront-motion/useStorefrontMotionState";
 import { PublicLocaleProvider } from "@/i18n/PublicLocaleProvider";
 
 vi.mock("@/contexts/ThemeRuntimeProvider", () => ({
@@ -70,6 +71,7 @@ describe("BottomNav", () => {
   let root: Root | null = null;
 
   async function renderBottomNav(initialPath = "/new-arrivals") {
+    initializeStorefrontMotionLocation(initialPath);
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);

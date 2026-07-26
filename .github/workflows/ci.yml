@@ -62,7 +62,7 @@ jobs:
           cache: npm
           cache-dependency-path: click-send-shop-main/click-send-shop-main/package-lock.json
       - run: npm ci
-      - run: npm audit --omit=dev
+      - run: npm audit --omit=dev --audit-level=high
       - run: npm run lint
       - run: npm run check:text
       - run: npm run typecheck

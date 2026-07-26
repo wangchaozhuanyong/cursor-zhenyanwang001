@@ -5,7 +5,9 @@ const { LEGACY_IM_KEYS, stripHelpCenterConfig } = require('../../../data/support
 
 const BLOCKED_SITE_SETTING_KEYS = new Set(LEGACY_IM_KEYS);
 const { invalidatePaymentTimeoutSettingsCache } = require('../../order/orderPaymentDeadline');
-const sharp = require('sharp');
+const sharp = /** @type {typeof import('sharp').default} */ (
+  /** @type {any} */ (require('sharp'))
+);
 const { isS3StorageEnabled, uploadBufferToS3 } = require('../../../utils/objectStorage');
 const { bufferMatchesDeclaredMime } = require('../../../utils/fileMagic');
 

@@ -1,7 +1,9 @@
 const path = require('path');
 const crypto = require('crypto');
 const fs = require('fs');
-const sharp = require('sharp');
+const sharp = /** @type {typeof import('sharp').default} */ (
+  /** @type {any} */ (require('sharp'))
+);
 const { isS3StorageEnabled, uploadBufferToS3 } = require('../../../utils/objectStorage');
 const { normalizeImageMode, optimizeImageFile } = require('../../../utils/imageOptimize');
 const { bufferMatchesDeclaredMime } = require('../../../utils/fileMagic');

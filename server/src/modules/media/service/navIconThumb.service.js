@@ -1,7 +1,9 @@
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
-const sharp = require('sharp');
+const sharp = /** @type {typeof import('sharp').default} */ (
+  /** @type {any} */ (require('sharp'))
+);
 const {
   buildStorageKey,
   getS3ObjectBuffer,

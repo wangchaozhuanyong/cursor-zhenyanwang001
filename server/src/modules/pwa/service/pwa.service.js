@@ -3,7 +3,9 @@ const crypto = require('crypto');
 const dns = require('dns').promises;
 const net = require('net');
 const path = require('path');
-const sharp = require('sharp');
+const sharp = /** @type {typeof import('sharp').default} */ (
+  /** @type {any} */ (require('sharp'))
+);
 const { NEUTRAL_SITE_DESCRIPTION, resolveSiteDescription, resolveSiteName } = require('../../../config/instance');
 
 const ICON_CACHE = new Map();

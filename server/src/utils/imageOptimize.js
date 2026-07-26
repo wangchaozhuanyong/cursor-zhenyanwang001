@@ -1,5 +1,7 @@
 const crypto = require('crypto');
-const sharp = require('sharp');
+const sharp = /** @type {typeof import('sharp').default} */ (
+  /** @type {any} */ (require('sharp'))
+);
 
 /** @typedef {'product' | 'banner' | 'thumb' | 'asset'} ImageUploadMode */
 

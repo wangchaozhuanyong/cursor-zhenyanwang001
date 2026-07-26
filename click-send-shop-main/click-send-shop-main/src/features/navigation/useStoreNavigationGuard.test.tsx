@@ -39,8 +39,8 @@ vi.mock("@/utils/storeRoutePreload", () => ({
   preloadStoreRoute: mocks.preloadStoreRoute,
 }));
 
-vi.mock("sonner", () => ({
-  toast: {
+vi.mock("@/utils/storeToast", () => ({
+  showStoreToast: {
     info: mocks.toastInfo,
   },
 }));
@@ -148,6 +148,8 @@ describe("useStoreNavigationGuard", () => {
     });
 
     expect(container?.querySelector("[data-testid='location']")?.textContent).toBe("/profile");
-    expect(mocks.toastInfo).toHaveBeenCalledWith("登录状态同步中，请稍后再试");
+    await vi.waitFor(() => {
+      expect(mocks.toastInfo).toHaveBeenCalledWith("登录状态同步中，请稍后再试");
+    });
   });
 });

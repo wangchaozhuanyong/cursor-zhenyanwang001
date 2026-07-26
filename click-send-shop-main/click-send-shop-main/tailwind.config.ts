@@ -1,9 +1,50 @@
 import type { Config } from "tailwindcss";
 import tailwindcssAnimate from "tailwindcss-animate";
+import { resolveStorefrontCriticalContent } from "./scripts/storefrontCriticalContent";
+
+const fullAppContent = [
+  "./index.html",
+  "./admin-index.html",
+  "./src/**/*.{ts,tsx}",
+  "!./src/**/*.test.{ts,tsx}",
+  "!./src/test/**/*.{ts,tsx}",
+];
+
+export const storefrontProductionContent = [
+  "./index.html",
+  "./src/**/*.{ts,tsx}",
+  "!./src/admin-main.tsx",
+  "!./src/AdminApp.tsx",
+  "!./src/api/admin/**/*.{ts,tsx}",
+  "!./src/components/admin/**/*.{ts,tsx}",
+  "!./src/hooks/admin/**/*.{ts,tsx}",
+  "!./src/i18n/admin/**/*.{ts,tsx}",
+  "!./src/layouts/admin/**/*.{ts,tsx}",
+  "!./src/modules/admin/**/*.{ts,tsx}",
+  "!./src/routes/Admin*.tsx",
+  "!./src/routes/admin*.{ts,tsx}",
+  "!./src/services/admin/**/*.{ts,tsx}",
+  "!./src/**/*.test.{ts,tsx}",
+  "!./src/test/**/*.{ts,tsx}",
+];
+
+export const storefrontCriticalContent = resolveStorefrontCriticalContent();
+
+// Vite loads this config before NODE_ENV is populated in some production builds.
+const productionBuildScripts = new Set(["build", "build:shop", "build:legacy"]);
+const npmLifecycleEvent = process.env.npm_lifecycle_event;
+const isProductionBuild = npmLifecycleEvent
+  ? productionBuildScripts.has(npmLifecycleEvent)
+  : process.env.NODE_ENV === "production";
+const content = process.env.TAILWIND_APP_TARGET === "admin"
+  ? fullAppContent
+  : isProductionBuild
+    ? storefrontCriticalContent
+    : fullAppContent;
 
 export default {
   darkMode: ["class"],
-  content: ["./pages/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
+  content,
   prefix: "",
   theme: {
     container: {

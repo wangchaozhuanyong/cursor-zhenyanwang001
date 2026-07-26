@@ -24,7 +24,7 @@ import ValueVaultCoupon, {
   type ValueVaultStatus,
 } from "@/modules/storefront-v2/design/components/ValueVaultCoupon";
 import { copyToClipboard } from "@/utils/clipboard";
-import { toast } from "sonner";
+import { showStoreToast } from "@/utils/storeToast";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import "@/styles/coupons-route.css";
 import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
@@ -664,8 +664,8 @@ const CouponCard = forwardRef<HTMLDivElement, CouponCardProps>(function CouponCa
 
   const copyCode = async (code: string) => {
     const copied = await copyToClipboard(code);
-    if (copied) toast.success("优惠码已复制", toastPresetQuickSuccess);
-    else toast.error("复制失败，请手动复制");
+    if (copied) showStoreToast.success("优惠码已复制", toastPresetQuickSuccess);
+    else showStoreToast.error("复制失败，请手动复制");
   };
 
   return (

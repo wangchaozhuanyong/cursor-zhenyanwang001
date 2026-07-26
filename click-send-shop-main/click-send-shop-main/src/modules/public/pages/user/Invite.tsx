@@ -5,7 +5,7 @@ import { formatDateTime } from "@/utils/formatDateTime";
 import { useGoBack } from "@/hooks/useGoBack";
 
 import { useUserStore } from "@/stores/useUserStore";
-import { toast } from "sonner";
+import { showStoreToast } from "@/utils/storeToast";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import { QRCodeCanvas } from "qrcode.react";
 import * as inviteService from "@/services/inviteService";
@@ -391,7 +391,7 @@ export default function Invite() {
     Promise.all([
       inviteService.fetchInviteStats().then(setStats),
       inviteService.fetchInviteRecords().then((d) => setRecords(d.list)),
-    ]).catch(() => toast.error("加载失败"));
+    ]).catch(() => showStoreToast.error("加载失败"));
   }, [loadProfile, loyaltyConfig, loyaltyLoading, navigate]);
 
   useEffect(() => {
@@ -408,35 +408,35 @@ export default function Invite() {
 
   const copyInviteCode = async () => {
     if (!inviteCode) {
-      toast.error("邀请码加载中，请稍后");
+      showStoreToast.error("邀请码加载中，请稍后");
       return;
     }
     setCopyState("loading");
     const copied = await copyToClipboard(inviteCode);
     if (copied) {
       setCopyState("copied");
-      toast.success("邀请码已复制", toastPresetQuickSuccess);
+      showStoreToast.success("邀请码已复制", toastPresetQuickSuccess);
       if (copyResetTimerRef.current) window.clearTimeout(copyResetTimerRef.current);
       copyResetTimerRef.current = window.setTimeout(() => setCopyState("idle"), 1600);
     } else {
       setCopyState("idle");
-      toast.error("复制失败，请手动复制");
+      showStoreToast.error("复制失败，请手动复制");
     }
   };
 
   const copyLink = async () => {
     if (!inviteCode) {
-      toast.error("邀请码加载中，请稍后");
+      showStoreToast.error("邀请码加载中，请稍后");
       return;
     }
     const copied = await copyToClipboard(inviteLink);
-    if (copied) toast.success("邀请链接已复制", toastPresetQuickSuccess);
-    else toast.error("复制失败，请手动复制");
+    if (copied) showStoreToast.success("邀请链接已复制", toastPresetQuickSuccess);
+    else showStoreToast.error("复制失败，请手动复制");
   };
 
   const handleShare = async () => {
     if (!inviteCode) {
-      toast.error("邀请码加载中，请稍后");
+      showStoreToast.error("邀请码加载中，请稍后");
       return;
     }
     if (navigator.share) {
@@ -456,17 +456,17 @@ export default function Invite() {
 
   const showQrCode = () => {
     document.querySelector(".sf-next-share-pass__qr")?.scrollIntoView({ behavior: "smooth", block: "center" });
-    toast.success("二维码已在上方展示", toastPresetQuickSuccess);
+    showStoreToast.success("二维码已在上方展示", toastPresetQuickSuccess);
   };
 
   const downloadPoster = useCallback(() => {
     if (!inviteCode) {
-      toast.error("邀请码加载中，请稍后");
+      showStoreToast.error("邀请码加载中，请稍后");
       return;
     }
     const qrCanvas = qrRef.current;
     if (!qrCanvas) {
-      toast.error("二维码生成中，请稍后");
+      showStoreToast.error("二维码生成中，请稍后");
       return;
     }
     const fileName = `damatong-invite-${selectedTemplate.id}-${inviteCode}.png`;
@@ -479,9 +479,9 @@ export default function Invite() {
           logoUrl: logoIconUrl,
         });
         triggerBrowserFileDownload(canvas.toDataURL("image/png"), fileName);
-        toast.success("海报已下载", toastPresetQuickSuccess);
+        showStoreToast.success("海报已下载", toastPresetQuickSuccess);
       } catch {
-        toast.error("海报生成失败");
+        showStoreToast.error("海报生成失败");
       }
     }, { title: "确认下载海报", fileName });
   }, [inviteCode, selectedTemplate]);

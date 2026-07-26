@@ -7,7 +7,7 @@ import { THIRD_PARTY_LOGIN_ENABLED } from "@/constants/authLogin";
 import * as meService from "@/services/meService";
 import { useGoBack } from "@/hooks/useGoBack";
 import { useUserStore } from "@/stores/useUserStore";
-import { toast } from "sonner";
+import { showStoreToast } from "@/utils/storeToast";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import * as uploadService from "@/services/uploadService";
@@ -106,12 +106,12 @@ export default function Settings() {
     const bindResult = searchParams.get("wechatBind");
     const wechatErr = searchParams.get("wechatError");
     if (wechatErr) {
-      toast.error(decodeURIComponent(wechatErr.replace(/\+/g, " ")));
+      showStoreToast.error(decodeURIComponent(wechatErr.replace(/\+/g, " ")));
       navigate(localizedPath("/settings"), { replace: true });
       return;
     }
     if (bindResult === "success") {
-      toast.success("微信已绑定", toastPresetQuickSuccess);
+      showStoreToast.success("微信已绑定", toastPresetQuickSuccess);
       loadWechatBinding();
       loadProfile().catch(() => {});
       navigate(localizedPath("/settings"), { replace: true });
@@ -123,7 +123,7 @@ export default function Settings() {
     try {
       await meService.startBindWechat(localizedPath("/settings"));
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "无法发起绑定");
+      showStoreToast.error(e instanceof Error ? e.message : "无法发起绑定");
       setWechatActionLoading(false);
     }
   };
@@ -133,9 +133,9 @@ export default function Settings() {
     try {
       await meService.unbindWechat();
       await loadWechatBinding();
-      toast.success("微信已解绑", toastPresetQuickSuccess);
+      showStoreToast.success("微信已解绑", toastPresetQuickSuccess);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "解绑失败");
+      showStoreToast.error(e instanceof Error ? e.message : "解绑失败");
     } finally {
       setWechatActionLoading(false);
     }
@@ -151,10 +151,10 @@ export default function Settings() {
       uploaded = true;
       setAvatar(data.url);
       await useUserStore.getState().saveProfile();
-      toast.success("头像上传成功", toastPresetQuickSuccess);
+      showStoreToast.success("头像上传成功", toastPresetQuickSuccess);
     } catch (error) {
       if (uploaded) setAvatar(previousAvatar);
-      toast.error(toastErrorMessage(error, uploaded ? "头像保存失败，请稍后重试" : "头像上传失败，请检查图片格式/大小后重试"));
+      showStoreToast.error(toastErrorMessage(error, uploaded ? "头像保存失败，请稍后重试" : "头像上传失败，请检查图片格式/大小后重试"));
     } finally {
       e.target.value = "";
     }
@@ -175,7 +175,7 @@ export default function Settings() {
       : null;
     if (whatsappError) {
       setFieldErrors({ whatsapp: whatsappError });
-      toast.error(whatsappError);
+      showStoreToast.error(whatsappError);
       return;
     }
     try {
@@ -194,9 +194,9 @@ export default function Settings() {
       setSavedBirthday(normalizedBirthday);
       setBirthdayLocked(resolveBirthdayLockedState(updatedProfile));
       await loadProfile();
-      toast.success("资料已保存", toastPresetQuickSuccess);
+      showStoreToast.success("资料已保存", toastPresetQuickSuccess);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "保存失败，请重试");
+      showStoreToast.error(e instanceof Error ? e.message : "保存失败，请重试");
     }
   };
 

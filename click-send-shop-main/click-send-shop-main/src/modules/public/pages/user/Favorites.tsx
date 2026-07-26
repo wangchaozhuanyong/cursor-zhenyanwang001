@@ -6,7 +6,7 @@ import { useCartStore } from "@/stores/useCartStore";
 import { isLoggedIn } from "@/utils/token";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 import StorefrontQuietLoading from "@/components/storefront-motion/StorefrontQuietLoading";
-import { toast } from "sonner";
+import { showStoreToast } from "@/utils/storeToast";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { usePublicLocale } from "@/i18n/publicLocale";
 import type { Product } from "@/types/product";
@@ -104,9 +104,9 @@ export default function Favorites() {
                     try {
                       setRemovingId(p.id);
                       await toggleFavorite(p);
-                      toast.success("已取消收藏");
+                      showStoreToast.success("已取消收藏");
                     } catch (e) {
-                      toast.error(e instanceof Error ? e.message : "取消收藏失败");
+                      showStoreToast.error(e instanceof Error ? e.message : "取消收藏失败");
                     } finally {
                       window.setTimeout(() => setRemovingId((old) => (old === p.id ? null : old)), 180);
                     }
@@ -114,9 +114,9 @@ export default function Favorites() {
                   onAddToCart={async () => {
                     try {
                       await addItem(p as unknown as Product, 1, null);
-                      toast.success("已加入购物车");
+                      showStoreToast.success("已加入购物车");
                     } catch (e) {
-                      toast.error(e instanceof Error ? e.message : "加入购物车失败");
+                      showStoreToast.error(e instanceof Error ? e.message : "加入购物车失败");
                     }
                   }}
                 />

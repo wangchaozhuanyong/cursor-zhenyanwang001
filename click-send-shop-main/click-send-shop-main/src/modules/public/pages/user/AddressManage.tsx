@@ -2,7 +2,7 @@ import { useState, useEffect, type ReactNode } from "react";
 import { Check, Edit3, MapPin, Phone, Plus, Trash2 } from "lucide-react";
 import { useGoBack } from "@/hooks/useGoBack";
 import { useUserStore, type Address } from "@/stores/useUserStore";
-import { toast } from "sonner";
+import { showStoreToast } from "@/utils/storeToast";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import { BottomSheetConfirm, BottomSheetForm } from "@/modules/micro-interactions";
 import { MALAYSIA_STATES } from "@/types/address";
@@ -75,29 +75,29 @@ export default function AddressManage() {
 
   const handleSave = async () => {
     if (!form.recipient_name.trim() || !form.phone.trim() || !form.line1.trim() || !form.city.trim() || !form.state.trim() || !form.postcode.trim()) {
-      toast.error(t("address.missing"));
+      showStoreToast.error(t("address.missing"));
       throw new Error("validation");
     }
     if (!isValidMyPhone(form.phone)) {
-      toast.error(t("address.phoneInvalid"));
+      showStoreToast.error(t("address.phoneInvalid"));
       throw new Error("validation");
     }
     if (!isValidMyPostcode(form.postcode)) {
-      toast.error(t("address.postcodeInvalid"));
+      showStoreToast.error(t("address.postcodeInvalid"));
       throw new Error("validation");
     }
     setSaving(true);
     try {
       if (editId) {
         await updateAddress(editId, form);
-        toast.success(t("address.updated"), toastPresetQuickSuccess);
+        showStoreToast.success(t("address.updated"), toastPresetQuickSuccess);
       } else {
         await addAddress(form);
-        toast.success(t("address.added"), toastPresetQuickSuccess);
+        showStoreToast.success(t("address.added"), toastPresetQuickSuccess);
       }
       setOpen(false);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : t("address.operationFailed"));
+      showStoreToast.error(e instanceof Error ? e.message : t("address.operationFailed"));
     } finally {
       setSaving(false);
     }
@@ -252,9 +252,9 @@ export default function AddressManage() {
           if (!deleteTarget) return;
           try {
             await removeAddress(deleteTarget.id);
-            toast.success(t("address.deleted"), toastPresetQuickSuccess);
+            showStoreToast.success(t("address.deleted"), toastPresetQuickSuccess);
           } catch (error) {
-            toast.error(t("address.deleteFailed"));
+            showStoreToast.error(t("address.deleteFailed"));
             throw error;
           }
         }}

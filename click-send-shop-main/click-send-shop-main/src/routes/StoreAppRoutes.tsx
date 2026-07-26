@@ -10,8 +10,6 @@ import AgeGate from "@/components/compliance/AgeGate";
 import LanguageGate from "@/components/LanguageGate";
 import FrontLayout from "@/layouts/FrontLayout";
 import BottomNav from "@/components/BottomNav";
-import FeatureUnavailable from "@/modules/public/pages/error/FeatureUnavailable";
-import ProtectedRoute from "@/components/ProtectedRoute";
 import AuthSessionSync from "@/components/AuthSessionSync";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { useAuthStore } from "@/stores/useAuthStore";
@@ -23,8 +21,6 @@ import {
 } from "@/constants/siteBrand";
 import { useSiteInfo, useSiteInfoLoaded } from "@/hooks/useSiteInfo";
 import { syncLockedInviteCodeBySearch } from "@/utils/inviteReferral";
-import { isLoyaltyFeatureEnabled } from "@/utils/loyaltyFeatureVisibility";
-import { useLoyaltyVisibility } from "@/hooks/useLoyaltyVisibility";
 import { useSiteCapabilities, useSiteCapabilitiesReady } from "@/hooks/useSiteCapabilities";
 import { DownloadConfirmProvider } from "@/components/DownloadConfirmProvider";
 import { ModalLayerProvider } from "@/modules/micro-interactions/modal/ModalLayerProvider";
@@ -32,7 +28,6 @@ import { trackEventLazy } from "@/services/trackEventLazy";
 import { detectPwaPlatform, isStandaloneApp } from "@/utils/pwa";
 import { queryClient } from "@/lib/queryClient";
 import { buildSiteFaviconLinkTargets, rememberSiteFaviconUrl } from "@/utils/siteBrandAssets";
-import { POINTS_GIFT_REDEEM_CLIENT_ENABLED } from "@/constants/pointsClientFeatures";
 import { STOREFRONT_NEXT_SCOPE } from "@/modules/storefront-v2/design/storefrontDesignContract";
 import { scheduleIdleTask } from "@/utils/idleScheduler";
 import { isStoreTabPath } from "@/utils/storeBottomInset";
@@ -54,30 +49,39 @@ import {
 } from "@/i18n/publicLocale";
 import { PublicLocaleProvider } from "@/i18n/PublicLocaleProvider";
 import {
-  StoreHomeV2, Login, ForgotPassword, BindWechatPhone,
-  Categories, ProductDetail, Search, Promotions, PromotionDetail,
-  Cart, Checkout, PaymentResult, Orders, OrderDetail, OrderLogistics, Returns, ReturnDetail, PendingReviews,
-  Profile, Feedback, MemberBenefits, Settings, AddressManage, Favorites, History, Notifications, Coupons, Points, PointsGiftShop, Rewards, Wallet, Invite,
-  Help, About, ContentCmsPage, SupportDownload, Delivery, FeatureStatus, TikTokLanding, NotFound,
-  ClientDesignSystem, ClientCouponDetailDesign, ClientShareDetailDesign, ClientStatesDesign,
-} from "@/routes/publicLazyPages";
-import RouteStatePanel from "@/modules/storefront-v2/design/components/RouteStatePanel";
+  Cart,
+  Categories,
+  NotFound,
+  ProductDetail,
+  Profile,
+  PromotionDetail,
+  Promotions,
+  Search,
+  StoreHomeV2,
+  SupportDownload,
+  TikTokLanding,
+} from "@/routes/publicFrontLazyPages";
+import type { PublicStandaloneRouteKey } from "@/routes/PublicStandaloneRouteElement";
+import { CapabilityRoute, type PublicRouteCapabilities } from "@/routes/publicCapabilityRoute";
+import { publicNavigatePath, publicRoutePath } from "@/routes/publicRoutePaths";
 import StorefrontMotionBoundary from "@/components/storefront-motion/StorefrontMotionBoundary";
 import StorefrontProgressThread from "@/components/storefront-motion/StorefrontProgressThread";
 import StorefrontRouteVeil from "@/components/storefront-motion/StorefrontRouteVeil";
 
 const CARD_EQUAL_MOBILE_FIX_STYLE_ID = "sf-next-card-equal-mobile-fix";
-const GLOBAL_WIDGET_DELAY_MS = 18_000;
+const BACKGROUND_ANALYTICS_DELAY_MS = 18_000;
+const BACKGROUND_TRACKING_DELAY_MS = 22_000;
+const BACKGROUND_MARKETING_WIDGET_DELAY_MS = 28_000;
+const BACKGROUND_COMPAT_NOTICE_DELAY_MS = 34_000;
 const HIGH_INTENT_WIDGET_DELAY_MS = 3_000;
 const ENABLE_LEGACY_CARD_OVERLAP_FIX = false;
-const STOREFRONT_TOAST_NEEDED_EVENT = "storefront:toast-needed";
 
 const CookieConsentBanner = lazy(() => import("@/components/CookieConsentBanner"));
 const TrackingManager = lazy(() => import("@/components/TrackingManager"));
-const SonnerToaster = lazy(() => import("@/components/ui/sonner").then((module) => ({ default: module.Toaster })));
 const RouteAnalyticsTracker = lazy(() => import("@/components/RouteAnalyticsTracker"));
 const ChinaBrowserCompatNotice = lazy(() => import("@/components/ChinaBrowserCompatNotice"));
 const PwaUpdateToast = lazy(() => import("@/components/PwaUpdateToast"));
+const PublicStandaloneRouteElement = lazy(() => import("@/routes/PublicStandaloneRouteElement"));
 
 function shouldDeferNonCriticalWidgets(pathname: string) {
   return !/^\/(cart|checkout|orders|payment|login)(\/|$)/.test(stripPublicLocaleFromPathname(pathname));
@@ -237,7 +241,7 @@ function PwaStandaloneAnalytics() {
     window.sessionStorage.setItem(key, "1");
     return trackEventLazy(
       { event_type: "pwa_open_standalone", module: "pwa", page: window.location.pathname },
-      { deferMs: GLOBAL_WIDGET_DELAY_MS },
+      { deferMs: BACKGROUND_ANALYTICS_DELAY_MS },
     );
   }, [capabilities.trafficAnalyticsEnabled]);
   return null;
@@ -260,7 +264,7 @@ function AnalyticsCapabilitySync() {
     const cancelIdle = analyticsLoadedRef.current
       ? scheduleIdleTask("analytics-capability-sync-now", sync, { delayMs: 0, timeoutMs: 1200, jitterMs: 0 })
       : scheduleIdleTask("analytics-capability-sync", sync, {
-        delayMs: GLOBAL_WIDGET_DELAY_MS,
+        delayMs: BACKGROUND_ANALYTICS_DELAY_MS,
         timeoutMs: 5000,
         jitterMs: 2500,
       });
@@ -272,7 +276,7 @@ function AnalyticsCapabilitySync() {
   return null;
 }
 
-function DeferredGlobalMount({ children, delayMs = GLOBAL_WIDGET_DELAY_MS }: { children: ReactNode; delayMs?: number }) {
+function DeferredGlobalMount({ children, delayMs = BACKGROUND_ANALYTICS_DELAY_MS }: { children: ReactNode; delayMs?: number }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     return scheduleIdleTask("deferred-global-mount", () => setMounted(true), {
@@ -282,31 +286,6 @@ function DeferredGlobalMount({ children, delayMs = GLOBAL_WIDGET_DELAY_MS }: { c
     });
   }, [delayMs]);
   return mounted ? <>{children}</> : null;
-}
-
-function DeferredToastHost({ delayMs = GLOBAL_WIDGET_DELAY_MS }: { delayMs?: number }) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    if (mounted) return undefined;
-    const mount = () => setMounted(true);
-    const cancelIdle = scheduleIdleTask("deferred-toast-host", mount, {
-      delayMs,
-      timeoutMs: 5000,
-      jitterMs: 2500,
-    });
-    window.addEventListener(STOREFRONT_TOAST_NEEDED_EVENT, mount);
-    return () => {
-      cancelIdle();
-      window.removeEventListener(STOREFRONT_TOAST_NEEDED_EVENT, mount);
-    };
-  }, [delayMs, mounted]);
-
-  return mounted ? (
-    <Suspense fallback={null}>
-      <SonnerToaster />
-    </Suspense>
-  ) : null;
 }
 
 function AppScopeSync() {
@@ -435,46 +414,6 @@ function HomeRoute() {
   return <StoreHomeV2 />;
 }
 
-function LoyaltyFeatureLoadingState({ feature }: { feature: "points" | "reward" | "referral" }) {
-  const label = feature === "points" ? "积分" : feature === "referral" ? "邀请奖励" : "返现奖励";
-  return (
-    <main className="sf-next-page sf-next-route-page sf-next-loyalty-route-loading" aria-busy="true">
-      <RouteStatePanel
-        title={`正在同步${label}`}
-        description="系统正在读取后台会员功能配置，请稍候。"
-      />
-    </main>
-  );
-}
-
-function CapabilityLoadingState() {
-  return (
-    <main className="sf-next-page sf-next-route-page sf-next-capability-route-loading" aria-busy="true">
-      <RouteStatePanel
-        title="正在准备页面"
-        description="正在读取商城配置，请稍候。"
-      />
-    </main>
-  );
-}
-
-function LoyaltyRouteGuard({ feature, children }: { feature: "points" | "reward" | "referral"; children: ReactNode }) {
-  const capabilities = useSiteCapabilities();
-  const { localizedPath } = usePublicLocale();
-  const { config, loading } = useLoyaltyVisibility();
-  const enabled = isLoyaltyFeatureEnabled(feature, capabilities, config);
-  if (loading) return <LoyaltyFeatureLoadingState feature={feature} />;
-  if (!enabled) return <Navigate to={localizedPath("/profile")} replace />;
-  return <>{children}</>;
-}
-
-function CapabilityRoute({ enabled, children }: { enabled: boolean; children: ReactNode }) {
-  const ready = useSiteCapabilitiesReady();
-  if (!ready) return <CapabilityLoadingState />;
-  if (!enabled) return <FeatureUnavailable />;
-  return <>{children}</>;
-}
-
 function LegacyDealsRedirect({ detail = false }: { detail?: boolean }) {
   const location = useLocation();
   const { slug = "" } = useParams();
@@ -495,16 +434,7 @@ function PublicLocaleRouteScope({ multilingualEnabled }: { multilingualEnabled: 
   return <Outlet />;
 }
 
-function publicRoutePath(path: string, localized: boolean) {
-  return localized ? path.replace(/^\//, "") : path;
-}
-
-function publicNavigatePath(path: string, localized: boolean) {
-  if (localized && path === "/") return ".";
-  return localized ? path.replace(/^\//, "") : path;
-}
-
-function renderFrontLayoutRoutes(capabilities: ReturnType<typeof useSiteCapabilities>, localized = false) {
+function renderFrontLayoutRoutes(capabilities: PublicRouteCapabilities, localized = false) {
   const dealsEnabled = capabilities.mallEnabled && (capabilities.couponEnabled || capabilities.pointsEnabled);
   return (
     <Route element={<FrontLayout />}>
@@ -524,76 +454,67 @@ function renderFrontLayoutRoutes(capabilities: ReturnType<typeof useSiteCapabili
   );
 }
 
-function renderStandalonePublicRoutes(capabilities: ReturnType<typeof useSiteCapabilities>, localized = false) {
+function StandaloneRouteLoader({
+  route,
+  capabilities,
+  localized = false,
+}: {
+  route: PublicStandaloneRouteKey;
+  capabilities: PublicRouteCapabilities;
+  localized?: boolean;
+}) {
+  return <PublicStandaloneRouteElement route={route} capabilities={capabilities} localized={localized} />;
+}
+
+function renderStandalonePublicRoutes(capabilities: PublicRouteCapabilities, localized = false) {
   const clientDesignRoutesEnabled = areClientDesignRoutesEnabled();
+  const standaloneElement = (route: PublicStandaloneRouteKey) => (
+    <StandaloneRouteLoader route={route} capabilities={capabilities} localized={localized} />
+  );
   return (
     <>
-      <Route path={publicRoutePath("/login", localized)} element={<Login />} />
-      <Route path={publicRoutePath("/register", localized)} element={<Login />} />
-      <Route path={publicRoutePath("/forgot", localized)} element={<ForgotPassword />} />
-      <Route path={publicRoutePath("/forgot-password", localized)} element={<ForgotPassword />} />
-      <Route path={publicRoutePath("/login/bind-phone", localized)} element={<BindWechatPhone />} />
-      <Route path={publicRoutePath("/help", localized)} element={<Help />} />
-      <Route path={publicRoutePath("/about", localized)} element={<About />} />
-      <Route path={publicRoutePath("/delivery", localized)} element={<Delivery />} />
-      <Route path={publicRoutePath("/feature-status", localized)} element={<FeatureStatus />} />
+      <Route path={publicRoutePath("/login", localized)} element={standaloneElement("login")} />
+      <Route path={publicRoutePath("/register", localized)} element={standaloneElement("login")} />
+      <Route path={publicRoutePath("/forgot", localized)} element={standaloneElement("forgot")} />
+      <Route path={publicRoutePath("/forgot-password", localized)} element={standaloneElement("forgot")} />
+      <Route path={publicRoutePath("/login/bind-phone", localized)} element={standaloneElement("bind-phone")} />
+      <Route path={publicRoutePath("/help", localized)} element={standaloneElement("help")} />
+      <Route path={publicRoutePath("/about", localized)} element={standaloneElement("about")} />
+      <Route path={publicRoutePath("/delivery", localized)} element={standaloneElement("delivery")} />
+      <Route path={publicRoutePath("/feature-status", localized)} element={standaloneElement("feature-status")} />
       {clientDesignRoutesEnabled ? (
         <>
-          <Route path={publicRoutePath("/client-design/system", localized)} element={<ClientDesignSystem />} />
-          <Route path={publicRoutePath("/client-design/coupon-detail", localized)} element={<ClientCouponDetailDesign />} />
-          <Route path={publicRoutePath("/client-design/share-detail", localized)} element={<ClientShareDetailDesign />} />
-          <Route path={publicRoutePath("/client-design/states", localized)} element={<ClientStatesDesign />} />
+          <Route path={publicRoutePath("/client-design/system", localized)} element={standaloneElement("client-design-system")} />
+          <Route path={publicRoutePath("/client-design/coupon-detail", localized)} element={standaloneElement("client-design-coupon-detail")} />
+          <Route path={publicRoutePath("/client-design/share-detail", localized)} element={standaloneElement("client-design-share-detail")} />
+          <Route path={publicRoutePath("/client-design/states", localized)} element={standaloneElement("client-design-states")} />
         </>
       ) : null}
-      <Route path={publicRoutePath("/feedback", localized)} element={<Feedback />} />
-      <Route path={publicRoutePath("/favorites", localized)} element={<Favorites />} />
-      <Route
-        path={publicRoutePath("/install", localized)}
-        element={capabilities.customerServiceDownloadEnabled ? (
-          <CapabilityRoute enabled={capabilities.customerServiceDownloadEnabled}>
-            <SupportDownload installMode />
-          </CapabilityRoute>
-        ) : (
-          <Navigate to={publicNavigatePath("/", localized)} replace />
-        )}
-      />
-      <Route path={publicRoutePath("/content/:slug", localized)} element={<ContentCmsPage />} />
+      <Route path={publicRoutePath("/feedback", localized)} element={standaloneElement("feedback")} />
+      <Route path={publicRoutePath("/favorites", localized)} element={standaloneElement("favorites")} />
+      <Route path={publicRoutePath("/install", localized)} element={standaloneElement("install")} />
+      <Route path={publicRoutePath("/content/:slug", localized)} element={standaloneElement("content")} />
 
-      <Route path={publicRoutePath("/checkout", localized)} element={<ProtectedRoute><CapabilityRoute enabled={capabilities.mallEnabled}><Checkout /></CapabilityRoute></ProtectedRoute>} />
-      <Route path={publicRoutePath("/payment/result", localized)} element={<CapabilityRoute enabled={capabilities.mallEnabled}><PaymentResult /></CapabilityRoute>} />
-      <Route path={publicRoutePath("/settings", localized)} element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-      <Route path={publicRoutePath("/member/benefits", localized)} element={<ProtectedRoute><CapabilityRoute enabled={capabilities.memberLevelEnabled}><MemberBenefits /></CapabilityRoute></ProtectedRoute>} />
+      <Route path={publicRoutePath("/checkout", localized)} element={standaloneElement("checkout")} />
+      <Route path={publicRoutePath("/payment/result", localized)} element={standaloneElement("payment-result")} />
+      <Route path={publicRoutePath("/settings", localized)} element={standaloneElement("settings")} />
+      <Route path={publicRoutePath("/member/benefits", localized)} element={standaloneElement("member-benefits")} />
       <Route path={publicRoutePath("/member-benefits", localized)} element={<Navigate to={publicNavigatePath("/member/benefits", localized)} replace />} />
-      <Route path={publicRoutePath("/orders", localized)} element={<ProtectedRoute><Orders /></ProtectedRoute>} />
-      <Route path={publicRoutePath("/orders/:id/logistics", localized)} element={<ProtectedRoute><OrderLogistics /></ProtectedRoute>} />
-      <Route path={publicRoutePath("/orders/:id", localized)} element={<ProtectedRoute><OrderDetail /></ProtectedRoute>} />
-      <Route path={publicRoutePath("/invite", localized)} element={<ProtectedRoute><LoyaltyRouteGuard feature="referral"><Invite /></LoyaltyRouteGuard></ProtectedRoute>} />
-      <Route path={publicRoutePath("/points", localized)} element={<ProtectedRoute><CapabilityRoute enabled={capabilities.pointsEnabled}><LoyaltyRouteGuard feature="points"><Points /></LoyaltyRouteGuard></CapabilityRoute></ProtectedRoute>} />
-      <Route
-        path={publicRoutePath("/points/gifts", localized)}
-        element={
-          POINTS_GIFT_REDEEM_CLIENT_ENABLED ? (
-            <ProtectedRoute>
-              <CapabilityRoute enabled={capabilities.pointsEnabled}>
-                <LoyaltyRouteGuard feature="points">
-                  <PointsGiftShop />
-                </LoyaltyRouteGuard>
-              </CapabilityRoute>
-            </ProtectedRoute>
-          ) : (
-            <Navigate to={publicNavigatePath("/points", localized)} replace />
-          )
-        }
-      />
-      <Route path={publicRoutePath("/rewards", localized)} element={<ProtectedRoute><LoyaltyRouteGuard feature="reward"><Rewards /></LoyaltyRouteGuard></ProtectedRoute>} />
-      <Route path={publicRoutePath("/wallet", localized)} element={<ProtectedRoute><Wallet /></ProtectedRoute>} />
-      <Route path={publicRoutePath("/address", localized)} element={<ProtectedRoute><AddressManage /></ProtectedRoute>} />
-      <Route path={publicRoutePath("/coupons", localized)} element={<CapabilityRoute enabled={capabilities.couponEnabled}><Coupons /></CapabilityRoute>} />
-      <Route path={publicRoutePath("/notifications", localized)} element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
-      <Route path={publicRoutePath("/returns", localized)} element={<ProtectedRoute><Returns /></ProtectedRoute>} />
-      <Route path={publicRoutePath("/returns/:id", localized)} element={<ProtectedRoute><ReturnDetail /></ProtectedRoute>} />
-      <Route path={publicRoutePath("/reviews/pending", localized)} element={<ProtectedRoute><CapabilityRoute enabled={capabilities.reviewEnabled}><PendingReviews /></CapabilityRoute></ProtectedRoute>} />
-      <Route path={publicRoutePath("/history", localized)} element={<History />} />
+      <Route path={publicRoutePath("/orders", localized)} element={standaloneElement("orders")} />
+      <Route path={publicRoutePath("/orders/:id/logistics", localized)} element={standaloneElement("order-logistics")} />
+      <Route path={publicRoutePath("/orders/:id", localized)} element={standaloneElement("order-detail")} />
+      <Route path={publicRoutePath("/invite", localized)} element={standaloneElement("invite")} />
+      <Route path={publicRoutePath("/points", localized)} element={standaloneElement("points")} />
+      <Route path={publicRoutePath("/points/gifts", localized)} element={standaloneElement("points-gifts")} />
+      <Route path={publicRoutePath("/rewards", localized)} element={standaloneElement("rewards")} />
+      <Route path={publicRoutePath("/wallet", localized)} element={standaloneElement("wallet")} />
+      <Route path={publicRoutePath("/address", localized)} element={standaloneElement("address")} />
+      <Route path={publicRoutePath("/coupons", localized)} element={standaloneElement("coupons")} />
+      <Route path={publicRoutePath("/notifications", localized)} element={standaloneElement("notifications")} />
+      <Route path={publicRoutePath("/returns", localized)} element={standaloneElement("returns")} />
+      <Route path={publicRoutePath("/returns/:id", localized)} element={standaloneElement("return-detail")} />
+      <Route path={publicRoutePath("/reviews/pending", localized)} element={standaloneElement("pending-reviews")} />
+      <Route path={publicRoutePath("/history", localized)} element={standaloneElement("history")} />
     </>
   );
 }
@@ -614,7 +535,10 @@ function MainStoreRoutes() {
   const capabilities = useSiteCapabilities();
   const suppressMarketingPopups = shouldSuppressMarketingPopups(location.pathname);
   const deferNonCriticalWidgets = shouldDeferNonCriticalWidgets(location.pathname);
-  const nonCriticalWidgetDelayMs = deferNonCriticalWidgets ? GLOBAL_WIDGET_DELAY_MS : HIGH_INTENT_WIDGET_DELAY_MS;
+  const trackingDelayMs = deferNonCriticalWidgets ? BACKGROUND_TRACKING_DELAY_MS : HIGH_INTENT_WIDGET_DELAY_MS;
+  const marketingWidgetDelayMs = deferNonCriticalWidgets ? BACKGROUND_MARKETING_WIDGET_DELAY_MS : HIGH_INTENT_WIDGET_DELAY_MS;
+  const analyticsDelayMs = deferNonCriticalWidgets ? BACKGROUND_ANALYTICS_DELAY_MS : HIGH_INTENT_WIDGET_DELAY_MS;
+  const compatNoticeDelayMs = deferNonCriticalWidgets ? BACKGROUND_COMPAT_NOTICE_DELAY_MS : HIGH_INTENT_WIDGET_DELAY_MS;
   const routeFallbackKey = `${location.pathname}${location.search}`;
   const routeFallbackDelayMs = location.pathname.startsWith("/product/") ? 520 : 320;
 
@@ -666,23 +590,26 @@ function MainStoreRoutes() {
               </Suspense>
             </StorefrontMotionBoundary>
             <StorefrontBottomNavHost />
-            <DeferredToastHost delayMs={nonCriticalWidgetDelayMs} />
-            <DeferredGlobalMount delayMs={nonCriticalWidgetDelayMs}>
+            <DeferredGlobalMount delayMs={trackingDelayMs}>
               <Suspense fallback={null}>
                 <TrackingManager />
               </Suspense>
             </DeferredGlobalMount>
             {!suppressMarketingPopups ? (
-              <DeferredGlobalMount delayMs={nonCriticalWidgetDelayMs}>
+              <DeferredGlobalMount delayMs={marketingWidgetDelayMs}>
                 <Suspense fallback={null}>
                   <CookieConsentBanner />
                   <PwaUpdateToast />
                 </Suspense>
               </DeferredGlobalMount>
             ) : null}
-            <DeferredGlobalMount delayMs={nonCriticalWidgetDelayMs}>
+            <DeferredGlobalMount delayMs={analyticsDelayMs}>
               <Suspense fallback={null}>
                 {capabilities.trafficAnalyticsEnabled ? <RouteAnalyticsTracker /> : null}
+              </Suspense>
+            </DeferredGlobalMount>
+            <DeferredGlobalMount delayMs={compatNoticeDelayMs}>
+              <Suspense fallback={null}>
                 <ChinaBrowserCompatNotice />
               </Suspense>
             </DeferredGlobalMount>

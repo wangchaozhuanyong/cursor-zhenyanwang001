@@ -18,7 +18,7 @@ import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { STORE_COPY } from "@/constants/storeCopy";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { buildCanonical } from "@/utils/seo";
-import { toast } from "sonner";
+import { showStoreToast } from "@/utils/storeToast";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import * as feedbackService from "@/services/feedbackService";
@@ -231,7 +231,7 @@ export default function Feedback() {
   const handleSubmit = async () => {
     const content = form.content.trim();
     if (content.length < 10) {
-      toast.error("请至少写 10 个字，方便我们判断问题");
+      showStoreToast.error("请至少写 10 个字，方便我们判断问题");
       return;
     }
 
@@ -250,9 +250,9 @@ export default function Feedback() {
       if (loggedIn) {
         void queryClient.invalidateQueries({ queryKey: ["feedback", "mine"] });
       }
-      toast.success("反馈已提交", toastPresetQuickSuccess);
+      showStoreToast.success("反馈已提交", toastPresetQuickSuccess);
     } catch (error) {
-      toast.error(toastErrorMessage(error, "反馈提交失败，请稍后重试"));
+      showStoreToast.error(toastErrorMessage(error, "反馈提交失败，请稍后重试"));
     } finally {
       setSubmitting(false);
     }

@@ -2,10 +2,12 @@ import { useState, useEffect, useMemo, useCallback, type CSSProperties, type Key
 import { AlertCircle, ArrowLeft, Eye, EyeOff, Lock, User, KeyRound } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import "@/styles/storefront-next.extended-routes.css";
+import "@/styles/auth-route.css";
+import "@/styles/auth-trust-bar.css";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useUserStore } from "@/stores/useUserStore";
 import * as authService from "@/services/authService";
-import { toast } from "sonner";
+import { showStoreToast } from "@/utils/storeToast";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import LoginBannerCarousel from "@/components/LoginBannerCarousel";
 import HomeTrustBar from "@/components/HomeTrustBar";
@@ -143,7 +145,7 @@ export default function Login() {
       focusField(field);
       return;
     }
-    toast.error(message);
+    showStoreToast.error(message);
   };
 
   const focusNextAuthField = useCallback(() => {
@@ -244,7 +246,7 @@ export default function Login() {
     const oauthProvider = params.get("oauthProvider");
     if (oauthErr || wechatErr) {
       const msg = decodeURIComponent((oauthErr || wechatErr || "").replace(/\+/g, " "));
-      toast.error(authErrorMessage(new Error(msg), msg || "第三方登录失败"));
+      showStoreToast.error(authErrorMessage(new Error(msg), msg || "第三方登录失败"));
       navigate(localizedPath("/login"), { replace: true });
       return;
     }
@@ -269,11 +271,11 @@ export default function Login() {
             useUserStore.getState().loadProfile(),
           ]);
           if (cancelled) return;
-          toast.success("登录成功", { duration: 900, position: "top-center" });
+          showStoreToast.success("登录成功", { duration: 900, position: "top-center" });
           navigate(from, { replace: true, state: fromState });
         } catch (e) {
           if (!cancelled) {
-            toast.error(e instanceof Error ? e.message : "登录失败");
+            showStoreToast.error(e instanceof Error ? e.message : "登录失败");
           }
           navigate("/login", { replace: true });
         }
@@ -292,12 +294,12 @@ export default function Login() {
           provider: oauthProvider,
         });
         if (cancelled) return;
-        toast.success("登录成功", { duration: 900, position: "top-center" });
+        showStoreToast.success("登录成功", { duration: 900, position: "top-center" });
         navigate(from, { replace: true, state: fromState });
       } catch (e) {
         if (!cancelled) {
           const fallback = useAuthStore.getState().error;
-          toast.error(e instanceof Error ? e.message : (fallback ?? "登录失败"));
+          showStoreToast.error(e instanceof Error ? e.message : (fallback ?? "登录失败"));
         }
         navigate(localizedPath("/login"), { replace: true });
       }
@@ -326,12 +328,12 @@ export default function Login() {
     try {
       const data = await authService.sendOtp({ phone, countryCode });
       if (data?.devOtp) {
-        toast.message("开发验证码：" + data.devOtp, { duration: 12_000 });
+        showStoreToast.message("开发验证码：" + data.devOtp, { duration: 12_000 });
       }
-      toast.success("验证码已发送", { ...toastPresetQuickSuccess, position: "top-center" });
+      showStoreToast.success("验证码已发送", { ...toastPresetQuickSuccess, position: "top-center" });
       setOtpCooldown(60);
     } catch (e) {
-      toast.error(authErrorMessage(e, "发送验证码失败"));
+      showStoreToast.error(authErrorMessage(e, "发送验证码失败"));
     } finally {
       setOtpSending(false);
     }
@@ -402,20 +404,20 @@ export default function Login() {
         });
         clearLockedInviteCode();
       }
-      toast.success(mode === "login" ? "登录成功" : "注册成功", {
+      showStoreToast.success(mode === "login" ? "登录成功" : "注册成功", {
         duration: 900,
         position: "top-center",
       });
       navigate(from, { replace: true, state: fromState });
     } catch (e) {
-      toast.error(authErrorMessage(e, mode === "login" ? "登录失败" : "注册失败"));
+      showStoreToast.error(authErrorMessage(e, mode === "login" ? "登录失败" : "注册失败"));
     }
   };
 
   const handleRequestReset = async () => {
     const phoneError = validatePhoneForCountry(phone, countryCode);
     if (phoneError) {
-      toast.error(phoneError);
+      showStoreToast.error(phoneError);
       return;
     }
     setResetLoading(true);
@@ -426,9 +428,9 @@ export default function Login() {
         setResetToken(data.resetToken);
         setDevResetToken(data.resetToken);
       }
-      toast.success(data?.resetToken ? "已生成重置口令" : "重置口令已发送（如已配置）", toastPresetQuickSuccess);
+      showStoreToast.success(data?.resetToken ? "已生成重置口令" : "重置口令已发送（如已配置）", toastPresetQuickSuccess);
     } catch (e) {
-      toast.error(authErrorMessage(e, "请求重置失败"));
+      showStoreToast.error(authErrorMessage(e, "请求重置失败"));
     } finally {
       setResetLoading(false);
     }
@@ -436,22 +438,22 @@ export default function Login() {
 
   const handleConfirmReset = async () => {
     if (!resetToken.trim()) {
-      toast.error("请输入重置令牌");
+      showStoreToast.error("请输入重置令牌");
       return;
     }
     const passwordError = validateStrongPassword(newPassword);
     if (passwordError) {
-      toast.error(passwordError);
+      showStoreToast.error(passwordError);
       return;
     }
     setResetLoading(true);
     try {
       await authService.resetPassword({ token: resetToken.trim(), newPassword });
-      toast.success("密码已重置，请使用新密码登录", toastPresetQuickSuccess);
+      showStoreToast.success("密码已重置，请使用新密码登录", toastPresetQuickSuccess);
       setPassword(newPassword);
       closeResetSheet();
     } catch (e) {
-      toast.error(authErrorMessage(e, "重置失败"));
+      showStoreToast.error(authErrorMessage(e, "重置失败"));
     } finally {
       setResetLoading(false);
     }

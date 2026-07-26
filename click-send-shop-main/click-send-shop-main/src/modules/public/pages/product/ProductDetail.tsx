@@ -18,7 +18,7 @@ import { useProductDetailHeaderSolid } from "@/hooks/useProductDetailHeaderSolid
 import ProductTagList from "@/components/ProductTagList";
 import { AppModal } from "@/modules/micro-interactions";
 import ProductVariantSheet from "@/components/product/ProductVariantSheet";
-import { toast } from "sonner";
+import { showStoreToast } from "@/utils/storeToast";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useGoBack } from "@/hooks/useGoBack";
@@ -305,7 +305,7 @@ export default function ProductDetail() {
 
   const openPurchaseSheetCore = (intent: "cart" | "buy") => {
     if (soldOut) {
-      toast.error("库存不足");
+      showStoreToast.error("库存不足");
       return;
     }
     if (availableVariants.length === 1) setSelectedVariantId(availableVariants[0].id);
@@ -342,7 +342,7 @@ export default function ProductDetail() {
   const commitAddToCart = async () => {
     const variant = ensureVariantSelected() ?? defaultVariant;
     if (availableVariants.length > 1 && !variant) {
-      toast.error("请选择商品规格");
+      showStoreToast.error("请选择商品规格");
       return;
     }
     const { productSnapshot, variantSnapshot } = buildPurchaseSnapshot(variant);
@@ -362,9 +362,9 @@ export default function ProductDetail() {
         amount: displayPriceAmount * Number(qty || 0),
       });
       window.dispatchEvent(new CustomEvent("cart:badge-bump"));
-      toast.success("已加入购物车", toastPresetQuickSuccess);
+      showStoreToast.success("已加入购物车", toastPresetQuickSuccess);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "加入购物车失败");
+      showStoreToast.error(e instanceof Error ? e.message : "加入购物车失败");
     }
   };
 
@@ -373,7 +373,7 @@ export default function ProductDetail() {
   const commitBuyNow = () => {
     const variant = ensureVariantSelected() ?? defaultVariant;
     if (availableVariants.length > 1 && !variant) {
-      toast.error("请选择商品规格");
+      showStoreToast.error("请选择商品规格");
       return;
     }
     const { productSnapshot, variantSnapshot } = buildPurchaseSnapshot(variant);
@@ -395,9 +395,9 @@ export default function ProductDetail() {
     try {
       const favorited = await toggleFavorite(product);
       void trackEvent({ event_type: "favorite", module: "product_detail", product_id: product.id, quantity: favorited ? 1 : 0 });
-      toast.success(favorited ? "已收藏" : "已取消收藏", toastPresetQuickSuccess);
+      showStoreToast.success(favorited ? "已收藏" : "已取消收藏", toastPresetQuickSuccess);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "收藏操作失败");
+      showStoreToast.error(e instanceof Error ? e.message : "收藏操作失败");
     }
   };
 
@@ -405,8 +405,8 @@ export default function ProductDetail() {
     const result = openCustomerService(siteInfo);
     if (result.action === "wechat_copy" && result.wechatId) {
       const copied = await copyToClipboard(result.wechatId);
-      if (copied) toast.success("客服微信号已复制", toastPresetQuickSuccess);
-      else toast.error("复制失败，请手动复制微信号");
+      if (copied) showStoreToast.success("客服微信号已复制", toastPresetQuickSuccess);
+      else showStoreToast.error("复制失败，请手动复制微信号");
       return;
     }
     if (result.action === "support_page") {
@@ -665,9 +665,9 @@ export default function ProductDetail() {
             onClick={async () => {
               const ok = await copyToClipboard(shareText);
               if (ok) {
-                toast.success("已复制分享文案", toastPresetQuickSuccess);
+                showStoreToast.success("已复制分享文案", toastPresetQuickSuccess);
                 setShareSheetOpen(false);
-              } else toast.error("复制失败");
+              } else showStoreToast.error("复制失败");
             }}
           >
             复制分享文案

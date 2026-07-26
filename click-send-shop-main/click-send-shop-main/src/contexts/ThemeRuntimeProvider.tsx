@@ -2,9 +2,9 @@ import { createContext, useCallback, useContext, useEffect, useLayoutEffect, use
 import type { ReactNode } from "react";
 import {
   ADMIN_SAFE_THEME_OVERRIDES,
+  DEFAULT_RUNTIME_THEME_SKIN,
   DEFAULT_SKIN_ID,
-  THEME_PRESETS,
-} from "@/constants/themePresets";
+} from "@/constants/themeRuntimeDefaults";
 import {
   THEME_PREVIEW_READY,
   getThemePreviewParentOrigin,
@@ -17,9 +17,8 @@ import { normalizeMediaUrls } from "@/utils/mediaUrl";
 import { getClientDesignStyleBySkinId } from "@/utils/clientDesignStyle";
 import { buildStorefrontNextSkinTokens } from "@/utils/storefrontSkinTokens";
 import { generateThemePalette } from "@/utils/themeContrast";
-import { normalizeThemeConfig, normalizeThemeSkinsPayload, resolveRuntimeThemeSkinId } from "@/utils/themeConfig";
 import { readThemePreviewDraftToken, readThemePreviewSkinId } from "@/utils/themePreviewParams";
-import type { ThemeConfig, ThemeSkin } from "@/types/theme";
+import type { ThemeConfig, ThemeHolidayRule, ThemeSkin } from "@/types/theme";
 
 type ThemeMode = "light" | "dark";
 
@@ -110,8 +109,80 @@ function applyThemeDataAttributes(root: HTMLElement, config: ThemeConfig, skin?:
   root.setAttribute("data-festival-mode", config.festival.mode);
 }
 
-function chooseRuntimeSkin(normalized: ReturnType<typeof normalizeThemeSkinsPayload>) {
-  const runtimeSkinId = normalized.runtimeSkinId || resolveRuntimeThemeSkinId(normalized);
+function normalizeThemeConfig(input: Partial<ThemeConfig> | null | undefined): ThemeConfig {
+  const raw = input ?? {};
+  return {
+    ...DEFAULT_RUNTIME_THEME_SKIN.config,
+    ...raw,
+    texture: {
+      ...DEFAULT_RUNTIME_THEME_SKIN.config.texture,
+      ...(raw.texture ?? {}),
+    },
+    festival: {
+      ...DEFAULT_RUNTIME_THEME_SKIN.config.festival,
+      ...(raw.festival ?? {}),
+    },
+    adminThemeMode: "fixed",
+  };
+}
+
+function normalizeRuntimeSkin(input: Partial<ThemeSkin> & { id?: string; name?: string } | null | undefined): ThemeSkin | null {
+  if (!input?.id) return null;
+  const id = String(input.id).trim();
+  if (!id) return null;
+  return {
+    id,
+    themeKey: typeof input.themeKey === "string" && input.themeKey.trim() ? input.themeKey.trim() : id,
+    name: typeof input.name === "string" && input.name.trim() ? input.name.trim() : id,
+    description: typeof input.description === "string" && input.description.trim() ? input.description.trim() : undefined,
+    category: typeof input.category === "string" && input.category.trim() ? input.category.trim() : DEFAULT_RUNTIME_THEME_SKIN.category,
+    sceneTag: input.sceneTag,
+    type: input.type,
+    status: input.status,
+    isDefault: input.isDefault === true,
+    startAt: input.startAt,
+    endAt: input.endAt,
+    priority: input.priority,
+    updatedAt: input.updatedAt,
+    config: normalizeThemeConfig(input.config),
+  };
+}
+
+function normalizeRuntimeThemePayload(payload: {
+  defaultSkinId?: string;
+  activeSkinId?: string;
+  runtimeSkinId?: string;
+  holidaySkinId?: string;
+  holidayRules?: ThemeHolidayRule[];
+  skins?: Array<Partial<ThemeSkin> & { id?: string; name?: string }>;
+} | null | undefined) {
+  const incoming = payload ?? {};
+  const skins = (incoming.skins ?? [])
+    .map((skin) => normalizeRuntimeSkin(skin))
+    .filter((skin): skin is ThemeSkin => Boolean(skin));
+  if (!skins.some((skin) => skin.id === DEFAULT_SKIN_ID)) {
+    skins.unshift(DEFAULT_RUNTIME_THEME_SKIN);
+  }
+  const hasSkin = (id: string | undefined | null) => !!id && skins.some((skin) => skin.id === id);
+  const firstDefault = skins.find((skin) => skin.isDefault && skin.status !== "disabled");
+  const defaultSkinId = hasSkin(incoming.defaultSkinId)
+    ? String(incoming.defaultSkinId)
+    : firstDefault?.id ?? DEFAULT_SKIN_ID;
+  const activeSkinId = hasSkin(incoming.activeSkinId) ? String(incoming.activeSkinId) : defaultSkinId;
+  const runtimeSkinId = hasSkin(incoming.runtimeSkinId) ? String(incoming.runtimeSkinId) : activeSkinId;
+  const holidaySkinId = hasSkin(incoming.holidaySkinId) ? String(incoming.holidaySkinId) : activeSkinId;
+  return {
+    defaultSkinId,
+    activeSkinId,
+    runtimeSkinId,
+    holidaySkinId,
+    holidayRules: incoming.holidayRules ?? [],
+    skins,
+  };
+}
+
+function chooseRuntimeSkin(normalized: ReturnType<typeof normalizeRuntimeThemePayload>) {
+  const runtimeSkinId = normalized.runtimeSkinId;
   const fallbackId = normalized.activeSkinId || normalized.defaultSkinId || DEFAULT_SKIN_ID;
   const chosen = runtimeSkinId || fallbackId;
   return normalized.skins.some((skin) => skin.id === chosen) ? chosen : fallbackId;
@@ -197,7 +268,7 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
         activeSkinId?: string;
         runtimeSkinId?: string;
         holidaySkinId?: string;
-        holidayRules?: ReturnType<typeof normalizeThemeSkinsPayload>["holidayRules"];
+        holidayRules?: ThemeHolidayRule[];
         skins?: ThemeSkin[];
       };
       const draftToken = readThemePreviewDraftToken();
@@ -229,7 +300,7 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
           }
         }
       }
-      const normalized = normalizeThemeSkinsPayload(raw);
+      const normalized = normalizeRuntimeThemePayload(raw);
       const chosen = chooseRuntimeSkin(normalized);
       const active = normalized.skins.find((skin) => skin.id === chosen) ?? normalized.skins[0];
 
@@ -243,14 +314,14 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
         localStorage.setItem(SKINS_CACHE_KEY, JSON.stringify(normalized.skins));
       }
     } catch (error) {
-      const fallback = normalizeThemeSkinsPayload({
+      const fallback = normalizeRuntimeThemePayload({
         defaultSkinId: DEFAULT_SKIN_ID,
         activeSkinId: DEFAULT_SKIN_ID,
-        skins: THEME_PRESETS,
+        skins: [DEFAULT_RUNTIME_THEME_SKIN],
       });
       setSkins(fallback.skins);
       setSkinIdState(DEFAULT_SKIN_ID);
-      setThemeConfig(normalizeThemeConfig(fallback.skins.find((skin) => skin.id === DEFAULT_SKIN_ID)?.config));
+      setThemeConfig(normalizeThemeConfig(DEFAULT_RUNTIME_THEME_SKIN.config));
       setThemeReady(true);
       setThemeSynced(true);
       console.warn("[theme] failed to sync skins, fallback applied", error);
@@ -355,18 +426,18 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
 function getInitialThemeState() {
   if (typeof window === "undefined") {
     return {
-      skins: THEME_PRESETS,
+      skins: [DEFAULT_RUNTIME_THEME_SKIN],
       skinId: DEFAULT_SKIN_ID,
-      themeConfig: normalizeThemeConfig(THEME_PRESETS[0]?.config),
+      themeConfig: normalizeThemeConfig(DEFAULT_RUNTIME_THEME_SKIN.config),
       ready: false,
     };
   }
 
   const cachedSkins = readCachedSkins();
-  const normalized = normalizeThemeSkinsPayload({
+  const normalized = normalizeRuntimeThemePayload({
     defaultSkinId: DEFAULT_SKIN_ID,
     activeSkinId: DEFAULT_SKIN_ID,
-    skins: cachedSkins.length > 0 ? cachedSkins : THEME_PRESETS,
+    skins: cachedSkins.length > 0 ? cachedSkins : [DEFAULT_RUNTIME_THEME_SKIN],
   });
   const sourceSkins = normalized.skins;
   const previewSkinId = readThemePreviewSkinId();

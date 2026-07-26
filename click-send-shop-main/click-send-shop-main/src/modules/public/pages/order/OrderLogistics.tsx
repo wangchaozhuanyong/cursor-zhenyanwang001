@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useParams } from "react-router-dom";
 import { AlertTriangle, ClipboardList, Copy, ExternalLink, MapPin, PackageCheck, RefreshCw, Truck } from "lucide-react";
-import { toast } from "sonner";
+import { showStoreToast } from "@/utils/storeToast";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 import StorefrontQuietLoading from "@/components/storefront-motion/StorefrontQuietLoading";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
@@ -222,8 +222,8 @@ export default function OrderLogistics() {
                       const trackingNo = snapshot?.trackingNo.trim() || "";
                       if (!trackingNo) return;
                       const ok = await copyToClipboard(trackingNo);
-                      if (ok) toast.success(copy.copied);
-                      else toast.error(copy.copyFailed);
+                      if (ok) showStoreToast.success(copy.copied);
+                      else showStoreToast.error(copy.copyFailed);
                     }}
                   >
                     <Copy size={14} aria-hidden />

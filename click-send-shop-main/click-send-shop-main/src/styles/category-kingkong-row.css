@@ -1,0 +1,146 @@
+html[data-app-scope="store"] .sf-next-category-rail {
+  isolation: isolate;
+}
+
+html[data-app-scope="store"] .sf-next-category-rail::before,
+html[data-app-scope="store"] .sf-next-category-rail::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 2;
+  width: 1.75rem;
+  pointer-events: none;
+}
+
+html[data-app-scope="store"] .sf-next-category-rail::before {
+  left: 0;
+  background: linear-gradient(90deg, var(--theme-surface), transparent);
+}
+
+html[data-app-scope="store"] .sf-next-category-rail::after {
+  right: 0;
+  background: linear-gradient(270deg, var(--theme-surface), transparent);
+}
+
+@media (min-width: 640px) {
+  html[data-app-scope="store"] .sf-next-category-rail::before,
+  html[data-app-scope="store"] .sf-next-category-rail::after {
+    display: none;
+  }
+}
+
+html[data-app-scope="store"] {
+  --store-category-gold: var(--theme-price);
+  --store-category-gold-soft: color-mix(in srgb, var(--theme-price) 18%, var(--theme-surface));
+  --store-category-gold-dark: color-mix(in srgb, var(--theme-price) 72%, var(--theme-text));
+  --store-category-ink: var(--theme-text);
+  --store-category-muted: var(--theme-text-muted);
+  --store-category-line: color-mix(in srgb, var(--theme-price) 24%, transparent);
+  --store-category-paper: var(--theme-surface);
+  --store-category-panel: color-mix(in srgb, var(--theme-surface) 88%, transparent);
+}
+
+html[data-app-scope="store"] .sf-next-category-tile,
+html[data-app-scope="store"] .sf-next-category-tile-skeleton {
+  width: clamp(4.85rem, 20.4vw, 5.15rem);
+  height: clamp(4.55rem, 18.8vw, 4.95rem);
+  border-radius: 1rem;
+  border-color: color-mix(in srgb, var(--theme-price) 18%, var(--theme-border));
+  background:
+    radial-gradient(circle at 50% 10%, color-mix(in srgb, var(--theme-surface) 96%, transparent), transparent 50%),
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-surface) 90%, transparent), color-mix(in srgb, var(--theme-bg) 82%, transparent)),
+    var(--store-category-paper);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 72%, transparent),
+    0 14px 26px -24px color-mix(in srgb, var(--theme-price) 30%, transparent);
+}
+
+html[data-app-scope="store"] .sf-next-category-tile-skeleton {
+  position: relative;
+}
+
+html[data-app-scope="store"] .sf-next-category-tile-skeleton::before,
+html[data-app-scope="store"] .sf-next-category-tile-skeleton::after {
+  content: "";
+  display: block;
+  border-radius: 999px;
+  background:
+    linear-gradient(90deg, rgba(214, 181, 107, 0.18), rgba(255, 255, 255, 0.72), rgba(214, 181, 107, 0.18));
+}
+
+html[data-app-scope="store"] .sf-next-category-tile-skeleton::before {
+  width: 2.55rem;
+  height: 2.55rem;
+  border-radius: 0.85rem;
+}
+
+html[data-app-scope="store"] .sf-next-category-tile-skeleton::after {
+  width: 3rem;
+  height: 0.52rem;
+}
+
+html[data-app-scope="store"] .sf-next-category-tile {
+  color: var(--store-text-main);
+}
+
+html[data-app-scope="store"] .sf-next-category-tile.is-active {
+  border-color: color-mix(in srgb, var(--theme-price) 44%, var(--theme-border));
+  background:
+    radial-gradient(circle at 50% 10%, color-mix(in srgb, var(--theme-surface) 98%, transparent), transparent 48%),
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-surface) 94%, transparent), color-mix(in srgb, var(--theme-price) 14%, var(--theme-surface))),
+    var(--store-category-paper);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 74%, transparent),
+    0 16px 30px -24px color-mix(in srgb, var(--theme-price) 42%, transparent);
+}
+
+html[data-app-scope="store"] .sf-next-category-tile-icon {
+  width: 2.55rem;
+  height: 2.55rem;
+  color: var(--store-category-gold-dark);
+  background: transparent;
+  box-shadow: none;
+}
+
+html[data-app-scope="store"] .sf-next-category-tile-icon svg {
+  color: var(--store-category-gold-dark);
+  width: 1.9rem;
+  height: 1.9rem;
+  stroke-width: 2;
+}
+
+html[data-app-scope="store"] .sf-next-category-tile-icon img {
+  width: 2.55rem;
+  height: 2.55rem;
+  object-fit: contain;
+  transform: scale(1.03);
+}
+
+html[data-app-scope="store"] .sf-next-category-tile-label {
+  color: var(--store-text-secondary);
+  font-size: 0.75rem;
+  font-weight: var(--store-control-weight);
+  letter-spacing: 0;
+}
+
+html[data-app-scope="store"] .sf-next-category-tile.is-active .sf-next-category-tile-label {
+  color: var(--store-text-main);
+  font-weight: var(--store-emphasis-weight);
+}
+
+html[data-app-scope="store"] .sf-next-category-rail--plain .sf-next-category-tile,
+html[data-app-scope="store"] .sf-next-category-rail--plain .sf-next-category-tile-skeleton {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+html[data-app-scope="store"] .sf-next-category-rail--plain .sf-next-category-tile.is-active {
+  border-color: transparent !important;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-price) 11%, transparent), color-mix(in srgb, var(--theme-surface) 34%, transparent)) !important;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 54%, transparent),
+    0 8px 18px -20px color-mix(in srgb, var(--theme-price) 34%, transparent) !important;
+}

@@ -1,6 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { UserRound } from "lucide-react";
-import BannerCarousel from "@/components/BannerCarousel";
 import NotificationIconButton from "@/components/NotificationIconButton";
 import StoreBrandLogo from "@/components/store/StoreBrandLogo";
 import { StoreSearchDrawer, StoreSearchLauncher } from "@/components/store/StoreSearchDrawer";
@@ -15,8 +14,11 @@ import { useNotificationStore } from "@/stores/useNotificationStore";
 import { useProductStore } from "@/stores/useProductStore";
 import * as productService from "@/services/productService";
 import type { ProductTag } from "@/types/product";
+import { scheduleIdleTask } from "@/utils/idleScheduler";
 import { storefrontCategoryName } from "@/utils/storefrontCopySanitizer";
 import { getBannerCtaText } from "@/utils/bannerCta";
+
+const BannerCarousel = lazy(() => import("@/components/BannerCarousel"));
 
 type HomeHeroV2Props = {
   siteName: string;
@@ -43,11 +45,12 @@ export default function HomeHeroV2({
   autoRotateMs,
   onNavigate,
 }: HomeHeroV2Props) {
-  const hasBanner = bannerEnabled && (bannersLoading || banners.length > 0);
+  const hasBanner = bannerEnabled && banners.length > 0;
   const [searchOpen, setSearchOpen] = useState(false);
   const [keyword, setKeyword] = useState("");
   const [searchTags, setSearchTags] = useState<ProductTag[]>([]);
   const [activeBanner, setActiveBanner] = useState<Banner | null>(null);
+  const [carouselReady, setCarouselReady] = useState(false);
   const categories = useProductStore((s) => s.categories);
   const loadCategories = useProductStore((s) => s.loadCategories);
   const { locale, localizedPath, t } = usePublicLocale();
@@ -81,6 +84,20 @@ export default function HomeHeroV2({
   useEffect(() => {
     if (hasBanner) return;
     setActiveBanner(null);
+  }, [hasBanner]);
+
+  useEffect(() => {
+    if (!hasBanner) {
+      setCarouselReady(false);
+      return;
+    }
+    return scheduleIdleTask("home-hero-banner-carousel", () => {
+      setCarouselReady(true);
+    }, {
+      delayMs: 3200,
+      timeoutMs: 5200,
+      jitterMs: 400,
+    });
   }, [hasBanner]);
 
   useEffect(() => {
@@ -165,17 +182,28 @@ export default function HomeHeroV2({
             <span className="sf-next-home-hero__art-orb" />
             <span className="sf-next-home-hero__art-base" />
           </div>
-          {hasBanner ? (
+          {hasBanner && carouselReady ? (
             <div className="sf-next-home-hero__banner-texture">
-              <BannerCarousel
-                banners={banners}
-                loading={bannersLoading}
-                themeConfigOverride={themeConfig}
-                autoRotateMs={autoRotateMs}
-                trackingModule="home_v2_banner"
-                showCopyLayer={false}
-                onActiveBannerChange={setActiveBanner}
-              />
+              <Suspense
+                fallback={(
+                  <HeroFallbackVisual
+                    siteName={siteName}
+                    logoSrc={logoSrc}
+                    slogan={displaySlogan}
+                    description={displayDescription}
+                  />
+                )}
+              >
+                <BannerCarousel
+                  banners={banners}
+                  loading={bannersLoading}
+                  themeConfigOverride={themeConfig}
+                  autoRotateMs={autoRotateMs}
+                  trackingModule="home_v2_banner"
+                  showCopyLayer={false}
+                  onActiveBannerChange={setActiveBanner}
+                />
+              </Suspense>
             </div>
           ) : (
             <HeroFallbackVisual

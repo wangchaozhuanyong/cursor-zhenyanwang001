@@ -52,6 +52,7 @@ async function main() {
   try {
     const env = {
       ...process.env,
+      TAILWIND_APP_TARGET: "admin",
       VITE_BUILD_OUT_DIR: adminDist,
       PWA_DIST_DIR: adminDist,
     };

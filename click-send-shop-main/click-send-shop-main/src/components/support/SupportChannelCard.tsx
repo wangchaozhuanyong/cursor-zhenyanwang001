@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { BadgeCheck, Copy, Download, ExternalLink, Loader2 } from "lucide-react";
-import { toast } from "sonner";
+import { showStoreToast } from "@/utils/storeToast";
 import WeChatIcon from "@/components/icons/WeChatIcon";
 import WhatsAppIcon from "@/components/icons/WhatsAppIcon";
 import TelegramIcon from "@/components/icons/TelegramIcon";
@@ -26,12 +26,12 @@ type Props = {
 async function copyWithToast(text: string, successMessage: string) {
   const value = cleanSupportText(text);
   if (!value) {
-    toast.error("暂无可复制内容");
+    showStoreToast.error("暂无可复制内容");
     return;
   }
   const ok = await copyToClipboard(value);
-  if (ok) toast.success(successMessage);
-  else toast.error("复制失败，请长按手动复制");
+  if (ok) showStoreToast.success(successMessage);
+  else showStoreToast.error("复制失败，请长按手动复制");
 }
 
 function getOpenLabel(channel: SupportDownloadChannel) {
@@ -91,10 +91,10 @@ export default function SupportChannelCard({ channel }: Props) {
     void trackEvent({ event_type: "support_qr_download", module: "support", page: "/support-download" });
     try {
       const saved = await downloadImage(qrUrl, `${title}-客服图片`);
-      if (saved) toast.success("客服图片已下载");
-      else toast.message("已打开客服图片，请长按保存");
+      if (saved) showStoreToast.success("客服图片已下载");
+      else showStoreToast.message("已打开客服图片，请长按保存");
     } catch {
-      toast.error("下载失败，请长按客服图片保存");
+      showStoreToast.error("下载失败，请长按客服图片保存");
     } finally {
       setDownloadingQr(false);
     }

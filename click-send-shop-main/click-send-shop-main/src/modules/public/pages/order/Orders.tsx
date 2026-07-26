@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { RefreshCw, SearchX, ShoppingBag } from "lucide-react";
 import { useLocation, useSearchParams } from "react-router-dom";
-import { toast } from "sonner";
+import { showStoreToast } from "@/utils/storeToast";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 import StorefrontQuietLoading from "@/components/storefront-motion/StorefrontQuietLoading";
 import { OrderPaymentCountdown } from "@/components/order/OrderPaymentCountdown";
@@ -235,12 +235,12 @@ export default function Orders() {
       for (const item of order.items) {
         await addToCart(buildRepurchaseProduct(item), item.qty, buildVariantFromOrderItem(item));
       }
-      toast.success(copy.cartReadded);
+      showStoreToast.success(copy.cartReadded);
       navigate(localizedPath("/checkout"), {
         state: { from: localizedPath(`/orders/${order.id}`), repurchaseOrderId: order.id },
       });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : copy.repurchaseFailed);
+      showStoreToast.error(e instanceof Error ? e.message : copy.repurchaseFailed);
     }
   };
 
@@ -248,11 +248,11 @@ export default function Orders() {
     setActingId(order.id);
     try {
       await deleteOrder(order.id);
-      toast.success(copy.orderDeleted);
+      showStoreToast.success(copy.orderDeleted);
       setSummary(null);
       await loadCurrentOrders({ force: true });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : copy.deleteFailed);
+      showStoreToast.error(e instanceof Error ? e.message : copy.deleteFailed);
     } finally {
       setActingId("");
     }
@@ -685,10 +685,10 @@ export default function Orders() {
             try {
               await cancelOrder(cancelConfirmOrder.id);
               await loadCurrentOrders({ force: true });
-              toast.success(copy.orderCancelled);
+              showStoreToast.success(copy.orderCancelled);
               setCancelConfirmOrder(null);
             } catch (e) {
-              toast.error(e instanceof Error ? e.message : copy.cancelFailed);
+              showStoreToast.error(e instanceof Error ? e.message : copy.cancelFailed);
             } finally {
               setActingId("");
             }
@@ -709,10 +709,10 @@ export default function Orders() {
             try {
               await confirmReceive(confirmReceiveOrder.id);
               await loadCurrentOrders({ force: true });
-              toast.success(copy.received);
+              showStoreToast.success(copy.received);
               setConfirmReceiveOrder(null);
             } catch (e) {
-              toast.error(e instanceof Error ? e.message : copy.receiveFailed);
+              showStoreToast.error(e instanceof Error ? e.message : copy.receiveFailed);
             } finally {
               setActingId("");
             }

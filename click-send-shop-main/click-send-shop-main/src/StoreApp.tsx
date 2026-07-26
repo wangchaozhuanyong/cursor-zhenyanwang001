@@ -1,10 +1,12 @@
-import { lazy, Suspense } from "react";
+import { Suspense } from "react";
 import { BrowserRouter, useLocation } from "react-router-dom";
 import AppRouteFallback, { DelayedRouteFallback, StoreOutletFallback } from "@/components/AppRouteFallback";
+import DeferredStoreToaster from "@/components/DeferredStoreToaster";
 import { NavigationHistoryRecorder } from "@/components/NavigationHistoryRecorder";
 import { StoreAppRoutes } from "@/routes/StoreAppRoutes";
+import { lazyPublicRouteWithPreload } from "@/routes/lazyWithPreload";
 
-const TikTokLanding = lazy(() => import("@/modules/public/pages/content/TikTokLanding"));
+const TikTokLanding = lazyPublicRouteWithPreload(() => import("@/modules/public/pages/content/TikTokLanding"));
 
 function StoreAppContent() {
   const location = useLocation();
@@ -26,6 +28,7 @@ const StoreApp = () => (
   >
     <NavigationHistoryRecorder />
     <StoreAppContent />
+    <DeferredStoreToaster />
   </BrowserRouter>
 );
 

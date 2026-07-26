@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { ReactNode } from "react";
+import "@/styles/guest-mobile-footer.css";
 import {
   ChevronDown,
   ChevronRight,
@@ -22,6 +23,7 @@ import { copyToClipboard } from "@/utils/clipboard";
 import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
 import { buildWhatsAppLink } from "@/utils/supportChannels";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
+import { showStoreToast } from "@/utils/storeToast";
 import StableImage from "@/components/ui/StableImage";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import {
@@ -411,11 +413,11 @@ export default function GuestMobileFooter({
         onNavigate(buildSupportPageUrl(channel.id));
         return;
       }
-      const [{ toast }, copied] = await Promise.all([import("sonner"), copyToClipboard(account)]);
+      const copied = await copyToClipboard(account);
       if (copied) {
-        toast.success("微信号已复制", toastPresetQuickSuccess);
+        showStoreToast.success("微信号已复制", toastPresetQuickSuccess);
       } else {
-        toast.error("复制失败，请手动复制微信号");
+        showStoreToast.error("复制失败，请手动复制微信号");
       }
       return;
     }

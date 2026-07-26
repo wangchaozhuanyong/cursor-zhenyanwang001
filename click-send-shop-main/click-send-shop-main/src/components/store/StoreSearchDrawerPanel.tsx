@@ -9,6 +9,7 @@ import { useOverlayDismiss } from "@/modules/micro-interactions/hooks/useOverlay
 import { useModalLayer } from "@/modules/micro-interactions/modal/ModalLayerProvider";
 import { fetchHotSearchTerms, fetchSearchSuggestions } from "@/services/searchService";
 import type { HotSearchTerm, SearchSuggestion } from "@/types/search";
+import "@/styles/store-search-drawer.css";
 
 const SEARCH_HISTORY_KEY = "search_history";
 const MAX_SEARCH_HISTORY = 10;

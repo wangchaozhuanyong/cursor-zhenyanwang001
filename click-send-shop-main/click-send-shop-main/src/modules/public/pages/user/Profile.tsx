@@ -5,9 +5,6 @@ import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { isLoyaltyFeatureEnabled } from "@/utils/loyaltyFeatureVisibility";
 import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
-import { toast } from "sonner";
-import { toastPresetQuickSuccess } from "@/utils/toastPresets";
-import { BottomSheetConfirm } from "@/modules/micro-interactions";
 import StoreAccountNav from "@/components/store/StoreAccountNav";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useCouponStore } from "@/stores/useCouponStore";
@@ -29,6 +26,7 @@ import { formatUnreadBadge } from "@/utils/notificationBadge";
 import { THIRD_PARTY_LOGIN_ENABLED } from "@/constants/authLogin";
 import { computeUpgradeProgress } from "@/utils/memberBenefitPresentation";
 import { scheduleIdleTask } from "@/utils/idleScheduler";
+import { showStoreToast } from "@/utils/storeToast";
 import {
   buildAccountFeaturesByKeys,
   type AccountFeatureContext,
@@ -54,6 +52,12 @@ import "@/styles/profile-route.css";
 const ProfileWechatBindSection = THIRD_PARTY_LOGIN_ENABLED
   ? lazy(() => import("./ProfileWechatBindSection"))
   : null;
+
+const LazyProfileLogoutConfirm = lazy(() =>
+  import("@/modules/micro-interactions/components/BottomSheetConfirm").then((module) => ({
+    default: module.BottomSheetConfirm,
+  })),
+);
 
 let cachedProfileOrderSummary: OrderSummary | null = null;
 
@@ -203,7 +207,7 @@ export default function Profile() {
 
   const handleLogout = async () => {
     await logout();
-    toast.success("已退出登录", toastPresetQuickSuccess);
+    showStoreToast.success("已退出登录", { duration: 2000 });
     navigateStorePath("/login", { from: "/profile" });
   };
 
@@ -214,9 +218,9 @@ export default function Profile() {
       const data = await uploadService.uploadSingle(file, { mode: "thumb" });
       useUserStore.setState({ avatar: data.url });
       await useUserStore.getState().saveProfile();
-      toast.success("头像已更新", toastPresetQuickSuccess);
+      showStoreToast.success("头像已更新", { duration: 2000 });
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "头像上传失败");
+      showStoreToast.error(error instanceof Error ? error.message : "头像上传失败");
     } finally {
       e.target.value = "";
     }
@@ -226,9 +230,9 @@ export default function Profile() {
     if (!inviteCode?.trim()) return;
     try {
       await navigator.clipboard.writeText(inviteCode.trim());
-      toast.success("邀请码已复制", toastPresetQuickSuccess);
+      showStoreToast.success("邀请码已复制", { duration: 2000 });
     } catch {
-      toast.error("复制失败，请手动复制邀请码");
+      showStoreToast.error("复制失败，请手动复制邀请码");
     }
   };
 
@@ -453,15 +457,19 @@ export default function Profile() {
         </div>
       </main>
 
-      <BottomSheetConfirm
-        open={logoutConfirmOpen}
-        onClose={() => setLogoutConfirmOpen(false)}
-        title="退出登录"
-        description="确定要退出当前账号吗？"
-        confirmText="退出"
-        danger
-        onConfirm={handleLogout}
-      />
+      {logoutConfirmOpen ? (
+        <Suspense fallback={null}>
+          <LazyProfileLogoutConfirm
+            open
+            onClose={() => setLogoutConfirmOpen(false)}
+            title="退出登录"
+            description="确定要退出当前账号吗？"
+            confirmText="退出"
+            danger
+            onConfirm={handleLogout}
+          />
+        </Suspense>
+      ) : null}
     </div>
   );
 }

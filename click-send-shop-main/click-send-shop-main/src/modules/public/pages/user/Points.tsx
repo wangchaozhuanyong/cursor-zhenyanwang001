@@ -14,7 +14,7 @@ import { usePointsStore } from "@/stores/usePointsStore";
 import { fetchPointsConfig, signIn } from "@/services/pointsService";
 import type { PointsClientConfig } from "@/services/pointsService";
 import { useLoyaltyVisibility } from "@/hooks/useLoyaltyVisibility";
-import { toast } from "sonner";
+import { showStoreToast } from "@/utils/storeToast";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import {
   THEME_ROW_ICON_NEGATIVE,
@@ -357,12 +357,12 @@ export default function Points() {
     setSigningIn(true);
     try {
       const pts = await signIn();
-      toast.success(`签到成功，获得 ${pts} 积分`, toastPresetQuickSuccess);
+      showStoreToast.success(`签到成功，获得 ${pts} 积分`, toastPresetQuickSuccess);
       await Promise.all([loadProfile(), loadPointsData()]);
       const cfg = await fetchPointsConfig().catch(() => null);
       if (cfg) setSignInConfig(cfg.signIn);
     } catch (e) {
-      toast.error(e instanceof Error ? normalizePointsText(e.message) || "签到失败" : "签到失败");
+      showStoreToast.error(e instanceof Error ? normalizePointsText(e.message) || "签到失败" : "签到失败");
     } finally {
       setSigningIn(false);
     }

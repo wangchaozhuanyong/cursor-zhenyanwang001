@@ -1,4 +1,4 @@
-import { useLayoutEffect } from "react";
+import { useEffect } from "react";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { isLoggedIn } from "@/utils/token";
 
@@ -16,7 +16,7 @@ function stripWechatLoginQuery(): void {
 
 /** 启动时将持久化 isAuthenticated 与 Cookie 会话对齐 */
 export default function AuthSessionSync() {
-  useLayoutEffect(() => {
+  useEffect(() => {
     let cancelled = false;
     const hydrateTimeout = window.setTimeout(() => {
       if (cancelled || useAuthStore.getState().authHydrated) return;

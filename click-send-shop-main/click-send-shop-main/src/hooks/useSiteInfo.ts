@@ -39,7 +39,7 @@ const FALLBACK: SiteInfo = {
 let cachedInfo: SiteInfo | null = null;
 let inflight: Promise<SiteInfo> | null = null;
 const subscribers = new Set<(info: SiteInfo) => void>();
-const SITE_INFO_RETRY_DELAYS_MS = [1_500, 3_000, 6_000] as const;
+const SITE_INFO_RETRY_DELAYS_MS = [4_000, 12_000, 30_000] as const;
 let retryTimer: ReturnType<typeof window.setTimeout> | null = null;
 let retryAttempt = 0;
 
@@ -125,6 +125,7 @@ function notifyFallbackAndScheduleRetry() {
 async function loadOnce(): Promise<SiteInfo> {
   if (cachedInfo) return cachedInfo;
   if (inflight) return inflight;
+  if (retryTimer) return FALLBACK;
   inflight = homeService.fetchHomeBootstrap().then((b) => b.siteInfo).catch(() => contentService.fetchSiteInfo())
     .then((data) => {
       const merged: SiteInfo = sanitizeSiteInfo({ ...FALLBACK, ...(data ?? {}) });

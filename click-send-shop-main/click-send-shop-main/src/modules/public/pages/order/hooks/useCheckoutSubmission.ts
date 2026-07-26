@@ -12,7 +12,7 @@ import type { Address } from "@/types/address";
 import type { CartItem } from "@/types/cart";
 import type { PublicPaymentChannel } from "@/services/paymentService";
 import { ORDER_STATUS } from "@/constants/statusDictionary";
-import { toast } from "sonner";
+import { showStoreToast } from "@/utils/storeToast";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import { copyToClipboard } from "@/utils/clipboard";
 import { trackPurchase } from "@/utils/tracking";
@@ -225,7 +225,7 @@ export function useCheckoutSubmission({
       const channelCode = selectedPaymentChannelCode || paymentChannels[0]?.code || "";
       if (!onlinePaymentEnabled || !channelCode) {
         setPostSubmitOnlineError(onlinePaymentUnavailableMessage);
-        toast.info(onlinePaymentUnavailableMessage);
+        showStoreToast.info(onlinePaymentUnavailableMessage);
         return;
       }
       try {
@@ -240,11 +240,11 @@ export function useCheckoutSubmission({
         }
         const note = sanitizeClientInstructions(intent.client_instructions) || "支付单已创建，请按页面指引完成付款";
         setPostSubmitOnlineNote(note);
-        toast.success(note);
+        showStoreToast.success(note);
       } catch (err) {
         const msg = err instanceof Error ? err.message : "在线支付发起失败";
         setPostSubmitOnlineError(msg);
-        toast.error(msg);
+        showStoreToast.error(msg);
       }
     },
     [localizedPath, onlinePaymentEnabled, onlinePaymentUnavailableMessage, paymentChannels, selectedPaymentChannelCode],
@@ -264,16 +264,16 @@ export function useCheckoutSubmission({
         if (latest.status === ORDER_STATUS.PAID || latest.payment_status === "paid") {
           trackPurchase(latest);
         }
-        toast.success("返现钱包支付成功");
+        showStoreToast.success("返现钱包支付成功");
         const text = generateOrderText(latest);
         const copied = await copyToClipboard(text);
         if (copied) {
-          toast.success("订单内容已复制到剪贴板", toastPresetQuickSuccess);
+          showStoreToast.success("订单内容已复制到剪贴板", toastPresetQuickSuccess);
         }
       } catch (err) {
         const msg = err instanceof Error ? err.message : "返现钱包支付失败";
         setPostSubmitWalletError(msg);
-        toast.error(msg);
+        showStoreToast.error(msg);
       }
     },
     [loadOrderDetail, setRewardBalance, setSubmittedOrder],
@@ -281,14 +281,14 @@ export function useCheckoutSubmission({
 
   const finalizeOfflineOrder = useCallback(async (order: Order) => {
     if (order.payment_method === "whatsapp") {
-      toast.success("订单已提交，请通过下方方式联系客服完成付款");
+      showStoreToast.success("订单已提交，请通过下方方式联系客服完成付款");
     } else {
-      toast.success("订单已提交");
+      showStoreToast.success("订单已提交");
     }
     const text = generateOrderText(order);
     const copied = await copyToClipboard(text);
     if (copied) {
-      toast.success("订单内容已复制到剪贴板", toastPresetQuickSuccess);
+      showStoreToast.success("订单内容已复制到剪贴板", toastPresetQuickSuccess);
     }
   }, []);
 
@@ -304,15 +304,15 @@ export function useCheckoutSubmission({
       shippingQuoteError,
     });
     if (!validation.ok) {
-      toast.error(validation.message);
+      showStoreToast.error(validation.message);
       return;
     }
     if (paymentMethod === "online" && !paymentConfigLoaded) {
-      toast.info("支付配置加载中，请稍后再试");
+      showStoreToast.info("支付配置加载中，请稍后再试");
       return;
     }
     if (paymentMethod === "online" && !onlinePaymentEnabled) {
-      toast.info(onlinePaymentUnavailableMessage);
+      showStoreToast.info(onlinePaymentUnavailableMessage);
       return;
     }
 
@@ -344,7 +344,7 @@ export function useCheckoutSubmission({
       await finalizeOfflineOrder(order);
     } catch (e) {
       setOrderFinalizing(false);
-      toast.error(e instanceof Error ? e.message : "提交订单失败");
+      showStoreToast.error(e instanceof Error ? e.message : "提交订单失败");
     }
   }, [
     name,
@@ -374,9 +374,9 @@ export function useCheckoutSubmission({
     if (!submittedOrder) return;
     const copied = await copyToClipboard(generateOrderText(submittedOrder));
     if (copied) {
-      toast.success("已复制订单内容", toastPresetQuickSuccess);
+      showStoreToast.success("已复制订单内容", toastPresetQuickSuccess);
     } else {
-      toast.error("复制失败，请手动复制订单内容");
+      showStoreToast.error("复制失败，请手动复制订单内容");
     }
   }, [submittedOrder]);
 
@@ -387,7 +387,7 @@ export function useCheckoutSubmission({
   }, [submittedOrder]);
 
   const openWeChat = useCallback(() => {
-    toast.info("请打开微信，粘贴订单内容发送给客服");
+    showStoreToast.info("请打开微信，粘贴订单内容发送给客服");
     void copyOrderText();
   }, [copyOrderText]);
 
@@ -395,7 +395,7 @@ export function useCheckoutSubmission({
     if (!submittedOrder) return;
     const channelCode = selectedPaymentChannelCode || paymentChannels[0]?.code || "";
     if (!onlinePaymentEnabled || !channelCode) {
-      toast.info(onlinePaymentUnavailableMessage);
+      showStoreToast.info(onlinePaymentUnavailableMessage);
       return;
     }
     setPostSubmitOnlineError(null);
@@ -412,11 +412,11 @@ export function useCheckoutSubmission({
       }
       const note = sanitizeClientInstructions(intent.client_instructions) || paymentInstructionToastMessage(intent.client_instructions);
       setPostSubmitOnlineNote(note);
-      toast.message(note);
+      showStoreToast.message(note);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "在线支付发起失败";
       setPostSubmitOnlineError(msg);
-      toast.error(msg);
+      showStoreToast.error(msg);
     }
   }, [localizedPath, submittedOrder, onlinePaymentEnabled, onlinePaymentUnavailableMessage, paymentChannels, selectedPaymentChannelCode]);
 
@@ -444,11 +444,11 @@ export function useCheckoutSubmission({
       }
       const balanceData = await rewardWalletService.fetchRewardBalance();
       setRewardBalance(Number(balanceData.balance || 0));
-      toast.success("返现钱包支付成功");
+      showStoreToast.success("返现钱包支付成功");
     } catch (e) {
       const msg = e instanceof Error ? e.message : "返现钱包支付失败";
       setPostSubmitWalletError(msg);
-      toast.error(msg);
+      showStoreToast.error(msg);
     } finally {
       setPayingWallet(false);
     }

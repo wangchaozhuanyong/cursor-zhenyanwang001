@@ -1,0 +1,9 @@
+html[data-app-scope="store"] .store-footer-brand-logo-shell {
+  width: var(--sf-next-brand-logo-footer-shell-size);
+  height: var(--sf-next-brand-logo-footer-shell-size);
+}
+
+html[data-app-scope="store"] .store-footer-brand-logo-image {
+  width: var(--sf-next-brand-logo-footer-image-size);
+  height: var(--sf-next-brand-logo-footer-image-size);
+}

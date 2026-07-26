@@ -1756,3 +1756,303 @@ html[data-app-scope="store"] .sf-next-logistics-page .sf-next-empty-state__actio
     margin-top: 12px;
   }
 }
+
+/* Route-specific styles moved from the storefront shell into src/styles/orders-route.css. */
+/* Moved from src/styles/storefront-next.final-contract.css */
+html[data-app-scope="store"][data-storefront-ui="next"] :where(
+  .sf-next-account-route-page,
+  .sf-next-orders-page,
+  .sf-next-order-detail-page,
+  .sf-next-return-detail-page,
+  .sf-next-returns-page,
+  .sf-next-wallet-page,
+  .sf-next-rewards-page,
+  .sf-next-points-page,
+  .sf-next-points-gifts-page,
+  .sf-next-feedback-page,
+  .sf-next-help-page,
+  .sf-next-delivery-page
+) {
+  background: var(--sf-canvas) !important;
+  color: var(--sf-ink) !important;
+}
+html[data-app-scope="store"][data-storefront-ui="next"] :where(
+  .sf-next-account-main,
+  .sf-next-orders-page main,
+  .sf-next-order-detail-page main,
+  .sf-next-return-detail-page main,
+  .sf-next-returns-page main,
+  .sf-next-wallet-page main,
+  .sf-next-rewards-page main,
+  .sf-next-points-page main,
+  .sf-next-points-gifts-page main,
+  .sf-next-feedback-main,
+  .sf-next-help-stack,
+  .sf-next-delivery-page main
+) {
+  min-width: 0 !important;
+}
+@media (max-width: 767px) {
+  html[data-app-scope="store"][data-storefront-ui="next"] :where(
+    .sf-next-account-main,
+    .sf-next-orders-page main,
+    .sf-next-order-detail-page main,
+    .sf-next-return-detail-page main,
+    .sf-next-returns-page main,
+    .sf-next-wallet-page main,
+    .sf-next-rewards-page main,
+    .sf-next-points-page main,
+    .sf-next-points-gifts-page main,
+    .sf-next-help-stack,
+    .sf-next-delivery-page main
+  ) {
+    width: 100% !important;
+    max-width: var(--sc-mobile-frame) !important;
+    margin-inline: auto !important;
+    padding-inline: var(--sc-page-x) !important;
+    padding-bottom: var(--sc-bottom-clearance) !important;
+  }
+}
+html[data-app-scope="store"][data-storefront-ui="next"] :where(
+  .sf-next-orders-page .sf-next-glass-surface,
+  .sf-next-notifications-filters,
+  .sf-next-feedback-segmented,
+  .sf-next-rewards-tabs,
+  .sf-next-points-gifts-filter,
+  .sf-next-returns-page section.rounded-\[24px\]
+) {
+  border: 1px solid var(--sc-line) !important;
+  border-radius: var(--sc-card-radius) !important;
+  background: var(--sf-surface) !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+html[data-app-scope="store"][data-storefront-ui="next"] :where(
+  .sf-next-orders-page [role="tab"],
+  .sf-next-returns-page [role="tab"],
+  .sf-next-feedback-segmented button,
+  .sf-next-feedback-record-filter__button,
+  .sf-next-notifications-filter,
+  .sf-next-rewards-tab,
+  .sf-next-points-gifts-filter__chip
+) {
+  min-height: 2.35rem !important;
+  border: 1px solid var(--sc-line) !important;
+  border-radius: 0.78rem !important;
+  background: var(--sf-surface-muted) !important;
+  color: var(--sf-ink-secondary) !important;
+  font-size: 0.8rem !important;
+  font-weight: 720 !important;
+  line-height: 1.1 !important;
+  white-space: nowrap !important;
+  box-shadow: none !important;
+}
+html[data-app-scope="store"][data-storefront-ui="next"] :where(
+  .sf-next-orders-page [role="tab"][aria-selected="true"],
+  .sf-next-returns-page [role="tab"][aria-selected="true"],
+  .sf-next-feedback-segmented button.is-active,
+  .sf-next-feedback-record-filter__button.is-active,
+  .sf-next-notifications-filter.is-active,
+  .sf-next-rewards-tab.is-active,
+  .sf-next-points-gifts-filter__chip.is-active
+) {
+  border-color: var(--sf-ink) !important;
+  background: var(--sf-ink) !important;
+  color: var(--sf-canvas) !important;
+}
+html[data-app-scope="store"][data-storefront-ui="next"] :where(
+  .sf-next-order-detail-hero,
+  .sf-next-return-detail-hero,
+  .sf-next-returns-hero
+) {
+  display: grid !important;
+  grid-template-columns: auto minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 0.9rem !important;
+  overflow: hidden !important;
+  border: 0 !important;
+  border-radius: 1rem !important;
+  background:
+    radial-gradient(circle at 84% 18%, color-mix(in srgb, var(--sf-accent-soft) 16%, transparent), transparent 5.5rem),
+    linear-gradient(90deg, color-mix(in srgb, var(--sf-canvas) 6%, transparent) 0 1px, transparent 1px 1.2rem),
+    linear-gradient(145deg, var(--sf-ink), color-mix(in srgb, var(--sf-ink) 84%, var(--sf-accent))) !important;
+  color: var(--sf-canvas) !important;
+  padding: 1rem !important;
+  box-shadow: 0 1rem 2rem color-mix(in srgb, var(--sf-ink) 12%, transparent) !important;
+}
+html[data-app-scope="store"][data-storefront-ui="next"] :where(
+  .sf-next-order-detail-hero__icon,
+  .sf-next-return-detail-hero__icon
+) {
+  display: inline-grid !important;
+  place-items: center !important;
+  width: 2.75rem !important;
+  height: 2.75rem !important;
+  border: 1px solid color-mix(in srgb, var(--sf-canvas) 14%, transparent) !important;
+  border-radius: 0.9rem !important;
+  background: color-mix(in srgb, var(--sf-canvas) 10%, transparent) !important;
+  color: var(--sf-canvas) !important;
+}
+html[data-app-scope="store"][data-storefront-ui="next"] :where(
+  .sf-next-order-detail-eyebrow,
+  .sf-next-return-detail-eyebrow
+) {
+  color: color-mix(in srgb, var(--sf-canvas) 66%, transparent) !important;
+  font-size: 0.7rem !important;
+  font-weight: 740 !important;
+  line-height: 1.1 !important;
+}
+html[data-app-scope="store"][data-storefront-ui="next"] :where(
+  .sf-next-order-detail-title,
+  .sf-next-return-detail-title,
+  .sf-next-returns-hero h1
+) {
+  margin: 0.12rem 0 0 !important;
+  color: var(--sf-canvas) !important;
+  font-size: 1.25rem !important;
+  font-weight: 840 !important;
+  line-height: 1.16 !important;
+  letter-spacing: 0 !important;
+}
+html[data-app-scope="store"][data-storefront-ui="next"] :where(
+  .sf-next-order-detail-subtitle,
+  .sf-next-return-detail-subtitle,
+  .sf-next-returns-hero p
+) {
+  max-width: 32rem;
+  margin-top: 0.32rem !important;
+  color: color-mix(in srgb, var(--sf-canvas) 70%, transparent) !important;
+  font-size: 0.78rem !important;
+  line-height: 1.45 !important;
+}
+html[data-app-scope="store"][data-storefront-ui="next"] :where(
+  .sf-next-order-detail-hero__actions,
+  .sf-next-return-detail-next
+) {
+  grid-column: 1 / -1;
+  display: flex !important;
+  min-width: 0 !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+}
+@media (min-width: 640px) {
+  html[data-app-scope="store"][data-storefront-ui="next"] :where(
+    .sf-next-order-detail-hero,
+    .sf-next-return-detail-hero
+  ) {
+    grid-template-columns: auto minmax(0, 1fr) auto !important;
+  }
+}
+@media (min-width: 640px) {
+
+  html[data-app-scope="store"][data-storefront-ui="next"] :where(
+    .sf-next-order-detail-hero__actions,
+    .sf-next-return-detail-next
+  ) {
+    grid-column: auto;
+    justify-content: end;
+  }
+}
+html[data-app-scope="store"][data-storefront-ui="next"] :where(
+  .sf-next-order-detail-summary,
+  .sf-next-return-detail-summary,
+  .sf-next-returns-summary,
+  .sf-next-history-summary,
+  .sf-next-stats-grid
+) {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 0.65rem !important;
+  min-width: 0 !important;
+}
+@media (min-width: 768px) {
+  html[data-app-scope="store"][data-storefront-ui="next"] :where(
+    .sf-next-order-detail-summary,
+    .sf-next-return-detail-summary,
+    .sf-next-returns-summary,
+    .sf-next-history-summary,
+    .sf-next-stats-grid
+  ) {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+}
+html[data-app-scope="store"][data-storefront-ui="next"] :where(
+  .sf-next-order-detail-step-grid,
+  .sf-next-return-detail-timeline
+) {
+  min-width: 0 !important;
+  overflow: hidden !important;
+  border-radius: var(--sc-inner-radius) !important;
+  background: var(--sf-surface-muted) !important;
+  padding: 0.75rem !important;
+}
+html[data-app-scope="store"][data-storefront-ui="next"] :where(
+  .sf-next-order-detail-ghost-action,
+  .sf-next-order-card button,
+  .sf-next-order-detail-actions-card button,
+  .sf-next-order-detail-mobile-bar button,
+  .sf-next-returns-hero button,
+  .sf-next-returns-card button,
+  .sf-next-return-detail-page button,
+  .sf-next-help-feedback-link,
+  .sf-next-feedback-login-action,
+  .sf-next-wallet-action,
+  .sf-next-rewards-action
+) {
+  min-height: 2.35rem !important;
+  border: 1px solid var(--sc-line) !important;
+  border-radius: 0.78rem !important;
+  background: var(--sf-surface) !important;
+  color: var(--sf-ink) !important;
+  padding: 0.55rem 0.82rem !important;
+  font-size: 0.8rem !important;
+  font-weight: 740 !important;
+  line-height: 1.1 !important;
+  box-shadow: none !important;
+}
+html[data-app-scope="store"][data-storefront-ui="next"] :where(
+  .sf-next-order-card button.bg-\[var\(--theme-primary\)\],
+  .sf-next-order-detail-actions-card button.bg-\[var\(--theme-primary\)\],
+  .sf-next-return-detail-page button.bg-\[var\(--theme-primary\)\],
+  .sf-next-returns-hero button.bg-\[var\(--theme-primary\)\]
+) {
+  border-color: transparent !important;
+  background: var(--sf-ink) !important;
+  color: var(--sf-canvas) !important;
+}
+html[data-app-scope="store"][data-storefront-ui="next"] :where(
+  .sf-next-favorite-tile__media-wrap,
+  .sf-next-favorite-tile__media,
+  .sf-next-points-gifts-card__media,
+  .sf-next-returns-card .w-12,
+  .sf-next-return-detail-product-card .w-14
+) {
+  aspect-ratio: 1 / 1 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  height: auto !important;
+  overflow: hidden !important;
+  border: 1px solid var(--sc-line) !important;
+  border-radius: var(--sc-inner-radius) !important;
+  background: var(--sf-surface-muted) !important;
+}
+html[data-app-scope="store"][data-storefront-ui="next"] :where(
+  .sf-next-returns-card .w-12,
+  .sf-next-return-detail-product-card .w-14
+) {
+  width: 4.5rem !important;
+  min-width: 4.5rem !important;
+}
+html[data-app-scope="store"][data-storefront-ui="next"] :where(
+  .sf-next-favorite-tile__media-wrap,
+  .sf-next-favorite-tile__media,
+  .sf-next-points-gifts-card__media,
+  .sf-next-returns-card .w-12,
+  .sf-next-return-detail-product-card .w-14
+) :where(img, .sf-next-ratio-image, .sf-next-ratio-image__img) {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}

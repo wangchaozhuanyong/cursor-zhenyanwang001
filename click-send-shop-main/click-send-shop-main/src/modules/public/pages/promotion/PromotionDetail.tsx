@@ -24,7 +24,7 @@ import ValueVaultCoupon, {
   type ValueVaultKind,
   type ValueVaultStatus,
 } from "@/modules/storefront-v2/design/components/ValueVaultCoupon";
-import "@/styles/promotions-route.css";
+import "@/styles/promotion-detail-route.css";
 import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
 const PROMOTIONS_BASE_PATH = "/promotions";

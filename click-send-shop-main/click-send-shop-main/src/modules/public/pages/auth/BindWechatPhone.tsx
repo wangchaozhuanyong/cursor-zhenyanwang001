@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, KeyRound, ShieldCheck } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import "@/styles/storefront-next.extended-routes.css";
+import "@/styles/auth-route.css";
 import { useAuthStore } from "@/stores/useAuthStore";
 import * as authService from "@/services/authService";
-import { toast } from "sonner";
+import { showStoreToast } from "@/utils/storeToast";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { cn } from "@/lib/utils";
@@ -42,7 +43,7 @@ export default function BindWechatPhone() {
 
   const failValidation = (message: string) => {
     setShakeKey((k) => k + 1);
-    toast.error(message);
+    showStoreToast.error(message);
   };
 
   const handleSendOtp = async () => {
@@ -60,12 +61,12 @@ export default function BindWechatPhone() {
     try {
       const data = await authService.sendWechatBindOtp({ phone, countryCode });
       if (data?.devOtp) {
-        toast.message(`开发环境验证码：${data.devOtp}`, { duration: 12_000 });
+        showStoreToast.message(`开发环境验证码：${data.devOtp}`, { duration: 12_000 });
       }
-      toast.success("验证码已发送", { ...toastPresetQuickSuccess, position: "top-center" });
+      showStoreToast.success("验证码已发送", { ...toastPresetQuickSuccess, position: "top-center" });
       setOtpCooldown(60);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "发送失败");
+      showStoreToast.error(e instanceof Error ? e.message : "发送失败");
     } finally {
       setOtpSending(false);
     }
@@ -92,11 +93,11 @@ export default function BindWechatPhone() {
         smsCode: otpCode.trim(),
         pendingWechatToken: pendingToken,
       });
-      toast.success("绑定成功", { duration: 900, position: "top-center" });
+      showStoreToast.success("绑定成功", { duration: 900, position: "top-center" });
       navigate("/", { replace: true });
     } catch (e) {
       const fallback = useAuthStore.getState().error;
-      toast.error(e instanceof Error ? e.message : (fallback ?? "绑定失败"));
+      showStoreToast.error(e instanceof Error ? e.message : (fallback ?? "绑定失败"));
     }
   };
 

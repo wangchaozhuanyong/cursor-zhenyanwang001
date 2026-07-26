@@ -1,7 +1,10 @@
-import { useState, type ReactNode } from "react";
+import { lazy, Suspense, useState, type ReactNode } from "react";
 import { Filter } from "lucide-react";
-import { AppModal } from "@/modules/micro-interactions";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+
+const LazyFilterAppModal = lazy(() =>
+  import("@/modules/micro-interactions/components/AppModal").then((module) => ({ default: module.AppModal })),
+);
 
 interface ProductFilterDrawerProps {
   activeFilterCount: number;
@@ -53,17 +56,21 @@ export default function ProductFilterDrawer({ activeFilterCount, onReset, onConf
         </span>
       </UnifiedButton>
 
-      <AppModal
-        tier="standard"
-        open={open}
-        onClose={() => setOpen(false)}
-        title="筛选商品"
-        height="90vh"
-        stickyFooter
-        footer={footer}
-      >
-        <div className="space-y-4 pb-2">{children}</div>
-      </AppModal>
+      {open ? (
+        <Suspense fallback={null}>
+          <LazyFilterAppModal
+            tier="standard"
+            open
+            onClose={() => setOpen(false)}
+            title="筛选商品"
+            height="90vh"
+            stickyFooter
+            footer={footer}
+          >
+            <div className="space-y-4 pb-2">{children}</div>
+          </LazyFilterAppModal>
+        </Suspense>
+      ) : null}
     </>
   );
 }

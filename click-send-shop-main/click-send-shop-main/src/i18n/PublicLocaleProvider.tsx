@@ -1,11 +1,9 @@
-import { useEffect, useMemo, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useLocation } from "react-router-dom";
 import {
   getLocaleAwarePath,
   getPublicLocaleFromPathname,
   localizePath,
-  messages,
-  promotionTypeLabels,
   PUBLIC_LOCALE_STORAGE_KEY,
   PUBLIC_LOCALES,
   PublicLocaleContext,
@@ -14,11 +12,22 @@ import {
   type PublicLocaleContextValue,
   type PublicMessageKey,
 } from "./publicLocale";
+import { promotionTypeLabelsZh, publicMessagesZh } from "./publicLocaleMessages.zh";
+
+type EnglishLocaleBundle = typeof import("./publicLocaleMessages.en");
+
+let englishLocaleBundlePromise: Promise<EnglishLocaleBundle> | null = null;
+
+function loadEnglishLocaleBundle() {
+  englishLocaleBundlePromise ??= import("./publicLocaleMessages.en");
+  return englishLocaleBundlePromise;
+}
 
 export function PublicLocaleProvider({ children }: { children: ReactNode }) {
   const location = useLocation();
   const pathLocale = getPublicLocaleFromPathname(location.pathname);
   const locale = pathLocale || "zh";
+  const [englishBundle, setEnglishBundle] = useState<EnglishLocaleBundle | null>(null);
 
   useEffect(() => {
     const config = PUBLIC_LOCALES.find((item) => item.value === locale);
@@ -28,8 +37,21 @@ export function PublicLocaleProvider({ children }: { children: ReactNode }) {
     }
   }, [locale, pathLocale]);
 
+  useEffect(() => {
+    if (locale !== "en" || englishBundle) return undefined;
+    let cancelled = false;
+    void loadEnglishLocaleBundle().then((bundle) => {
+      if (!cancelled) setEnglishBundle(bundle);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [englishBundle, locale]);
+
   const value = useMemo<PublicLocaleContextValue>(() => {
-    const t = (key: PublicMessageKey) => messages[locale][key] || messages.zh[key] || key;
+    const activeMessages = locale === "en" ? englishBundle?.publicMessagesEn : publicMessagesZh;
+    const activePromotionTypeLabels = locale === "en" ? englishBundle?.promotionTypeLabelsEn : promotionTypeLabelsZh;
+    const t = (key: PublicMessageKey) => activeMessages?.[key] || publicMessagesZh[key] || key;
     const localizedPath = (path: string) => getLocaleAwarePath(path, pathLocale, locale);
     const switchLocalePath = (nextLocale: PublicLocale) => (
       localizePath(
@@ -38,7 +60,7 @@ export function PublicLocaleProvider({ children }: { children: ReactNode }) {
       )
     );
     const promotionTypeLabel = (type: string) => (
-      promotionTypeLabels[locale][type] || promotionTypeLabels.zh[type] || type
+      activePromotionTypeLabels?.[type] || promotionTypeLabelsZh[type] || type
     );
     const formatDate = (value: string) => {
       if (!value) return t("promotion.lifetime");
@@ -60,7 +82,7 @@ export function PublicLocaleProvider({ children }: { children: ReactNode }) {
       promotionTypeLabel,
       formatDate,
     };
-  }, [locale, location.hash, location.pathname, location.search, pathLocale]);
+  }, [englishBundle, locale, location.hash, location.pathname, location.search, pathLocale]);
 
   return (
     <PublicLocaleContext.Provider value={value}>

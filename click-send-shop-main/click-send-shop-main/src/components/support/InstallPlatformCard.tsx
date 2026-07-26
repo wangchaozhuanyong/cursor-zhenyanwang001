@@ -1,5 +1,5 @@
 import { Apple, CheckCircle2, ChevronDown, Copy, Info, PlusSquare, Share2, Smartphone } from "lucide-react";
-import { toast } from "sonner";
+import { showStoreToast } from "@/utils/storeToast";
 import type { DownloadPlatform } from "@/types/content";
 import type { usePwaInstallPrompt } from "@/hooks/usePwaInstallPrompt";
 import { copyToClipboard } from "@/utils/clipboard";
@@ -21,12 +21,12 @@ const IOS_STEP_ICONS = ["share", "plus", "done"] as const;
 
 async function copySiteLink(url: string, successMessage = "当前链接已复制") {
   if (!url) {
-    toast.error("无法获取当前链接");
+    showStoreToast.error("无法获取当前链接");
     return;
   }
   const ok = await copyToClipboard(url);
-  if (ok) toast.success(successMessage);
-  else toast.error("复制失败，请手动复制地址栏链接");
+  if (ok) showStoreToast.success(successMessage);
+  else showStoreToast.error("复制失败，请手动复制地址栏链接");
 }
 
 function getPreferredAndroidBrowserText() {
@@ -64,9 +64,9 @@ export default function InstallPlatformCard({ platform, browser, pwa, recommende
     if (!canOneTap) return;
     void trackEvent({ event_type: "pwa_install_button_clicked", module: "pwa", page: "/support-download" });
     const result = await pwa.install();
-    if (result === "accepted") toast.success("已添加到桌面，可从手机桌面打开");
-    else if (result === "dismissed") toast.message("已取消，可稍后再试");
-    else toast.message("当前浏览器可能不支持自动添加，请按下方步骤手动添加到桌面。");
+    if (result === "accepted") showStoreToast.success("已添加到桌面，可从手机桌面打开");
+    else if (result === "dismissed") showStoreToast.message("已取消，可稍后再试");
+    else showStoreToast.message("当前浏览器可能不支持自动添加，请按下方步骤手动添加到桌面。");
   };
 
   const title = platform.title?.trim() || (isAndroid ? "安卓手机添加到桌面" : "苹果手机添加到桌面");

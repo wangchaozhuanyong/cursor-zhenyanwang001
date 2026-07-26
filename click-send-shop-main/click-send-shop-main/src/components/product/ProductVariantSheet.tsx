@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { CheckCircle2, ChevronRight, Clock3, Minus, Plus, ShieldCheck, Ticket } from "lucide-react";
-import { toast } from "sonner";
 import CouponPicker from "@/components/CouponPicker";
 import type { Product, ProductActiveActivity, ProductVariant } from "@/types/product";
 import type { CheckoutPickerCoupon } from "@/types/coupon";
@@ -13,6 +12,7 @@ import { stripHtml } from "@/utils/seo";
 import RatioImage from "@/components/client/RatioImage";
 import { THEME_PRODUCT_MEDIA_RATIO } from "@/constants/productMediaAspect";
 import { buildProductDisplayPriceModel } from "@/modules/storefront-v2/product/productDisplayPricing";
+import { showStoreToast } from "@/utils/storeToast";
 
 type PurchaseIntent = "cart" | "buy";
 
@@ -181,13 +181,13 @@ export default function ProductVariantSheet({
 
   const tryChangeQty = (next: number, source: "plus" | "minus" | "input") => {
     if (soldOut || maxQty <= 0) {
-      toast.error("库存不足");
+      showStoreToast.error("库存不足");
       return;
     }
     if (!Number.isFinite(next)) return;
     if (next > maxQty) {
       onQtyChange(clampQty(next));
-      toast.error(source === "input" ? `最多可购买 ${maxQty} 件` : "已达到库存上限");
+      showStoreToast.error(source === "input" ? `最多可购买 ${maxQty} 件` : "已达到库存上限");
       return;
     }
     if (next < 1) {

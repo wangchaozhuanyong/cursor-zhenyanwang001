@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Plus } from "lucide-react";
+import "@/styles/product-card-v2.css";
 import ProductCoverImage from "@/components/ProductCoverImage";
 import { cn } from "@/lib/utils";
 import { appendThemePreviewParams } from "@/utils/themePreviewParams";

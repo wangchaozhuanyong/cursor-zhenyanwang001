@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Star } from "lucide-react";
-import { toast } from "sonner";
+import { showStoreToast } from "@/utils/storeToast";
 import { AppModal, LoadingButton } from "@/modules/micro-interactions";
 import * as reviewService from "@/services/reviewService";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
@@ -40,7 +40,7 @@ export default function ReviewComposerSheet({
   const uploadImages = async (files: File[]) => {
     if (!files.length) return;
     if (images.length + files.length > 5) {
-      toast.error("最多上传 5 张图片");
+      showStoreToast.error("最多上传 5 张图片");
       return;
     }
     const uploaded = await reviewService.uploadReviewImages(files);
@@ -50,17 +50,17 @@ export default function ReviewComposerSheet({
   const submit = async () => {
     if (!orderItemId) return;
     if (!content.trim()) {
-      toast.error("请填写评价内容");
+      showStoreToast.error("请填写评价内容");
       return;
     }
     setSubmitting(true);
     try {
       await reviewService.submitReview({ order_item_id: orderItemId, rating, content, images });
-      toast.success("评价提交成功");
+      showStoreToast.success("评价提交成功");
       onClose();
       onSuccess?.();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "提交失败");
+      showStoreToast.error(e instanceof Error ? e.message : "提交失败");
     } finally {
       setSubmitting(false);
     }

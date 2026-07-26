@@ -23,7 +23,7 @@ import { copyToClipboard } from "@/utils/clipboard";
 import { isLoggedIn } from "@/utils/token";
 import { userCouponToPremiumDisplay } from "@/utils/couponDisplay";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
-import { toast } from "sonner";
+import { showStoreToast } from "@/utils/storeToast";
 import "@/styles/client-design-system.css";
 
 type DesignRouteKind = "system" | "coupon-detail" | "share-detail" | "states";
@@ -215,7 +215,7 @@ function CouponDetailDesignRoute() {
               actionLabel={coupon.claimed_at ? "使用" : "领取"}
               onCopyCode={async (code) => {
                 const copied = await copyToClipboard(code);
-                if (copied) toast.success("优惠码已复制", toastPresetQuickSuccess);
+                if (copied) showStoreToast.success("优惠码已复制", toastPresetQuickSuccess);
               }}
             />
           );
@@ -226,7 +226,7 @@ function CouponDetailDesignRoute() {
             loading={loading && coupon.status === "claimable"}
             onCopyCode={async (code) => {
               const copied = await copyToClipboard(code);
-              if (copied) toast.success("优惠码已复制", toastPresetQuickSuccess);
+              if (copied) showStoreToast.success("优惠码已复制", toastPresetQuickSuccess);
             }}
           />
         ))}
@@ -273,14 +273,14 @@ function ShareDetailDesignRoute() {
 
   const copyInviteCode = useCallback(async () => {
     if (!inviteCode) {
-      toast.error("邀请码加载中，请稍后");
+      showStoreToast.error("邀请码加载中，请稍后");
       return;
     }
     setCopyState("loading");
     const copied = await copyToClipboard(inviteCode);
     setCopyState(copied ? "copied" : "idle");
     if (copied) {
-      toast.success("邀请码已复制", toastPresetQuickSuccess);
+      showStoreToast.success("邀请码已复制", toastPresetQuickSuccess);
       if (resetTimer.current) window.clearTimeout(resetTimer.current);
       resetTimer.current = window.setTimeout(() => setCopyState("idle"), 1600);
     }

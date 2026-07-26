@@ -7,6 +7,7 @@ import { useSupportRuntime } from "@/hooks/useSupportRuntime";
 import { getChannelTitle } from "@/utils/supportChannels";
 import { copyToClipboard } from "@/utils/clipboard";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
+import { showStoreToast } from "@/utils/storeToast";
 import type { SupportChannelType } from "@/types/content";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
@@ -53,9 +54,9 @@ export default function SupportContactSection({ className, hideDescription = fal
     if (result === "wechat_copy") {
       const account = channel.account?.trim();
       if (!account) return;
-      const [{ toast }, copied] = await Promise.all([import("sonner"), copyToClipboard(account)]);
-      if (copied) toast.success("微信号已复制", toastPresetQuickSuccess);
-      else toast.error("复制失败，请手动复制微信号");
+      const copied = await copyToClipboard(account);
+      if (copied) showStoreToast.success("微信号已复制", toastPresetQuickSuccess);
+      else showStoreToast.error("复制失败，请手动复制微信号");
       return;
     }
     if (result === "none") {

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { ClipboardList, Copy, CreditCard, PackageCheck, RefreshCw, Truck, WalletCards } from "lucide-react";
-import { toast } from "sonner";
+import { showStoreToast } from "@/utils/storeToast";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 import StorefrontQuietLoading from "@/components/storefront-motion/StorefrontQuietLoading";
 import { OrderAutoConfirmCountdown } from "@/components/order/OrderAutoConfirmCountdown";
@@ -202,9 +202,9 @@ export default function OrderDetail() {
       for (const item of order.items) {
         await addToCart(buildRepurchaseProduct(item), item.qty, buildVariantFromOrderItem(item));
       }
-      toast.success(copy.cartAdded);
+      showStoreToast.success(copy.cartAdded);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : copy.addCartFailed);
+      showStoreToast.error(e instanceof Error ? e.message : copy.addCartFailed);
     }
   };
 
@@ -216,12 +216,12 @@ export default function OrderDetail() {
       for (const item of order.items) {
         await addToCart(buildRepurchaseProduct(item), item.qty, buildVariantFromOrderItem(item));
       }
-      toast.success(copy.cartReadded);
+      showStoreToast.success(copy.cartReadded);
       navigate(localizedPath("/checkout"), {
         state: { from: localizedPath(`/orders/${order.id}`), repurchaseOrderId: order.id },
       });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : copy.repurchaseFailed);
+      showStoreToast.error(e instanceof Error ? e.message : copy.repurchaseFailed);
     }
   };
 
@@ -247,10 +247,10 @@ export default function OrderDetail() {
         setFirstReviewableId(next[0].order_item_id!);
         setConfirmReviewOpen(true);
       } else {
-        toast.success(copy.received);
+        showStoreToast.success(copy.received);
       }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : copy.receiveFailed);
+      showStoreToast.error(e instanceof Error ? e.message : copy.receiveFailed);
     } finally {
       setConfirmingReceive(false);
     }
@@ -650,7 +650,7 @@ export default function OrderDetail() {
               className="inline-flex items-center gap-1 truncate rounded-full border border-[var(--theme-border)] px-2 py-1 text-xs"
               onClick={async () => {
                 await navigator.clipboard.writeText(order.order_no);
-                toast.success(copy.copiedOrderNo);
+                showStoreToast.success(copy.copiedOrderNo);
               }}
             >
               {order.order_no}
@@ -816,10 +816,10 @@ export default function OrderDetail() {
           try {
             await cancelOrder(order.id);
             await reload();
-            toast.success(copy.orderCancelled);
+            showStoreToast.success(copy.orderCancelled);
             setCancelConfirmOpen(false);
           } catch (e) {
-            toast.error(e instanceof Error ? e.message : copy.cancelFailed);
+            showStoreToast.error(e instanceof Error ? e.message : copy.cancelFailed);
           } finally {
             setCancelling(false);
           }

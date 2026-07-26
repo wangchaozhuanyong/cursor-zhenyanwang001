@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { toast } from "sonner";
+import { showStoreToast } from "@/utils/storeToast";
 import { useCheckoutPickerCoupons } from "@/hooks/useCheckoutPickerCoupons";
 import type { CheckoutPickerCoupon } from "@/types/coupon";
 import type { SubmitOrderParams } from "@/types/order";
@@ -147,7 +147,7 @@ export function useCheckoutCouponSelection({
         setSelectedCoupon(preferred);
       } else {
         const exists = pickerCoupons.some((coupon) => matchesPreferredCoupon(coupon, preferredCouponId));
-        toast.message(
+        showStoreToast.message(
           exists
             ? "该优惠券当前不满足本次结算条件，请在结算页选择其他可用优惠券"
             : "该优惠券当前不可用，请在结算页重新选择可用优惠券",
@@ -174,7 +174,7 @@ export function useCheckoutCouponSelection({
         return;
       }
       if (initialCouponChoice.mode === "manual") {
-        toast.message("上一页选择的优惠券当前不可用，已为你重新匹配可用优惠");
+        showStoreToast.message("上一页选择的优惠券当前不可用，已为你重新匹配可用优惠");
       }
       selectBest();
       setCouponInitDone(true);

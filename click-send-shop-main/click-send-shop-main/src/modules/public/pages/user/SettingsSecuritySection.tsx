@@ -1,7 +1,7 @@
 import { useCallback, useId, useState, type FormEvent, type ReactNode } from "react";
 import { ChevronRight, Lock, Trash2 } from "lucide-react";
 
-import { toast } from "sonner";
+import { showStoreToast } from "@/utils/storeToast";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import * as userService from "@/services/userService";
 import { useAuthStore } from "@/stores/useAuthStore";
@@ -147,18 +147,18 @@ export default function SettingsSecuritySection() {
   const handleChangePwd = async (e: FormEvent) => {
     e.preventDefault();
     if (panelBusy) return;
-    if (!oldPwd || !newPwd) return toast.error("请输入旧密码和新密码");
-    if (newPwd.length < 6) return toast.error("新密码至少 6 位");
-    if (newPwd !== confirmPwd) return toast.error("两次输入密码不一致");
+    if (!oldPwd || !newPwd) return showStoreToast.error("请输入旧密码和新密码");
+    if (newPwd.length < 6) return showStoreToast.error("新密码至少 6 位");
+    if (newPwd !== confirmPwd) return showStoreToast.error("两次输入密码不一致");
 
     setPanelBusy(true);
     try {
       await userService.changePassword(oldPwd, newPwd);
-      toast.success("密码修改成功", toastPresetQuickSuccess);
+      showStoreToast.success("密码修改成功", toastPresetQuickSuccess);
       resetPasswordFields();
       setActivePanel(null);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "密码修改失败");
+      showStoreToast.error(err instanceof Error ? err.message : "密码修改失败");
     } finally {
       setPanelBusy(false);
     }
@@ -167,16 +167,16 @@ export default function SettingsSecuritySection() {
   const handleCancelAccount = async (e: FormEvent) => {
     e.preventDefault();
     if (panelBusy) return;
-    if (cancelConfirmText.trim() !== "注销账号") return toast.error("请输入“注销账号”确认操作");
+    if (cancelConfirmText.trim() !== "注销账号") return showStoreToast.error("请输入“注销账号”确认操作");
 
     setPanelBusy(true);
     try {
       await userService.cancelAccount(cancelConfirmText.trim());
-      toast.success("账号已注销", toastPresetQuickSuccess);
+      showStoreToast.success("账号已注销", toastPresetQuickSuccess);
       await useAuthStore.getState().logout();
       navigate("/", { replace: true });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "注销失败，请重试");
+      showStoreToast.error(err instanceof Error ? err.message : "注销失败，请重试");
     } finally {
       setPanelBusy(false);
     }

@@ -5,7 +5,7 @@ import { useUserStore } from "@/stores/useUserStore";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { useLoyaltyVisibility } from "@/hooks/useLoyaltyVisibility";
 import { fetchPointsGifts, redeemPointsGift, type PointsGiftCatalogItem } from "@/services/pointsService";
-import { toast } from "sonner";
+import { showStoreToast } from "@/utils/storeToast";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { usePayPendingOrder } from "@/hooks/usePayPendingOrder";
 import * as orderService from "@/services/orderService";
@@ -119,7 +119,7 @@ export default function PointsGiftShop() {
         reloadGifts(),
       ]);
     } catch (e) {
-      toast.error(toastErrorMessage(e));
+      showStoreToast.error(toastErrorMessage(e));
     } finally {
       setLoading(false);
       setBootstrapReady(true);
@@ -133,16 +133,16 @@ export default function PointsGiftShop() {
   const requestRedeem = (gift: PointsGiftCatalogItem) => {
     const blockReason = giftRedeemBlockReason(gift, pointsBalance);
     if (blockReason) {
-      toast.error(blockReason);
+      showStoreToast.error(blockReason);
       return;
     }
     if (!bootstrapReady || addressLoading) {
-      toast.message("正在加载收货地址，请稍候");
+      showStoreToast.message("正在加载收货地址，请稍候");
       return;
     }
     const addr = getDefaultAddress() || addresses[0];
     if (!addr) {
-      toast.error("请先添加收货地址");
+      showStoreToast.error("请先添加收货地址");
       navigate("/address", { state: { from: "/points/gifts" } });
       return;
     }
@@ -152,7 +152,7 @@ export default function PointsGiftShop() {
   const handleRedeem = async (gift: PointsGiftCatalogItem) => {
     const addr = getDefaultAddress() || addresses[0];
     if (!addr) {
-      toast.error("请先添加收货地址");
+      showStoreToast.error("请先添加收货地址");
       navigate("/address", { state: { from: "/points/gifts" } });
       return;
     }
@@ -173,7 +173,7 @@ export default function PointsGiftShop() {
           country: addr.country || "MY",
         },
       });
-      toast.success(res.message || "兑换成功");
+      showStoreToast.success(res.message || "兑换成功");
       await Promise.all([loadProfile(), reloadGifts()]);
       if (!res.data?.order_id) return;
 
@@ -186,7 +186,7 @@ export default function PointsGiftShop() {
       }
       navigate(`/orders/${res.data.order_id}`);
     } catch (e) {
-      toast.error(toastErrorMessage(e));
+      showStoreToast.error(toastErrorMessage(e));
     } finally {
       setRedeemingId(null);
     }

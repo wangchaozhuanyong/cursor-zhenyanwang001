@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { toast } from "sonner";
+import { showStoreToast } from "@/utils/storeToast";
 import { ImagePlus, Loader2, X } from "lucide-react";
 import * as orderService from "@/services/orderService";
 import * as returnService from "@/services/returnService";
@@ -176,7 +176,7 @@ export default function ReturnApplySheet({ orderId, open, onClose, onSuccess }: 
         setQuantity(1);
       })
       .catch((e) => {
-        toast.error(e instanceof Error ? e.message : copy.loadFailed);
+        showStoreToast.error(e instanceof Error ? e.message : copy.loadFailed);
         onClose();
       })
       .finally(() => setLoading(false));
@@ -199,15 +199,15 @@ export default function ReturnApplySheet({ orderId, open, onClose, onSuccess }: 
       return;
     }
     if (!order || !orderItemId) {
-      toast.error(copy.selectItem);
+      showStoreToast.error(copy.selectItem);
       throw new Error("validation");
     }
     if (!reason.trim()) {
-      toast.error(copy.reasonRequired);
+      showStoreToast.error(copy.reasonRequired);
       throw new Error("validation");
     }
     if (uploading) {
-      toast.error(copy.uploadPending);
+      showStoreToast.error(copy.uploadPending);
       throw new Error("validation");
     }
     const payload: CreateReturnParams = {
@@ -222,14 +222,14 @@ export default function ReturnApplySheet({ orderId, open, onClose, onSuccess }: 
       contact_phone: contactPhone.trim(),
     };
     await returnService.createReturn(payload);
-    toast.success(copy.submitted);
+    showStoreToast.success(copy.submitted);
     onSuccess();
   };
 
   const uploadImages = async (files: File[]) => {
     if (!files.length) return;
     if (images.length + files.length > 6) {
-      toast.error(copy.uploadLimit);
+      showStoreToast.error(copy.uploadLimit);
       return;
     }
     setUploading(true);
@@ -237,7 +237,7 @@ export default function ReturnApplySheet({ orderId, open, onClose, onSuccess }: 
       const uploaded = await uploadService.uploadFiles(files, { mode: "image" });
       setImages((prev) => [...prev, ...uploaded.map((item) => item.url)]);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : copy.uploadFailed);
+      showStoreToast.error(error instanceof Error ? error.message : copy.uploadFailed);
     } finally {
       setUploading(false);
     }

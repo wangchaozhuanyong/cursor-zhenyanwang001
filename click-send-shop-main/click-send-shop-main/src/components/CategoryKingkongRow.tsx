@@ -1,4 +1,5 @@
 import CategoryNavTile from "@/components/store/CategoryNavTile";
+import "@/styles/category-kingkong-row.css";
 import { cn } from "@/lib/utils";
 import { useHorizontalActiveScroll } from "@/hooks/useHorizontalActiveScroll";
 

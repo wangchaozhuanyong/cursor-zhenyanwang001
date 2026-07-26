@@ -1,31 +1,25 @@
-import { lazy } from "react";
+import { lazyPublicRouteWithPreload as lazyWithPreload } from "@/routes/lazyWithPreload";
+export type { PreloadableLazy } from "@/routes/lazyWithPreload";
+export {
+  Cart,
+  Categories,
+  NotFound,
+  ProductDetail,
+  Profile,
+  PromotionDetail,
+  Promotions,
+  Search,
+  StoreHomeV2,
+  SupportDownload,
+  TikTokLanding,
+} from "@/routes/publicFrontLazyPages";
 
-export type PreloadableLazy<T extends React.ComponentType<never>> = T & { preload?: () => Promise<unknown> };
-export function lazyWithPreload<T extends React.ComponentType<never>>(factory: () => Promise<{ default: T }>) {
-  let pending: Promise<{ default: T }> | undefined;
-  const load = () => {
-    pending ??= factory();
-    return pending;
-  };
-  const Component = lazy(load) as PreloadableLazy<T>;
-  Component.preload = load;
-  return Component;
-}
-
-export const StoreHomeV2 = lazyWithPreload(() => import("@/modules/storefront-v2/home/StoreHomeV2"));
 export const Login = lazyWithPreload(() => import("@/modules/public/pages/auth/Login"));
 export const ForgotPassword = lazyWithPreload(() => import("@/modules/public/pages/auth/ForgotPassword"));
 export const BindWechatPhone = lazyWithPreload(() => import("@/modules/public/pages/auth/BindWechatPhone"));
 
-export const Categories = lazyWithPreload(() => import("@/modules/public/pages/product/Categories"));
-export const ProductDetail = lazyWithPreload(() => import("@/modules/public/pages/product/ProductDetail"));
 export const NewArrivals = lazyWithPreload(() => import("@/modules/public/pages/product/NewArrivals"));
-export const Search = lazyWithPreload(() => import("@/modules/public/pages/product/Search"));
 export const Deals = lazyWithPreload(() => import("@/modules/public/pages/marketing/Deals"));
-export const Promotions = lazyWithPreload(() => import("@/modules/public/pages/promotion/Promotions"));
-export const PromotionDetail = lazyWithPreload(() => import("@/modules/public/pages/promotion/PromotionDetail"));
-
-export const Cart = lazyWithPreload(() => import("@/modules/public/pages/cart/Cart"));
 
 export const Checkout = lazyWithPreload(() => import("@/modules/public/pages/order/Checkout"));
 export const PaymentResult = lazyWithPreload(() => import("@/modules/public/pages/order/PaymentResult"));
@@ -36,7 +30,6 @@ export const Returns = lazyWithPreload(() => import("@/modules/public/pages/orde
 export const ReturnDetail = lazyWithPreload(() => import("@/modules/public/pages/order/ReturnDetail"));
 export const PendingReviews = lazyWithPreload(() => import("@/modules/public/pages/review/PendingReviews"));
 
-export const Profile = lazyWithPreload(() => import("@/modules/public/pages/user/Profile"));
 export const Feedback = lazyWithPreload(() => import("@/modules/public/pages/user/Feedback"));
 export const MemberBenefits = lazyWithPreload(() => import("@/modules/public/pages/user/MemberBenefits"));
 export const Settings = lazyWithPreload(() => import("@/modules/public/pages/user/Settings"));
@@ -54,13 +47,9 @@ export const Invite = lazyWithPreload(() => import("@/modules/public/pages/user/
 export const Help = lazyWithPreload(() => import("@/modules/public/pages/content/Help"));
 export const About = lazyWithPreload(() => import("@/modules/public/pages/content/About"));
 export const ContentCmsPage = lazyWithPreload(() => import("@/modules/public/pages/content/ContentCmsPage"));
-export const SupportDownload = lazyWithPreload(() => import("@/modules/public/pages/content/SupportDownload"));
 export const Delivery = lazyWithPreload(() => import("@/modules/public/pages/content/Delivery"));
 export const FeatureStatus = lazyWithPreload(() => import("@/modules/public/pages/content/FeatureStatus"));
-export const TikTokLanding = lazy(() => import("@/modules/public/pages/content/TikTokLanding"));
 export const ClientDesignSystem = lazyWithPreload(() => import("@/modules/public/pages/design/ClientDesignSystem").then((module) => ({ default: module.ClientDesignSystem })));
 export const ClientCouponDetailDesign = lazyWithPreload(() => import("@/modules/public/pages/design/ClientDesignSystem").then((module) => ({ default: module.ClientCouponDetailDesign })));
 export const ClientShareDetailDesign = lazyWithPreload(() => import("@/modules/public/pages/design/ClientDesignSystem").then((module) => ({ default: module.ClientShareDetailDesign })));
 export const ClientStatesDesign = lazyWithPreload(() => import("@/modules/public/pages/design/ClientDesignSystem").then((module) => ({ default: module.ClientStatesDesign })));
-
-export const NotFound = lazy(() => import("@/modules/public/pages/error/NotFound"));

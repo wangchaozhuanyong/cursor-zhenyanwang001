@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
 import { ArrowLeft, KeyRound, Loader2, Lock, ShieldCheck } from "lucide-react";
 import "@/styles/storefront-next.extended-routes.css";
+import "@/styles/auth-route.css";
 
-import { toast } from "sonner";
+import { showStoreToast } from "@/utils/storeToast";
 import CountryPhoneInput from "@/components/auth/CountryPhoneInput";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { STORE_AUTH_MAIN_CLASS, STORE_AUTH_SHELL_CLASS } from "@/constants/storeLayout";
@@ -49,9 +50,9 @@ export default function ForgotPassword() {
         setResetToken(data.resetToken);
         setDevResetToken(data.resetToken);
       }
-      toast.success(data?.resetToken ? "已生成重置口令" : "重置口令已发送（如已配置）", toastPresetQuickSuccess);
+      showStoreToast.success(data?.resetToken ? "已生成重置口令" : "重置口令已发送（如已配置）", toastPresetQuickSuccess);
     } catch (error) {
-      toast.error(authErrorMessage(error, "请求重置失败"));
+      showStoreToast.error(authErrorMessage(error, "请求重置失败"));
     } finally {
       setLoading(false);
     }
@@ -59,25 +60,25 @@ export default function ForgotPassword() {
 
   const confirmReset = async () => {
     if (!resetToken.trim()) {
-      toast.error("请输入重置令牌");
+      showStoreToast.error("请输入重置令牌");
       return;
     }
     const passwordError = validateStrongPassword(newPassword);
     if (passwordError) {
-      toast.error(passwordError);
+      showStoreToast.error(passwordError);
       return;
     }
     if (newPassword !== confirmPassword) {
-      toast.error("两次输入的密码不一致");
+      showStoreToast.error("两次输入的密码不一致");
       return;
     }
     setResetting(true);
     try {
       await authService.resetPassword({ token: resetToken.trim(), newPassword });
-      toast.success("密码已重置，请使用新密码登录", toastPresetQuickSuccess);
+      showStoreToast.success("密码已重置，请使用新密码登录", toastPresetQuickSuccess);
       navigate(localizedPath("/login"), { replace: true });
     } catch (error) {
-      toast.error(authErrorMessage(error, "重置失败"));
+      showStoreToast.error(authErrorMessage(error, "重置失败"));
     } finally {
       setResetting(false);
     }

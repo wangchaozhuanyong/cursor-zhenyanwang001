@@ -1,4 +1,4 @@
-import { toast } from "sonner";
+import { showStoreToast } from "@/utils/storeToast";
 import { AppModal } from "@/modules/micro-interactions";
 import { copyToClipboard } from "@/utils/clipboard";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
@@ -83,10 +83,10 @@ export function LogisticsInfoModal({
             onClick={async () => {
               const ok = await copyToClipboard(trackingNo!.trim());
               if (ok) {
-                toast.success(copy.copied);
+                showStoreToast.success(copy.copied);
                 onClose();
               } else {
-                toast.error(copy.copyFailed);
+                showStoreToast.error(copy.copyFailed);
               }
             }}
           >

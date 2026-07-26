@@ -1,0 +1,274 @@
+/*
+ * Storefront primitives needed before a public route chunk is loaded.
+ * Route-only account, coupon, invite, search, and transaction primitives live
+ * in storefront-next.primitives.css and are loaded by the public route loader.
+ */
+html[data-app-scope="store"][data-storefront-ui="next"],
+html[data-app-scope="store"][data-storefront-ui="next"] body,
+html[data-app-scope="store"][data-storefront-ui="next"] #root {
+  min-width: 0;
+  max-width: 100%;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] body {
+  overflow-x: hidden;
+  background: var(--sf-canvas);
+  color: var(--sf-ink);
+}
+
+@supports (overflow: clip) {
+  html[data-app-scope="store"][data-storefront-ui="next"] body {
+    overflow-x: clip;
+  }
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"]
+  :where(*, *::before, *::after) {
+  box-sizing: border-box;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"]
+  :where(img, video, canvas, svg) {
+  max-width: 100%;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"]
+  :where(button, a, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--sf-accent);
+  outline-offset: 2px;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .skeleton-base {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--sf-line) 62%, var(--sf-surface-muted)), var(--sf-surface-strong)) !important;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 58%),
+    inset 0 -1px 0 color-mix(in srgb, var(--sf-line-strong) 48%, transparent) !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .skeleton-shimmer::after {
+  background-image:
+    linear-gradient(
+      100deg,
+      transparent 0%,
+      rgb(255 255 255 / 22%) 42%,
+      rgb(255 255 255 / 52%) 50%,
+      rgb(255 255 255 / 24%) 58%,
+      transparent 100%
+    ) !important;
+}
+
+.sf-next-page {
+  min-width: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  background: var(--sf-canvas);
+  color: var(--sf-ink);
+}
+
+@supports (overflow: clip) {
+  .sf-next-page {
+    overflow-x: clip;
+  }
+}
+
+.sf-next-container {
+  width: 100%;
+  max-width: var(--sf-content-max);
+  min-width: 0;
+  margin-inline: auto;
+  padding-inline: var(--sf-page-gutter);
+}
+
+.sf-next-section {
+  min-width: 0;
+  margin-block: var(--sf-space-7);
+}
+
+.sf-next-section__header {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sf-space-3);
+  margin-bottom: var(--sf-space-4);
+}
+
+.sf-next-section__title {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: var(--sf-ink);
+  font-size: var(--sf-font-xl);
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sf-next-sheet {
+  min-width: 0;
+  border: 1px solid var(--sf-line);
+  border-radius: var(--sf-radius-md);
+  background: var(--sf-surface);
+}
+
+.sf-next-button {
+  display: inline-flex;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sf-space-2);
+  border: 1px solid transparent;
+  border-radius: var(--sf-radius-sm);
+  padding: 0.625rem 1rem;
+  font: inherit;
+  font-size: var(--sf-font-base);
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    opacity var(--sf-duration-fast) var(--sf-ease-standard),
+    background-color var(--sf-duration-standard) var(--sf-ease-standard),
+    border-color var(--sf-duration-standard) var(--sf-ease-standard),
+    color var(--sf-duration-standard) var(--sf-ease-standard);
+}
+
+.sf-next-button:active:not(:disabled) {
+  opacity: 0.78;
+}
+
+.sf-next-button:disabled,
+.sf-next-button[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.sf-next-button--primary {
+  background: var(--sf-graphite);
+  color: #fff;
+}
+
+.sf-next-button--secondary {
+  border-color: var(--sf-line-strong);
+  background: var(--sf-surface);
+  color: var(--sf-ink);
+}
+
+.sf-next-button--quiet {
+  background: var(--sf-surface-muted);
+  color: var(--sf-ink-secondary);
+}
+
+.sf-next-icon-button {
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+}
+
+.sf-next-skeleton {
+  overflow: hidden;
+  border-radius: inherit;
+  background: var(--sf-surface-strong);
+  animation: sf-next-skeleton-pulse 1.35s ease-in-out infinite;
+}
+
+@keyframes sf-next-skeleton-pulse {
+  0%, 100% { opacity: 0.62; }
+  50% { opacity: 1; }
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-loyalty-route-loading {
+  display: grid;
+  min-height: 100svh;
+  place-items: start center;
+  background: var(--sf-canvas) !important;
+  padding: calc(env(safe-area-inset-top, 0px) + var(--sf-space-8)) var(--sf-page-gutter) var(--sf-space-8);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-loyalty-route-loading .sf-next-route-state {
+  width: min(100%, 26rem);
+  margin-top: var(--sf-space-8);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-capability-route-loading {
+  display: grid;
+  min-height: min(60svh, 34rem);
+  place-items: start center;
+  padding: calc(env(safe-area-inset-top, 0px) + var(--sf-space-8)) var(--sf-page-gutter) var(--sf-space-8);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-capability-route-loading .sf-next-route-state {
+  width: min(100%, 26rem);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-route-state {
+  display: grid;
+  min-width: 0;
+  justify-items: center;
+  border: 1px solid var(--sf-line);
+  border-radius: var(--sf-radius-lg);
+  background: var(--sf-surface);
+  padding: 2rem var(--sf-space-5);
+  text-align: center;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-route-state__icon {
+  display: grid;
+  width: 4rem;
+  height: 4rem;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--sf-accent-soft);
+  color: var(--sf-accent);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-route-state[data-tone="success"] .sf-next-route-state__icon {
+  background: color-mix(in srgb, var(--sf-success) 12%, var(--sf-surface));
+  color: var(--sf-success);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-route-state[data-tone="error"] .sf-next-route-state__icon {
+  background: color-mix(in srgb, var(--sf-danger) 10%, var(--sf-surface));
+  color: var(--sf-danger);
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-route-state__title {
+  margin: 1rem 0 0;
+  color: var(--sf-ink);
+  font-size: var(--sf-font-xl);
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-route-state__description {
+  max-width: 28rem;
+  margin: 0.5rem 0 0;
+  color: var(--sf-ink-secondary);
+  font-size: var(--sf-font-sm);
+  line-height: 1.65;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-route-state__actions {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--sf-space-3);
+  margin-top: 1.25rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-app-scope="store"][data-storefront-ui="next"] *,
+  html[data-app-scope="store"][data-storefront-ui="next"] *::before,
+  html[data-app-scope="store"][data-storefront-ui="next"] *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

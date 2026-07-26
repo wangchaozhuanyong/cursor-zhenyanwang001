@@ -1,6 +1,5 @@
 import { useCallback } from "react";
 import { useLocation } from "react-router-dom";
-import { toast } from "sonner";
 import {
   getAccountFeature,
   isAccountFeatureEnabled,
@@ -13,6 +12,7 @@ import { useLoyaltyVisibility } from "@/hooks/useLoyaltyVisibility";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { usePublicLocale } from "@/i18n/publicLocale";
 import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
+import { showStoreToast } from "@/utils/storeToast";
 
 export function useStoreNavigationGuard() {
   const navigate = useStorefrontNavigate();
@@ -37,7 +37,7 @@ export function useStoreNavigationGuard() {
     const from = options.from || `${location.pathname}${location.search}`;
     const target = localizedPath(path);
     if (options.requireAuth && !authHydrated) {
-      toast.info("登录状态同步中，请稍后再试");
+      showStoreToast.info("登录状态同步中，请稍后再试");
       return false;
     }
     if (options.requireAuth && !isAuthenticated) {
@@ -45,7 +45,7 @@ export function useStoreNavigationGuard() {
       return false;
     }
     if (options.disabled) {
-      toast.info(options.disabledReason || "功能暂未开放");
+      showStoreToast.info(options.disabledReason || "功能暂未开放");
       return false;
     }
     navigate(target, { state: { from: localizedPath(from), ...(options.state || {}) } });
@@ -55,7 +55,7 @@ export function useStoreNavigationGuard() {
   const navigateFeature = useCallback((featureKey: AccountFeatureKey) => {
     const feature = getAccountFeature(featureKey);
     if (!feature) {
-      toast.info("功能暂未开放");
+      showStoreToast.info("功能暂未开放");
       return false;
     }
     const ctx: AccountFeatureContext = { capabilities, loyaltyConfig };

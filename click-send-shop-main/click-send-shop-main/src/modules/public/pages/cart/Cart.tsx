@@ -27,6 +27,7 @@ import { estimateCartWeightKg } from "@/lib/shippingFee";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import "@/styles/cart-route.css";
 import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
+import { showStoreToast } from "@/utils/storeToast";
 
 const CART_ACTION_WIDTH = 244;
 const CART_ACTION_REVEAL_THRESHOLD = 64;
@@ -60,10 +61,7 @@ type CartCheckoutCouponsState = {
 };
 
 function showCartToast(type: "success" | "error", message: string, options?: { duration?: number }) {
-  window.dispatchEvent(new Event("storefront:toast-needed"));
-  void import("sonner").then(({ toast }) => {
-    toast[type](message, options);
-  });
+  showStoreToast[type](message, options);
 }
 
 function getCachedCartPreview(signature: string) {

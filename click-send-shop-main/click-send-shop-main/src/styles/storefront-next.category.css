@@ -1432,6 +1432,14 @@ html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-category-page .
   }
 }
 
+html[data-app-scope="store"] .sf-next-listing-empty {
+  border: 1px dashed color-mix(in srgb, var(--theme-primary) 24%, var(--store-border));
+  border-radius: var(--store-panel-radius);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, white 28%, transparent), transparent),
+    color-mix(in srgb, var(--store-surface) 72%, var(--store-page-base));
+}
+
 /* Final mobile tap-target layer. This file is imported after the route contract CSS. */
 @media (max-width: 767px) {
   html[data-app-scope="store"][data-storefront-ui="next"] :where(

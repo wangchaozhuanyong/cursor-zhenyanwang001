@@ -22,7 +22,7 @@ import {
 import { STORE_COPY } from "@/constants/storeCopy";
 import { STORE_MOBILE_PAGE_HEADER_CLASS } from "@/constants/storeLayout";
 import { getChannelTitle } from "@/utils/supportChannels";
-import { toast } from "sonner";
+import { showStoreToast } from "@/utils/storeToast";
 import type { AnalyticsEventPayload } from "@/services/analyticsService";
 import type { SupportChannelType, SupportDownloadChannel } from "@/types/content";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
@@ -44,8 +44,8 @@ function trackPwaEvent(eventType: AnalyticsEventPayload["event_type"]) {
 
 async function copyCurrentLink(url: string) {
   const ok = await copyToClipboard(url);
-  if (ok) toast.success("当前链接已复制");
-  else toast.error("复制失败，请手动复制地址栏链接");
+  if (ok) showStoreToast.success("当前链接已复制");
+  else showStoreToast.error("复制失败，请手动复制地址栏链接");
 }
 
 function resolveQueryView(value: string | null): SupportDownloadView | null {

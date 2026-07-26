@@ -4,7 +4,7 @@ import { BadgePercent, Clock, History as HistoryIcon, LogIn, PackageCheck, Searc
 import { useHistoryStore } from "@/stores/useHistoryStore";
 import { isLoggedIn } from "@/utils/token";
 import { motion, AnimatePresence } from "framer-motion";
-import { toast } from "sonner";
+import { showStoreToast } from "@/utils/storeToast";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 import StorefrontQuietLoading from "@/components/storefront-motion/StorefrontQuietLoading";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
@@ -23,7 +23,7 @@ export default function History() {
   const activityCount = history.filter((item) => item.active_activity || item.activity_promo_label).length;
 
   useEffect(() => {
-    loadHistory().catch(() => toast.error("加载失败"));
+    loadHistory().catch(() => showStoreToast.error("加载失败"));
   }, [loadHistory]);
 
   return (
@@ -137,7 +137,7 @@ export default function History() {
         danger
         onConfirm={async () => {
           await clearHistory();
-          toast.success("浏览历史已清空");
+          showStoreToast.success("浏览历史已清空");
         }}
       />
     </>

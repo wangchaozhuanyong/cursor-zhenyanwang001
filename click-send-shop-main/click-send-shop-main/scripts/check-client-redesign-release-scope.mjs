@@ -46,7 +46,12 @@ function warn(area, message, extra = {}) {
 function isExpectedPath(appPath) {
   return (
     appPath === ".gitignore" ||
+    appPath === "index.html" ||
     appPath === "package.json" ||
+    appPath === "tailwind.cart.config.ts" ||
+    appPath === "tailwind.config.ts" ||
+    appPath === "tailwind.promotions.config.ts" ||
+    appPath === "tailwind.storefront-routes.config.ts" ||
     /^server\/migrations\/167_seed_default_home_nav_items\.(up|down)\.js$/.test(appPath) ||
     appPath.startsWith("src/") ||
     appPath.startsWith("scripts/") ||

@@ -3,9 +3,7 @@ import {
   RefreshCw,
   Users,
 } from "lucide-react";
-import "@/styles/client-redesign.css";
-import "@/styles/storefront-next.extended-routes.css";
-import { toast } from "sonner";
+import "@/styles/store-home-v2.css";
 import SeoHead from "@/components/SeoHead";
 import HomeTrustBar from "@/components/HomeTrustBar";
 import HomeNavIcon from "@/components/store/HomeNavIcon";
@@ -20,25 +18,23 @@ import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useProductStore } from "@/stores/useProductStore";
-import { useCartStore } from "@/stores/useCartStore";
-import { useFavoritesStore } from "@/stores/useFavoritesStore";
-import { useHistoryStore } from "@/stores/useHistoryStore";
-import { useOrderStore } from "@/stores/useOrderStore";
 import { cn } from "@/lib/utils";
 import { isLoggedIn } from "@/utils/token";
-import * as authService from "@/services/authService";
 import { scheduleIdleTask } from "@/utils/idleScheduler";
 import { buildCanonical } from "@/utils/seo";
 import { buildOrganizationJsonLd, buildWebsiteJsonLd } from "@/utils/structuredData";
 import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
-import { buildPersonalizedRecommendations } from "@/utils/personalizedRecommendations";
 import { appendThemePreviewParams } from "@/utils/themePreviewParams";
 import { NEW_ARRIVAL_CATEGORY_PATH } from "@/constants/newArrivalNavigation";
 import { getHomeModuleTitle, isHomeModuleEnabled } from "@/constants/homeModules";
 import { STORE_COPY } from "@/constants/storeCopy";
 import { usePublicLocale } from "@/i18n/publicLocale";
 import { navigateWithStoreTransition } from "@/utils/storeNavigationTransition";
+import { showStoreToast } from "@/utils/storeToast";
+import type { CartItem } from "@/types/cart";
 import type { FooterNavItem, HomeNavItem } from "@/types/content";
+import type { Order } from "@/types/order";
+import type { Product } from "@/types/product";
 import { filterVisibleHomeNavItems } from "@/utils/homeNavCapabilities";
 import { normalizeHomeNavText, openHomeNavItemTarget } from "@/utils/homeNavTarget";
 import { isLoyaltyFeatureEnabled } from "@/utils/loyaltyFeatureVisibility";
@@ -52,11 +48,27 @@ import {
 import { storefrontPageClassName } from "../design/classes";
 import HomeHeroV2 from "./HomeHeroV2";
 import HomePrimaryCampaignV2 from "./HomePrimaryCampaignV2";
-import HomeProductSectionV2 from "./HomeProductSectionV2";
 import { buildHomeCampaignEntrances, dedupeFooterNav, parseFooterNav, uniqueProducts } from "./homeV2Utils";
 import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
 const GuestMobileFooter = lazy(() => import("@/components/GuestMobileFooter"));
+const HomeProductSectionV2 = lazy(() => import("./HomeProductSectionV2"));
+
+type MemberHomeSignals = {
+  cartItems: CartItem[];
+  favoriteIds: string[];
+  favoriteProducts: Array<Pick<Product, "id" | "category_id" | "price">>;
+  historyProducts: Product[];
+  orders: Order[];
+};
+
+const EMPTY_MEMBER_HOME_SIGNALS: MemberHomeSignals = {
+  cartItems: [],
+  favoriteIds: [],
+  favoriteProducts: [],
+  historyProducts: [],
+  orders: [],
+};
 
 export default function StoreHomeV2() {
   useDocumentTitle(undefined);
@@ -79,18 +91,12 @@ export default function StoreHomeV2() {
   const homeError = useProductStore((state) => state.error);
   const loadHomeData = useProductStore((state) => state.loadHomeData);
 
-  const cartItems = useCartStore((state) => state.items);
-  const loadCart = useCartStore((state) => state.loadCart);
-  const favoriteIds = useFavoritesStore((state) => state.favoriteIds);
-  const favoriteProducts = useFavoritesStore((state) => state.favoriteProducts);
-  const loadFavorites = useFavoritesStore((state) => state.loadFavorites);
-  const historyProducts = useHistoryStore((state) => state.history);
-  const loadHistory = useHistoryStore((state) => state.loadHistory);
-  const orders = useOrderStore((state) => state.orders);
-  const loadOrders = useOrderStore((state) => state.loadOrders);
-
   const [campaigns, setCampaigns] = useState<StorefrontCampaignVm[]>([]);
   const [campaignsLoading, setCampaignsLoading] = useState(true);
+  const [deferredHomeContentReady, setDeferredHomeContentReady] = useState(false);
+  const [guestFooterReady, setGuestFooterReady] = useState(false);
+  const [memberHomeSignals, setMemberHomeSignals] = useState<MemberHomeSignals>(EMPTY_MEMBER_HOME_SIGNALS);
+  const [memberRecommendations, setMemberRecommendations] = useState<Product[]>([]);
 
   useEffect(() => {
     const state = useProductStore.getState();
@@ -99,26 +105,162 @@ export default function StoreHomeV2() {
   }, [loadHomeData]);
 
   useEffect(() => {
-    if (!isAuthenticated || !isLoggedIn()) return;
+    if (!isAuthenticated || !isLoggedIn()) {
+      setMemberHomeSignals(EMPTY_MEMBER_HOME_SIGNALS);
+      return;
+    }
+
     let cancelled = false;
     let cancelIdle: (() => void) | undefined;
-    void authService.restoreSessionFromCookie().then((ok) => {
-      if (!ok || cancelled) return;
-      cancelIdle = scheduleIdleTask("store-home-v2-member-data", () => {
+    let unsubscribers: Array<() => void> = [];
+
+    void Promise.all([
+      import("@/stores/useCartStore"),
+      import("@/stores/useFavoritesStore"),
+      import("@/stores/useHistoryStore"),
+      import("@/stores/useOrderStore"),
+    ]).then(([cartStore, favoritesStore, historyStore, orderStore]) => {
+      if (cancelled) return;
+
+      const syncSignals = () => {
         if (cancelled) return;
-        void Promise.allSettled([
-          loadHistory(),
-          loadFavorites(),
-          loadCart(),
-          loadOrders({ page: 1, pageSize: 20 }),
-        ]);
-      }, { delayMs: 2500, timeoutMs: 4500 });
+        setMemberHomeSignals({
+          cartItems: cartStore.useCartStore.getState().items,
+          favoriteIds: favoritesStore.useFavoritesStore.getState().favoriteIds,
+          favoriteProducts: favoritesStore.useFavoritesStore.getState().favoriteProducts,
+          historyProducts: historyStore.useHistoryStore.getState().history,
+          orders: orderStore.useOrderStore.getState().orders,
+        });
+      };
+
+      syncSignals();
+      unsubscribers = [
+        cartStore.useCartStore.subscribe(syncSignals),
+        favoritesStore.useFavoritesStore.subscribe(syncSignals),
+        historyStore.useHistoryStore.subscribe(syncSignals),
+        orderStore.useOrderStore.subscribe(syncSignals),
+      ];
+
+      void import("@/services/authService").then(({ restoreSessionFromCookie }) => restoreSessionFromCookie()).then((ok) => {
+        if (!ok || cancelled) return;
+        cancelIdle = scheduleIdleTask("store-home-v2-member-data", () => {
+          if (cancelled) return;
+          void Promise.allSettled([
+            historyStore.useHistoryStore.getState().loadHistory(),
+            favoritesStore.useFavoritesStore.getState().loadFavorites(),
+            cartStore.useCartStore.getState().loadCart(),
+            orderStore.useOrderStore.getState().loadOrders({ page: 1, pageSize: 20 }),
+          ]);
+        }, { delayMs: 2500, timeoutMs: 4500 });
+      }).catch(() => undefined);
     });
+
     return () => {
       cancelled = true;
       cancelIdle?.();
+      unsubscribers.forEach((unsubscribe) => unsubscribe());
     };
-  }, [isAuthenticated, loadCart, loadFavorites, loadHistory, loadOrders]);
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      setGuestFooterReady(false);
+      return;
+    }
+    if (guestFooterReady) return;
+
+    let cancelled = false;
+    let revealed = false;
+    let scrollFrame = 0;
+
+    const detachScroll = () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleScroll);
+      if (scrollFrame) {
+        window.cancelAnimationFrame(scrollFrame);
+        scrollFrame = 0;
+      }
+    };
+
+    const revealFooter = () => {
+      if (cancelled || revealed) return;
+      revealed = true;
+      detachScroll();
+      setGuestFooterReady(true);
+    };
+
+    function handleScroll() {
+      if (scrollFrame) return;
+      scrollFrame = window.requestAnimationFrame(() => {
+        scrollFrame = 0;
+        const distanceToBottom = document.documentElement.scrollHeight - (window.scrollY + window.innerHeight);
+        if (distanceToBottom < window.innerHeight * 1.4) revealFooter();
+      });
+    }
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("resize", handleScroll);
+
+    const cancelIdle = scheduleIdleTask("store-home-v2-guest-footer", revealFooter, {
+      delayMs: 4200,
+      timeoutMs: 6500,
+      jitterMs: 500,
+    });
+
+    return () => {
+      cancelled = true;
+      cancelIdle();
+      detachScroll();
+    };
+  }, [guestFooterReady, isAuthenticated]);
+
+  useEffect(() => {
+    if (deferredHomeContentReady) return;
+
+    let cancelled = false;
+    let revealed = false;
+    let scrollFrame = 0;
+
+    const detachScroll = () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleScroll);
+      if (scrollFrame) {
+        window.cancelAnimationFrame(scrollFrame);
+        scrollFrame = 0;
+      }
+    };
+
+    const revealContent = () => {
+      if (cancelled || revealed) return;
+      revealed = true;
+      detachScroll();
+      setDeferredHomeContentReady(true);
+    };
+
+    function handleScroll() {
+      if (scrollFrame) return;
+      scrollFrame = window.requestAnimationFrame(() => {
+        scrollFrame = 0;
+        const distanceToBottom = document.documentElement.scrollHeight - (window.scrollY + window.innerHeight);
+        if (window.scrollY > 96 || distanceToBottom < window.innerHeight * 1.8) revealContent();
+      });
+    }
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("resize", handleScroll);
+
+    const cancelIdle = scheduleIdleTask("store-home-v2-deferred-content", revealContent, {
+      delayMs: 3200,
+      timeoutMs: 5600,
+      jitterMs: 500,
+    });
+
+    return () => {
+      cancelled = true;
+      cancelIdle();
+      detachScroll();
+    };
+  }, [deferredHomeContentReady]);
 
   useEffect(() => {
     let cancelled = false;
@@ -177,27 +319,45 @@ export default function StoreHomeV2() {
     () => uniqueProducts([...hotProducts, ...recommendedProducts], homeModules.guestRecommendMax),
     [homeModules.guestRecommendMax, hotProducts, recommendedProducts],
   );
-  const memberRecommendations = useMemo(() => uniqueProducts(
-    buildPersonalizedRecommendations({
-      candidates: recommendedProducts,
-      fallbackProducts: [...recommendedProducts, ...hotProducts, ...newProducts],
-      historyProducts,
-      favoriteIds,
-      favoriteProducts,
-      cartItems,
-      orders,
-      limit: homeModules.recBatchSize * 2,
-    }),
-    homeModules.recBatchSize * 2,
-  ), [
-    cartItems,
-    favoriteIds,
-    favoriteProducts,
-    historyProducts,
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setMemberRecommendations([]);
+      return;
+    }
+
+    let cancelled = false;
+    void import("@/utils/personalizedRecommendations").then(({ buildPersonalizedRecommendations }) => {
+      if (cancelled) return;
+      setMemberRecommendations(uniqueProducts(
+        buildPersonalizedRecommendations({
+          candidates: recommendedProducts,
+          fallbackProducts: [...recommendedProducts, ...hotProducts, ...newProducts],
+          historyProducts: memberHomeSignals.historyProducts,
+          favoriteIds: memberHomeSignals.favoriteIds,
+          favoriteProducts: memberHomeSignals.favoriteProducts,
+          cartItems: memberHomeSignals.cartItems,
+          orders: memberHomeSignals.orders,
+          limit: homeModules.recBatchSize * 2,
+        }),
+        homeModules.recBatchSize * 2,
+      ));
+    }).catch(() => {
+      if (!cancelled) setMemberRecommendations([]);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    isAuthenticated,
+    memberHomeSignals.cartItems,
+    memberHomeSignals.favoriteIds,
+    memberHomeSignals.favoriteProducts,
+    memberHomeSignals.historyProducts,
+    memberHomeSignals.orders,
     homeModules.recBatchSize,
     hotProducts,
     newProducts,
-    orders,
     recommendedProducts,
   ]);
 
@@ -310,32 +470,36 @@ export default function StoreHomeV2() {
 
         {showTrustBar ? <HomeTrustBar className="sf-next-home-trust-compact" /> : null}
 
-        {siteCapabilities.mallEnabled && showNewArrivals ? (
-          <HomeProductSectionV2
-            title={newArrivalTitle}
-            products={newArrivalProducts}
-            loading={homeLoading && newArrivalProducts.length === 0}
-            actionLabel="查看新品"
-            actionPath={NEW_ARRIVAL_CATEGORY_PATH}
-            emptyText="新品正在整理中，可以先看分类。"
-            emptyActionLabel="去分类"
-            showPrice={siteInfo.newArrivalShowPrice !== "0"}
-            previewLimit={newArrivalDisplayCount}
-            onNavigate={navigatePath}
-          />
+        {deferredHomeContentReady && siteCapabilities.mallEnabled && showNewArrivals ? (
+          <Suspense fallback={null}>
+            <HomeProductSectionV2
+              title={newArrivalTitle}
+              products={newArrivalProducts}
+              loading={homeLoading && newArrivalProducts.length === 0}
+              actionLabel="查看新品"
+              actionPath={NEW_ARRIVAL_CATEGORY_PATH}
+              emptyText="新品正在整理中，可以先看分类。"
+              emptyActionLabel="去分类"
+              showPrice={siteInfo.newArrivalShowPrice !== "0"}
+              previewLimit={newArrivalDisplayCount}
+              onNavigate={navigatePath}
+            />
+          </Suspense>
         ) : null}
 
-        {siteCapabilities.mallEnabled && showGuestRecommend ? (
-          <HomeProductSectionV2
-            title={getHomeModuleTitle(homeModules, "guest_recommend", "精选商品")}
-            products={guestProducts}
-            loading={homeLoading && guestProducts.length === 0}
-            actionLabel="全部商品"
-            emptyText="精选商品暂时没有更新，可以先进入分类浏览。"
-            emptyActionLabel="浏览分类"
-            previewLimit={homeModules.guestRecommendMax}
-            onNavigate={navigatePath}
-          />
+        {deferredHomeContentReady && siteCapabilities.mallEnabled && showGuestRecommend ? (
+          <Suspense fallback={null}>
+            <HomeProductSectionV2
+              title={getHomeModuleTitle(homeModules, "guest_recommend", "精选商品")}
+              products={guestProducts}
+              loading={homeLoading && guestProducts.length === 0}
+              actionLabel="全部商品"
+              emptyText="精选商品暂时没有更新，可以先进入分类浏览。"
+              emptyActionLabel="浏览分类"
+              previewLimit={homeModules.guestRecommendMax}
+              onNavigate={navigatePath}
+            />
+          </Suspense>
         ) : null}
 
         {showInviteEntry ? (
@@ -346,31 +510,35 @@ export default function StoreHomeV2() {
           />
         ) : null}
 
-        {siteCapabilities.mallEnabled && showHotSales ? (
-          <HomeProductSectionV2
-            title={getHomeModuleTitle(homeModules, "hot_sales", "今日热销")}
-            products={hotHomeProducts}
-            loading={homeLoading && hotHomeProducts.length === 0}
-            actionLabel="热销榜"
-            actionPath="/categories?sort=sales_desc"
-            emptyText="热销榜暂时没有数据，可以先看全部商品。"
-            emptyActionLabel="全部商品"
-            previewLimit={homeModules.hotBatchSize}
-            onNavigate={navigatePath}
-          />
+        {deferredHomeContentReady && siteCapabilities.mallEnabled && showHotSales ? (
+          <Suspense fallback={null}>
+            <HomeProductSectionV2
+              title={getHomeModuleTitle(homeModules, "hot_sales", "今日热销")}
+              products={hotHomeProducts}
+              loading={homeLoading && hotHomeProducts.length === 0}
+              actionLabel="热销榜"
+              actionPath="/categories?sort=sales_desc"
+              emptyText="热销榜暂时没有数据，可以先看全部商品。"
+              emptyActionLabel="全部商品"
+              previewLimit={homeModules.hotBatchSize}
+              onNavigate={navigatePath}
+            />
+          </Suspense>
         ) : null}
 
-        {siteCapabilities.mallEnabled && showRecommend ? (
-          <HomeProductSectionV2
-            title={getHomeModuleTitle(homeModules, "recommend", "猜你喜欢")}
-            products={memberRecommendations}
-            loading={homeLoading && memberRecommendations.length === 0}
-            actionLabel="更多推荐"
-            emptyText="还没有足够的浏览记录生成推荐，可以先看看热销商品。"
-            emptyActionLabel="看热销"
-            previewLimit={homeModules.recBatchSize}
-            onNavigate={navigatePath}
-          />
+        {deferredHomeContentReady && siteCapabilities.mallEnabled && showRecommend ? (
+          <Suspense fallback={null}>
+            <HomeProductSectionV2
+              title={getHomeModuleTitle(homeModules, "recommend", "猜你喜欢")}
+              products={memberRecommendations}
+              loading={homeLoading && memberRecommendations.length === 0}
+              actionLabel="更多推荐"
+              emptyText="还没有足够的浏览记录生成推荐，可以先看看热销商品。"
+              emptyActionLabel="看热销"
+              previewLimit={homeModules.recBatchSize}
+              onNavigate={navigatePath}
+            />
+          </Suspense>
         ) : null}
 
         {homeError ? (
@@ -387,7 +555,7 @@ export default function StoreHomeV2() {
           </div>
         ) : null}
 
-        {!isAuthenticated ? (
+        {!isAuthenticated && guestFooterReady ? (
           <Suspense fallback={null}>
             <GuestMobileFooter
               siteName={siteName}
@@ -449,7 +617,7 @@ function HomeQuickEntryPanel({
             <UnifiedButton
               key={action.id}
               type="button"
-              onClick={() => openHomeNavItemTarget(action, capabilities, onNavigate, toast.error)}
+              onClick={() => openHomeNavItemTarget(action, capabilities, onNavigate, (message) => showStoreToast.error(message))}
               className="sf-next-quick-entry__item"
             >
               <span className="sf-next-quick-entry__icon">

@@ -17,7 +17,6 @@ import type { ProductListParams, ProductSortType, ProductTag } from "@/types/pro
 import type { Category } from "@/types/category";
 import { findCategoryById, findRootCategoryIdForActive, isCategoryOrDescendantActive } from "@/utils/categoryTree";
 import { trackEvent } from "@/services/analyticsService";
-import { toast } from "sonner";
 import { useClientDesignStyle } from "@/modules/storefront-v2/design/useClientDesignStyle";
 import { THEME_ALERT_ERROR_SOFT } from "@/utils/themeVisuals";
 import { appendThemePreviewParams, THEME_PREVIEW_PARAM_NAMES } from "@/utils/themePreviewParams";
@@ -30,6 +29,7 @@ import SilkProductGrid from "@/components/motion/SilkProductGrid";
 import StableImage from "@/components/ui/StableImage";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { hasMorePaginatedItems } from "@/lib/pagination";
+import { showStoreToast } from "@/utils/storeToast";
 import {
   NEW_ARRIVAL_CATEGORY_CANONICAL_SEARCH,
   NEW_ARRIVAL_CATEGORY_LABEL,
@@ -429,7 +429,7 @@ export default function Categories() {
         const min = minPrice ? Number(minPrice) : undefined;
         const max = maxPrice ? Number(maxPrice) : undefined;
         if (min !== undefined && max !== undefined && min > max) {
-          toast.error("最低价不能大于最高价");
+          showStoreToast.error("最低价不能大于最高价");
           return false;
         }
         syncQuery();
@@ -484,6 +484,43 @@ export default function Categories() {
     </ProductFilterDrawer>
   );
   const productSectionTitle = isNew ? NEW_ARRIVAL_CATEGORY_LABEL : activeCategoryName || "全部商品";
+  const productEmptyState = error ? (
+    <section className={cn(emptyColSpan, "sf-next-listing-error-state")}>
+      <StorefrontLoadErrorPanel
+        message={error}
+        compact
+        onRetry={() => {
+          useProductStore.getState().clearError();
+          void loadProducts();
+          void loadCategories();
+        }}
+      />
+    </section>
+  ) : (
+    <section className={cn(emptyColSpan, "sf-next-state-panel sf-next-listing-empty")}>
+      <span className="sf-next-state-panel__icon" aria-hidden>
+        <Search size={28} />
+      </span>
+      <h2>
+        {activeFilterCount > 0 || submittedQuery
+          ? "当前筛选条件无结果"
+          : activeCat !== "all"
+            ? "当前分类暂无商品"
+            : "暂无商品上架"}
+      </h2>
+      <p>
+        {(activeFilterCount > 0 || submittedQuery)
+          ? "可以清空筛选后重新浏览全部商品。"
+          : "商品上架后会自动显示在这里。"}
+      </p>
+      {(activeFilterCount > 0 || submittedQuery) ? (
+        <UnifiedButton type="button" onClick={clearFilters} className="sf-next-state-panel__primary">
+          <X size={17} aria-hidden />
+          清空筛选
+        </UnifiedButton>
+      ) : null}
+    </section>
+  );
 
   return (
     <div
@@ -539,19 +576,6 @@ export default function Categories() {
           <div className="sf-next-listing-sort-shell">
             <ProductSortBar value={sort} onChange={setSort} className="sf-next-listing-sortbar" />
           </div>
-          {error && visibleProducts.length === 0 ? (
-            <div className="mb-3">
-              <StorefrontLoadErrorPanel
-                message={error}
-                compact
-                onRetry={() => {
-                  useProductStore.getState().clearError();
-                  void loadProducts();
-                  void loadCategories();
-                }}
-              />
-            </div>
-          ) : null}
           {error && visibleProducts.length > 0 ? (
             <p className={`mb-3 px-3 py-2 text-center text-xs ${THEME_ALERT_ERROR_SOFT}`}>
               商品列表暂时无法刷新，以下为缓存数据
@@ -570,33 +594,7 @@ export default function Categories() {
             itemKeyPrefix={`category:${isNew ? "new" : activeCat}`}
             showQuietLoading={showQuietLoading}
             showSoftRefreshing={showSoftRefreshing}
-            emptyState={
-              !error ? (
-                <section className={cn(emptyColSpan, "sf-next-state-panel sf-next-listing-empty")}>
-                  <span className="sf-next-state-panel__icon" aria-hidden>
-                    <Search size={28} />
-                  </span>
-                  <h2>
-                    {activeFilterCount > 0 || submittedQuery
-                      ? "当前筛选条件无结果"
-                      : activeCat !== "all"
-                        ? "当前分类暂无商品"
-                        : "暂无商品上架"}
-                  </h2>
-                  <p>
-                    {(activeFilterCount > 0 || submittedQuery)
-                      ? "可以清空筛选后重新浏览全部商品。"
-                      : "商品上架后会自动显示在这里。"}
-                  </p>
-                  {(activeFilterCount > 0 || submittedQuery) ? (
-                    <UnifiedButton type="button" onClick={clearFilters} className="sf-next-state-panel__primary">
-                      <X size={17} aria-hidden />
-                      清空筛选
-                    </UnifiedButton>
-                  ) : null}
-                </section>
-              ) : null
-            }
+            emptyState={productEmptyState}
           />
           {visibleProducts.length > 0 ? (
             <div ref={loadMoreRef} className="py-8 text-center text-xs text-[var(--theme-text-muted)]" aria-live="polite">

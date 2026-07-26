@@ -228,6 +228,7 @@ export function ProfileHeroCard({
               key={item.key}
               type="button"
               data-feature-key={item.key}
+              data-profile-asset={item.key}
               aria-label={`${item.label}：${item.value}`}
               onClick={(event) => {
                 event.stopPropagation();

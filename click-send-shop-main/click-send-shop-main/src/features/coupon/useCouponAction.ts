@@ -1,11 +1,11 @@
 import { useCallback } from "react";
-import { toast } from "sonner";
 import { ensureStoreSession } from "@/lib/ensureStoreSession";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useCouponStore } from "@/stores/useCouponStore";
 import { invalidateCouponCenterStoreCache } from "@/stores/useCouponCenterStore";
 import { invalidateMyCouponsStoreCache } from "@/stores/useMyCouponsStore";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
+import { showStoreToast } from "@/utils/storeToast";
 import type { CouponClaimStatus } from "@/types/coupon";
 import { ApiError } from "@/types/common";
 import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
@@ -102,7 +102,7 @@ export function useCouponAction(defaultFrom = "/coupons") {
     const finalizeClaim = (claimed: Awaited<ReturnType<typeof claimCoupon>>) => {
       invalidateCouponCenterStoreCache();
       invalidateMyCouponsStoreCache();
-      toast.success(options.successMessage || "领取成功", toastPresetQuickSuccess);
+      showStoreToast.success(options.successMessage || "领取成功", toastPresetQuickSuccess);
       return claimed;
     };
     let state = getCouponActionState(coupon, isAuthenticated);
@@ -118,12 +118,12 @@ export function useCouponAction(defaultFrom = "/coupons") {
         : getCouponActionState(coupon, true);
     }
     if (state.claimStatus === "member_required") {
-      toast.info(state.reason || "该优惠券仅限会员领取");
+      showStoreToast.info(state.reason || "该优惠券仅限会员领取");
       navigate("/member/benefits", { state: { from } });
       return null;
     }
     if (state.disabled) {
-      toast.info(state.reason || "该优惠券暂不可领取");
+      showStoreToast.info(state.reason || "该优惠券暂不可领取");
       return null;
     }
     if (!sessionVerified) {
@@ -151,11 +151,11 @@ export function useCouponAction(defaultFrom = "/coupons") {
             navigate("/login", { state: { from } });
             return null;
           }
-          toast.error(retryError instanceof Error ? retryError.message : "领取失败");
+          showStoreToast.error(retryError instanceof Error ? retryError.message : "领取失败");
           throw retryError;
         }
       }
-      toast.error(error instanceof Error ? error.message : "领取失败");
+      showStoreToast.error(error instanceof Error ? error.message : "领取失败");
       throw error;
     }
   }, [claimCoupon, defaultFrom, isAuthenticated, navigate]);

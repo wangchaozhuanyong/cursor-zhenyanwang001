@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { AlertTriangle, CreditCard, ImagePlus, Loader2, PackageCheck, RotateCcw, Truck, X } from "lucide-react";
-import { toast } from "sonner";
+import { showStoreToast } from "@/utils/storeToast";
 import { useGoBack } from "@/hooks/useGoBack";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
@@ -269,7 +269,7 @@ export default function ReturnDetail() {
   const uploadImages = async (files: File[]) => {
     if (!files.length) return;
     if (evidenceImages.length + files.length > 6) {
-      toast.error(copy.uploadLimit);
+      showStoreToast.error(copy.uploadLimit);
       return;
     }
     setUploading(true);
@@ -277,7 +277,7 @@ export default function ReturnDetail() {
       const uploaded = await uploadService.uploadFiles(files, { mode: "image" });
       setEvidenceImages((prev) => [...prev, ...uploaded.map((item) => item.url)]);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : copy.uploadFailed);
+      showStoreToast.error(error instanceof Error ? error.message : copy.uploadFailed);
     } finally {
       setUploading(false);
     }
@@ -287,7 +287,7 @@ export default function ReturnDetail() {
     setSubmitting(true);
     try {
       await task();
-      toast.success(successText);
+      showStoreToast.success(successText);
       setEvidenceText("");
       setEvidenceImages([]);
       setCarrier("");
@@ -295,7 +295,7 @@ export default function ReturnDetail() {
       setLogisticsNote("");
       await loadDetail();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : copy.actionFailed);
+      showStoreToast.error(error instanceof Error ? error.message : copy.actionFailed);
     } finally {
       setSubmitting(false);
     }
@@ -304,7 +304,7 @@ export default function ReturnDetail() {
   const submitEvidence = () => {
     if (!id) return;
     if (!evidenceText.trim() && evidenceImages.length === 0) {
-      toast.error(copy.evidenceRequired);
+      showStoreToast.error(copy.evidenceRequired);
       return;
     }
     void runAction(
@@ -320,7 +320,7 @@ export default function ReturnDetail() {
   const submitLogistics = () => {
     if (!id) return;
     if (!carrier.trim() || !trackingNo.trim()) {
-      toast.error(copy.logisticsRequired);
+      showStoreToast.error(copy.logisticsRequired);
       return;
     }
     void runAction(

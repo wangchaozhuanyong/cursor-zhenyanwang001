@@ -75,6 +75,8 @@ jobs:
         env:
           VITE_API_BASE_URL: /api
       - run: npm run verify:pwa
+      - run: npx playwright install --with-deps chromium
+      - run: npm run audit:storefront-performance
 
   server-typecheck:
     name: Server (typecheck)

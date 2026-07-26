@@ -26,6 +26,18 @@ npm run build
 npm run preview
 ```
 
+## 客户端性能门禁
+
+构建后运行移动端 4 倍 CPU 性能预算、路由切换和 Toast 延迟加载验收：
+
+```bash
+npm run audit:storefront-performance
+```
+
+默认预算为首屏 JS 480KB、CSS 250KB、空闲新增 JS/CSS 4KB/2KB、单个长任务
+110ms、总阻塞 100ms、购物车切换 300ms。通过 `BASE_URL` 可复测已部署环境；
+各预算可使用 `STOREFRONT_PERF_MAX_*` 环境变量覆盖。
+
 ## 交易重构相关前端入口
 
 - 活动中心：`/promotions`

@@ -1,4 +1,11 @@
 /* Activity detail route styles split from promotions-route.css. */
+/* Moved from the global final contract; keep before the route-specific overrides below. */
+@media (max-width: 767px) {
+  html[data-app-scope="store"][data-storefront-ui="next"] body .sf-next-promotion-detail-page {
+    padding-bottom: var(--sc-bottom-rest-space) !important;
+  }
+}
+
 /* Moved from src/styles/storefront-next.extended-routes.css */
 html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-promotion-detail-page {
   min-width: 0;

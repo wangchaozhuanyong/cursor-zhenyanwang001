@@ -40,7 +40,12 @@ import {
   rememberStoreTabPath,
   rememberStoreScrollPosition,
 } from "@/utils/storeScrollRestoration";
-import { logPerf, markPerfStart, observeLongTasksAndLcp } from "@/utils/performanceDebug";
+import {
+  isPerformanceDebugEnabled,
+  logPerf,
+  markPerfStart,
+  observeLongTasksAndLcp,
+} from "@/utils/performanceDebug";
 import {
   isPublicLocale,
   stripPublicLocaleFromPath,
@@ -127,14 +132,18 @@ function StoreScrollRestoration() {
     const isTabSwitch = Boolean(previousTabKey && currentTabKey && previousTabKey !== currentTabKey);
     const shouldRestore = hasHandledInitialRouteRef.current && (navigationType === "POP" || isTabSwitch);
     const targetY = shouldRestore ? getRememberedStoreScrollPosition(scrollKey) ?? 0 : 0;
-    const maxY = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
-    window.scrollTo({ top: Math.min(targetY, maxY), left: 0, behavior: "auto" });
+    if (targetY > 0) {
+      const maxY = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+      window.scrollTo({ top: Math.min(targetY, maxY), left: 0, behavior: "auto" });
+    } else if (window.scrollY !== 0) {
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    }
     previousScrollKeyRef.current = scrollKey;
     previousPathnameRef.current = location.pathname;
     hasHandledInitialRouteRef.current = true;
   }, [location.pathname, navigationType, scrollKey]);
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     rememberStoreTabPath(location.pathname, location.search, location.hash);
   }, [location.hash, location.pathname, location.search]);
 
@@ -196,7 +205,7 @@ function SiteIdentitySync() {
   const siteInfo = useSiteInfo();
   const siteInfoLoaded = useSiteInfoLoaded();
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     if (!siteInfoLoaded) return;
     const iconTargets = buildSiteFaviconLinkTargets(siteInfo, {
       svg: DEFAULT_FAVICON_SVG,
@@ -554,7 +563,7 @@ function MainStoreRoutes() {
             <SiteIdentitySync />
             <ReferralInviteSync />
             <StoreScrollRestoration />
-            <StorePerformanceDiagnostics />
+            {isPerformanceDebugEnabled() ? <StorePerformanceDiagnostics /> : null}
             <AnalyticsCapabilitySync />
             <PwaStandaloneAnalytics />
             <AppScopeSync />

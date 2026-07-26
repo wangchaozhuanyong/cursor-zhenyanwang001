@@ -57,11 +57,16 @@ describe("appVersionRecovery", () => {
   it("detects chunk and preload failures without treating API failures as version updates", () => {
     expect(isChunkLoadFailure("Failed to fetch dynamically imported module: /assets/order.js")).toBe(true);
     expect(isChunkLoadFailure({ message: "Unable to preload CSS for /assets/page.css" })).toBe(true);
+    expect(isChunkLoadFailure({ src: "https://example.com/assets/page-old.js" })).toBe(true);
     expect(isChunkLoadFailure("net::ERR_ABORTED 404 (Not Found) https://example.com/assets/page-old.js")).toBe(true);
     expect(isChunkLoadFailure("Expected a JavaScript module script but the server responded with a MIME type of \"text/html\"")).toBe(true);
     expect(isChunkLoadFailure("net::ERR_ABORTED https://example.com/api/coupons")).toBe(false);
     expect(isChunkLoadFailure({ message: "net::ERR_FAILED /api/cart" })).toBe(false);
     expect(isChunkLoadFailure({ message: "Request failed with status code 404 /api/coupons" })).toBe(false);
+
+    const runtimeError = new TypeError("categories.map is not a function");
+    runtimeError.stack = "TypeError: categories.map is not a function\n    at /assets/Categories-current.js:2:13568";
+    expect(isChunkLoadFailure(runtimeError)).toBe(false);
   });
 
   it("builds a backend report payload for frontend cache inconsistency", () => {

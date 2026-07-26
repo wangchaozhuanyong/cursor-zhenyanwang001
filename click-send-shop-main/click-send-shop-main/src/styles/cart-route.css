@@ -1,3 +1,28 @@
+/* Moved from the global final contract; keep before the route-specific overrides below. */
+html[data-app-scope="store"][data-storefront-ui="next"] body .sf-next-cart-page .sf-next-cart-discount-panel__coupon-slot .sf-next-checkout-coupon-trigger {
+  min-height: 3.25rem !important;
+  border: 1px solid color-mix(in srgb, var(--sf-line-strong) 64%, transparent) !important;
+  border-radius: 0.88rem !important;
+  background: color-mix(in srgb, var(--sf-surface-muted) 58%, var(--sf-surface) 42%) !important;
+  padding: 0.66rem 0.72rem !important;
+  box-shadow: none !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] body .sf-next-cart-page .sf-next-cart-discount-panel__coupon-slot .sf-next-checkout-coupon-title {
+  color: var(--sf-ink) !important;
+  font-size: 0.82rem !important;
+  font-weight: 760 !important;
+  line-height: 1.15 !important;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] body .sf-next-cart-page .sf-next-cart-discount-panel__coupon-slot .sf-next-checkout-coupon-status {
+  margin-top: 0.18rem !important;
+  color: var(--sf-ink-secondary) !important;
+  font-size: 0.7rem !important;
+  font-weight: 680 !important;
+  line-height: 1.15 !important;
+}
+
 /* Moved from src/styles/storefront-next.extended-routes.css */
 
 html[data-app-scope="store"] .sf-next-cart-summary .sf-next-product-price {

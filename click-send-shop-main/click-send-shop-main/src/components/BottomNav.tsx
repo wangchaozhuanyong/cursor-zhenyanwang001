@@ -8,7 +8,6 @@ import { getBottomNavInnerClassName, getBottomNavShellClassName } from "@/utils/
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { isStoreNavPathVisible } from "@/utils/storeNavVisibility";
 import { shouldHideBottomNav } from "./bottomNavVisibility";
-import { navigateWithStoreTransition } from "@/utils/storeNavigationTransition";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { getRememberedStoreTabPath, rememberCurrentStoreScrollPosition } from "@/utils/storeScrollRestoration";
 import { stripPublicLocaleFromPathname, usePublicLocale } from "@/i18n/publicLocale";
@@ -98,7 +97,7 @@ export default function BottomNav() {
       return;
     }
     rememberCurrentStoreScrollPosition();
-    navigateWithStoreTransition(navigate, localizedPath(getRememberedStoreTabPath(path)));
+    navigate(localizedPath(getRememberedStoreTabPath(path)));
   }, [currentPathname, localizedPath, location.search, motion.phase, navigate]);
 
   /** 避免 pointerdown/pointerup/click 双触发；兼容不支持 Pointer Events 的浏览器 */

@@ -2501,34 +2501,6 @@ html[data-app-scope="store"][data-storefront-ui="next"] :where(
 
 /* Checkout mobile submit bar: final specificity lock against legacy span rules. */
 
-/* Cart mobile checkout bar: compact fixed purchase rail. */
-
-/* Cart discount panel: calm receipt summary without colored side rails. */
-
-html[data-app-scope="store"][data-storefront-ui="next"] body .sf-next-cart-page .sf-next-cart-discount-panel__coupon-slot .sf-next-checkout-coupon-trigger {
-  min-height: 3.25rem !important;
-  border: 1px solid color-mix(in srgb, var(--sf-line-strong) 64%, transparent) !important;
-  border-radius: 0.88rem !important;
-  background: color-mix(in srgb, var(--sf-surface-muted) 58%, var(--sf-surface) 42%) !important;
-  padding: 0.66rem 0.72rem !important;
-  box-shadow: none !important;
-}
-
-html[data-app-scope="store"][data-storefront-ui="next"] body .sf-next-cart-page .sf-next-cart-discount-panel__coupon-slot .sf-next-checkout-coupon-title {
-  color: var(--sf-ink) !important;
-  font-size: 0.82rem !important;
-  font-weight: 760 !important;
-  line-height: 1.15 !important;
-}
-
-html[data-app-scope="store"][data-storefront-ui="next"] body .sf-next-cart-page .sf-next-cart-discount-panel__coupon-slot .sf-next-checkout-coupon-status {
-  margin-top: 0.18rem !important;
-  color: var(--sf-ink-secondary) !important;
-  font-size: 0.7rem !important;
-  font-weight: 680 !important;
-  line-height: 1.15 !important;
-}
-
 /* Mobile bottom spacing contract: avoid stacked blank space at route ends. */
 @media (max-width: 767px) {
   html[data-app-scope="store"][data-storefront-ui="next"] {
@@ -2576,11 +2548,6 @@ html[data-app-scope="store"][data-storefront-ui="next"] body .sf-next-product-de
     padding-bottom: var(--sc-bottom-rest-space) !important;
   }
 
-  html[data-app-scope="store"][data-storefront-ui="next"] body .sf-next-search-page > main.sf-next-search-body,
-  html[data-app-scope="store"][data-storefront-ui="next"] body .sf-next-search-page .sf-next-search-body {
-    padding-bottom: var(--sc-bottom-rest-space) !important;
-  }
-
   html[data-app-scope="store"][data-storefront-ui="next"][data-store-tab-route] body :where(
     .sf-next-home-main,
     .sf-next-promotions-main,
@@ -2589,100 +2556,10 @@ html[data-app-scope="store"][data-storefront-ui="next"] body .sf-next-product-de
     padding-bottom: var(--sc-bottom-tab-space) !important;
   }
 
-  html[data-app-scope="store"][data-storefront-ui="next"] body .sf-next-promotion-detail-page {
-    padding-bottom: var(--sc-bottom-rest-space) !important;
-  }
-
   html[data-app-scope="store"][data-storefront-ui="next"] body .sf-next-support-download-page .support-download-shell {
     padding-bottom: var(--sc-bottom-rest-space) !important;
   }
 
-  html[data-app-scope="store"][data-storefront-ui="next"] body .sf-next-product-action-space:not(.sf-next-product-detail-page) {
-    padding-bottom: var(--sc-bottom-rest-space) !important;
-  }
-
-  html[data-app-scope="store"][data-storefront-ui="next"] body .sf-next-product-detail-main {
-    padding-bottom: var(--sc-bottom-action-space) !important;
-  }
-}
-
-html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-notifications-toolbar {
-  display: flex;
-  min-width: 0;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  margin-bottom: 0.65rem;
-}
-
-html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-notifications-toolbar > div {
-  display: grid;
-  min-width: 0;
-  gap: 0.16rem;
-}
-
-html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-notifications-toolbar strong,
-html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-notifications-toolbar span {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-notifications-toolbar strong {
-  color: var(--sf-ink);
-  font-size: 0.95rem;
-  font-weight: 820;
-  line-height: 1.15;
-}
-
-html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-notifications-toolbar span {
-  color: var(--sf-ink-secondary);
-  font-size: 0.76rem;
-  font-weight: 650;
-}
-
-html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-notifications-mark-read {
-  display: inline-flex;
-  min-height: 2.15rem;
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: center;
-  gap: 0.28rem;
-  border: 1px solid color-mix(in srgb, var(--sf-price) 22%, transparent);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--sf-price) 8%, var(--sf-surface));
-  color: var(--sf-price);
-  padding: 0 0.72rem;
-  font-size: 0.75rem;
-  font-weight: 800;
-}
-
-html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-notifications-mark-read span {
-  color: inherit;
-}
-
-html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-notifications-filters {
-  display: grid !important;
-  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-  gap: 0.45rem !important;
-  overflow: visible !important;
-  border: 0 !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-  padding: 0 !important;
-  box-shadow: none !important;
-}
-
-html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-notifications-filter {
-  min-width: 0 !important;
-  border: 0 !important;
-  background: color-mix(in srgb, var(--sf-surface) 86%, var(--sf-canvas)) !important;
-}
-
-html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-notifications-filter.is-active {
-  background: var(--sf-ink) !important;
-  color: var(--sf-canvas) !important;
 }
 
 @media (max-width: 767px) {

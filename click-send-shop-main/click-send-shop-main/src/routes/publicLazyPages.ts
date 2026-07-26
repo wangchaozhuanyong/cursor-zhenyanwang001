@@ -1,4 +1,7 @@
-import { lazyPublicRouteWithPreload as lazyWithPreload } from "@/routes/lazyWithPreload";
+import {
+  lazyPublicRouteWithPreload as lazyWithPreload,
+  lazyPublicRouteWithStyles,
+} from "@/routes/lazyWithPreload";
 export type { PreloadableLazy } from "@/routes/lazyWithPreload";
 export {
   Cart,
@@ -13,6 +16,19 @@ export {
   SupportDownload,
   TikTokLanding,
 } from "@/routes/publicFrontLazyPages";
+
+let notificationsRouteStylesPromise: Promise<unknown> | undefined;
+
+function preloadNotificationsRouteStyles() {
+  notificationsRouteStylesPromise ??= Promise.all([
+    import("@/styles/notifications-tailwind.css"),
+    import("@/styles/storefront-route-primitives.css"),
+  ]).catch((error: unknown) => {
+    notificationsRouteStylesPromise = undefined;
+    throw error;
+  });
+  return notificationsRouteStylesPromise;
+}
 
 export const Login = lazyWithPreload(() => import("@/modules/public/pages/auth/Login"));
 export const ForgotPassword = lazyWithPreload(() => import("@/modules/public/pages/auth/ForgotPassword"));
@@ -36,7 +52,10 @@ export const Settings = lazyWithPreload(() => import("@/modules/public/pages/use
 export const AddressManage = lazyWithPreload(() => import("@/modules/public/pages/user/AddressManage"));
 export const Favorites = lazyWithPreload(() => import("@/modules/public/pages/user/Favorites"));
 export const History = lazyWithPreload(() => import("@/modules/public/pages/user/History"));
-export const Notifications = lazyWithPreload(() => import("@/modules/public/pages/user/Notifications"));
+export const Notifications = lazyPublicRouteWithStyles(
+  () => import("@/modules/public/pages/user/Notifications"),
+  preloadNotificationsRouteStyles,
+);
 export const Coupons = lazyWithPreload(() => import("@/modules/public/pages/user/Coupons"));
 export const Points = lazyWithPreload(() => import("@/modules/public/pages/user/Points"));
 export const PointsGiftShop = lazyWithPreload(() => import("@/modules/public/pages/user/PointsGiftShop"));

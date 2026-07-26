@@ -1,6 +1,6 @@
 import { formatDateTime } from "@/utils/formatDateTime";
-import { useEffect, useState } from "react";
-import "@/styles/storefront-next.extended-routes.css";
+import { lazy, Suspense, useEffect, useState } from "react";
+import "@/styles/notifications-route.css";
 import {
   Bell,
   Package,
@@ -17,7 +17,6 @@ import {
 } from "lucide-react";
 
 import { useGoBack } from "@/hooks/useGoBack";
-import { motion, AnimatePresence } from "framer-motion";
 import { useNotificationStore } from "@/stores/useNotificationStore";
 import type { NotificationType } from "@/types/notification";
 import { formatUnreadBadge } from "@/utils/notificationBadge";
@@ -32,10 +31,13 @@ import {
   THEME_BADGE_WARNING,
 } from "@/utils/themeVisuals";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
-import { AppModal } from "@/modules/micro-interactions";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { useHorizontalActiveScroll } from "@/hooks/useHorizontalActiveScroll";
 import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
+
+const LazyNotificationsAppModal = lazy(() =>
+  import("@/modules/micro-interactions/components/AppModal").then((module) => ({ default: module.AppModal })),
+);
 
 const typeConfig: Record<NotificationType, { icon: typeof Bell; color: string }> = {
   order: { icon: Package, color: THEME_BADGE_PRIMARY },
@@ -237,56 +239,54 @@ export default function Notifications() {
           </section>
         ) : null}
         <div className="sf-next-notifications-list">
-          <AnimatePresence>
-            {filteredNotifications.map((n, i) => {
-              const config = typeConfig[n.type] || fallbackConfig;
-              const Icon = config.icon;
-              const display = normalizeNotificationDisplay(n.title, n.content);
-              return (
-                <motion.div
-                  key={n.id}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.04 }}
-                  onClick={() => handleOpenNotification(n.id, n.link_url)}
-                  className={`sf-next-notifications-card ${n.is_read ? "" : "is-unread"}`}
-                >
-                  {!n.is_read && (
-                    <div className="absolute right-4 top-4 h-2 w-2 rounded-full bg-[var(--theme-price)]" />
-                  )}
-                  <div className="flex gap-3">
-                    <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl ${config.color}`}>
-                      <Icon size={18} />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold text-foreground">{display.title}</p>
-                      <p className="mt-1 text-xs leading-relaxed text-muted-foreground line-clamp-2">
-                        {display.content}
-                      </p>
-                      <p className="mt-2 text-[11px] text-muted-foreground/60">{formatDateTime(n.created_at)}</p>
-                    </div>
+          {filteredNotifications.map((n, i) => {
+            const config = typeConfig[n.type] || fallbackConfig;
+            const Icon = config.icon;
+            const display = normalizeNotificationDisplay(n.title, n.content);
+            return (
+              <div
+                key={n.id}
+                style={{ animationDelay: `${i * 40}ms` }}
+                onClick={() => handleOpenNotification(n.id, n.link_url)}
+                className={`sf-next-notifications-card ${n.is_read ? "" : "is-unread"}`}
+              >
+                {!n.is_read && (
+                  <div className="absolute right-4 top-4 h-2 w-2 rounded-full bg-[var(--theme-price)]" />
+                )}
+                <div className="flex gap-3">
+                  <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl ${config.color}`}>
+                    <Icon size={18} />
                   </div>
-                </motion.div>
-              );
-            })}
-          </AnimatePresence>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-foreground">{display.title}</p>
+                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground line-clamp-2">
+                      {display.content}
+                    </p>
+                    <p className="mt-2 text-[11px] text-muted-foreground/60">{formatDateTime(n.created_at)}</p>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </StoreAccountLayout>
 
-      <AppModal
-        tier="standard"
-        open={Boolean(active)}
-        onClose={() => setActiveId(null)}
-        title={active ? normalizeNotificationDisplay(active.title, active.content).title : ""}
-        height="70vh"
-        showCloseButton
-      >
-        {active ? (
-          <div className="whitespace-pre-wrap break-words pb-2 text-sm leading-6 text-[var(--theme-text)]">
-            {normalizeNotificationDisplay(active.title, active.content).content}
-          </div>
-        ) : null}
-      </AppModal>
+      {active ? (
+        <Suspense fallback={null}>
+          <LazyNotificationsAppModal
+            tier="standard"
+            open
+            onClose={() => setActiveId(null)}
+            title={normalizeNotificationDisplay(active.title, active.content).title}
+            height="70vh"
+            showCloseButton
+          >
+            <div className="whitespace-pre-wrap break-words pb-2 text-sm leading-6 text-[var(--theme-text)]">
+              {normalizeNotificationDisplay(active.title, active.content).content}
+            </div>
+          </LazyNotificationsAppModal>
+        </Suspense>
+      ) : null}
     </div>
   );
 }

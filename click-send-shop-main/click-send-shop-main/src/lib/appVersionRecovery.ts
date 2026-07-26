@@ -12,7 +12,7 @@ const FRONTEND_CACHE_EVENT_MODULE = "frontend_cache";
 
 const ASSET_URL_RE = /\/assets\/[^"'\s)]+\.(?:js|mjs|css)/i;
 const CHUNK_LOAD_ERROR_RE =
-  /Failed to fetch dynamically imported module|Importing a module script failed|Loading chunk [\w.-]+ failed|ChunkLoadError|error loading dynamically imported module|Unable to preload CSS|dynamically imported module|Importing module from .* was blocked|module script failed|Expected a JavaScript module script|disallowed MIME type|MIME type ["']?text\/html|404(?: \(Not Found\))?.*\/assets\/|\/assets\/[^"'\s)]+\.(?:js|mjs|css)/i;
+  /Failed to fetch dynamically imported module|Importing a module script failed|Loading chunk [\w.-]+ failed|ChunkLoadError|error loading dynamically imported module|Unable to preload CSS|dynamically imported module|Importing module from .* was blocked|module script failed|Expected a JavaScript module script|disallowed MIME type|MIME type ["']?text\/html|404(?: \(Not Found\))?.*\/assets\//i;
 const APP_CACHE_RE = /workbox|precache|vite|pwa|app-shell|chunk/i;
 
 export type AppVersionRecoveryState = {
@@ -143,7 +143,7 @@ export function clearAppVersionRecoveryState(_appName = "app"): void {
 }
 
 export function isChunkLoadFailure(reason: unknown): boolean {
-  return CHUNK_LOAD_ERROR_RE.test(stringifyError(reason));
+  return CHUNK_LOAD_ERROR_RE.test(stringifyError(reason)) || hasDirectAssetResourceUrl(reason);
 }
 
 export function suppressAppVersionRecovery(ms = 2_500): void {
@@ -520,6 +520,20 @@ function stringifyError(reason: unknown): string {
       .join("\n");
   }
   return "";
+}
+
+function hasDirectAssetResourceUrl(reason: unknown): boolean {
+  if (!reason || typeof reason !== "object" || reason instanceof Error) return false;
+  const record = reason as Record<string, unknown>;
+  const target = record.target as Record<string, unknown> | undefined;
+  return [
+    record.src,
+    record.href,
+    record.url,
+    record.filename,
+    target?.src,
+    target?.href,
+  ].some((value) => typeof value === "string" && ASSET_URL_RE.test(value));
 }
 
 function extractAssetUrl(reason: unknown): string | undefined {

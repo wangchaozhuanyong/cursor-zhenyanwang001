@@ -1,5 +1,16 @@
 /* Moved from src/index.css */
 
+/* Moved from the global final contract; keep before the route-specific overrides below. */
+@media (max-width: 767px) {
+  html[data-app-scope="store"][data-storefront-ui="next"] body .sf-next-product-action-space:not(.sf-next-product-detail-page) {
+    padding-bottom: var(--sc-bottom-rest-space) !important;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] body .sf-next-product-detail-main {
+    padding-bottom: var(--sc-bottom-action-space) !important;
+  }
+}
+
 .sf-next-product-price {
     font-size: 23px;
     line-height: 1;

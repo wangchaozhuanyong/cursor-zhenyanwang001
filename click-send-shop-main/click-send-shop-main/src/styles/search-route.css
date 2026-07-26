@@ -1,5 +1,13 @@
 /* Route-only styles for the public search page. Loaded by Search.tsx. */
 
+/* Moved from the global final contract; keep before the route-specific overrides below. */
+@media (max-width: 767px) {
+  html[data-app-scope="store"][data-storefront-ui="next"] body .sf-next-search-page > main.sf-next-search-body,
+  html[data-app-scope="store"][data-storefront-ui="next"] body .sf-next-search-page .sf-next-search-body {
+    padding-bottom: var(--sc-bottom-rest-space) !important;
+  }
+}
+
 html[data-app-scope="store"] .sf-next-search-empty {
   border: 1px dashed color-mix(in srgb, var(--theme-primary) 24%, var(--store-border));
   border-radius: var(--store-panel-radius);

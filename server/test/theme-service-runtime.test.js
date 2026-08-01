@@ -4,12 +4,13 @@ const {
   createThemePreviewDraft,
   normalizeThemeConfig,
   normalizeThemeSkinsPayload,
+  resolveLegacyThemeCompatibility,
   resolveRuntimeThemeSkinId,
   saveThemeSkinDraft,
 } = require('../src/modules/theme/service/theme.service');
 const themeRepo = require('../src/modules/theme/repository/theme.repository');
 const { THEME_PRESETS } = require('../src/modules/theme/theme.presets');
-const { FIXED_THEME_CONFIG } = require('../src/modules/theme/theme.fixed');
+const { FIXED_THEME_CONFIG, FIXED_THEME_PAYLOAD } = require('../src/modules/theme/theme.fixed');
 
 test('theme config forces admin mode fixed and keeps new skin fields', () => {
   const config = normalizeThemeConfig({
@@ -34,6 +35,16 @@ test('runtime theme prefers active lunar festival skin only inside schedule wind
   assert.equal(resolveRuntimeThemeSkinId(payload, new Date('2026-01-20T00:00:00Z')), 'newyear');
   assert.equal(resolveRuntimeThemeSkinId(payload, new Date('2026-07-15T00:00:00Z')), 'polar');
   assert.equal(resolveRuntimeThemeSkinId(payload, new Date('2026-09-25T00:00:00Z')), 'midautumn');
+});
+
+test('fixed storefront compatibility ignores legacy festival windows', () => {
+  const resolved = resolveLegacyThemeCompatibility(
+    FIXED_THEME_PAYLOAD,
+    new Date('2026-08-01T00:00:00Z'),
+  );
+
+  assert.equal(resolved.full.runtimeSkinId, 'city-goods-fixed');
+  assert.equal(resolved.activeConfig.primaryColor, FIXED_THEME_CONFIG.primaryColor);
 });
 
 test('preview draft creation preserves string admin user ids', async () => {

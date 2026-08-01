@@ -1,6 +1,7 @@
 import { AppModal } from "@/modules/micro-interactions";
 import { writeAgeGateConfirmation } from "@/utils/ageGate";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import { Check } from "lucide-react";
 
 type Props = {
   open: boolean;
@@ -23,12 +24,13 @@ export default function RestrictedAgeConfirmModal({ open, requiredAge, onClose, 
       footer={
         <UnifiedButton
           type="button"
-          className="flex min-h-12 w-full items-center justify-center rounded-full bg-[var(--theme-primary)] text-sm font-semibold text-[var(--theme-primary-foreground)]"
+          className="sf-fixed-modal-primary"
           onClick={() => {
             writeAgeGateConfirmation(requiredAge);
             onConfirmed();
           }}
         >
+          <Check size={16} aria-hidden />
           确认我已满 {requiredAge} 岁
         </UnifiedButton>
       }

@@ -1,12 +1,12 @@
-# 客户端设计系统与后台皮肤契约
+# 固定客户端设计系统契约
 
-更新时间：2026-06-24
+更新时间：2026-07-29
 
 ## 目标
 
-客户端以 SILENT COMMERCE / storefront-next 作为唯一正式设计系统。后台皮肤系统负责配置客户端允许的视觉参数，不能重新引入旧首页结构、旧快捷入口、旧商品卡或另一套独立样式。
+客户端以 SILENT COMMERCE / storefront-next 作为唯一正式设计系统。客户端外观由版本化代码和固定令牌管理，管理后台不能修改客户端颜色、布局、组件形态或设计风格。
 
-这份契约只约束前台展示层和后台皮肤配置边界，不改变登录、支付、订单、库存、优惠券核销、权限和部署逻辑。
+这份契约只约束客户端展示层和后台外观边界，不改变登录、支付、订单、库存、优惠券核销、权限和部署逻辑。后台自己的浅色/深色偏好独立保存，不影响客户端。
 
 ## 正式客户端入口
 
@@ -19,14 +19,14 @@
 - 设计系统代码：`src/modules/storefront-v2/design/storefrontDesignContract.ts`
 - token 样式：`src/styles/storefront-next.tokens.css`
 - 原语样式：`src/styles/storefront-next.primitives.css`
-- 路由扩展样式：`src/styles/storefront-next.extended-routes.css`
 - 分类页最终样式层：`src/styles/storefront-next.category.css`
+- 固定全站样式层：`src/styles/fixed-storefront.css`
 
 旧 `GuestHome`、`MemberHome`、`HomeOpsBlocks` 和旧 `store-home-*` 首页视觉层已经退出正式客户端源码。后续不能为了兼容旧样式重新接回正式路由。
 
-## 后台皮肤允许控制的字段
+## 固定外观边界
 
-后台皮肤配置只能影响这些客户端维度：
+以下客户端维度只能通过代码评审和正式版本发布修改：
 
 - 颜色：`bgColor`、`surfaceColor`、`primaryColor`、`priceColor`、`borderColor`、`textColor`、`mutedTextColor`
 - 质感：`texture.material`、`texture.surface`、`texture.grainOpacity`、`texture.patternOpacity`、`texture.imageContrast`、`texture.imageSaturation`
@@ -41,11 +41,11 @@
 - 快捷入口图标：`categoryIconStyle`
 - 底部导航：`navStyle`
 
-后台不得直接输出页面专用 CSS class、固定像素布局、页面排序补丁或旧 HTML 结构。
+管理后台只管理商品、分类、Banner、活动、导航和业务内容，不得输出页面专用 CSS class、设计令牌、固定像素布局、页面排序补丁或旧 HTML 结构。
 
 ## 客户端固定标准
 
-这些标准由客户端设计系统固定，后台皮肤不能覆盖：
+这些标准由客户端设计系统固定，任何后台业务配置都不能覆盖：
 
 - 路由外壳：`FrontLayout` / `StoreShell`
 - 移动端基准：390px
@@ -313,15 +313,13 @@
 - 更新 baseline 必须是显式动作：`THEME_CHECK_UPDATE_BASELINE=1 npm run theme:check`。
 - 常规开发和发布检查只运行 `npm run theme:check`，新增硬编码颜色会失败。
 
-## 后台适配路线
+## 后台外观边界
 
-后台皮肤页不追求自己变好看，目标是配置准确、预览真实、发布同步：
-
-1. 皮肤编辑器只展示客户端支持的字段。
-2. 编辑器字段名要按客户端模块组织：颜色、质感、首页、商品卡、优惠券、会员卡、快捷入口、导航。
-3. 预览必须使用真实客户端路由和草稿 token。
-4. 发布后必须更新 `activeSkinId` / `runtimeSkinId`，并通知前台刷新主题缓存。
-5. 后台自身继续使用安全主题，不跟随商城皮肤变色。
+1. 后台只保留独立的浅色/深色显示偏好。
+2. 后台外观由 `AdminAppearanceProvider` 管理，不读取客户端皮肤、URL 预览参数或主题草稿。
+3. 前台与后台构建均不得包含 `/theme/skins`、`theme_cached_skins`、`theme_preview_draft` 或 `next-themes`。
+4. 历史主题读取接口仅作为旧 PWA 的一个发布周期兼容层，不得被新前端重新引用。
+5. 历史主题数据只能在固定客户端稳定运行一个发布周期后，通过独立迁移删除。
 
 ## 验收门禁
 

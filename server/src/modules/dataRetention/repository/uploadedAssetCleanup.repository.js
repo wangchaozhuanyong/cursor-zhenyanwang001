@@ -4,7 +4,7 @@ const REFERENCE_SOURCES = [
   { table: 'products', columns: ['cover_image', 'images', 'video_url', 'description'] },
   { table: 'product_variants', columns: ['image_url'] },
   { table: 'product_spec_values', columns: ['image_url'] },
-  { table: 'banners', columns: ['image', 'link'] },
+  { table: 'banners', columns: ['image', 'image_mobile', 'image_desktop', 'link'] },
   { table: 'categories', columns: ['image', 'icon', 'icon_url', 'cover_image', 'banner_image_url'] },
   { table: 'content_pages', columns: ['body', 'cover_image', 'seo_image', 'content'] },
   { table: 'site_settings', columns: ['setting_value'] },

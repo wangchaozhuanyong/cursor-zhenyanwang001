@@ -459,7 +459,7 @@ async function getOrdersSummary(query, prebuilt = null) {
 }
 
 async function getOrderById(orderId) {
-  const { formatOrder, formatOrderItem } = require('../../order/order.mapper');
+  const { formatAdminOrder, formatOrderItem } = require('../../order/order.mapper');
   const order = await repo.selectOrderById(null, orderId);
   if (!order) throw new NotFoundError('订单不存在');
   const rawItems = await repo.selectOrderItemsWithProduct(repo.getPool(), order.id);
@@ -471,7 +471,7 @@ async function getOrderById(orderId) {
       price: it.unit_price,
     }),
   );
-  const data = formatOrder(order, items);
+  const data = /** @type {any} */ (formatAdminOrder(order, items));
   const adjustments = await repo.selectOrderAdjustments(repo.getPool(), order.id);
   const adjustmentItems = await repo.selectOrderAdjustmentItemsByOrder(repo.getPool(), order.id);
   const itemsByAdjustmentId = {};

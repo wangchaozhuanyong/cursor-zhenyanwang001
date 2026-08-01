@@ -112,7 +112,6 @@ const ADMIN_ROUTES = [
   { path: "/admin/orders", name: "后台订单", needsAdmin: true },
   { path: "/admin/products", name: "后台商品", needsAdmin: true },
   { path: "/admin/marketing/coupons", name: "后台优惠券", needsAdmin: true },
-  { path: "/admin/settings/theme", name: "主题工作室", needsAdmin: true },
   { path: "/admin/home-ops", name: "首页运营", needsAdmin: true },
 ];
 

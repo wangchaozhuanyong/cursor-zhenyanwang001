@@ -24,17 +24,14 @@ function money(v: number) {
   return v.toFixed(2);
 }
 
-const REDEEM_CARD_CLASS =
-  "sf-next-checkout-redeem-card rounded-2xl border border-[color-mix(in_srgb,var(--theme-primary)_18%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-primary)_5%,var(--theme-surface))] p-3.5 shadow-sm";
+const REDEEM_CARD_CLASS = "sf-next-checkout-redeem-card";
 
-const REDEEM_TOGGLE_CLASS =
-  "sf-next-checkout-redeem-toggle grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-2xl border border-[color-mix(in_srgb,var(--theme-border)_74%,transparent)] bg-[var(--theme-surface)] px-3.5 py-3";
+const REDEEM_TOGGLE_CLASS = "sf-next-checkout-redeem-toggle";
 
 const REDEEM_INPUT_ROW_CLASS =
   "sf-next-checkout-redeem-input-row grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2";
 
-const FORM_CONTROL_CLASS =
-  "w-full min-w-0 rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2.5 text-base text-foreground outline-none focus:ring-2 focus:ring-[var(--theme-primary)]";
+const FORM_CONTROL_CLASS = "sf-next-checkout-form-control";
 
 export function CheckoutLoyaltySection({
   pointsRedeemEnabled,
@@ -69,9 +66,9 @@ export function CheckoutLoyaltySection({
   };
 
   return (
-    <section className="sf-next-checkout-card sf-next-checkout-loyalty-section sf-next-theme-radius space-y-4 border border-[var(--theme-border)] bg-[var(--theme-surface)] p-5 sf-next-theme-shadow">
-      <div className="min-w-0">
-        <h3 className="text-[15px] font-semibold text-foreground">积分与返现抵扣</h3>
+    <section className="sf-next-checkout-card sf-next-checkout-loyalty-section">
+      <div className="sf-next-checkout-card__head">
+        <h3 className="sf-next-checkout-section-title">积分与返现抵扣</h3>
       </div>
 
       {pointsRedeemEnabled ? (
@@ -118,7 +115,7 @@ export function CheckoutLoyaltySection({
                   value={pointsToUse}
                   onChange={(e) => onPointsToUseChange(normalizePointsInput(Number(e.target.value || 0)))}
                 />
-                <UnifiedButton type="button" className="sf-next-checkout-redeem-all-button rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2.5 text-xs font-semibold text-foreground" onClick={() => onPointsToUseChange(maxPoints)}>
+                <UnifiedButton type="button" className="sf-next-checkout-redeem-all-button" onClick={() => onPointsToUseChange(maxPoints)}>
                   全部
                 </UnifiedButton>
               </div>
@@ -167,7 +164,7 @@ export function CheckoutLoyaltySection({
                   value={rewardCashAmount}
                   onChange={(e) => onRewardCashAmountChange(Math.max(0, Math.min(maxReward, Number(e.target.value || 0))))}
                 />
-                <UnifiedButton type="button" className="sf-next-checkout-redeem-all-button rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-2.5 text-xs font-semibold text-foreground" onClick={() => onRewardCashAmountChange(maxReward)}>
+                <UnifiedButton type="button" className="sf-next-checkout-redeem-all-button" onClick={() => onRewardCashAmountChange(maxReward)}>
                   全部
                 </UnifiedButton>
               </div>

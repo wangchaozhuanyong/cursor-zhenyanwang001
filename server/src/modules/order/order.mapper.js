@@ -147,11 +147,6 @@ function formatOrder(row, items, returnMeta = null) {
     coupon_discount: Number(discountMeta?.coupon_discount ?? 0),
     coupon_title: row.coupon_title,
     shipping_fee: parseFloat(row.shipping_fee),
-    shipping_cost_amount: parseFloat(row.shipping_cost_amount || 0),
-    payment_fee_amount: parseFloat(row.payment_fee_amount || 0),
-    goods_cost_amount: parseFloat(row.goods_cost_amount || 0),
-    gross_profit_amount: parseFloat(row.gross_profit_amount || 0),
-    net_profit_amount: parseFloat(row.net_profit_amount || 0),
     refund_amount: parseFloat(row.refund_amount || row.refunded_amount || 0),
     shipping_name: normalizeKnownMojibakeText(row.shipping_name),
     total_amount: parseFloat(row.total_amount),
@@ -201,4 +196,15 @@ function formatOrder(row, items, returnMeta = null) {
   };
 }
 
-module.exports = { formatOrderItem, formatOrder };
+function formatAdminOrder(row, items, returnMeta = null) {
+  return {
+    ...formatOrder(row, items, returnMeta),
+    shipping_cost_amount: parseFloat(row.shipping_cost_amount || 0),
+    payment_fee_amount: parseFloat(row.payment_fee_amount || 0),
+    goods_cost_amount: parseFloat(row.goods_cost_amount || 0),
+    gross_profit_amount: parseFloat(row.gross_profit_amount || 0),
+    net_profit_amount: parseFloat(row.net_profit_amount || 0),
+  };
+}
+
+module.exports = { formatOrderItem, formatOrder, formatAdminOrder };

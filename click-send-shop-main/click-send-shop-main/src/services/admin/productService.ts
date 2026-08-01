@@ -91,6 +91,7 @@ export async function exportProductsCsv(params?: ProductListParams) {
   if (params?.status) qs.set("status", params.status);
   if (params?.stock_status) qs.set("stock_status", params.stock_status);
   if (params?.cost_status) qs.set("cost_status", params.cost_status);
+  if (params?.media_status) qs.set("media_status", params.media_status);
   if (params?.sort) qs.set("sort", params.sort);
   if (params?.ids?.length) qs.set("ids", params.ids.join(","));
   const q = qs.toString();

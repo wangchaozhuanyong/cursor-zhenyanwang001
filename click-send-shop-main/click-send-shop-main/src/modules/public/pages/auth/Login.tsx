@@ -1,21 +1,16 @@
 import { useState, useEffect, useMemo, useCallback, type CSSProperties, type KeyboardEvent } from "react";
 import { AlertCircle, ArrowLeft, Eye, EyeOff, Lock, User, KeyRound } from "lucide-react";
 import { useLocation } from "react-router-dom";
-import "@/styles/storefront-next.extended-routes.css";
 import "@/styles/auth-route.css";
-import "@/styles/auth-trust-bar.css";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useUserStore } from "@/stores/useUserStore";
 import * as authService from "@/services/authService";
 import { showStoreToast } from "@/utils/storeToast";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
-import LoginBannerCarousel from "@/components/LoginBannerCarousel";
-import HomeTrustBar from "@/components/HomeTrustBar";
 import { LoginAgreementFooter } from "@/components/auth/LoginAgreementFooter";
 import { LoginPasswordResetSheet } from "@/components/auth/LoginPasswordResetSheet";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
-import { useHomeBanners } from "@/hooks/useHomeBanners";
 import {
   clearLockedInviteCode,
   getLockedInviteCode,
@@ -24,7 +19,6 @@ import {
 import { SMS_OTP_LOGIN_BUILD_HINT, THIRD_PARTY_LOGIN_ENABLED } from "@/constants/authLogin";
 import { readCachedAuthFeatures, writeCachedAuthFeatures } from "@/utils/authFeaturesCache";
 import { STORE_AUTH_MAIN_CLASS, STORE_AUTH_SHELL_CLASS } from "@/constants/storeLayout";
-import { isHomeModuleEnabled } from "@/constants/homeModules";
 import { cn } from "@/lib/utils";
 import { FormFieldShake } from "@/modules/micro-interactions";
 import CountryPhoneInput from "@/components/auth/CountryPhoneInput";
@@ -36,7 +30,6 @@ import {
 } from "@/utils/authValidation";
 import { useFormFieldFocus } from "@/hooks/useFormFieldFocus";
 import { useSupportRuntime } from "@/hooks/useSupportRuntime";
-import { useHomeModuleSettings } from "@/hooks/useHomeModuleSettings";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { resolveAuthRedirectTarget, resolveLoginCancelTarget } from "@/utils/authRedirect";
 import { buildRoutePath, readRouteBack } from "@/utils/routeBackState";
@@ -60,8 +53,6 @@ export default function Login() {
   const { localizedPath, t } = usePublicLocale();
   const canonicalPathname = stripPublicLocaleFromPathname(location.pathname);
   const authStore = useAuthStore();
-  const { banners } = useHomeBanners();
-  const { settings: homeModules } = useHomeModuleSettings();
   const siteInfo = useSiteInfo();
   const { channels } = useSupportRuntime();
   const supportContact = useMemo(() => {
@@ -117,8 +108,7 @@ export default function Login() {
   const smsOtpLoginEnabled = authFeatures?.smsOtpLoginEnabled === true;
   const effectiveCredentialMode: CredentialMode =
     authFeaturesReady && smsOtpLoginEnabled ? credentialMode : "password";
-  const { formCompact, keyboardOpen, keyboardInset, visualViewportOffsetTop, visualViewportHeight } = useFormFieldFocus();
-  const showHomeTrustBar = isHomeModuleEnabled(homeModules, "trust_bar", "guest");
+  const { keyboardOpen, keyboardInset, visualViewportOffsetTop, visualViewportHeight } = useFormFieldFocus();
   const hasLockedInviteCode = !!lockedInviteCode;
   const [shakeKey, setShakeKey] = useState(0);
   const [fieldErrors, setFieldErrors] = useState<{ phone?: string; password?: string; otp?: string; nickname?: string }>({});
@@ -533,96 +523,89 @@ export default function Login() {
       style={authShellStyle}
     >
       <main className={`${STORE_AUTH_MAIN_CLASS} auth-login-main auth-next-main`}>
-        <div className="auth-login-topbar">
-          <button
-            type="button"
-            onClick={handleBack}
-            aria-label={t("auth.back")}
-            className="auth-login-back-btn"
-          >
-            <ArrowLeft size={19} aria-hidden="true" />
-          </button>
-
-          <section className="auth-login-heading shrink-0">
-            <h1 className="font-display text-xl font-bold text-foreground sm:text-[22px]">
-              {mode === "login" ? t("auth.welcomeBack") : t("auth.createAccount")}
-            </h1>
-          </section>
-        </div>
-
-        {banners.length > 0 ? (
-          <section
-            className="auth-login-banner mb-3 overflow-hidden lg:hidden [transition:none]"
-          >
-            <LoginBannerCarousel banners={banners} paused={formCompact} />
-          </section>
-        ) : null}
-
-        {showHomeTrustBar ? <HomeTrustBar className="auth-login-trust mb-4 lg:hidden" /> : null}
-
-        <section className="auth-login-mode-tabs mb-4">
-          <div className="flex rounded-2xl bg-secondary p-1" role="tablist" aria-label={t("auth.loginOrRegister")}>
-            {(["login", "register"] as AuthMode[]).map((m) => (
-              <UnifiedButton
-                key={m}
-                type="button"
-                role="tab"
-                aria-selected={mode === m}
-                aria-label={m === "login" ? t("auth.login") : t("auth.register")}
-                onClick={() => switchAuthMode(m)}
-                className={`relative min-h-10 flex-1 rounded-xl py-2.5 text-sm font-semibold transition-all ${
-                  mode === m
-                    ? "bg-card text-foreground shadow-sm"
-                    : "text-muted-foreground"
-                }`}
-              >
-                {m === "login" ? t("auth.loginTab") : t("auth.registerTab")}
-              </UnifiedButton>
-            ))}
-          </div>
-        </section>
-
-        {mode === "login" && !authFeaturesReady ? (
-          <section
-            className="mb-4 h-[42px] animate-pulse rounded-2xl bg-secondary"
-            aria-hidden="true"
+        <aside className="auth-login-desktop-visual" aria-hidden="true">
+          <img
+            src="/assets/fixed-storefront/option2-home-hero-desktop.webp"
+            alt=""
+            width={1600}
+            height={600}
           />
-        ) : null}
+        </aside>
 
-        {mode === "login" && authFeaturesReady && smsOtpLoginEnabled ? (
-          <section className="auth-login-credential-tabs mb-4 flex rounded-2xl bg-secondary p-1" role="tablist" aria-label={t("auth.loginOrRegister")}>
-            {(["password", "otp"] as CredentialMode[]).map((c) => (
-              <UnifiedButton
-                key={c}
-                type="button"
-                role="tab"
-                aria-selected={credentialMode === c}
-                onClick={() => {
-                  setCredentialMode(c);
-                  setShowReset(false);
-                  setFieldErrors({});
-                  setFormError("");
-                }}
-                className={`flex-1 rounded-xl py-2 text-xs font-semibold transition-colors ${
-                  credentialMode === c
-                    ? "bg-card text-foreground shadow-sm"
-                    : "text-muted-foreground"
-                }`}
-              >
-                {c === "password" ? t("auth.passwordLogin") : t("auth.otpLogin")}
-              </UnifiedButton>
-            ))}
-          </section>
-        ) : null}
+        <div className="auth-login-content">
+          <div className="auth-login-topbar">
+            <button
+              type="button"
+              onClick={handleBack}
+              aria-label={t("auth.back")}
+              className="auth-login-back-btn"
+            >
+              <ArrowLeft size={19} aria-hidden="true" />
+            </button>
 
-        {formError ? (
-          <div className="mb-3 flex items-start gap-2 rounded-2xl border border-destructive/25 bg-destructive/10 px-3.5 py-3 text-sm leading-relaxed text-destructive" role="alert">
-            <AlertCircle size={17} className="mt-0.5 shrink-0" />
-            <span>{formError}</span>
+            <section className="auth-login-heading shrink-0">
+              <h1 className="font-display text-xl font-bold text-foreground sm:text-[22px]">
+                {mode === "login" ? t("auth.welcomeBack") : t("auth.createAccount")}
+              </h1>
+            </section>
           </div>
-        ) : null}
 
-        <FormFieldShake shake={shakeKey} className="auth-login-form-wrap space-y-3.5">
+          <section className="auth-login-mode-tabs mb-4">
+            <div className="flex rounded-2xl bg-secondary p-1" role="tablist" aria-label={t("auth.loginOrRegister")}>
+              {(["login", "register"] as AuthMode[]).map((m) => (
+                <UnifiedButton
+                  key={m}
+                  type="button"
+                  role="tab"
+                  aria-selected={mode === m}
+                  aria-label={m === "login" ? t("auth.login") : t("auth.register")}
+                  onClick={() => switchAuthMode(m)}
+                  className={`relative min-h-10 flex-1 rounded-xl py-2.5 text-sm font-semibold transition-all ${
+                    mode === m
+                      ? "bg-card text-foreground shadow-sm"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  {m === "login" ? t("auth.loginTab") : t("auth.registerTab")}
+                </UnifiedButton>
+              ))}
+            </div>
+          </section>
+
+          {mode === "login" && authFeaturesReady && smsOtpLoginEnabled ? (
+            <section className="auth-login-credential-tabs mb-4 flex rounded-2xl bg-secondary p-1" role="tablist" aria-label={t("auth.loginOrRegister")}>
+              {(["password", "otp"] as CredentialMode[]).map((c) => (
+                <UnifiedButton
+                  key={c}
+                  type="button"
+                  role="tab"
+                  aria-selected={credentialMode === c}
+                  onClick={() => {
+                    setCredentialMode(c);
+                    setShowReset(false);
+                    setFieldErrors({});
+                    setFormError("");
+                  }}
+                  className={`flex-1 rounded-xl py-2 text-xs font-semibold transition-colors ${
+                    credentialMode === c
+                      ? "bg-card text-foreground shadow-sm"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  {c === "password" ? t("auth.passwordLogin") : t("auth.otpLogin")}
+                </UnifiedButton>
+              ))}
+            </section>
+          ) : null}
+
+          {formError ? (
+            <div className="mb-3 flex items-start gap-2 rounded-2xl border border-destructive/25 bg-destructive/10 px-3.5 py-3 text-sm leading-relaxed text-destructive" role="alert">
+              <AlertCircle size={17} className="mt-0.5 shrink-0" />
+              <span>{formError}</span>
+            </div>
+          ) : null}
+
+          <FormFieldShake shake={shakeKey} className="auth-login-form-wrap space-y-3.5">
           <form
             className="auth-login-form sf-next-form-sheet auth-next-sheet flex flex-col gap-3.5"
             autoComplete="on"
@@ -802,14 +785,15 @@ export default function Login() {
             ) : submitLabel}
           </UnifiedButton>
           </form>
-        </FormFieldShake>
+          </FormFieldShake>
 
-        <LoginAgreementFooter
-          mode={mode}
-          termsPath={siteInfo.termsPath}
-          privacyPath={siteInfo.privacyPolicyPath}
-          className="auth-login-agreement-footer--sheet"
-        />
+          <LoginAgreementFooter
+            mode={mode}
+            termsPath={siteInfo.termsPath}
+            privacyPath={siteInfo.privacyPolicyPath}
+            className="auth-login-agreement-footer--sheet"
+          />
+        </div>
       </main>
 
       <LoginPasswordResetSheet

@@ -8,10 +8,10 @@ html[data-app-scope="store"][data-storefront-ui="next"] {
   --store-ui-border-strong: color-mix(in srgb, var(--theme-primary, hsl(var(--primary))) 18%, var(--store-ui-border));
   --store-ui-primary: var(--theme-primary, hsl(var(--primary)));
   --store-ui-price: var(--theme-price, hsl(var(--destructive)));
-  --store-ui-radius-sm: 10px;
-  --store-ui-radius-md: 14px;
-  --store-ui-radius-lg: 18px;
-  --store-ui-radius-xl: 22px;
+  --store-ui-radius-sm: 4px;
+  --store-ui-radius-md: 6px;
+  --store-ui-radius-lg: 8px;
+  --store-ui-radius-xl: 8px;
   --store-ui-shadow-sm: 0 10px 24px -22px color-mix(in srgb, var(--store-ui-text) 24%, transparent);
   --store-ui-shadow-md: 0 18px 42px -34px color-mix(in srgb, var(--store-ui-text) 28%, transparent);
   --store-ui-shadow-header: 0 16px 40px -34px color-mix(in srgb, var(--store-ui-primary) 34%, var(--store-ui-text));
@@ -37,9 +37,7 @@ html[data-app-scope="store"][data-storefront-ui="next"] #root {
 
 html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-store-shell {
   min-width: 0;
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--store-ui-primary) 4%, transparent), transparent 18rem),
-    var(--store-ui-bg);
+  background: var(--store-ui-bg);
   color: var(--store-ui-text);
   isolation: isolate;
 }

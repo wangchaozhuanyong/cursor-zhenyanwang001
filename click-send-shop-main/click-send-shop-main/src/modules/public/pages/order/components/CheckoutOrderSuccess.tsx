@@ -298,9 +298,6 @@ export function CheckoutOrderSuccess({
     return "";
   })();
   const statusBadge = isPaid ? copy.paidBadge : isPending ? copy.pendingBadge : copy.processingBadge;
-  const primaryActionClass = isPaid
-    ? "btn-theme-gradient shadow-lg sf-next-theme-shadow"
-    : "btn-theme-price shadow-[0_18px_34px_-26px_var(--theme-price)]";
   const onlineNote = sanitizeClientInstructions(postSubmitOnlineNote);
   const paymentHint =
     isOnlinePending && !postSubmitOnlineError
@@ -320,25 +317,22 @@ export function CheckoutOrderSuccess({
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        className="sf-next-checkout-success-stack mx-auto w-full max-w-lg space-y-3 pb-8 md:max-w-none"
+        className="sf-next-checkout-success-stack"
       >
-        {/* 状态摘要：横向紧凑，避免上半区过高 */}
-        <div className="sf-next-checkout-success-status-card overflow-hidden rounded-2xl border border-border bg-card">
-          <div className="flex items-start gap-3 p-4">
+        <div className="sf-next-checkout-success-status-card">
+          <div className="sf-next-checkout-success-status-main">
             <motion.div
               initial={{ scale: 0.85, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ type: "spring", bounce: 0.4, delay: 0.05 }}
-              className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${
-                isPaid ? "bg-[color-mix(in_srgb,var(--theme-success)_18%,transparent)]" : "bg-[color-mix(in_srgb,var(--theme-price)_10%,var(--theme-surface))]"
-              }`}
+              className={`sf-next-checkout-success-icon ${isPaid ? "is-paid" : "is-pending"}`}
             >
-              <CheckCircle2 size={24} className={isPaid ? "text-[var(--theme-success)]" : "text-theme-price"} />
+              <CheckCircle2 size={24} />
             </motion.div>
-            <div className="min-w-0 flex-1 text-left">
-              <h2 className="font-display text-lg font-bold leading-snug text-foreground">{mainHeading}</h2>
-              <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-                <span className="rounded-full border border-[var(--theme-border)] bg-[var(--theme-bg)] px-2 py-0.5 font-semibold text-[var(--theme-text)]">
+            <div className="sf-next-checkout-success-copy">
+              <h2>{mainHeading}</h2>
+              <div className="sf-next-checkout-success-meta">
+                <span className="sf-next-checkout-success-status">
                   {statusBadge}
                 </span>
                 <span>
@@ -350,7 +344,7 @@ export function CheckoutOrderSuccess({
           </div>
 
           {(postSubmitOnlineError && isOnlinePending) || isOnlinePending || paymentHint ? (
-            <div className="space-y-2 border-t border-border px-4 py-3">
+            <div className="sf-next-checkout-success-message">
               {postSubmitOnlineError && isOnlinePending ? (
                 <p className={`text-left text-xs ${THEME_ALERT_ERROR_BOX}`}>{postSubmitOnlineError}</p>
               ) : null}
@@ -369,10 +363,10 @@ export function CheckoutOrderSuccess({
           ) : null}
         </div>
 
-        <div className="sf-next-checkout-success-info-card rounded-2xl border border-border bg-card p-4">
-          <h3 className="mb-3 text-sm font-semibold text-foreground">{copy.keyInfo}</h3>
-          <div className="space-y-2 text-sm">
-            <div className="flex items-center justify-between">
+        <div className="sf-next-checkout-success-info-card">
+          <h3>{copy.keyInfo}</h3>
+          <div className="sf-next-checkout-success-info-list">
+            <div>
               <span className="text-muted-foreground">{copy.paymentMethod}</span>
               <span className="font-medium text-foreground">
                 {order.payment_method === "online"
@@ -382,11 +376,11 @@ export function CheckoutOrderSuccess({
                     : copy.support}
               </span>
             </div>
-            <div className="flex items-center justify-between">
+            <div>
               <span className="text-muted-foreground">{copy.amountDue}</span>
               <span className="font-semibold text-[var(--theme-price)]">RM {order.total_amount}</span>
             </div>
-            <div className="flex items-center justify-between">
+            <div>
               <span className="text-muted-foreground">{copy.orderTime}</span>
               <span className="font-medium text-foreground">
                 {formatDateTime(order.created_at)}
@@ -395,16 +389,15 @@ export function CheckoutOrderSuccess({
           </div>
         </div>
 
-        {/* 下一步操作 */}
-        <div className="sf-next-checkout-success-actions space-y-2.5">
-          <p className="px-0.5 text-xs font-semibold text-muted-foreground">{copy.nextActions}</p>
+        <div className="sf-next-checkout-success-actions">
+          <p className="sf-next-checkout-success-actions__label">{copy.nextActions}</p>
           {isOnlinePending && (
             <>
               {onlinePaymentEnabled ? (
                 <UnifiedButton
                   type="button"
                   onClick={onPayOnline}
-                  className={`flex w-full items-center justify-center gap-2.5 rounded-full py-4 text-sm font-bold transition-all active:scale-[0.98] ${primaryActionClass}`}
+                  className="sf-next-checkout-success-action sf-next-checkout-success-action--primary"
                 >
                   {postSubmitOnlineError ? copy.repay : copy.continuePay}
                 </UnifiedButton>
@@ -412,33 +405,33 @@ export function CheckoutOrderSuccess({
               <UnifiedButton
                 type="button"
                 onClick={onViewOrderDetail}
-                className="w-full rounded-full border-2 border-border py-3 text-center text-sm font-semibold text-foreground transition-all active:scale-[0.98] hover:bg-secondary"
+                className="sf-next-checkout-success-action"
               >
                 {onlinePaymentEnabled ? copy.continueInDetail : copy.viewOrderDetail}
               </UnifiedButton>
               <UnifiedButton
                 type="button"
                 onClick={() => setAlternatePayOpen((o) => !o)}
-                className="flex w-full items-center justify-center gap-2 py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
+                className="sf-next-checkout-success-toggle"
               >
                 {copy.changePayment}
                 {alternatePayOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
               </UnifiedButton>
               {alternatePayOpen && (
-                <div className="sf-next-checkout-success-alt-actions space-y-2 rounded-xl border border-border bg-card p-3">
-                  <p className="px-1 text-center text-[11px] text-muted-foreground">{copy.alternatePaymentWarning}</p>
+                <div className="sf-next-checkout-success-alt-actions">
+                  <p>{copy.alternatePaymentWarning}</p>
                   <UnifiedButton
                     type="button"
                     onClick={onPayRewardWallet}
                     disabled={payingWallet}
-                    className="flex w-full items-center justify-center gap-2 rounded-full border-2 border-[var(--theme-price)] py-3 text-sm font-semibold text-[var(--theme-price)] transition-all disabled:opacity-60"
+                    className="sf-next-checkout-success-action"
                   >
                     {payingWallet ? copy.paying : copy.tryWallet(rewardBalance)}
                   </UnifiedButton>
                   <UnifiedButton
                     type="button"
                     onClick={onWhatsApp}
-                    className="flex w-full items-center justify-center gap-2 rounded-full py-3 text-sm font-semibold text-[var(--theme-gradient-foreground)] sf-next-theme-shadow"
+                    className="sf-next-checkout-success-action"
                    
                   >
                     <Phone size={16} /> {copy.support}
@@ -454,7 +447,7 @@ export function CheckoutOrderSuccess({
                 <UnifiedButton
                   type="button"
                   onClick={onPayOnline}
-                  className={`flex w-full items-center justify-center gap-2.5 rounded-full py-4 text-sm font-bold transition-all active:scale-[0.98] ${primaryActionClass}`}
+                  className="sf-next-checkout-success-action sf-next-checkout-success-action--primary"
                 >
                   {copy.switchOnline}
                 </UnifiedButton>
@@ -462,14 +455,14 @@ export function CheckoutOrderSuccess({
               <UnifiedButton
                 type="button"
                 onClick={onWhatsApp}
-                className="flex w-full items-center justify-center gap-2.5 rounded-full border-2 border-border py-4 text-sm font-semibold text-foreground transition-all active:scale-[0.98] hover:bg-secondary"
+                className="sf-next-checkout-success-action"
               >
                 <Phone size={18} /> {copy.support}
               </UnifiedButton>
               <UnifiedButton
                 type="button"
                 onClick={onViewOrderDetail}
-                className="w-full rounded-full py-3 text-center text-sm font-medium text-muted-foreground hover:text-foreground"
+                className="sf-next-checkout-success-toggle"
               >
                 {copy.viewOrderDetail}
               </UnifiedButton>
@@ -482,7 +475,7 @@ export function CheckoutOrderSuccess({
                 type="button"
                 onClick={onPayRewardWallet}
                 disabled={payingWallet}
-                className={`flex w-full items-center justify-center gap-2.5 rounded-full py-4 text-sm font-bold transition-all active:scale-[0.98] disabled:opacity-60 ${primaryActionClass}`}
+                className="sf-next-checkout-success-action sf-next-checkout-success-action--primary"
               >
                 {payingWallet ? copy.paying : copy.useWallet(rewardBalance)}
               </UnifiedButton>
@@ -490,7 +483,7 @@ export function CheckoutOrderSuccess({
                 <UnifiedButton
                   type="button"
                   onClick={onPayOnline}
-                  className="flex w-full items-center justify-center gap-2.5 rounded-full border-2 border-border py-4 text-sm font-semibold text-foreground transition-all active:scale-[0.98] hover:bg-secondary"
+                  className="sf-next-checkout-success-action"
                 >
                   {copy.switchOnline}
                 </UnifiedButton>
@@ -503,7 +496,7 @@ export function CheckoutOrderSuccess({
               <UnifiedButton
                 type="button"
                 onClick={onWhatsApp}
-                className="flex w-full items-center justify-center gap-2.5 rounded-full py-4 text-sm font-bold text-[var(--theme-gradient-foreground)] sf-next-theme-shadow transition-all active:scale-[0.98]"
+                className="sf-next-checkout-success-action sf-next-checkout-success-action--primary"
                
               >
                 <Phone size={18} /> {copy.sendWhatsapp}
@@ -511,32 +504,32 @@ export function CheckoutOrderSuccess({
               <UnifiedButton
                 type="button"
                 onClick={onWeChat}
-                className="flex w-full items-center justify-center gap-2.5 rounded-full bg-[var(--theme-price)] py-4 text-sm font-bold text-[var(--theme-price-foreground)] sf-next-theme-shadow transition-all active:scale-[0.98]"
+                className="sf-next-checkout-success-action"
               >
                 <MessageCircle size={18} /> {copy.sendWechat}
               </UnifiedButton>
               <UnifiedButton
                 type="button"
                 onClick={onCopy}
-                className="flex w-full items-center justify-center gap-2.5 rounded-full border-2 border-border py-4 text-sm font-semibold text-foreground transition-all active:scale-[0.98] hover:bg-secondary"
+                className="sf-next-checkout-success-action"
               >
                 <Copy size={18} /> {copy.copyOrder}
               </UnifiedButton>
               <UnifiedButton
                 type="button"
                 onClick={() => setMoreWaysOpen((o) => !o)}
-                className="flex w-full items-center justify-center gap-2 py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
+                className="sf-next-checkout-success-toggle"
               >
                 {copy.moreWays}
                 {moreWaysOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
               </UnifiedButton>
               {moreWaysOpen && (
-                <div className="sf-next-checkout-success-alt-actions space-y-2 rounded-xl border border-border bg-card p-3">
+                <div className="sf-next-checkout-success-alt-actions">
                   {onlinePaymentEnabled ? (
                     <UnifiedButton
                       type="button"
                       onClick={onPayOnline}
-                      className="flex w-full items-center justify-center rounded-full border border-border py-3 text-sm font-semibold text-foreground hover:bg-secondary"
+                      className="sf-next-checkout-success-action"
                     >
                       {copy.onlinePayment}
                     </UnifiedButton>
@@ -545,7 +538,7 @@ export function CheckoutOrderSuccess({
                     type="button"
                     onClick={onPayRewardWallet}
                     disabled={payingWallet}
-                    className="flex w-full items-center justify-center rounded-full border border-border py-3 text-sm font-semibold text-foreground hover:bg-secondary disabled:opacity-60"
+                    className="sf-next-checkout-success-action"
                   >
                     {payingWallet ? copy.paying : copy.walletOption(rewardBalance)}
                   </UnifiedButton>
@@ -559,14 +552,14 @@ export function CheckoutOrderSuccess({
               <UnifiedButton
                 type="button"
                 onClick={onPayOnline}
-                className={`flex w-full items-center justify-center gap-2.5 rounded-full py-4 text-sm font-bold transition-all active:scale-[0.98] ${primaryActionClass}`}
+                className="sf-next-checkout-success-action sf-next-checkout-success-action--primary"
               >
                 {copy.continuePay}
               </UnifiedButton>
               <UnifiedButton
                 type="button"
                 onClick={onViewOrderDetail}
-                className="w-full rounded-full border-2 border-border py-3 text-center text-sm font-semibold text-foreground transition-all active:scale-[0.98] hover:bg-secondary"
+                className="sf-next-checkout-success-action"
               >
                 {copy.viewOrderDetail}
               </UnifiedButton>
@@ -577,7 +570,7 @@ export function CheckoutOrderSuccess({
             <UnifiedButton
               type="button"
               onClick={onViewOrderDetail}
-              className={`flex w-full items-center justify-center gap-2.5 rounded-full py-4 text-sm font-bold transition-all active:scale-[0.98] ${primaryActionClass}`}
+              className="sf-next-checkout-success-action sf-next-checkout-success-action--primary"
             >
               {copy.viewOrderDetail}
             </UnifiedButton>
@@ -587,23 +580,22 @@ export function CheckoutOrderSuccess({
             <UnifiedButton
               type="button"
               onClick={onCopy}
-              className="flex w-full items-center justify-center gap-2.5 rounded-full border-2 border-border py-4 text-sm font-semibold text-foreground transition-all active:scale-[0.98] hover:bg-secondary"
+              className="sf-next-checkout-success-action"
             >
               <Copy size={18} /> {copy.copyOrder}
             </UnifiedButton>
           )}
         </div>
 
-        {/* 订单详情 */}
-        <div className="sf-next-checkout-success-products-card rounded-2xl border border-border bg-card p-4">
-          <h3 className="mb-4 text-sm font-semibold text-foreground">{copy.orderDetails}</h3>
+        <div className="sf-next-checkout-success-products-card">
+          <h3>{copy.orderDetails}</h3>
           {order.items.map((item) => (
-            <div key={item.product.id} className="flex items-center gap-3 border-b border-border py-3 last:border-0">
+            <div key={item.product.id} className="sf-next-checkout-success-product">
               <ProductCoverImage
                 url={item.product.cover_image}
                 alt={item.product.name}
-                className="w-10 rounded-lg object-cover"
-                imgClassName="object-cover"
+                className="sf-next-checkout-success-product__media"
+                imgClassName="object-contain"
               />
               <div className="flex-1 min-w-0">
                 <p className="text-[13px] font-medium text-foreground truncate">{item.product.name}</p>
@@ -640,16 +632,16 @@ export function CheckoutOrderSuccess({
           </div>
         </div>
 
-        <div className="sf-next-checkout-success-footer-actions space-y-2.5 pt-1">
+        <div className="sf-next-checkout-success-footer-actions">
           <UnifiedButton
             onClick={onViewOrders}
-            className="w-full rounded-full border-2 border-border py-3.5 text-center text-sm font-semibold text-foreground transition-all active:scale-[0.98] hover:bg-secondary"
+            className="sf-next-checkout-success-action"
           >
             {copy.viewMyOrders}
           </UnifiedButton>
           <UnifiedButton
             onClick={onHome}
-            className="w-full rounded-full py-3 text-center text-sm font-medium text-muted-foreground transition-all hover:text-foreground"
+            className="sf-next-checkout-success-toggle"
           >
             {copy.continueShopping}
           </UnifiedButton>

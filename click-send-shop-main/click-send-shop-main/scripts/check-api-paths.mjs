@@ -13,9 +13,7 @@ const scanRoots = [
 
 const requestHelpers = new Set(["get", "post", "put", "patch", "del"]);
 const violations = [];
-const adminApiPublicEndpointAllowlist = new Map([
-  ["src/api/admin/theme.ts", ["/theme/"]],
-]);
+const adminApiPublicEndpointAllowlist = new Map();
 
 function walk(dir, acc = []) {
   if (!fs.existsSync(dir)) return acc;

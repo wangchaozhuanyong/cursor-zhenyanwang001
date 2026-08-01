@@ -1,4 +1,9 @@
-const { parseBool, formatProduct, formatProductCard, omitInlineDataUrl } = require('../../../utils/helpers');
+const {
+  parseBool,
+  formatPublicProduct,
+  formatProductCard,
+  omitInlineDataUrl,
+} = require('../../../utils/helpers');
 const { ACTIVE_PRODUCT_WHERE, activeProductWhere } = require('../productLifecycle');
 const repo = require('../repository/catalog.repository');
 const tagAssignmentRepo = require('../repository/productTagAssignment.repository');
@@ -11,7 +16,9 @@ const cache = new Map();
 const inFlight = new Map();
 
 /**
- * 异步缓存：缓存未命中时等�?loader，避免旧实现「先返回 fallback、后台再写入」导�? * 首请求永远拿到空数组（会员端轮播长期落在本地 fallback）�? */
+ * 异步缓存：缓存未命中时等待 loader，避免旧实现先返回 fallback、再由后台写入缓存，
+ * 导致首个请求总是拿到空数组并长期显示本地轮播图。
+ */
 async function getCached(key, loader) {
   const now = Date.now();
   const hit = cache.get(key);
@@ -163,6 +170,8 @@ function formatBannerCard(row) {
     description: row.description || row.subtitle || '',
     cta_text: row.cta_text || '',
     image: omitInlineDataUrl(row.image_url || row.image || ''),
+    image_mobile: omitInlineDataUrl(row.image_mobile || ''),
+    image_desktop: omitInlineDataUrl(row.image_desktop || ''),
     link: row.link || row.url || '',
     sort_order: Number(row.sort_order || 0),
     enabled: row.enabled !== undefined ? !!row.enabled : true,
@@ -354,7 +363,7 @@ async function formatRowsWithTagsAndActivities(rows) {
     variant_count: Number(r.variant_count || 0),
   }]));
   return rows.map((r) => attachActivity({
-    ...formatProduct(r),
+    ...formatPublicProduct(r),
     ...(priceRangeMap.get(r.id) || {}),
     tags: tagMap.get(r.id) || [],
     default_variant: defaultVariantMap.get(r.id) || null,
@@ -397,10 +406,7 @@ function formatVariant(row) {
     title: row.title || '',
     price: Number(row.price || 0),
     original_price: row.original_price == null ? null : Number(row.original_price),
-    cost_price: row.cost_price == null ? null : Number(row.cost_price),
     stock: Number(row.stock || 0),
-    stock_warning_threshold: Number(row.stock_warning_threshold || 0),
-    barcode: row.barcode || '',
     image_url: row.image_url || '',
     weight: row.weight == null ? null : Number(row.weight),
     enabled: row.enabled !== undefined ? !!row.enabled : true,
@@ -562,7 +568,7 @@ async function loadHomeProducts() {
     repo.selectDefaultVariantsByProductIds(allIds),
     repo.selectVariantPriceRangesByProductIds(allIds),
   ]);
-  const defaultVariantMap = new Map(defaultVariants.map((v) => [v.product_id, formatVariant(v)]));
+  const defaultVariantMap = new Map(defaultVariants.map((v) => [v.product_id, formatVariantCard(v)]));
   const priceRangeMap = new Map(priceRanges.map((r) => [r.product_id, {
     min_price: Number(r.min_price || 0),
     max_price: Number(r.max_price || 0),

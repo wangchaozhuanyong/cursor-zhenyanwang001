@@ -11,8 +11,7 @@ interface CheckoutCouponSectionProps {
   onSelect: (coupon: CheckoutPickerCoupon | null) => void;
 }
 
-const SECTION_SHELL =
-  "sf-next-checkout-card rounded-[20px] border border-[color-mix(in_srgb,var(--theme-border)_70%,transparent)] bg-[var(--theme-surface)] p-4 shadow-[0_14px_38px_rgba(65,45,28,0.08)] md:p-5";
+const SECTION_SHELL = "sf-next-checkout-card";
 
 export function CheckoutCouponSection({
   rawTotal,
@@ -25,12 +24,12 @@ export function CheckoutCouponSection({
 }: CheckoutCouponSectionProps) {
   return (
     <div className={SECTION_SHELL}>
-      <div className="mb-3 flex items-center justify-between gap-3">
+      <div className="sf-next-checkout-card__head">
         <div>
-          <h3 className="text-[15px] font-bold text-foreground md:text-base">优惠</h3>
+          <h3 className="sf-next-checkout-section-title">优惠</h3>
         </div>
         {selectedCoupon ? (
-          <span className="rounded-full bg-[color-mix(in_srgb,var(--theme-price)_10%,transparent)] px-3 py-1 text-xs font-semibold text-[var(--theme-price)]">
+          <span className="sf-next-checkout-used-status">
             已使用
           </span>
         ) : null}

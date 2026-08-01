@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import { Tx } from "@/components/admin/AdminText";
 import { AdminLabelWithHint } from "@/components/admin/AdminFieldHint";
 import AdminPageShell from "@/components/admin/AdminPageShell";
@@ -38,6 +39,7 @@ import {
 import {
   THEME_BADGE_MUTED,
   THEME_BADGE_SUCCESS,
+  THEME_BADGE_WARNING,
   THEME_HOVER_BG_DANGER,
   THEME_HOVER_TEXT_DANGER,
   THEME_TEXT_SUCCESS_SOFT,
@@ -47,6 +49,10 @@ import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { invalidatePublicProductStoreCache } from "@/stores/useProductStore";
 import { fetchSiteSettings, updateSiteSettings } from "@/services/admin/settingsService";
 import { refreshSiteInfo } from "@/hooks/useSiteInfo";
+import { readImageSize } from "@/utils/imageRatio";
+import { assessBannerImageDimensions } from "@/utils/bannerImageValidation";
+import { resolveCategoryRecommendedHero } from "@/constants/categoryFallbackMedia";
+import AdminCategoryBannerRepairBar from "@/modules/admin/pages/product/AdminCategoryBannerRepairBar";
 
 type CategoryForm = {
   name: string;
@@ -358,7 +364,7 @@ function CategoryBannerFields({
       <div className="space-y-1">
         <AdminLabelWithHint
           label={<Tx>广告图片 URL</Tx>}
-          hint={<Tx>建议横幅比例 16:7 或 2.4:1；移动端会固定比例裁切，避免撑开页面。</Tx>}
+          hint={<Tx>固定比例 16:7，推荐 1200×525；重要主体请放在画面中央安全区域。</Tx>}
         />
         <div className="flex flex-col gap-2 sm:flex-row">
           <input
@@ -551,6 +557,8 @@ function CategoryDrawerFields({
   onChange,
   onUpload,
   onBannerUpload,
+  recommendedBannerUrl,
+  onUseRecommendedBanner,
 }: {
   mode: CategoryDrawerMode;
   value: CategoryForm;
@@ -558,9 +566,16 @@ function CategoryDrawerFields({
   onChange: (patch: Partial<CategoryForm>) => void;
   onUpload: (file: File) => void;
   onBannerUpload: (file: File) => void;
+  recommendedBannerUrl?: string | null;
+  onUseRecommendedBanner?: () => void;
 }) {
   const previewName = value.name.trim() || (mode === "create" ? "新分类" : "未命名分类");
   const statusClass = value.is_visible ? THEME_BADGE_SUCCESS : THEME_BADGE_MUTED;
+  const recommendedBannerSelected = Boolean(
+    recommendedBannerUrl
+    && value.banner_enabled
+    && value.banner_image_url.trim() === recommendedBannerUrl,
+  );
 
   return (
     <div className="space-y-4">
@@ -586,6 +601,31 @@ function CategoryDrawerFields({
           </div>
         </div>
       </section>
+
+      {recommendedBannerUrl && onUseRecommendedBanner ? (
+        <section className="grid gap-3 rounded-lg border border-border bg-card p-3 sm:grid-cols-[minmax(0,260px)_minmax(0,1fr)] sm:items-center">
+          <img
+            src={recommendedBannerUrl}
+            alt={`${previewName} 推荐分类主图`}
+            className="aspect-[16/7] w-full rounded-md bg-secondary object-cover object-center"
+          />
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-foreground"><Tx>固定设计推荐主图</Tx></p>
+            <p className="mt-1 text-xs leading-5 text-muted-foreground">
+              <Tx>该图片已通过 1200×525 规格检查。请先审阅画面，采用后仍需点击底部保存才会生效。</Tx>
+            </p>
+            <UnifiedButton
+              type="button"
+              onClick={onUseRecommendedBanner}
+              disabled={recommendedBannerSelected}
+              className="mt-3 inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[var(--theme-primary)] px-4 text-sm font-semibold text-[var(--theme-primary-foreground)] disabled:cursor-default disabled:opacity-70"
+            >
+              {recommendedBannerSelected ? <Check size={16} /> : <ImageIcon size={16} />}
+              <Tx>{recommendedBannerSelected ? "已采用推荐主图" : "使用推荐主图"}</Tx>
+            </UnifiedButton>
+          </div>
+        </section>
+      ) : null}
 
       <CategoryDrawerSection title="基础设置">
         <div className="grid gap-3 sm:grid-cols-2">
@@ -670,6 +710,8 @@ function CategoryDrawerFields({
 export default function AdminCategories() {
   const { tText } = useAdminT();
   const queryClient = useQueryClient();
+  const [urlSearchParams, setUrlSearchParams] = useSearchParams();
+  const bannerReviewMode = urlSearchParams.get("banner_status") === "review";
   const expandedInitialized = useRef(false);
   const [saving, setSaving] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -704,6 +746,7 @@ export default function AdminCategories() {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: adminQueryKeys.categories() }),
       queryClient.invalidateQueries({ queryKey: adminQueryKeys.productsRoot() }),
+      queryClient.invalidateQueries({ queryKey: adminQueryKeys.storefrontReadiness() }),
     ]);
   };
 
@@ -715,11 +758,24 @@ export default function AdminCategories() {
 
   const flatRows = useMemo(() => flattenTree(categories, expanded), [categories, expanded]);
   const allRows = useMemo(() => flattenAll(categories), [categories]);
+  const categoryBannerReviewRows = useMemo(
+    () => allRows.filter((row) => (
+      row.level === 0
+      && row.is_visible !== false
+      && (row.banner_enabled !== true || !row.banner_image_url?.trim())
+    )),
+    [allRows],
+  );
+  const renderedRows = bannerReviewMode ? categoryBannerReviewRows : flatRows;
   const parentOptions = useMemo(() => allRows.filter((x) => x.level < 2), [allRows]);
   const categoryNameById = useMemo(() => new Map(allRows.map((row) => [row.id, row.name])), [allRows]);
   const editingCategory = useMemo(
     () => (editingId ? allRows.find((row) => row.id === editingId) ?? null : null),
     [allRows, editingId],
+  );
+  const recommendedBannerUrl = useMemo(
+    () => (editingCategory ? resolveCategoryRecommendedHero(editingCategory.name) : null),
+    [editingCategory],
   );
   const editBaseline = useMemo<CategoryForm>(() => (
     editingCategory
@@ -827,6 +883,13 @@ export default function AdminCategories() {
 
   const uploadBannerImage = async (file: File, target: "create" | "edit") => {
     try {
+      try {
+        const size = await readImageSize(file);
+        const assessment = assessBannerImageDimensions(size, "category_banner", false);
+        if (assessment.level === "warning") toast.warning(assessment.message);
+      } catch {
+        toast.warning("读取图片尺寸失败，已继续上传；请在预览中检查裁切效果。");
+      }
       const res = await uploadService.uploadSingle(file, { mode: "banner" });
       const url = res.url || "";
       if (!url) throw new Error("服务器未返回图片地址");
@@ -1055,6 +1118,13 @@ export default function AdminCategories() {
     return handleAdd();
   };
 
+  const exitBannerReviewMode = () => {
+    closeEditForm();
+    const next = new URLSearchParams(urlSearchParams);
+    next.delete("banner_status");
+    setUrlSearchParams(next, { replace: true });
+  };
+
   return (
     <AdminPageShell
       hint={<Tx>支持最多 3 级分类；前台分类页固定显示「全部」「新品」两个系统入口，普通分类从第三个入口开始展示。有子分类或已关联商品的分类禁止删除。</Tx>}
@@ -1069,6 +1139,18 @@ export default function AdminCategories() {
         </PermissionGate>
       )}
     >
+      {bannerReviewMode ? (
+        <AdminCategoryBannerRepairBar
+          total={categoryBannerReviewRows.length}
+          loading={loading}
+          onStart={() => {
+            const firstCategory = categoryBannerReviewRows[0];
+            if (firstCategory) startEdit(firstCategory);
+          }}
+          onExit={exitBannerReviewMode}
+        />
+      ) : null}
+
       <CategorySystemEntrySettings
         value={systemIconForm}
         loading={systemSettingsLoading}
@@ -1085,7 +1167,9 @@ export default function AdminCategories() {
         onOpenChange={(open) => {
           if (!open) closeCategoryDrawer();
         }}
-        title={drawerTitle}
+        title={drawerMode === "edit" && bannerReviewMode && editingCategory
+          ? `${tText("审阅分类主图")}：${editingCategory.name}`
+          : drawerTitle}
         description={drawerDescription}
         className="lg:w-[min(560px,calc(100vw-2rem))] xl:w-[min(640px,calc(100vw-2rem))]"
         bodyClassName="bg-muted/20"
@@ -1135,6 +1219,13 @@ export default function AdminCategories() {
               onChange={updateDrawerForm}
               onUpload={(file) => void uploadIcon(file, drawerMode === "edit" ? "edit" : "create")}
               onBannerUpload={(file) => void uploadBannerImage(file, drawerMode === "edit" ? "edit" : "create")}
+              recommendedBannerUrl={drawerMode === "edit" && bannerReviewMode ? recommendedBannerUrl : null}
+              onUseRecommendedBanner={drawerMode === "edit" && recommendedBannerUrl
+                ? () => updateDrawerForm({
+                    banner_image_url: recommendedBannerUrl,
+                    banner_enabled: true,
+                  })
+                : undefined}
             />
           </form>
         ) : null}
@@ -1244,7 +1335,7 @@ export default function AdminCategories() {
               <div className="skeleton-base skeleton-shimmer h-8 w-20 rounded-lg justify-self-end" />
             </div>
           ))
-          : flatRows.map((cat) => {
+          : renderedRows.map((cat) => {
           const hasChildren = cat.children.length > 0;
           const isEditing = editingId === cat.id;
           return (
@@ -1321,6 +1412,10 @@ export default function AdminCategories() {
                         <span className="mt-1 inline-flex w-fit items-center rounded-full bg-[color-mix(in_srgb,var(--theme-primary)_10%,var(--theme-surface))] px-2 py-0.5 text-[11px] font-medium text-[var(--theme-primary)]">
                           <Tx>已配置分类广告</Tx>
                         </span>
+                      ) : bannerReviewMode ? (
+                        <span className={`mt-1 inline-flex w-fit items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${THEME_BADGE_WARNING}`}>
+                          <Tx>待确认分类主图</Tx>
+                        </span>
                       ) : null}
                     </div>
                   </div>
@@ -1381,7 +1476,11 @@ export default function AdminCategories() {
             </div>
           );
         })}
-        {flatRows.length === 0 && <div className="py-8 text-center text-sm text-muted-foreground"><Tx>暂无分类</Tx></div>}
+        {renderedRows.length === 0 && (
+          <div className="py-8 text-center text-sm text-muted-foreground">
+            <Tx>{bannerReviewMode ? "当前没有待确认主图的公开一级分类" : "暂无分类"}</Tx>
+          </div>
+        )}
       </div>
       <AnimatedConfirmDialog
         open={!!deleteTarget}

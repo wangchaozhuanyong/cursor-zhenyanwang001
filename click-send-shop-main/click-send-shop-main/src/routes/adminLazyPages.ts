@@ -102,7 +102,6 @@ export const AdminSiteSettings = lazyWithPreload(() => import("@/modules/admin/p
 export const AdminFeatureSettings = lazyWithPreload(() => import("@/modules/admin/pages/settings/AdminFeatureSettings"));
 export const AdminSupportDownload = lazyWithPreload(() => import("@/modules/admin/pages/settings/AdminSupportDownload"));
 export const AdminTelegramSettings = lazyWithPreload(() => import("@/modules/admin/pages/settings/AdminTelegramSettings"));
-export const AdminThemeSettings = lazyWithPreload(() => import("@/modules/admin/pages/settings/AdminThemeSettings"));
 export const AdminContent = lazyWithPreload(() => import("@/modules/admin/pages/settings/AdminContent"));
 export const AdminHomeOps = lazyWithPreload(() => import("@/modules/admin/pages/settings/AdminHomeOps"));
 export const AdminMyInvois = lazyWithPreload(() => import("@/modules/admin/pages/settings/AdminMyInvois"));
@@ -154,7 +153,6 @@ const ADMIN_EXACT_ROUTE_PRELOADERS = new Map<string, AdminLazyComponent>([
   ["/admin/settings/features", AdminFeatureSettings],
   ["/admin/settings/telegram", AdminTelegramSettings],
   ["/admin/support-download", AdminSupportDownload],
-  ["/admin/settings/theme", AdminThemeSettings],
   ["/admin/home-ops", AdminHomeOps],
   ["/admin/myinvois", AdminMyInvois],
   ["/admin/settings/shipping", AdminShipping],

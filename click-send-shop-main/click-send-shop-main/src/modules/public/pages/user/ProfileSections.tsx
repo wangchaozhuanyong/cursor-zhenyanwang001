@@ -196,8 +196,13 @@ export function ProfileHeroCard({
             <Pencil size={12} />
           </span>
         </UnifiedButton>
-        <button type="button" onClick={onProfileClick} className="profile-vip-name-row profile-vip-profile-trigger">
-          <span className="profile-vip-name" title={userName} aria-label={userName}>{displayName}</span>
+        <button
+          type="button"
+          onClick={onMemberLevelClick}
+          className="profile-vip-name-row"
+          aria-label={`${displayName}，${memberLevelName}，查看会员权益`}
+        >
+          <span className="profile-vip-name" title={userName}>{displayName}</span>
           <span className="profile-vip-badge">{memberLevelName}</span>
         </button>
         <div className="profile-vip-header-actions">
@@ -211,16 +216,6 @@ export function ProfileHeroCard({
           </UnifiedButton>
         </div>
       </div>
-      <UnifiedButton
-        type="button"
-        onClick={onMemberLevelClick}
-        className="profile-vip-folio-head"
-        aria-label={`查看${memberLevelName}会员权益`}
-      >
-        <span>会员权益</span>
-        <h2>{memberLevelName}</h2>
-      </UnifiedButton>
-
       {folioAssets.length ? (
         <div className="profile-card-assets" aria-label="我的资产">
           {folioAssets.map((item) => (

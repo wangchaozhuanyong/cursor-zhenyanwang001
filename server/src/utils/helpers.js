@@ -140,6 +140,16 @@ function formatProduct(row) {
   };
 }
 
+function formatPublicProduct(row) {
+  const product = formatProduct(row);
+  if (!product) return null;
+  delete product.stock_warning_threshold;
+  delete product.stock_lower_limit;
+  delete product.stock_upper_limit;
+  product.category_name = row.category_name || '';
+  return product;
+}
+
 function hasInlineDataUrl(value) {
   if (typeof value !== 'string') return false;
   return /^\s*data:/i.test(value) || /data:image\//i.test(value);
@@ -198,6 +208,6 @@ module.exports = {
   generateId, generateOrderNo, generateInviteCode,
   hashPassword, comparePassword,
   signToken, verifyToken,
-  parseBool, parseProductImages, parseProductImageAlts, formatProduct, formatProductCard,
+  parseBool, parseProductImages, parseProductImageAlts, formatProduct, formatPublicProduct, formatProductCard,
   hasInlineDataUrl, omitInlineDataUrl,
 };

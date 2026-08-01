@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CheckCircle2, Gift, Loader2, PackageCheck, SlidersHorizontal, Sparkles } from "lucide-react";
+import { CheckCircle2, Gift, Loader2, PackageCheck, Sparkles } from "lucide-react";
 
 import { useUserStore } from "@/stores/useUserStore";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
@@ -249,10 +249,6 @@ export default function PointsGiftShop() {
         </section>
 
         <section className="sf-next-points-gifts-filter" aria-label="积分礼品筛选">
-          <div className="sf-next-points-gifts-filter__title">
-            <SlidersHorizontal size={16} aria-hidden />
-            <span>筛选礼品</span>
-          </div>
           <div className="sf-next-points-gifts-filter__chips">
             {filters.map((item) => (
               <UnifiedButton
@@ -271,11 +267,8 @@ export default function PointsGiftShop() {
 
         <section className="sf-next-points-gifts-catalog" aria-labelledby="points-gifts-heading">
           <div className="sf-next-points-gifts-section-head">
-            <div>
-              <p>礼品中心</p>
-              <h2 id="points-gifts-heading">积分礼品</h2>
-            </div>
-            <span>{filteredGifts.length}</span>
+            <h2 id="points-gifts-heading">积分礼品</h2>
+            <span>共 {filteredGifts.length} 件</span>
           </div>
 
           {loading ? (

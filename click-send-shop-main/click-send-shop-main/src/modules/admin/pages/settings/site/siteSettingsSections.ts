@@ -208,6 +208,16 @@ export function getSectionById(id: SiteSettingsSectionId): SiteSettingsSectionDe
   return SITE_SETTINGS_SECTIONS.find((s) => s.id === id) ?? SITE_SETTINGS_SECTIONS[0];
 }
 
+export function readSiteSettingsSectionIdFromHash(hash: string): SiteSettingsSectionId | null {
+  try {
+    const candidate = decodeURIComponent(String(hash || "").replace(/^#/, "").trim());
+    const match = SITE_SETTINGS_SECTIONS.find((section) => section.id === candidate);
+    return match?.id ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export function getSectionFieldKeys(sectionId: SiteSettingsSectionId): (keyof SiteSettings)[] {
   const section = getSectionById(sectionId);
   if (sectionId === "advanced") {

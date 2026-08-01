@@ -603,22 +603,24 @@ function CouponVaultHero({
 
   return (
     <>
-      <section className="sf-next-coupon-hero sf-next-sheet" aria-label="优惠券概览">
-        <div className="sf-next-coupon-hero__summary">
-          <span className="sf-next-coupon-hero__eyebrow">优惠钱包</span>
-          <strong className="sf-next-coupon-hero__value">
-            {walletCount} <span>{walletUnit}</span>
-          </strong>
-        </div>
-        <div className="sf-next-coupon-hero__aside">
-          <span>{sideLabel}</span>
-          {selectedCartCount > 0 ? (
-            <UnifiedButton type="button" onClick={onGoCart} className="sf-next-coupon-hero__cart">
-              去购物车
-            </UnifiedButton>
-          ) : null}
-        </div>
-      </section>
+      {walletCount > 0 ? (
+        <section className="sf-next-coupon-hero sf-next-sheet" aria-label="优惠券概览">
+          <div className="sf-next-coupon-hero__summary">
+            <span className="sf-next-coupon-hero__eyebrow">优惠钱包</span>
+            <strong className="sf-next-coupon-hero__value">
+              {walletCount} <span>{walletUnit}</span>
+            </strong>
+          </div>
+          <div className="sf-next-coupon-hero__aside">
+            <span>{sideLabel}</span>
+            {selectedCartCount > 0 ? (
+              <UnifiedButton type="button" onClick={onGoCart} className="sf-next-coupon-hero__cart">
+                去购物车
+              </UnifiedButton>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
       <div className="sf-next-coupon-view-switch" role="tablist" aria-label="优惠券页面切换">
         <UnifiedButton
           type="button"
@@ -751,7 +753,7 @@ function CouponCategoryRail({
               <span>{item.label}</span>
               <span
                 className={cn(
-                  "inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] tabular-nums",
+                  "inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs tabular-nums",
                   selected
                     ? "bg-[color-mix(in_srgb,var(--theme-primary-foreground)_22%,transparent)] text-[var(--theme-primary-foreground)]"
                     : "bg-[color-mix(in_srgb,var(--theme-primary)_8%,var(--theme-bg))] text-[var(--theme-text-muted-on-surface)]",

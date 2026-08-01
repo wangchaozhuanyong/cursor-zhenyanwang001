@@ -1,19 +1,25 @@
 import { Tx } from "@/components/admin/AdminText";
 import type { HomeNavItem } from "@/types/content";
 import HomeNavSortRow from "./HomeNavSortRow";
+import type { HomeNavRepairSuggestion } from "./homeNavUtils";
 
 type Props = {
   loading: boolean;
   navItems: HomeNavItem[];
   categoryNameMap: Map<string, string>;
   supportChannelNameMap: Map<string, string>;
+  validationIssues: Map<string, string>;
+  repairSuggestions: Map<string, HomeNavRepairSuggestion>;
+  repairingNavId: string | null;
   draggingId: string | null;
   savingOrder: boolean;
   setDraggingId: (id: string | null) => void;
   onDrop: (targetId: string) => void | Promise<void>;
   onEdit: (item: HomeNavItem) => void;
   onDelete: (item: HomeNavItem) => void;
+  onApplySuggestion: (item: HomeNavItem, suggestion: HomeNavRepairSuggestion) => void;
   onPositionChange: (itemId: string, position: number) => void | Promise<void>;
+  repairMode?: boolean;
 };
 
 export default function HomeNavSortableList({
@@ -21,13 +27,18 @@ export default function HomeNavSortableList({
   navItems,
   categoryNameMap,
   supportChannelNameMap,
+  validationIssues,
+  repairSuggestions,
+  repairingNavId,
   draggingId,
   savingOrder,
   setDraggingId,
   onDrop,
   onEdit,
   onDelete,
+  onApplySuggestion,
   onPositionChange,
+  repairMode = false,
 }: Props) {
   const getLinkLabel = (item: HomeNavItem) => {
     if (item.target_type === "categories") {
@@ -46,7 +57,9 @@ export default function HomeNavSortableList({
   return (
     <div className="mt-4 space-y-2">
       <p className="text-xs text-muted-foreground">
-        <Tx>拖拽左侧手柄调整顺序；点击序号可手动指定位置。序号越小越靠前。</Tx>
+        {repairMode
+          ? <Tx>这里只显示需要修复或确认的入口；排序保持与首页一致。</Tx>
+          : <Tx>拖拽左侧手柄调整顺序；点击序号可手动指定位置。序号越小越靠前。</Tx>}
       </p>
 
       {loading
@@ -68,9 +81,12 @@ export default function HomeNavSortableList({
           <HomeNavSortRow
             key={item.id}
             item={item}
-            displayIndex={index + 1}
+            displayIndex={repairMode ? item.sort_order : index + 1}
             linkLabel={getLinkLabel(item)}
-            canManage
+            validationIssue={validationIssues.get(item.id)}
+            repairSuggestion={repairSuggestions.get(item.id)}
+            repairingSuggestion={repairingNavId === item.id}
+            canManage={!repairMode}
             savingOrder={savingOrder}
             isDragging={draggingId === item.id}
             onDragStart={() => setDraggingId(item.id)}
@@ -79,13 +95,14 @@ export default function HomeNavSortableList({
             onDragEnd={() => setDraggingId(null)}
             onEdit={() => onEdit(item)}
             onDelete={() => onDelete(item)}
+            onApplySuggestion={(suggestion) => onApplySuggestion(item, suggestion)}
             onPositionChange={(position) => onPositionChange(item.id, position)}
           />
         ))}
 
       {!loading && navItems.length === 0 && (
         <div className="py-8 text-center text-sm text-muted-foreground">
-          <Tx>暂无快捷入口</Tx>
+          <Tx>{repairMode ? "当前没有需要修复或确认的入口" : "暂无快捷入口"}</Tx>
         </div>
       )}
     </div>

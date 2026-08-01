@@ -48,6 +48,18 @@ const PRODUCT_LIST_FROM_BASE = `
           ELSE 0
         END
       ) AS stock_warning_sku_count,
+      MAX(
+        CASE
+          WHEN v.enabled = 1 AND v.is_default = 1 AND NULLIF(TRIM(v.image_url), '') IS NOT NULL
+          THEN v.image_url
+        END
+      ) AS default_variant_image_url,
+      MAX(
+        CASE
+          WHEN v.enabled = 1 AND NULLIF(TRIM(v.image_url), '') IS NOT NULL
+          THEN v.image_url
+        END
+      ) AS any_variant_image_url,
       MIN(CASE WHEN v.enabled = 1 THEN v.sku_code END) AS min_sku_code
     FROM product_variants v
     WHERE v.deleted_at IS NULL
@@ -111,6 +123,12 @@ const PRODUCT_LIST_SELECT = `
     vagg.max_sku_price,
     vagg.min_cost_price,
     vagg.max_cost_price,
+    COALESCE(
+      NULLIF(TRIM(p.cover_image), ''),
+      vagg.default_variant_image_url,
+      vagg.any_variant_image_url,
+      ''
+    ) AS effective_cover_image,
     COALESCE(vagg.missing_cost_sku_count, 0) AS missing_cost_sku_count,
     COALESCE(vagg.out_of_stock_sku_count, 0) AS out_of_stock_sku_count,
     COALESCE(vagg.stock_warning_sku_count, 0) AS stock_warning_sku_count,

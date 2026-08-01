@@ -12,7 +12,7 @@ import type { FaqItem } from "@/constants/help";
 import type { HelpCenterConfig } from "@/types/content";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import type { LucideIcon } from "lucide-react";
-import "@/styles/secondary-routes.css";
+import "@/styles/help-route.css";
 
 function parseHelpConfig(raw?: string): { categories: string[]; faqs: FaqItem[] } | null {
   if (!raw?.trim()) return null;
@@ -113,65 +113,67 @@ export default function Help() {
             className="sf-next-help-search__input"
           />
         </div>
-        <section className="sf-next-help-quick" aria-labelledby="store-help-quick-title">
-          <div className="sf-next-help-section-head">
-            <h2 id="store-help-quick-title">常用帮助</h2>
-            {activeCategory ? (
-              <UnifiedButton
-                type="button"
-                onClick={() => setActiveCategory(null)}
-                className="sf-next-help-clear"
-              >
-                全部问题
-              </UnifiedButton>
-            ) : null}
-          </div>
-          <div className="sf-next-help-quick-grid">
-            {quickCategories.map(({ category, count }, index) => {
-              const Icon = HELP_QUICK_ICONS[index] || HelpCircle;
-              const active = activeCategory === category;
-              return (
+        <div className="sf-next-help-body-grid">
+          <section className="sf-next-help-quick" aria-labelledby="store-help-quick-title">
+            <div className="sf-next-help-section-head">
+              <h2 id="store-help-quick-title">常用帮助</h2>
+              {activeCategory ? (
                 <UnifiedButton
-                  key={category}
                   type="button"
-                  onClick={() => setActiveCategory(active ? null : category)}
-                  className={`sf-next-help-quick-card ${active ? "is-active" : ""}`}
-                  aria-pressed={active}
+                  onClick={() => setActiveCategory(null)}
+                  className="sf-next-help-clear"
                 >
-                  <Icon size={22} aria-hidden />
-                  <span>{category}</span>
-                  <small>{count} 个问题</small>
+                  全部问题
                 </UnifiedButton>
-              );
-            })}
-          </div>
-        </section>
-
-        <section className="sf-next-help-faq-section" aria-labelledby="store-help-faq-title">
-          <div className="sf-next-help-section-head">
-            <h2 id="store-help-faq-title">{showingFocusedList ? "筛选结果" : "常见问题"}</h2>
-            {showingFocusedList ? (
-              <span>{filtered.length} 条</span>
-            ) : null}
-          </div>
-          {filtered.length === 0 ? (
-            <div className="sf-next-help-empty">
-              <p className="text-sm font-semibold text-[var(--theme-text)]">没有找到匹配的问题</p>
-              <p className="mt-1 text-xs leading-5 text-[var(--theme-muted)]">换个关键词，或直接提交反馈。</p>
+              ) : null}
             </div>
-          ) : null}
-          <div className="sf-next-help-list">
-            {visibleFaqs.map((faq) => (
-              <div key={faq.id} className="sf-next-help-faq">
-                <UnifiedButton type="button" onClick={() => setOpenId(openId === faq.id ? null : faq.id)} className="sf-next-help-faq__trigger">
-                  <span>{faq.question}</span>
-                  {openId === faq.id ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
-                </UnifiedButton>
-                {openId === faq.id ? <div className="sf-next-help-faq__answer">{faq.answer}</div> : null}
+            <div className="sf-next-help-quick-grid">
+              {quickCategories.map(({ category, count }, index) => {
+                const Icon = HELP_QUICK_ICONS[index] || HelpCircle;
+                const active = activeCategory === category;
+                return (
+                  <UnifiedButton
+                    key={category}
+                    type="button"
+                    onClick={() => setActiveCategory(active ? null : category)}
+                    className={`sf-next-help-quick-card ${active ? "is-active" : ""}`}
+                    aria-pressed={active}
+                  >
+                    <Icon size={22} aria-hidden />
+                    <span>{category}</span>
+                    <small>{count} 个问题</small>
+                  </UnifiedButton>
+                );
+              })}
+            </div>
+          </section>
+
+          <section className="sf-next-help-faq-section" aria-labelledby="store-help-faq-title">
+            <div className="sf-next-help-section-head">
+              <h2 id="store-help-faq-title">{showingFocusedList ? "筛选结果" : "常见问题"}</h2>
+              {showingFocusedList ? (
+                <span>{filtered.length} 条</span>
+              ) : null}
+            </div>
+            {filtered.length === 0 ? (
+              <div className="sf-next-help-empty">
+                <p className="text-sm font-semibold text-[var(--theme-text)]">没有找到匹配的问题</p>
+                <p className="mt-1 text-xs leading-5 text-[var(--theme-muted)]">换个关键词，或直接提交反馈。</p>
               </div>
-            ))}
-          </div>
-        </section>
+            ) : null}
+            <div className="sf-next-help-list">
+              {visibleFaqs.map((faq) => (
+                <div key={faq.id} className="sf-next-help-faq">
+                  <UnifiedButton type="button" onClick={() => setOpenId(openId === faq.id ? null : faq.id)} className="sf-next-help-faq__trigger">
+                    <span>{faq.question}</span>
+                    {openId === faq.id ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+                  </UnifiedButton>
+                  {openId === faq.id ? <div className="sf-next-help-faq__answer">{faq.answer}</div> : null}
+                </div>
+              ))}
+            </div>
+          </section>
+        </div>
 
         <section className="sf-next-help-feedback" aria-labelledby="store-help-feedback-title">
           <h2 id="store-help-feedback-title">联系与反馈</h2>

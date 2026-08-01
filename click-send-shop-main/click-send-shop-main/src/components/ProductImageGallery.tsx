@@ -2,7 +2,6 @@ import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import RatioImage from "@/components/client/RatioImage";
 import { THEME_PRODUCT_MEDIA_ASPECT_STYLE } from "@/constants/productMediaAspect";
-import { getProductFallbackImage } from "@/utils/productFallbackImage";
 import { productCoverForDetail } from "@/utils/uploadImageVariant";
 
 interface ProductImageGalleryProps {
@@ -25,7 +24,6 @@ export default function ProductImageGallery({ images, imageAlts, name, videoUrl,
   const [current, setCurrent] = useState(0);
   const [touchStart, setTouchStart] = useState(0);
   const currentItem = media[current];
-  const fallbackImage = getProductFallbackImage(name);
 
   useEffect(() => {
     if (current >= media.length) setCurrent(Math.max(0, media.length - 1));
@@ -49,7 +47,7 @@ export default function ProductImageGallery({ images, imageAlts, name, videoUrl,
       <div className="sf-next-product-gallery-inner relative">
         <div className="sf-next-product-gallery-stage relative w-full overflow-hidden bg-secondary" style={THEME_PRODUCT_MEDIA_ASPECT_STYLE}>
           <RatioImage
-            src={fallbackImage}
+            src=""
             alt={`${name} 商品图`}
             ratio="1 / 1"
             rounded="none"
@@ -84,7 +82,7 @@ export default function ProductImageGallery({ images, imageAlts, name, videoUrl,
             {currentItem.type === "video" ? (
               <video
                 src={currentItem.url}
-                className="h-full w-full bg-black object-contain"
+                className="h-full w-full bg-[var(--sf-graphite)] object-contain"
                 controls
                 playsInline
                 preload="metadata"
@@ -93,7 +91,6 @@ export default function ProductImageGallery({ images, imageAlts, name, videoUrl,
             ) : (
               <RatioImage
                 src={productCoverForDetail(currentItem.url)}
-                fallbackSrc={fallbackImage}
                 alt={currentItem.alt || (current === 0 ? `${name} 主图` : `${name} 详情图 ${current + 1}`)}
                 ratio="1 / 1"
                 rounded="none"
@@ -106,7 +103,7 @@ export default function ProductImageGallery({ images, imageAlts, name, videoUrl,
           </motion.div>
         </AnimatePresence>
 
-        <div className="sf-next-product-gallery-count pointer-events-none absolute bottom-3 left-1/2 z-10 -translate-x-1/2 rounded-full border border-[color-mix(in_srgb,var(--theme-border)_60%,transparent)] bg-[color-mix(in_srgb,var(--theme-surface)_88%,transparent)] px-2.5 py-1 text-[11px] font-medium text-[var(--theme-text-on-surface)] shadow-sm backdrop-blur-sm">
+        <div className="sf-next-product-gallery-count">
           {current + 1} / {media.length}
         </div>
       </div>

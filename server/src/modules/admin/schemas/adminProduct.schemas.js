@@ -48,6 +48,7 @@ const adminProductListQuerySchema = z.object({
   status: z.enum(['draft', 'active', 'inactive']).optional(),
   stock_status: z.enum(['normal', 'low', 'out']).optional(),
   cost_status: z.enum(['normal', 'missing']).optional(),
+  media_status: z.enum(['normal', 'missing']).optional(),
   min_margin: z.coerce.number().optional(),
   max_margin: z.coerce.number().optional(),
   sort: z.enum([

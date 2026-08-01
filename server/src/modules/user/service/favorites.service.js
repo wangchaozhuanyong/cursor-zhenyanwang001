@@ -1,4 +1,4 @@
-const { generateId, formatProduct } = require('../../../utils/helpers');
+const { generateId, formatPublicProduct } = require('../../../utils/helpers');
 const repo = require('../repository/favorites.repository');
 
 async function getFavorites(userId, query) {
@@ -7,7 +7,7 @@ async function getFavorites(userId, query) {
   const total = await repo.countByUser(userId);
   const offset = (page - 1) * pageSize;
   const rows = await repo.selectPage(userId, pageSize, offset);
-  const list = rows.map((r) => formatProduct(r));
+  const list = rows.map((r) => formatPublicProduct(r));
   return { list, total, page, pageSize };
 }
 
@@ -39,7 +39,6 @@ module.exports = {
   removeFavorite,
   checkFavorite,
 };
-
 
 
 

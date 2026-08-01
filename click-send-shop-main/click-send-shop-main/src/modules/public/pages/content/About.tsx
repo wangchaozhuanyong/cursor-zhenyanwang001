@@ -11,7 +11,7 @@ import { stripHtml, truncateText } from "@/utils/seo";
 import { sanitizeCmsHtml } from "@/utils/cmsSanitizer";
 import { isAboutPlaceholderBody } from "@/constants/helpCenterConfig";
 import { STORE_COPY } from "@/constants/storeCopy";
-import "@/styles/secondary-routes.css";
+import "@/styles/content-routes.css";
 
 const informationItems = [
   {

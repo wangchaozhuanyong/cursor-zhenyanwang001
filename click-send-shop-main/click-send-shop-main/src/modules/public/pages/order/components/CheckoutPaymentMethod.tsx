@@ -43,8 +43,7 @@ const CHECKOUT_PAYMENT_COPY: Record<PublicLocale, {
   },
 };
 
-const PAYMENT_TRIGGER_CLASS =
-  "flex w-full items-center justify-between gap-3 rounded-xl border border-[color-mix(in_srgb,var(--theme-price)_55%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-price)_18%,var(--theme-surface))] px-4 py-3.5 text-left shadow-sm ring-1 ring-[color-mix(in_srgb,var(--theme-price)_16%,transparent)] transition-all hover:border-[color-mix(in_srgb,var(--theme-price)_70%,var(--theme-border))] hover:bg-[color-mix(in_srgb,var(--theme-price)_22%,var(--theme-surface))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-price)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--theme-surface)]";
+const PAYMENT_TRIGGER_CLASS = "sf-next-checkout-payment-trigger";
 
 interface CheckoutPaymentMethodProps {
   paymentMethod: PaymentMethod;
@@ -97,13 +96,13 @@ export function CheckoutPaymentMethod({
       : null;
 
   return (
-    <div className="sf-next-checkout-card rounded-[20px] border border-[color-mix(in_srgb,var(--theme-border)_70%,transparent)] bg-[var(--theme-surface)] p-4 shadow-[0_14px_38px_rgba(65,45,28,0.08)] md:p-5">
-      <div className="mb-3 flex items-center justify-between gap-3">
+    <div className="sf-next-checkout-card">
+      <div className="sf-next-checkout-card__head">
         <div>
-          <h3 className="text-[15px] font-bold text-foreground md:text-base">{copy.title}</h3>
+          <h3 className="sf-next-checkout-section-title">{copy.title}</h3>
         </div>
-        <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
-          <ShieldCheck size={12} className="text-[var(--theme-success)]" /> {copy.secure}
+        <span className="sf-next-checkout-secure-label">
+          <ShieldCheck size={12} /> {copy.secure}
         </span>
       </div>
 
@@ -114,13 +113,13 @@ export function CheckoutPaymentMethod({
             onClick={() => setSheetOpen(true)}
             className={PAYMENT_TRIGGER_CLASS}
           >
-            <div className="min-w-0 flex-1">
-              <p className="text-[11px] font-semibold text-theme-price">{copy.selected}</p>
-              <p className="mt-0.5 text-sm font-semibold text-foreground">{copy.methodLabels[paymentMethod]}</p>
+            <div className="sf-next-checkout-payment-copy">
+              <p>{copy.selected}</p>
+              <strong>{copy.methodLabels[paymentMethod]}</strong>
               {channelName ? (
-                <p className="mt-0.5 truncate text-xs text-muted-foreground">{channelName}</p>
+                <span>{channelName}</span>
               ) : (
-                <p className="mt-0.5 text-xs text-muted-foreground">{copy.switchHint}</p>
+                <span>{copy.switchHint}</span>
               )}
             </div>
             <ChevronRight size={18} className="shrink-0 text-muted-foreground" />
@@ -133,7 +132,7 @@ export function CheckoutPaymentMethod({
         picker
       )}
       {paymentTimeoutHint && paymentMethod === "online" ? (
-        <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{paymentTimeoutHint}</p>
+        <p className="sf-next-checkout-section-message">{paymentTimeoutHint}</p>
       ) : null}
     </div>
   );

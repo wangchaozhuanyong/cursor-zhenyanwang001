@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { useLocation } from "react-router-dom";
 import { useRegisterSW } from "virtual:pwa-register/react";
+import { Clock3, RefreshCw } from "lucide-react";
+import "@/styles/fixed-storefront-overlays.css";
 import { trackEvent } from "@/services/analyticsService";
 import { getStoreFixedBottomOffset } from "@/utils/storeBottomInset";
 import {
@@ -171,21 +173,23 @@ export default function PwaUpdateToast() {
       aria-labelledby="pwa-update-title"
       aria-describedby="pwa-update-desc"
       style={mobileBottomStyle}
-      className="pointer-events-auto fixed left-1/2 z-[120] w-[min(92vw,420px)] -translate-x-1/2 rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-4 shadow-[var(--theme-shadow)] max-lg:bottom-[var(--pwa-toast-bottom,5.75rem)] lg:bottom-4"
+      className="sf-fixed-update-toast"
     >
-      <p id="pwa-update-title" className="text-sm font-semibold text-[var(--theme-text)]">
-        发现新版本
-      </p>
-      <p id="pwa-update-desc" className="mt-1 text-xs leading-relaxed text-[var(--theme-text-muted)]">
-        点击刷新后将更新到最新内容。建议先确认当前操作已完成。
-      </p>
-      <div className="mt-3 flex items-center justify-end gap-2">
+      <span className="sf-fixed-update-toast__icon" aria-hidden>
+        <RefreshCw size={18} />
+      </span>
+      <div className="sf-fixed-update-toast__copy">
+        <p id="pwa-update-title">发现新版本</p>
+        <p id="pwa-update-desc">更新后可使用最新内容，请先完成当前操作。</p>
+      </div>
+      <div className="sf-fixed-update-toast__actions">
         <UnifiedButton
           type="button"
           disabled={refreshing}
           onClick={handleDismiss}
-          className="rounded-full border border-[var(--theme-border)] px-3 py-1.5 text-xs text-[var(--theme-text-muted)] disabled:opacity-50"
+          className="sf-fixed-overlay-action"
         >
+          <Clock3 size={15} aria-hidden />
           稍后
         </UnifiedButton>
         <UnifiedButton
@@ -194,8 +198,9 @@ export default function PwaUpdateToast() {
           onClick={() => {
             void handleRefresh();
           }}
-          className="rounded-full bg-[var(--theme-primary)] px-3 py-1.5 text-xs font-semibold text-[var(--theme-primary-foreground)] disabled:opacity-70"
+          className="sf-fixed-overlay-action is-primary"
         >
+          <RefreshCw size={15} className={refreshing ? "animate-spin" : undefined} aria-hidden />
           {refreshing ? "正在刷新…" : "刷新更新"}
         </UnifiedButton>
       </div>

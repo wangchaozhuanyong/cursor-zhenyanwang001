@@ -33,15 +33,15 @@ export default function AccountProductCard({
   return (
     <article
       className={cn(
-        "sf-next-account-product-card group rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 shadow-[var(--theme-shadow)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_42px_color-mix(in_srgb,var(--theme-primary)_10%,transparent)]",
+        "sf-next-account-product-card group",
         isHistory && "sf-next-account-product-card--history",
         className,
       )}
     >
-      <div className="sf-next-account-product-card__row grid min-w-0 grid-cols-[5.75rem_minmax(0,1fr)] gap-3 sm:grid-cols-[7rem_minmax(0,1fr)]">
+      <div className="sf-next-account-product-card__row">
         <Link
           to={href}
-          className="sf-next-account-product-card__media relative block overflow-hidden rounded-xl bg-[color-mix(in_srgb,var(--theme-primary)_5%,var(--theme-bg))]"
+          className="sf-next-account-product-card__media"
           style={THEME_PRODUCT_MEDIA_ASPECT_STYLE}
           aria-label={`查看 ${vm.name}`}
         >
@@ -66,10 +66,10 @@ export default function AccountProductCard({
           {vm.soldOut ? <SoldOutMask /> : null}
         </Link>
 
-        <div className="sf-next-account-product-card__content flex min-w-0 flex-col">
+        <div className="sf-next-account-product-card__content">
           <Link to={href} className="sf-next-account-product-card__title-link min-w-0" aria-label={`查看 ${vm.name}`}>
             <h3 className={cn(
-              "sf-next-account-product-card__title line-clamp-2 text-sm font-semibold leading-5 text-[var(--theme-text)]",
+              "sf-next-account-product-card__title",
               isHistory ? "min-h-0" : "min-h-[2.5rem]",
             )}>
               {vm.name}
@@ -77,14 +77,14 @@ export default function AccountProductCard({
           </Link>
           {!isHistory ? <DecisionMetaRow items={vm.decisionTexts} /> : null}
           {!isHistory ? <ActivityProgressBar percent={vm.activityProgressPercent} text={vm.activityProgressText} /> : null}
-          <div className="sf-next-account-product-card__price mt-auto pt-2">
+          <div className="sf-next-account-product-card__price">
             <StorefrontPrice className="sf-next-account-product-card__price-line" amount={vm.priceText} originalAmount={vm.originalPriceText} />
           </div>
         </div>
       </div>
 
       {actions ? (
-        <div className="mt-3 flex flex-wrap gap-2 border-t border-[color-mix(in_srgb,var(--theme-border)_72%,transparent)] pt-3">
+        <div className="sf-next-account-product-card__actions">
           {actions}
         </div>
       ) : null}
@@ -93,9 +93,9 @@ export default function AccountProductCard({
 }
 
 function DecisionMetaRow({ items }: { items: string[] }) {
-  if (!items.length) return <div className="sf-next-account-product-card__meta mt-1.5 min-h-[1rem]" />;
+  if (!items.length) return <div className="sf-next-account-product-card__meta" />;
   return (
-    <div className="sf-next-account-product-card__meta mt-1.5 flex min-h-[1rem] min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] leading-4 text-[var(--theme-text-muted)]">
+    <div className="sf-next-account-product-card__meta">
       {items.map((item, index) => (
         <span key={`${item}-${index}`} className="inline-flex min-w-0 items-center gap-1">
           {index > 0 ? <span className="h-1 w-1 shrink-0 rounded-full bg-[var(--theme-border)]" aria-hidden /> : null}
@@ -107,24 +107,24 @@ function DecisionMetaRow({ items }: { items: string[] }) {
 }
 
 function ActivityProgressBar({ percent, text }: { percent?: number; text?: string }) {
-  if (!percent && !text) return <div className="sf-next-account-product-card__progress mt-2 min-h-[1.1rem]" />;
+  if (!percent && !text) return <div className="sf-next-account-product-card__progress" />;
   const safePercent = Math.max(0, Math.min(100, Math.round(Number(percent || 0))));
   return (
-    <div className="sf-next-account-product-card__progress mt-2 min-h-[1.1rem]">
-      <div className="h-1.5 overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--theme-border)_70%,transparent)]">
+    <div className="sf-next-account-product-card__progress">
+      <div className="sf-next-account-product-card__track">
         <div
-          className="h-full rounded-full bg-[var(--theme-price)] transition-[width]"
+          className="sf-next-account-product-card__track-value"
           style={{ width: `${safePercent}%` }}
         />
       </div>
-      {text ? <p className="mt-1 truncate text-[11px] leading-4 text-[var(--theme-text-muted)]">{text}</p> : null}
+      {text ? <p>{text}</p> : null}
     </div>
   );
 }
 
 function SoldOutMask() {
   return (
-    <div className="absolute inset-0 grid place-items-center bg-black/35 text-xs font-bold text-white">
+    <div className="absolute inset-0 grid place-items-center bg-[var(--sf-overlay)] text-xs font-bold text-[var(--theme-primary-foreground)]">
       已售罄
     </div>
   );

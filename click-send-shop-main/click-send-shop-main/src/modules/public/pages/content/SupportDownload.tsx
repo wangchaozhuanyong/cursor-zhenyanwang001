@@ -3,6 +3,8 @@ import { ArrowLeft, ArrowRight, Clock3, Copy, PlusSquare } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import SeoHead from "@/components/SeoHead";
 import StorePageHeader from "@/components/store/StorePageHeader";
+import StoreDesktopHeader from "@/components/store/StoreDesktopHeader";
+import StoreTabletBar from "@/components/store/StoreTabletBar";
 import WeChatIcon from "@/components/icons/WeChatIcon";
 import WhatsAppIcon from "@/components/icons/WhatsAppIcon";
 import TelegramIcon from "@/components/icons/TelegramIcon";
@@ -240,7 +242,16 @@ export default function SupportDownload({ installMode = false }: SupportDownload
     return (
       <div className={`sf-next-page-shell sf-next-bottom-safe sf-next-page sf-next-route-page support-download-page sf-next-support-download-page${installMode ? " support-install-mode" : ""} support-download-page--empty`}>
         {mobileHeader}
+        <StoreTabletBar className="sf-next-fixed-header" />
+        <StoreDesktopHeader className="sf-next-fixed-header" />
         <main className="support-download-shell">
+          <header className="support-download-desktop-head">
+            <UnifiedButton type="button" onClick={handleBack} className="support-download-desktop-back">
+              <ArrowLeft size={16} aria-hidden="true" />
+              <span>返回</span>
+            </UnifiedButton>
+            <h1>{displayTitle}</h1>
+          </header>
           <div className="support-empty-panel">客服中心暂未开放。</div>
         </main>
       </div>
@@ -256,8 +267,18 @@ export default function SupportDownload({ installMode = false }: SupportDownload
         robots="index,follow"
       />
       {mobileHeader}
+      <StoreTabletBar className="sf-next-fixed-header" />
+      <StoreDesktopHeader className="sf-next-fixed-header" />
 
       <main className="support-download-shell">
+        <header className="support-download-desktop-head">
+          <UnifiedButton type="button" onClick={handleBack} className="support-download-desktop-back">
+            <ArrowLeft size={16} aria-hidden="true" />
+            <span>返回</span>
+          </UnifiedButton>
+          <h1>{displayTitle}</h1>
+        </header>
+
         {installMode ? (
           <section className="support-install-identity" aria-label="应用身份">
             <span className="support-install-identity__mark" aria-hidden="true">

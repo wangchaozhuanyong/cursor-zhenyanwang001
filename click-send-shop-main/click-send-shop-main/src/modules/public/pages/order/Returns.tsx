@@ -1,15 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { ChevronRight, Clock3, FileText, PackageCheck, Plus, RefreshCw } from "lucide-react";
+import { ChevronRight, FileText, Plus, RefreshCw } from "lucide-react";
 import { useGoBack } from "@/hooks/useGoBack";
 import * as returnService from "@/services/returnService";
 import type { ReturnRequest } from "@/types/return";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
-import { getReturnStatusBadgeClass } from "@/constants/statusDictionary";
 import { formatDateTime } from "@/utils/formatDateTime";
 import ReturnApplySheet from "./ReturnApplySheet";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
-import { THEME_PRODUCT_MEDIA_ASPECT_STYLE } from "@/constants/productMediaAspect";
 import {
   type ReturnFilterKey,
   getBuyerReturnAction,
@@ -23,12 +21,11 @@ import {
 import ProductCoverImage from "@/components/ProductCoverImage";
 import { usePublicLocale, type PublicLocale } from "@/i18n/publicLocale";
 import { useHorizontalActiveScroll } from "@/hooks/useHorizontalActiveScroll";
-import "@/styles/secondary-routes.css";
+import "@/styles/returns-route.css";
 import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
 const RETURNS_COPY: Record<PublicLocale, {
   title: string;
-  heroTitle: string;
   heroDescription: string;
   refresh: string;
   apply: string;
@@ -42,7 +39,6 @@ const RETURNS_COPY: Record<PublicLocale, {
 }> = {
   zh: {
     title: "售后进度",
-    heroTitle: "售后进度中心",
     heroDescription: "查看退款、退货、换货和维修处理进度。",
     refresh: "刷新",
     apply: "发起售后",
@@ -56,7 +52,6 @@ const RETURNS_COPY: Record<PublicLocale, {
   },
   en: {
     title: "Returns progress",
-    heroTitle: "After-sales progress",
     heroDescription: "Track refunds, returns, exchanges, and repair requests.",
     refresh: "Refresh",
     apply: "Request service",
@@ -110,32 +105,6 @@ export default function Returns() {
     () => list.filter((item) => shouldShowReturnInFilter(item, filter)),
     [filter, list],
   );
-  const returnStats = useMemo(() => [
-    {
-      label: "全部售后",
-      value: list.length,
-      icon: FileText,
-    },
-    {
-      label: "待我操作",
-      value: list.filter((item) => {
-        const action = getBuyerReturnAction(item, locale);
-        return action?.key === "evidence" || action?.key === "logistics" || action?.key === "confirm";
-      }).length,
-      icon: Clock3,
-    },
-    {
-      label: "处理中",
-      value: list.filter((item) => shouldShowReturnInFilter(item, "processing")).length,
-      icon: RefreshCw,
-    },
-    {
-      label: "已完成",
-      value: list.filter((item) => item.status === "completed").length,
-      icon: PackageCheck,
-    },
-  ], [list, locale]);
-
   const closeApply = () => {
     setApplyOpen(false);
     if (applyOrderId) {
@@ -152,10 +121,9 @@ export default function Returns() {
       className="sf-next-page sf-next-route-page sf-next-returns-page"
       mainClassName="sf-next-account-main sm:px-4 xl:py-6"
     >
-      <main className="mx-auto w-full max-w-3xl space-y-4 text-sm">
+      <main className="sf-next-returns-main">
         <section className="sf-next-returns-hero sf-next-returns-hero--compact">
           <div className="sf-next-returns-hero__copy">
-            <h1>{copy.heroTitle}</h1>
             <p>{copy.heroDescription}</p>
           </div>
           <div className="sf-next-returns-hero__actions">
@@ -178,26 +146,11 @@ export default function Returns() {
           </div>
         </section>
 
-        <section className="sf-next-returns-summary sf-next-stats-grid" aria-label="售后统计">
-          {returnStats.map((item) => {
-            const Icon = item.icon;
-            return (
-              <div key={item.label} className="sf-next-stat">
-                <span className="sf-next-stat__icon" aria-hidden>
-                  <Icon size={17} />
-                </span>
-                <strong>{item.value}</strong>
-                <span>{item.label}</span>
-              </div>
-            );
-          })}
-        </section>
-
-        <section className="rounded-[24px] border border-border bg-card p-3 shadow-[0_14px_34px_rgba(15,23,42,0.07)]">
-          <div className="relative overflow-hidden">
+        <section className="sf-next-returns-tabs-shell">
+          <div className="sf-next-returns-tabs-viewport">
             <div
               ref={filterRailRef}
-              className="no-scrollbar flex snap-x snap-mandatory gap-2 overflow-x-auto overflow-y-hidden scroll-smooth px-1 py-1 [-webkit-overflow-scrolling:touch]"
+              className="sf-next-returns-tabs no-scrollbar"
               role="tablist"
               aria-label={copy.statusTabs}
             >
@@ -214,19 +167,13 @@ export default function Returns() {
                       scrollFilterToKey(item.key);
                       setFilter(item.key);
                     }}
-                    className={`min-h-10 shrink-0 snap-center whitespace-nowrap rounded-full border px-4 py-2 text-sm transition-colors ${
-                      active
-                        ? "border-[var(--theme-primary)] bg-[color-mix(in_srgb,var(--theme-primary)_10%,var(--theme-surface))] font-medium text-[var(--theme-primary)]"
-                        : "border-border bg-background text-muted-foreground"
-                    }`}
+                    className={`sf-next-returns-tab ${active ? "is-active" : ""}`}
                   >
                     {item.label}
                   </UnifiedButton>
                 );
               })}
             </div>
-            <span className="pointer-events-none absolute inset-y-0 left-0 w-5 bg-gradient-to-r from-card to-transparent" aria-hidden />
-            <span className="pointer-events-none absolute inset-y-0 right-0 w-5 bg-gradient-to-l from-card to-transparent" aria-hidden />
           </div>
         </section>
 
@@ -253,18 +200,18 @@ export default function Returns() {
           </section>
         ) : null}
 
-        <section className="space-y-3">
+        <section className="sf-next-returns-list">
           {filteredList.map((item) => {
             const action = getBuyerReturnAction(item, locale);
             const image = getReturnItemImage(item);
             return (
-              <article key={item.id} className="sf-next-returns-card rounded-2xl border border-border bg-card p-3 shadow-sm">
+              <article key={item.id} className="sf-next-returns-card">
                 <UnifiedButton
                   type="button"
                   onClick={() => navigate(localizedPath(`/returns/${item.id}`))}
-                  className="grid w-full grid-cols-[48px_1fr_auto] items-center gap-3 text-left"
+                  className="sf-next-returns-card__button"
                 >
-                  <div className="w-12 overflow-hidden rounded-xl bg-secondary" style={THEME_PRODUCT_MEDIA_ASPECT_STYLE}>
+                  <div className="sf-next-returns-card__media">
                     {image ? (
                       <ProductCoverImage
                         url={image}
@@ -274,27 +221,27 @@ export default function Returns() {
                       />
                     ) : null}
                   </div>
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="max-w-full truncate font-medium text-foreground">{getReturnItemName(item, locale)}</p>
-                      <span className={`rounded-full px-2 py-0.5 text-[10px] ${getReturnStatusBadgeClass(item.status)}`}>
+                  <div className="sf-next-returns-card__copy">
+                    <div className="sf-next-returns-card__title-row">
+                      <p>{getReturnItemName(item, locale)}</p>
+                      <span className="sf-next-returns-card__status">
                         {getReturnStatusLabel(item.status, locale)}
                       </span>
                     </div>
-                    <p className="mt-1 text-xs text-muted-foreground">
+                    <p className="sf-next-returns-card__meta">
                       {getReturnTypeLabel(item.type, locale)} · {copy.order} {item.order_no}
                     </p>
-                    <p className="mt-1 text-xs text-muted-foreground">
+                    <p className="sf-next-returns-card__meta">
                       {formatDateTime(item.created_at)}
                       {item.refund_amount != null && Number(item.refund_amount) > 0 ? ` · ${copy.refund} RM ${Number(item.refund_amount).toFixed(2)}` : ""}
                     </p>
                     {action ? (
-                      <p className="mt-2 rounded-lg bg-[var(--theme-primary)]/10 px-2 py-1 text-xs text-[var(--theme-primary)]">
+                      <p className="sf-next-returns-card__next">
                         {copy.nextStep}: {action.label}
                       </p>
                     ) : null}
                   </div>
-                  <ChevronRight size={18} className="text-muted-foreground" />
+                  <ChevronRight size={18} className="sf-next-returns-card__chevron" />
                 </UnifiedButton>
               </article>
             );

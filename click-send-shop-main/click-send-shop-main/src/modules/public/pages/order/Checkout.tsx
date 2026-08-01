@@ -142,24 +142,24 @@ export default function Checkout() {
       onBack={checkout.goBack}
       backFallback={localizedPath("/cart")}
       desktopBackLabel={t("checkout.backCart")}
-      className="sf-next-conversion-page sf-next-route-page sf-next-checkout-page sf-next-checkout-action-space bg-[color-mix(in_srgb,var(--theme-bg)_82%,var(--sf-canvas))] md:pb-0"
-      contentClassName="xl:max-w-screen-xl"
+      className="sf-next-conversion-page sf-next-route-page sf-next-checkout-page sf-next-checkout-action-space"
+      contentClassName="sf-next-checkout-content"
       rightSlot={<NotificationIconButton unreadCount={checkout.unreadCount} onClick={checkout.goNotifications} />}
     >
       <main className="w-full">
         <DesktopPurchaseTwoColumn
-          contentClassName="space-y-4"
+          contentClassName="sf-next-checkout-flow"
           aside={
             <DesktopPurchaseCard
               title={t("checkout.orderSummary")}
-              className="sf-next-checkout-card sf-next-checkout-summary rounded-[22px] border-[color-mix(in_srgb,var(--theme-border)_75%,transparent)] shadow-[0_18px_46px_rgba(65,45,28,0.12)]"
-              bodyClassName="space-y-4"
+              className="sf-next-checkout-card sf-next-checkout-summary"
+              bodyClassName="sf-next-checkout-summary__body"
             >
-              <div className="flex items-center justify-between border-b border-[var(--theme-border)] pb-3 text-sm">
-                <span className="text-muted-foreground">{t("checkout.itemCount")}</span>
-                <span className="font-bold text-foreground">
+              <div className="sf-next-checkout-summary__count">
+                <span>{t("checkout.itemCount")}</span>
+                <strong>
                   {itemCount} {t("checkout.unit")}
-                </span>
+                </strong>
               </div>
               <CheckoutPriceSummary
                 rawTotal={checkout.rawTotal}
@@ -180,7 +180,7 @@ export default function Checkout() {
                 onClick={checkout.handleSubmit}
                 disabled={submitDisabled}
                 variant="solid"
-                className="mt-1 min-h-12 w-full rounded-full py-3 text-sm font-bold btn-theme-gradient sf-next-theme-shadow disabled:opacity-60"
+                className="sf-next-checkout-desktop-submit"
                 loadingText={submitCtaLabel(checkout.paymentMethod, true)}
               >
                 {submitDisabled && submitDisabledHint ? submitDisabledHint : submitCtaLabel(checkout.paymentMethod, false)}
@@ -248,8 +248,8 @@ export default function Checkout() {
               showCustomerService={checkout.showCustomerService}
             />
 
-            <div className="sf-next-checkout-card sf-next-checkout-summary rounded-[20px] border border-[color-mix(in_srgb,var(--theme-border)_70%,transparent)] bg-[var(--theme-surface)] p-4 shadow-[0_14px_38px_rgba(65,45,28,0.08)] md:hidden">
-              <h3 className="mb-3 text-[15px] font-bold text-foreground">{t("checkout.amountDetail")}</h3>
+            <div className="sf-next-checkout-card sf-next-checkout-summary sf-next-checkout-summary--mobile md:hidden">
+              <h3 className="sf-next-checkout-section-title">{t("checkout.amountDetail")}</h3>
               <CheckoutPriceSummary
                 rawTotal={checkout.rawTotal}
                 discountAmount={checkout.discountAmount}

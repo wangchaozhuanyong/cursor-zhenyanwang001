@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Heart, LogIn, Plus, ShoppingCart, Store, Trash2 } from "lucide-react";
+import { Heart, LogIn, ShoppingCart, Store, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
 import { useCartStore } from "@/stores/useCartStore";
@@ -16,7 +16,7 @@ import StorefrontBadge from "@/modules/storefront-v2/components/StorefrontBadge"
 import StorefrontPrice from "@/modules/storefront-v2/components/StorefrontPrice";
 import { buildProductCardV2Model } from "@/modules/storefront-v2/product/productCardV2Model";
 import { cn } from "@/lib/utils";
-import "@/styles/secondary-routes.css";
+import "@/styles/favorites-history-route.css";
 import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
 export default function Favorites() {
@@ -67,14 +67,6 @@ export default function Favorites() {
           <>
             <FavoriteListHeader count={0} />
             <section className="sf-next-state-panel sf-next-favorites-empty">
-              <div className="sf-next-favorites-empty-preview" aria-hidden>
-                {Array.from({ length: 4 }).map((_, index) => (
-                  <span key={index}>
-                    <i />
-                    <b><Plus size={14} /></b>
-                  </span>
-                ))}
-              </div>
               <span className="sf-next-state-panel__icon" aria-hidden>
                 <Heart size={24} />
               </span>
@@ -184,6 +176,11 @@ function FavoriteProductTile({
             ))}
           </div>
         ) : null}
+      </div>
+      <div className="sf-next-favorite-tile__title-row">
+        <Link to={href} className="sf-next-favorite-tile__title" aria-label={`查看 ${vm.name}`}>
+          {vm.name}
+        </Link>
         <UnifiedButton
           type="button"
           aria-label={`取消收藏 ${vm.name}`}
@@ -193,9 +190,6 @@ function FavoriteProductTile({
           <Trash2 size={15} aria-hidden />
         </UnifiedButton>
       </div>
-      <Link to={href} className="sf-next-favorite-tile__title" aria-label={`查看 ${vm.name}`}>
-        {vm.name}
-      </Link>
       <div className="sf-next-favorite-tile__meta">
         {vm.decisionTexts.slice(0, 2).map((item) => (
           <span key={item}>{item}</span>

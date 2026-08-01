@@ -305,6 +305,7 @@ function AppScopeSync() {
     const syncScope = () => {
       root.setAttribute("data-app-scope", "store");
       root.setAttribute("data-storefront-ui", STOREFRONT_NEXT_SCOPE);
+      root.setAttribute("data-fixed-storefront", "true");
       if (isStandaloneApp()) {
         root.setAttribute("data-pwa-standalone", "true");
         root.setAttribute("data-pwa-platform", detectPwaPlatform());

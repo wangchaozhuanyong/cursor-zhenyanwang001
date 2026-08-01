@@ -5,6 +5,7 @@ import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { formatDateTime } from "@/utils/formatDateTime";
 import type { OrderLogisticsTrack } from "@/types/order";
 import { usePublicLocale, type PublicLocale } from "@/i18n/publicLocale";
+import { Copy } from "lucide-react";
 
 export type LogisticsInfoModalProps = {
   open: boolean;
@@ -79,7 +80,7 @@ export function LogisticsInfoModal({
         hasTracking ? (
           <UnifiedButton
             type="button"
-            className="flex min-h-12 w-full items-center justify-center rounded-full bg-[var(--theme-primary)] text-sm font-semibold text-[var(--theme-primary-foreground)]"
+            className="sf-fixed-modal-primary"
             onClick={async () => {
               const ok = await copyToClipboard(trackingNo!.trim());
               if (ok) {
@@ -90,6 +91,7 @@ export function LogisticsInfoModal({
               }
             }}
           >
+            <Copy size={16} aria-hidden />
             {copy.copyTracking}
           </UnifiedButton>
         ) : undefined
@@ -97,7 +99,7 @@ export function LogisticsInfoModal({
     >
       <div className="space-y-3 text-sm">
         {statusLabel ? (
-          <div className={`rounded-2xl border px-3 py-2 ${hasException ? "border-[var(--theme-danger)] bg-[color-mix(in_srgb,var(--theme-danger)_10%,var(--theme-surface))]" : "border-border bg-[var(--theme-surface)]"}`}>
+          <div className={`rounded-md border px-3 py-2 ${hasException ? "border-[var(--theme-danger)] bg-[color-mix(in_srgb,var(--theme-danger)_10%,var(--theme-surface))]" : "border-border bg-[var(--theme-surface)]"}`}>
             <p className="font-semibold text-[var(--theme-text)]">{statusLabel}</p>
             {exceptionMessage ? (
               <p className="mt-1 text-xs text-[var(--theme-text-muted)]">{exceptionMessage}</p>
@@ -122,7 +124,7 @@ export function LogisticsInfoModal({
         {hasTimeline ? (
           <div className="space-y-2 border-t border-border pt-3">
             {timeline.slice(0, 8).map((item) => (
-              <div key={item.id} className="rounded-2xl border border-border bg-[var(--theme-surface)] px-3 py-2 text-xs">
+              <div key={item.id} className="border-b border-border px-0 py-3 text-xs last:border-b-0">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className={item.severity === "error" || item.severity === "warning" ? "font-semibold text-[var(--theme-danger)]" : "font-semibold text-[var(--theme-text)]"}>
                     {item.title || item.status_label || item.status || copy.update}

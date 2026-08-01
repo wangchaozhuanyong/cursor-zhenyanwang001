@@ -1,0 +1,602 @@
+{
+  "baseUrl": "https://damatong.net",
+  "checkedAt": "2026-07-29T20:04:29.627Z",
+  "status": "not_ready",
+  "summary": {
+    "activeBanners": 7,
+    "bannersWithoutResponsiveMedia": 7,
+    "visibleCategories": 7,
+    "categoriesWithoutCustomBanner": 7,
+    "enabledHomeNavItems": 10,
+    "invalidHomeNavItems": 5,
+    "externalHomeNavItemsToReview": 1,
+    "homeProducts": 48,
+    "homeProductsWithoutEffectiveImage": 41,
+    "ageGateEnabled": false,
+    "restrictedCatalogCategories": 2,
+    "complianceBlockers": 1,
+    "blockerCount": 54
+  },
+  "details": {
+    "bannerTitlesWithoutResponsiveMedia": [
+      "中文客服确认中心",
+      "会员权益与奖励",
+      "优惠券与限时活动",
+      "配送安排更透明",
+      "本地现货优先",
+      "中国优选采购",
+      "礼品精选顾问"
+    ],
+    "categoriesWithoutCustomBanner": [
+      "签证服务",
+      "零食饮料",
+      "第二家园",
+      "留学办理",
+      "商业装修",
+      "正品酒水",
+      "正品烟草"
+    ],
+    "invalidHomeNavItems": [
+      {
+        "title": "正品烟草",
+        "reason": "unknown_category_target",
+        "targetCategoryId": "65005193-4dad-40f1-adcd-ecbf55678861",
+        "id": "e6e78222-bd22-4737-8b57-ae404dc465e9",
+        "suggestedAction": "set_category",
+        "suggestedTargetCategoryId": "4e41062b-82ce-4680-9522-fa1314d9a70e",
+        "suggestedLinkUrl": "/categories?cat=4e41062b-82ce-4680-9522-fa1314d9a70e"
+      },
+      {
+        "title": "床上用品",
+        "reason": "missing_url",
+        "id": "d2117871-cb2e-4071-a66b-1434236e07ad",
+        "suggestedAction": "disable_until_supported"
+      },
+      {
+        "title": "签证办理",
+        "reason": "unknown_category_target",
+        "targetCategoryId": "54c61c6c-86df-4b89-9075-cb45855e9808",
+        "id": "e4ca168f-d4d4-495e-b05f-44e33da1fd7f",
+        "suggestedAction": "set_category",
+        "suggestedTargetCategoryId": "3a7daa85-0e84-4434-8fef-5bcb7bb92811",
+        "suggestedLinkUrl": "/categories?cat=3a7daa85-0e84-4434-8fef-5bcb7bb92811"
+      },
+      {
+        "title": "第二家园",
+        "reason": "missing_url",
+        "id": "6be82b20-71e4-4540-abfc-db96c059a981",
+        "suggestedAction": "set_category",
+        "suggestedTargetCategoryId": "6b565c49-858e-405c-99f1-21e1b6d2b86a",
+        "suggestedLinkUrl": "/categories?cat=6b565c49-858e-405c-99f1-21e1b6d2b86a"
+      },
+      {
+        "title": "留学办理",
+        "reason": "missing_url",
+        "id": "978ea93c-7395-4a77-a652-ad6d0ad3f6a9",
+        "suggestedAction": "set_category",
+        "suggestedTargetCategoryId": "830428b6-69e9-43cb-abb2-905f079273f7",
+        "suggestedLinkUrl": "/categories?cat=830428b6-69e9-43cb-abb2-905f079273f7"
+      }
+    ],
+    "externalHomeNavItems": [
+      {
+        "id": "6f38172b-6a2f-4f09-8d28-660a432f6b46",
+        "title": "邀请返现",
+        "linkUrl": "https://flashcast.com.my/invite",
+        "suggestedAction": "review_internal_invite_route",
+        "suggestedLinkUrl": "/invite"
+      }
+    ],
+    "complianceBlockers": [
+      {
+        "issue": "age_gate_disabled_with_restricted_catalog",
+        "restrictedCategories": [
+          {
+            "id": "b9f90f39-fba8-481b-8167-4ea6fa8342db",
+            "name": "正品酒水"
+          },
+          {
+            "id": "4e41062b-82ce-4680-9522-fa1314d9a70e",
+            "name": "正品烟草"
+          }
+        ],
+        "minimumAge": 18,
+        "suggestedAction": "enable_site_age_gate"
+      }
+    ],
+    "productsWithoutEffectiveImage": [
+      {
+        "id": "e8a3c236-e51a-48e8-a67f-9633f92f160f",
+        "name": "7星1",
+        "priority": "P0",
+        "occurrences": [
+          {
+            "group": "hot",
+            "position": 4
+          }
+        ],
+        "requiredAction": "upload_square_product_cover_or_default_variant_image"
+      },
+      {
+        "id": "d5a148eb-81d4-4069-a216-07e4be869336",
+        "name": "卡比龙 极细支",
+        "priority": "P0",
+        "occurrences": [
+          {
+            "group": "hot",
+            "position": 5
+          }
+        ],
+        "requiredAction": "upload_square_product_cover_or_default_variant_image"
+      },
+      {
+        "id": "d44a5e7f-4553-4870-a31a-804a077b32e4",
+        "name": "蓝卡比龙",
+        "priority": "P0",
+        "occurrences": [
+          {
+            "group": "hot",
+            "position": 6
+          }
+        ],
+        "requiredAction": "upload_square_product_cover_or_default_variant_image"
+      },
+      {
+        "id": "158ac8b0-4821-4c33-a0c7-a60381d4a087",
+        "name": "蓝莓七",
+        "priority": "P0",
+        "occurrences": [
+          {
+            "group": "hot",
+            "position": 7
+          }
+        ],
+        "requiredAction": "upload_square_product_cover_or_default_variant_image"
+      },
+      {
+        "id": "c7fdfb79-af81-4b40-9243-b7198fa25f53",
+        "name": "卡细",
+        "priority": "P0",
+        "occurrences": [
+          {
+            "group": "hot",
+            "position": 8
+          }
+        ],
+        "requiredAction": "upload_square_product_cover_or_default_variant_image"
+      },
+      {
+        "id": "c3d65e8c-8cc7-43b1-94fb-ee78381522cf",
+        "name": "绿卡比龙",
+        "priority": "P1",
+        "occurrences": [
+          {
+            "group": "hot",
+            "position": 9
+          }
+        ],
+        "requiredAction": "upload_square_product_cover_or_default_variant_image"
+      },
+      {
+        "id": "c32e8adb-143a-43ae-b0ca-97c4f04dc6af",
+        "name": "软云斯顿",
+        "priority": "P1",
+        "occurrences": [
+          {
+            "group": "hot",
+            "position": 10
+          }
+        ],
+        "requiredAction": "upload_square_product_cover_or_default_variant_image"
+      },
+      {
+        "id": "c2f99676-b36e-496d-95be-7b9c83da30ff",
+        "name": "7星3",
+        "priority": "P1",
+        "occurrences": [
+          {
+            "group": "hot",
+            "position": 11
+          }
+        ],
+        "requiredAction": "upload_square_product_cover_or_default_variant_image"
+      },
+      {
+        "id": "bccef4f9-fc40-41af-b6be-f1f3c2f08870",
+        "name": "黄和平",
+        "priority": "P1",
+        "occurrences": [
+          {
+            "group": "hot",
+            "position": 12
+          }
+        ],
+        "requiredAction": "upload_square_product_cover_or_default_variant_image"
+      },
+      {
+        "id": "b00bbd49-42c2-40fb-88ef-87e200fbc72f",
+        "name": "硬白7",
+        "priority": "P1",
+        "occurrences": [
+          {
+            "group": "hot",
+            "position": 13
+          }
+        ],
+        "requiredAction": "upload_square_product_cover_or_default_variant_image"
+      },
+      {
+        "id": "ae0c8c0d-b97c-4ca4-b002-334c5dcfdfb3",
+        "name": "软白7星",
+        "priority": "P1",
+        "occurrences": [
+          {
+            "group": "hot",
+            "position": 14
+          }
+        ],
+        "requiredAction": "upload_square_product_cover_or_default_variant_image"
+      },
+      {
+        "id": "2e848fc2-1ecc-409f-88b2-4e76675606a1",
+        "name": "7星6",
+        "priority": "P1",
+        "occurrences": [
+          {
+            "group": "hot",
+            "position": 15
+          }
+        ],
+        "requiredAction": "upload_square_product_cover_or_default_variant_image"
+      },
+      {
+        "id": "aac723ef-061e-4c39-a9b6-cebaa1564fc2",
+        "name": "黑卡",
+        "priority": "P1",
+        "occurrences": [
+          {
+            "group": "hot",
+            "position": 16
+          }
+        ],
+        "requiredAction": "upload_square_product_cover_or_default_variant_image"
+      },
+      {
+        "id": "a3d39d0b-7b2b-4f01-8f5a-427f57858725",
+        "name": "和平铁罐",
+        "priority": "P2",
+        "occurrences": [
+          {
+            "group": "hot",
+            "position": 17
+          }
+        ],
+        "requiredAction": "upload_square_product_cover_or_default_variant_image"
+      },
+      {
+        "id": "33bcb398-1a41-4263-84c7-c6f2195dc76f",
+        "name": "白卡",
+        "priority": "P2",
+        "occurrences": [
+          {
+            "group": "hot",
+            "position": 18
+          }
+        ],
+        "requiredAction": "upload_square_product_cover_or_default_variant_image"
+      },
+      {
+        "id": "36fe93a6-4afd-4acc-8317-3eb39aaf589a",
+        "name": "绿卡",
+        "priority": "P2",
+        "occurrences": [
+          {
+            "group": "hot",
+            "position": 19
+          }
+        ],
+        "requiredAction": "upload_square_product_cover_or_default_variant_image"
+      },
+      {
+        "id": "01ef41da-1a5b-49eb-a961-d55b048ff5fb",
+        "name": "白硬7",
+        "priority": "P2",
+        "occurrences": [
+          {
+            "group": "hot",
+            "position": 20
+          }
+        ],
+        "requiredAction": "upload_square_product_cover_or_default_variant_image"
+      },
+      {
+        "id": "643b3cbc-0eaa-4077-bf58-84c6e6ed7c2e",
+        "name": "南阳 红双喜",
+        "priority": "P2",
+        "occurrences": [
+          {
+            "group": "hot",
+            "position": 21
+          }
+        ],
+        "requiredAction": "upload_square_product_cover_or_default_variant_image"
+      },
+      {
+        "id": "6178ed2d-4694-4cec-93b7-c99920eceb03",
+        "name": "日本硬七星七毫克",
+        "priority": "P2",
+        "occurrences": [
+          {
+            "group": "hot",
+            "position": 22
+          }
+        ],
+        "requiredAction": "upload_square_product_cover_or_default_variant_image"
+      },
+      {
+        "id": "42654141-83fe-43cf-a5a1-b3e9a88c70f4",
+        "name": "棕卡",
+        "priority": "P2",
+        "occurrences": [
+          {
+            "group": "hot",
+            "position": 23
+          }
+        ],
+        "requiredAction": "upload_square_product_cover_or_default_variant_image"
+      },
+      {
+        "id": "8eb15aef-17be-4e96-ba0f-4113d347a337",
+        "name": "和平金顶",
+        "priority": "P2",
+        "occurrences": [
+          {
+            "group": "hot",
+            "position": 24
+          }
+        ],
+        "requiredAction": "upload_square_product_cover_or_default_variant_image"
+      },
+      {
+        "id": "fe0aecce-ce2d-4514-9761-17da27fd19e7",
+        "name": "真龙海韵",
+        "priority": "P1",
+        "occurrences": [
+          {
+            "group": "recommended",
+            "position": 1
+          }
+        ],
+        "requiredAction": "upload_square_product_cover_or_default_variant_image"
+      },
+      {
+        "id": "f7b14ed1-602d-4e2f-8a35-e506e1e3e7b5",
+        "name": "荷花  粗",
+        "priority": "P1",
+        "occurrences": [
+          {
+            "group": "recommended",
+            "position": 2
+          }
+        ],
+        "requiredAction": "upload_square_product_cover_or_default_variant_image"
+      },
+      {
+        "id": "ec5ee6f6-ee14-4f3f-9e90-a7751604b975",
+        "name": "钻石",
+        "priority": "P1",
+        "occurrences": [
+          {
+            "group": "recommended",
+            "position": 3
+          }
+        ],
+        "requiredAction": "upload_square_product_cover_or_default_variant_image"
+      },
+      {
+        "id": "ebc49c0d-e73e-48b8-ab7d-cf443e2ce709",
+        "name": "中南蓝莓",
+        "priority": "P1",
+        "occurrences": [
+          {
+            "group": "recommended",
+            "position": 4
+          }
+        ],
+        "requiredAction": "upload_square_product_cover_or_default_variant_image"
+      },
+      {
+        "id": "e5741cd0-9d2f-457d-ac49-2e58833047a3",
+        "name": "南金十二钗 金",
+        "priority": "P1",
+        "occurrences": [
+          {
+            "group": "recommended",
+            "position": 5
+          }
+        ],
+        "requiredAction": "upload_square_product_cover_or_default_variant_image"
+      },
+      {
+        "id": "d7a5d0e8-82ce-4033-81e4-9f1427b389ef",
+        "name": "硬金典",
+        "priority": "P1",
+        "occurrences": [
+          {
+            "group": "recommended",
+            "position": 6
+          }
+        ],
+        "requiredAction": "upload_square_product_cover_or_default_variant_image"
+      },
+      {
+        "id": "ce8fe761-547a-4278-a24a-496e61011b68",
+        "name": "云烟紫云烟",
+        "priority": "P1",
+        "occurrences": [
+          {
+            "group": "recommended",
+            "position": 7
+          }
+        ],
+        "requiredAction": "upload_square_product_cover_or_default_variant_image"
+      },
+      {
+        "id": "c6d17a11-7078-4b74-abbf-36cba8a90ca8",
+        "name": "贵烟 中支",
+        "priority": "P1",
+        "occurrences": [
+          {
+            "group": "recommended",
+            "position": 8
+          }
+        ],
+        "requiredAction": "upload_square_product_cover_or_default_variant_image"
+      },
+      {
+        "id": "944d8a93-7f8b-4cae-8ee9-2b0d66a3bac2",
+        "name": "十二银钗",
+        "priority": "P2",
+        "occurrences": [
+          {
+            "group": "recommended",
+            "position": 10
+          }
+        ],
+        "requiredAction": "upload_square_product_cover_or_default_variant_image"
+      },
+      {
+        "id": "92418863-7867-4439-9ba5-7bc68267a536",
+        "name": "中支 平安宽窄",
+        "priority": "P2",
+        "occurrences": [
+          {
+            "group": "recommended",
+            "position": 11
+          }
+        ],
+        "requiredAction": "upload_square_product_cover_or_default_variant_image"
+      },
+      {
+        "id": "8762e84a-622b-4097-b383-f749011d2262",
+        "name": "宽窄 粗",
+        "priority": "P2",
+        "occurrences": [
+          {
+            "group": "recommended",
+            "position": 13
+          }
+        ],
+        "requiredAction": "upload_square_product_cover_or_default_variant_image"
+      },
+      {
+        "id": "7d3cbe55-b4bb-4c3d-8298-0ca537df8876",
+        "name": "真龙源起",
+        "priority": "P2",
+        "occurrences": [
+          {
+            "group": "recommended",
+            "position": 14
+          }
+        ],
+        "requiredAction": "upload_square_product_cover_or_default_variant_image"
+      },
+      {
+        "id": "75b69902-9656-4be8-ab31-3529693e7324",
+        "name": "经典喜",
+        "priority": "P2",
+        "occurrences": [
+          {
+            "group": "recommended",
+            "position": 15
+          }
+        ],
+        "requiredAction": "upload_square_product_cover_or_default_variant_image"
+      },
+      {
+        "id": "5d507055-09f3-4eb1-9e39-b200cd267ba4",
+        "name": "硬 红双喜",
+        "priority": "P2",
+        "occurrences": [
+          {
+            "group": "recommended",
+            "position": 16
+          }
+        ],
+        "requiredAction": "upload_square_product_cover_or_default_variant_image"
+      },
+      {
+        "id": "57902fbe-7907-41de-b54e-43d036c7f2b7",
+        "name": "黑软七",
+        "priority": "P2",
+        "occurrences": [
+          {
+            "group": "recommended",
+            "position": 17
+          }
+        ],
+        "requiredAction": "upload_square_product_cover_or_default_variant_image"
+      },
+      {
+        "id": "53bad999-7879-4952-af5a-cdd0e57fad03",
+        "name": "荷花中支",
+        "priority": "P2",
+        "occurrences": [
+          {
+            "group": "recommended",
+            "position": 18
+          }
+        ],
+        "requiredAction": "upload_square_product_cover_or_default_variant_image"
+      },
+      {
+        "id": "248da3b8-c522-432e-9abf-5c029bc2459c",
+        "name": "经典 红双喜",
+        "priority": "P2",
+        "occurrences": [
+          {
+            "group": "recommended",
+            "position": 19
+          }
+        ],
+        "requiredAction": "upload_square_product_cover_or_default_variant_image"
+      },
+      {
+        "id": "1f28b681-35c8-4bf4-8c27-e0a3e587b0b8",
+        "name": "荷中",
+        "priority": "P2",
+        "occurrences": [
+          {
+            "group": "recommended",
+            "position": 20
+          }
+        ],
+        "requiredAction": "upload_square_product_cover_or_default_variant_image"
+      },
+      {
+        "id": "077461b8-b8ba-489a-8ad5-8170234652ff",
+        "name": "上海喜",
+        "priority": "P2",
+        "occurrences": [
+          {
+            "group": "recommended",
+            "position": 22
+          }
+        ],
+        "requiredAction": "upload_square_product_cover_or_default_variant_image"
+      },
+      {
+        "id": "199bda9e-12b2-4ff9-bb70-04098deaade0",
+        "name": "蘭州",
+        "priority": "P2",
+        "occurrences": [
+          {
+            "group": "recommended",
+            "position": 24
+          }
+        ],
+        "requiredAction": "upload_square_product_cover_or_default_variant_image"
+      }
+    ]
+  }
+}

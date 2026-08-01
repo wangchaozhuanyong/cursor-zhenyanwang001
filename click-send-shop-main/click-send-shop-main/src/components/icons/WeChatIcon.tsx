@@ -7,7 +7,7 @@ type WeChatIconProps = {
 
 export default function WeChatIcon({
   size = 24,
-  color = "#07C160",
+  color = "#07C160", // theme-hardcode-allowed: official WeChat brand color
   className,
   "aria-hidden": ariaHidden,
 }: WeChatIconProps) {

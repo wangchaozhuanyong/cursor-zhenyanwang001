@@ -26,6 +26,14 @@ function normalizeTargetType(value) {
   return 'url';
 }
 
+function isUsableUrlTarget(value) {
+  const target = trimString(value, 512);
+  if (!target || target.startsWith('//')) return false;
+  if (/^(?:javascript|data|vbscript):/i.test(target)) return false;
+  const scheme = target.match(/^([a-z][a-z\d+.-]*):/i)?.[1]?.toLowerCase();
+  return !scheme || scheme === 'http' || scheme === 'https';
+}
+
 async function assertSupportNavAllowed() {
   const caps = await siteCapabilitiesService.getSiteCapabilities();
   if (caps.customerServiceDownloadEnabled === false) {
@@ -45,6 +53,10 @@ async function resolveNavTarget(body) {
   if (targetType === 'category') {
     if (!targetCategoryId) {
       return { error: { code: 400, message: '请选择要跳转的分类' } };
+    }
+    const publicCategoryIds = await repo.selectPublicCategoryIds([targetCategoryId]);
+    if (!publicCategoryIds.includes(targetCategoryId)) {
+      return { error: { code: 400, message: '所选分类不存在、已停用或不可见' } };
     }
     return {
       targetType,
@@ -81,11 +93,15 @@ async function resolveNavTarget(body) {
     };
   }
 
+  const linkUrl = trimString(body.link_url ?? body.linkUrl, 512);
+  if (!isUsableUrlTarget(linkUrl)) {
+    return { error: { code: 400, message: '请输入有效的站内路径或 HTTP(S) 地址' } };
+  }
   return {
     targetType: 'url',
     targetCategoryId: null,
     targetSupportChannelId: null,
-    linkUrl: trimString(body.link_url ?? body.linkUrl, 512),
+    linkUrl,
   };
 }
 
@@ -115,6 +131,41 @@ async function listSupportChannelsForAdmin() {
   if (capError) return capError;
   const channels = await supportChannels.listSupportChannels({ enabledOnly: true });
   return { data: channels };
+}
+
+async function filterPublicNavItems(rows) {
+  const items = rows.map(formatNavItem);
+  const categoryIds = items
+    .filter((item) => item.target_type === 'category')
+    .map((item) => item.target_category_id)
+    .filter(Boolean);
+  const hasSupportTargets = items.some((item) => item.target_type === 'support');
+
+  const [publicCategoryIds, supportState] = await Promise.all([
+    repo.selectPublicCategoryIds(categoryIds),
+    hasSupportTargets
+      ? Promise.all([
+        siteCapabilitiesService.getSiteCapabilities(),
+        supportChannels.listSupportChannels({ enabledOnly: true }),
+      ])
+      : Promise.resolve(null),
+  ]);
+  const publicCategoryIdSet = new Set(publicCategoryIds);
+  const supportEnabled = supportState?.[0]?.customerServiceDownloadEnabled !== false;
+  const enabledSupportChannelIds = new Set((supportState?.[1] || []).map((channel) => channel.id));
+
+  return items.filter((item) => {
+    if (item.target_type === 'category') {
+      return !!item.target_category_id && publicCategoryIdSet.has(item.target_category_id);
+    }
+    if (item.target_type === 'categories') return true;
+    if (item.target_type === 'support') {
+      return supportEnabled
+        && !!item.target_support_channel_id
+        && enabledSupportChannelIds.has(item.target_support_channel_id);
+    }
+    return isUsableUrlTarget(item.link_url);
+  });
 }
 
 async function createNavItem(body) {
@@ -166,8 +217,9 @@ async function updateNavItem(id, body) {
     || body.targetCategoryId !== undefined
     || body.target_support_channel_id !== undefined
     || body.targetSupportChannelId !== undefined;
+  const enablingExistingItem = body.enabled !== undefined && normalizeBool(body.enabled, true);
 
-  if (targetTouched) {
+  if (targetTouched || enablingExistingItem) {
     const current = await repo.selectNavTargetById(id);
     if (!current) return { error: { code: 404, message: '导航不存在' } };
     const merged = {
@@ -231,10 +283,11 @@ async function updateHomeOpsSettings(body, adminUserId, req) {
 }
 
 async function getPublicHomeOps() {
-  const [navItems, moduleSettings] = await Promise.all([
-    listNavItems({ publicOnly: true }),
+  const [navRows, moduleSettings] = await Promise.all([
+    repo.selectNavItems({ publicOnly: true }),
     homeModuleSettings.getHomeModuleSettings(),
   ]);
+  const navItems = await filterPublicNavItems(navRows);
   return { navItems, moduleSettings };
 }
 

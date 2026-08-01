@@ -31,8 +31,8 @@ export default function StorefrontLoadErrorPanel({
       aria-live="polite"
       className={
         compact
-          ? `rounded-xl px-4 py-4 text-center text-sm ${THEME_ALERT_ERROR_SOFT}`
-          : `rounded-xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-8 text-center ${THEME_ALERT_ERROR_SOFT}`
+          ? `sf-fixed-load-error is-compact ${THEME_ALERT_ERROR_SOFT}`
+          : `sf-fixed-load-error ${THEME_ALERT_ERROR_SOFT}`
       }
     >
       <p className="font-medium text-[var(--theme-text)]">{displayMessage}</p>
@@ -41,12 +41,12 @@ export default function StorefrontLoadErrorPanel({
           {hint}
         </p>
       ) : null}
-      <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+      <div className="sf-fixed-load-error__actions">
         {onRetry ? (
           <UnifiedButton
             type="button"
             onClick={onRetry}
-            className="inline-flex items-center gap-1.5 rounded-full bg-[var(--theme-primary)] px-4 py-2 text-xs font-semibold text-[var(--theme-primary-foreground)]"
+            className="sf-fixed-overlay-action is-primary"
           >
             <RefreshCw size={14} />
             {t("common.retry")}
@@ -56,7 +56,7 @@ export default function StorefrontLoadErrorPanel({
           <UnifiedButton
             type="button"
             onClick={() => navigate(localizedPath("/categories"))}
-            className="inline-flex items-center gap-1.5 rounded-full border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 py-2 text-xs font-semibold text-[var(--theme-text)]"
+            className="sf-fixed-overlay-action"
           >
             <Grid3X3 size={14} />
             {t("common.categories")}
@@ -66,7 +66,7 @@ export default function StorefrontLoadErrorPanel({
           <UnifiedButton
             type="button"
             onClick={() => navigate(localizedPath("/support-download?tab=support"))}
-            className="inline-flex items-center gap-1.5 rounded-full border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 py-2 text-xs font-semibold text-[var(--theme-text)]"
+            className="sf-fixed-overlay-action"
           >
             <Headphones size={14} />
             {t("common.contactSupport")}

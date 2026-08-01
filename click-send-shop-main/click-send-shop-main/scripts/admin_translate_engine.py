@@ -1004,7 +1004,6 @@ WORDS: dict[str, str] = {
     "视频仅支持 MP4、WebM、MOV 格式": "Video: MP4, WebM, or MOV only",
     "成功色，用于完成、通过、库存充足等正向状态。": "Success color for positive states.",
     "商品卡布局变体：标准、高级、促销、紧凑横版。": "Product card layout: standard, premium, promo, or compact.",
-    "Theme Studio 预览 Banner": "Theme Studio preview banner",
     "图标 URL（建议 128×128 正方形）": "Icon URL (128×128 square recommended)",
     "活动已有参与数据时删除将影响统计，确认删除？": "Delete campaign with participation data? Stats will be affected.",
     "首页 Banner 圆角、遮罩与促销强调风格。": "Home banner corners, overlay & promo emphasis.",

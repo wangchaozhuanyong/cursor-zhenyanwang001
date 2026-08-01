@@ -1,18 +1,16 @@
 /* eslint-disable react-refresh/only-export-components */
-import { useTheme } from "next-themes";
 import { Toaster as Sonner, toast } from "sonner";
 
 type ToasterProps = React.ComponentProps<typeof Sonner>;
 
-const Toaster = ({ closeButton, toastOptions, ...props }: ToasterProps) => {
-  const { theme = "system" } = useTheme();
+const Toaster = ({ closeButton, theme = "light", toastOptions, ...props }: ToasterProps) => {
   const isStoreScope =
     typeof document !== "undefined" &&
     document.documentElement.getAttribute("data-app-scope") === "store";
 
   return (
     <Sonner
-      theme={theme as ToasterProps["theme"]}
+      theme={theme}
       className="toaster group"
       closeButton={closeButton ?? isStoreScope}
       /* 顶栏展示，避免与前台/后台底栏 Tab 抢触控区域；顶距尊重刘海安全区 */
@@ -36,3 +34,4 @@ const Toaster = ({ closeButton, toastOptions, ...props }: ToasterProps) => {
 };
 
 export { Toaster, toast };
+export type { ToasterProps };

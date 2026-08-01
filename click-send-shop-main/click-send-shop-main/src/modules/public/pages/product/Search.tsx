@@ -6,7 +6,6 @@ import { StoreSearchDrawer, StoreSearchLauncher } from "@/components/store/Store
 import { buildStoreSearchCategoryOptions, type StoreSearchTagOption } from "@/components/store/storeSearchOptions";
 import { STORE_COPY } from "@/constants/storeCopy";
 import { NEW_ARRIVAL_CATEGORY_PATH } from "@/constants/newArrivalNavigation";
-import { useClientDesignStyle } from "@/modules/storefront-v2/design/useClientDesignStyle";
 import StorefrontPrice from "@/modules/storefront-v2/components/StorefrontPrice";
 import { buildProductCardV2Model } from "@/modules/storefront-v2/product/productCardV2Model";
 import { useGoBack } from "@/hooks/useGoBack";
@@ -24,7 +23,6 @@ import SeoHead from "@/components/SeoHead";
 import { buildCanonical } from "@/utils/seo";
 import { setSearchAttribution } from "@/services/analyticsService";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
-import { appendThemePreviewParams } from "@/utils/themePreviewParams";
 import { storefrontCategoryName } from "@/utils/storefrontCopySanitizer";
 import type { Product, ProductListParams, ProductTag } from "@/types/product";
 import "@/styles/search-route.css";
@@ -85,7 +83,6 @@ export default function Search() {
   const goBack = useGoBack("/");
   const navigate = useStorefrontNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const clientStyle = useClientDesignStyle();
   const siteInfo = useSiteInfo();
   const siteCapabilities = useSiteCapabilities();
   const productGridClass = "sf-next-product-grid grid grid-cols-2 gap-x-5 gap-y-8 pt-1 md:grid-cols-3 xl:grid-cols-4";
@@ -128,9 +125,18 @@ export default function Search() {
   const hasDiscoveryProducts =
     hotProducts.length > 0 || newProducts.length > 0 || recommendedProducts.length > 0;
   const recentBrowseProducts = useMemo(() => historyProducts.slice(0, 3), [historyProducts]);
+  const recentBrowseProductIds = useMemo(
+    () => new Set(recentBrowseProducts.map((product) => product.id)),
+    [recentBrowseProducts],
+  );
   const recommendedBrowseProducts = useMemo(
-    () => uniqueProductsById([...hotProducts, ...newProducts, ...recommendedProducts], 3),
-    [hotProducts, newProducts, recommendedProducts],
+    () => uniqueProductsById(
+      [...hotProducts, ...newProducts, ...recommendedProducts].filter(
+        (product) => !recentBrowseProductIds.has(product.id) && Boolean(product.cover_image?.trim()),
+      ),
+      4,
+    ),
+    [hotProducts, newProducts, recentBrowseProductIds, recommendedProducts],
   );
   const searchProductParams = useMemo<ProductListParams | null>(() => {
     const keyword = submittedQuery.trim();
@@ -254,20 +260,19 @@ export default function Search() {
   const searchCategoryOptions = useMemo(() => buildStoreSearchCategoryOptions({
     categories,
     activeCategoryId: "all",
-    onAll: () => navigate(appendThemePreviewParams("/categories")),
-    onNew: () => navigate(appendThemePreviewParams(NEW_ARRIVAL_CATEGORY_PATH)),
-    onCategorySelect: (category) => navigate(appendThemePreviewParams(`/categories?cat=${encodeURIComponent(category.id)}`)),
+    onAll: () => navigate("/categories"),
+    onNew: () => navigate(NEW_ARRIVAL_CATEGORY_PATH),
+    onCategorySelect: (category) => navigate(`/categories?cat=${encodeURIComponent(category.id)}`),
   }), [categories, navigate]);
   const searchTagOptions = useMemo<StoreSearchTagOption[]>(() => quickTags.map((tag) => ({
     id: tag.id,
     label: storefrontCategoryName(tag.name),
-    onSelect: () => navigate(appendThemePreviewParams(`/categories?tag_id=${encodeURIComponent(tag.id)}`)),
+    onSelect: () => navigate(`/categories?tag_id=${encodeURIComponent(tag.id)}`),
   })), [navigate, quickTags]);
 
   return (
     <div
       className="sf-next-page-shell sf-next-route-page sf-next-search-page sf-next-bottom-safe text-[var(--theme-text)]"
-      data-storefront-client-style={clientStyle}
     >
       <SeoHead
         title={`搜索｜${siteName}`}
@@ -291,38 +296,40 @@ export default function Search() {
 
       <main className="sf-next-search-body mx-auto w-full max-w-screen-xl">
         {shouldShowDiscovery ? (
-          <>
-            <SearchHistorySection
-              items={searchHistory}
-              onClear={clearSearchHistory}
-              onSelect={commitSearch}
-            />
+          <div className="sf-next-search-discovery-layout">
+            <div className="sf-next-search-discovery-nav">
+              <SearchHistorySection
+                items={searchHistory}
+                onClear={clearSearchHistory}
+                onSelect={commitSearch}
+              />
 
-            <SearchListSection title="热门搜索">
-              {hotTermLabels.slice(0, 4).map((term, index) => (
-                <SearchSuggestionRow
-                  key={`hot-term-${index}`}
-                  label={term}
-                  index={index + 1}
-                  onClick={() => commitSearch(term)}
-                />
-              ))}
-            </SearchListSection>
+              <SearchListSection title="热门搜索">
+                {hotTermLabels.slice(0, 4).map((term, index) => (
+                  <SearchSuggestionRow
+                    key={`hot-term-${index}`}
+                    label={term}
+                    index={index + 1}
+                    onClick={() => commitSearch(term)}
+                  />
+                ))}
+              </SearchListSection>
+            </div>
 
-            <RecentBrowseSection
-              products={recentBrowseProducts}
-              onOpen={(product) => navigate(appendThemePreviewParams(buildProductCardV2Model(product).href))}
-            />
+            <div className="sf-next-search-discovery-products">
+              <RecentBrowseSection
+                products={recentBrowseProducts}
+                onOpen={(product) => navigate(buildProductCardV2Model(product).href)}
+              />
 
-            {recentBrowseProducts.length === 0 ? (
               <SearchProductStripSection
-                title="推荐浏览"
+                title={recentBrowseProducts.length > 0 ? "精选推荐" : "推荐浏览"}
                 products={recommendedBrowseProducts}
                 loading={showDiscoveryProductsLoading}
-                onOpen={(product) => navigate(appendThemePreviewParams(buildProductCardV2Model(product).href))}
+                onOpen={(product) => navigate(buildProductCardV2Model(product).href)}
               />
-            ) : null}
-          </>
+            </div>
+          </div>
         ) : (
           <>
             <div className="sf-next-search-results-head">

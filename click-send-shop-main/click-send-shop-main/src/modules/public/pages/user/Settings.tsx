@@ -15,7 +15,7 @@ import * as userService from "@/services/userService";
 import * as authService from "@/services/authService";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 import SettingsSecuritySection from "@/modules/public/pages/user/SettingsSecuritySection";
-import SegmentedDateInput from "@/components/admin/SegmentedDateInput";
+import StoreSegmentedDateInput from "@/components/store/StoreSegmentedDateInput";
 import CountryPhoneInput from "@/components/auth/CountryPhoneInput";
 import {
   buildIntlPhone,
@@ -27,19 +27,17 @@ import { normalizeBirthdayValue, resolveBirthdayLockedState } from "@/utils/birt
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import StableImage from "@/components/ui/StableImage";
 import { usePublicLocale } from "@/i18n/publicLocale";
-import "@/styles/secondary-routes.css";
+import "@/styles/settings-route.css";
 import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
 const CARD = "sf-next-settings-card";
-const SECTION_TITLE = "sf-next-settings-section-title";
 const SOFT_INPUT = "sf-next-settings-input";
 const FIELD_LABEL = "sf-next-settings-field-label";
 const DIVIDER = "sf-next-settings-divider";
 
 function SectionBlock({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="sf-next-settings-section">
-      <h2 className={SECTION_TITLE}>{title}</h2>
+    <section className="sf-next-settings-section" aria-label={title}>
       <div className={CARD}>{children}</div>
     </section>
   );
@@ -283,7 +281,7 @@ export default function Settings() {
               </IconBubble>
               <div className="min-w-0 flex-1">
                 <span className={FIELD_LABEL}>生日</span>
-                <SegmentedDateInput
+                <StoreSegmentedDateInput
                   value={birthday}
                   readOnly={birthdayReadOnly}
                   onChange={setBirthday}
@@ -387,7 +385,7 @@ export default function Settings() {
                     : "绑定后可使用微信扫码登录"}
                 </p>
                 {wechatBinding.bound && wechatBinding.boundAt ? (
-                  <p className="mt-1 text-[11px] leading-5 text-[var(--theme-muted)]">
+                  <p className="mt-1 text-xs leading-5 text-[var(--theme-muted)]">
                     绑定时间：{formatDateTime(wechatBinding.boundAt)}
                   </p>
                 ) : null}

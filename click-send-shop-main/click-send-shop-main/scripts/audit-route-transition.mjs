@@ -20,7 +20,7 @@ const NEW_ARRIVAL_CATEGORY_PATH = "/categories?is_new=1&home_new_arrivals_rule=1
 const BLOCK_SERVICE_WORKERS = process.env.ROUTE_AUDIT_ALLOW_SERVICE_WORKER !== "1";
 
 const publicRoutes = ["/", "/categories", "/promotions", "/cart", "/profile", "/search", NEW_ARRIVAL_CATEGORY_PATH];
-const adminRoutes = ["/admin", "/admin/products", "/admin/orders", "/admin/settings/theme"];
+const adminRoutes = ["/admin", "/admin/products", "/admin/orders", "/admin/home-ops"];
 
 const issues = [];
 const warnings = [];
@@ -648,7 +648,7 @@ async function auditAdmin(browser, launch, session) {
     return results;
   }
 
-  for (const path of ["/admin/products", "/admin/orders", "/admin/settings/theme", "/admin"]) {
+  for (const path of ["/admin/products", "/admin/orders", "/admin/home-ops", "/admin"]) {
     results.push(await auditTransition(page, `admin ${path}`, path, { scope: "admin", viewport: "desktop" }));
   }
 

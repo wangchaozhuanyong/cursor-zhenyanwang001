@@ -1,33 +1,48 @@
 import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Tx } from "@/components/admin/AdminText";
 import AdminFieldHint from "@/components/admin/AdminFieldHint";
 import AdminPageShell from "@/components/admin/AdminPageShell";
-import { Grid3X3, LayoutGrid, Sparkles, ToggleLeft } from "lucide-react";
+import { Grid3X3, LayoutGrid, ShieldCheck, Sparkles, ToggleLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import AdminHomeOpsDisplayPanel from "./homeOps/AdminHomeOpsDisplayPanel";
 import AdminHomeOpsModulePanel from "./homeOps/AdminHomeOpsModulePanel";
 import AdminHomeOpsNewArrivalPanel from "./homeOps/AdminHomeOpsNewArrivalPanel";
 import AdminHomeNavEditor from "./homeOps/AdminHomeNavEditor";
+import AdminStorefrontReadinessPanel from "./homeOps/AdminStorefrontReadinessPanel";
 import { useAdminT } from "@/hooks/useAdminT";
 import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import { useAdminTabDirty } from "@/hooks/useAdminTabDirty";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
-type HomeOpsTab = "modules" | "display" | "nav" | "newArrival";
+type HomeOpsTab = "readiness" | "modules" | "display" | "nav" | "newArrival";
 
 const HOME_OPS_TABS: { id: HomeOpsTab; label: string; icon: React.ElementType; desc: string }[] = [
+  { id: "readiness", label: "发布准备", icon: ShieldCheck, desc: "检查当前客户端内容是否达到发布要求" },
   { id: "modules", label: "模块开关", icon: ToggleLeft, desc: "管理首页模块的启用和禁用" },
   { id: "display", label: "展示设置", icon: LayoutGrid, desc: "设置首页展示规则与数量" },
   { id: "nav", label: "快捷入口", icon: Grid3X3, desc: "维护图标、标题、跳转方式和排序" },
   { id: "newArrival", label: "新品主推设置", icon: Sparkles, desc: "配置新品专区的展示内容" },
 ];
 
+function normalizeHomeOpsTab(value: string | null): HomeOpsTab {
+  return HOME_OPS_TABS.some((tab) => tab.id === value) ? value as HomeOpsTab : "readiness";
+}
+
 export default function AdminHomeOps() {
   const { tText } = useAdminT();
   const { confirm } = useAdminConfirm();
-  const [activeTab, setActiveTab] = useState<HomeOpsTab>("modules");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = normalizeHomeOpsTab(searchParams.get("tab"));
   const [panelDirty, setPanelDirty] = useState(false);
   useAdminTabDirty(panelDirty);
+
+  const changeTab = (nextTab: HomeOpsTab) => {
+    const nextSearchParams = new URLSearchParams(searchParams);
+    nextSearchParams.set("tab", nextTab);
+    setPanelDirty(false);
+    setSearchParams(nextSearchParams, { replace: true });
+  };
 
   const requestTabChange = (nextTab: HomeOpsTab) => {
     if (nextTab === activeTab) return;
@@ -36,11 +51,11 @@ export default function AdminHomeOps() {
         title: tText("未保存的修改"),
         description: tText("当前分区还有未保存内容，切换后将丢失这些修改。"),
         confirmText: tText("继续切换"),
-        onConfirm: () => setActiveTab(nextTab),
+        onConfirm: () => changeTab(nextTab),
       });
       return;
     }
-    setActiveTab(nextTab);
+    changeTab(nextTab);
   };
 
   return (
@@ -74,6 +89,7 @@ export default function AdminHomeOps() {
           })}
         </nav>
         <div className="min-w-0">
+          {activeTab === "readiness" ? <AdminStorefrontReadinessPanel /> : null}
           {activeTab === "modules" ? <AdminHomeOpsModulePanel onDirtyChange={setPanelDirty} /> : null}
           {activeTab === "display" ? <AdminHomeOpsDisplayPanel onDirtyChange={setPanelDirty} /> : null}
           {activeTab === "newArrival" ? <AdminHomeOpsNewArrivalPanel onDirtyChange={setPanelDirty} /> : null}

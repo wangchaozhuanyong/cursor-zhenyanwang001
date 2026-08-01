@@ -171,6 +171,7 @@ export const adminQueryKeys = {
   restoreDrills: () => ["admin", "restore", "drills"] as const,
   banners: () => ["admin", "banners"] as const,
   contentHub: () => ["admin", "content", "hub"] as const,
+  storefrontReadiness: () => ["admin", "home-ops", "storefront-readiness"] as const,
   homeOpsNav: () => ["admin", "home-ops", "nav"] as const,
   reportOverview: (filters?: Record<string, string>) => ["admin", "reports", "overview", filters ?? {}] as const,
   settingsRoot: () => ["admin", "settings"] as const,

@@ -7,7 +7,7 @@ type TelegramIconProps = {
 
 export default function TelegramIcon({
   size = 24,
-  color = "#229ED9",
+  color = "#229ED9", // theme-hardcode-allowed: official Telegram brand color
   className,
   "aria-hidden": ariaHidden,
 }: TelegramIconProps) {

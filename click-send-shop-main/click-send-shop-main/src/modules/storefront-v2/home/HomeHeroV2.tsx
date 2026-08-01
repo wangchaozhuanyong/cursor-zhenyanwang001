@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { Fragment, lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { UserRound } from "lucide-react";
 import NotificationIconButton from "@/components/NotificationIconButton";
 import StoreBrandLogo from "@/components/store/StoreBrandLogo";
@@ -14,7 +14,6 @@ import { useNotificationStore } from "@/stores/useNotificationStore";
 import { useProductStore } from "@/stores/useProductStore";
 import * as productService from "@/services/productService";
 import type { ProductTag } from "@/types/product";
-import { scheduleIdleTask } from "@/utils/idleScheduler";
 import { storefrontCategoryName } from "@/utils/storefrontCopySanitizer";
 import { getBannerCtaText } from "@/utils/bannerCta";
 
@@ -50,7 +49,7 @@ export default function HomeHeroV2({
   const [keyword, setKeyword] = useState("");
   const [searchTags, setSearchTags] = useState<ProductTag[]>([]);
   const [activeBanner, setActiveBanner] = useState<Banner | null>(null);
-  const [carouselReady, setCarouselReady] = useState(false);
+  const [carouselReady, setCarouselReady] = useState(hasBanner);
   const categories = useProductStore((s) => s.categories);
   const loadCategories = useProductStore((s) => s.loadCategories);
   const { locale, localizedPath, t } = usePublicLocale();
@@ -63,6 +62,7 @@ export default function HomeHeroV2({
   const activeBannerLink = activeBanner?.link?.trim() || "";
   const activeBannerCtaText = activeBanner ? getBannerCtaText(activeBanner) : "";
   const displayHeroTitle = activeBannerTitle || heroTitle;
+  const heroTitleSegments = splitCjkHeroTitle(displayHeroTitle);
   const displayHeroDescription = activeBannerDescription
     ? normalizeBannerHeroDescription(activeBannerDescription)
     : compactHeroDescription;
@@ -87,17 +87,7 @@ export default function HomeHeroV2({
   }, [hasBanner]);
 
   useEffect(() => {
-    if (!hasBanner) {
-      setCarouselReady(false);
-      return;
-    }
-    return scheduleIdleTask("home-hero-banner-carousel", () => {
-      setCarouselReady(true);
-    }, {
-      delayMs: 3200,
-      timeoutMs: 5200,
-      jitterMs: 400,
-    });
+    setCarouselReady(hasBanner);
   }, [hasBanner]);
 
   useEffect(() => {
@@ -164,7 +154,16 @@ export default function HomeHeroV2({
       <div className="sf-next-home-hero__feature">
         <div className="sf-next-home-hero__copy">
           <span className="sf-next-home-hero__kicker">{siteName}</span>
-          <h2>{displayHeroTitle}</h2>
+          <h2>
+            {heroTitleSegments
+              ? heroTitleSegments.map((segment, index) => (
+                <Fragment key={segment}>
+                  {index > 0 ? " " : null}
+                  <span className="sf-next-home-hero__title-line">{segment}</span>
+                </Fragment>
+              ))
+              : displayHeroTitle}
+          </h2>
           {displayHeroDescription ? <p>{displayHeroDescription}</p> : null}
           <UnifiedButton
             type="button"
@@ -176,19 +175,12 @@ export default function HomeHeroV2({
         </div>
 
         <div className="sf-next-home-hero__visual">
-          <div className="sf-next-home-hero__art" aria-hidden="true">
-            <span className="sf-next-home-hero__art-block sf-next-home-hero__art-block--ink" />
-            <span className="sf-next-home-hero__art-block sf-next-home-hero__art-block--mint" />
-            <span className="sf-next-home-hero__art-orb" />
-            <span className="sf-next-home-hero__art-base" />
-          </div>
           {hasBanner && carouselReady ? (
             <div className="sf-next-home-hero__banner-texture">
               <Suspense
                 fallback={(
                   <HeroFallbackVisual
                     siteName={siteName}
-                    logoSrc={logoSrc}
                     slogan={displaySlogan}
                     description={displayDescription}
                   />
@@ -208,7 +200,6 @@ export default function HomeHeroV2({
           ) : (
             <HeroFallbackVisual
               siteName={siteName}
-              logoSrc={logoSrc}
               slogan={displaySlogan}
               description={displayDescription}
             />
@@ -221,6 +212,13 @@ export default function HomeHeroV2({
 
 function containsCjk(value: string) {
   return /[\u3400-\u9fff]/.test(value);
+}
+
+function splitCjkHeroTitle(title: string) {
+  const segments = title.trim().split(/\s+/).filter(Boolean);
+  if (segments.length !== 2) return null;
+  if (!segments.every((segment) => containsCjk(segment) && segment.length <= 7)) return null;
+  return segments;
 }
 
 function buildQuietHeroTitle(siteName: string, slogan: string) {
@@ -326,18 +324,24 @@ function HeroFallbackVisual({
   siteName,
   slogan,
   description,
-  logoSrc,
 }: {
   siteName: string;
   slogan: string;
   description: string;
-  logoSrc?: string;
 }) {
   return (
     <div className="sf-next-home-hero__fallback">
-      <div className="sf-next-home-hero__fallback-mark" aria-hidden>
-        {logoSrc ? <img src={logoSrc} alt="" className="h-full w-full object-contain p-10 opacity-80" /> : null}
-      </div>
+      <picture>
+        <source
+          media="(min-width: 768px)"
+          srcSet="/assets/fixed-storefront/option2-home-hero-desktop.webp"
+        />
+        <img
+          src="/assets/fixed-storefront/option2-home-hero-mobile.webp"
+          alt=""
+          className="sf-next-home-hero__fallback-image"
+        />
+      </picture>
       <span className="sr-only">{siteName}{slogan}{description}</span>
     </div>
   );

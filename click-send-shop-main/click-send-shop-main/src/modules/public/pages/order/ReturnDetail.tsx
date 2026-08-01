@@ -26,7 +26,7 @@ import {
 } from "./returnProgress";
 import { usePublicLocale, type PublicLocale } from "@/i18n/publicLocale";
 import StatusTimeline, { type StatusTimelineItem } from "@/modules/storefront-v2/design/components/StatusTimeline";
-import "@/styles/secondary-routes.css";
+import "@/styles/returns-route.css";
 
 const ORDER_REFUND_STATUS_LABELS: Record<PublicLocale, Record<string, string>> = {
   zh: {
@@ -349,13 +349,8 @@ export default function ReturnDetail() {
   const timeline = detail ? buildReturnTimeline(detail, locale) : [];
   const image = detail ? getReturnItemImage(detail) : "";
   const returnQuantity = detail ? detail.quantity || detail.item_info?.request_qty || 1 : 0;
-  const returnRefundAmount = detail ? Number(detail.refund_summary?.refund_amount || detail.refund_amount || 0) : 0;
-  const orderRefundedAmount = detail ? Number(detail.refund_summary?.order_refunded_amount || 0) : 0;
   const returnStatusLabel = detail ? getReturnStatusLabel(detail.status, locale) : "";
   const returnTypeLabel = detail ? getReturnTypeLabel(detail.type, locale) : "";
-  const refundStatusLabel = detail
-    ? getOrderRefundStatusLabel(detail.refund_summary?.order_refund_status || detail.refund_summary?.order_payment_status, locale)
-    : "";
   const progressItems: StatusTimelineItem[] = timeline.map((item, index) => ({
     id: item.key,
     title: item.title,
@@ -376,8 +371,8 @@ export default function ReturnDetail() {
 
   return (
     <StoreAccountLayout title={copy.title} onBack={goBack} backFallback={localizedPath("/returns")} desktopBackLabel={copy.backToProgress} className="sf-next-route-page sf-next-return-detail-page" mainClassName="sm:px-4 xl:py-6">
-      <main className="mx-auto w-full max-w-3xl space-y-4 text-sm">
-        {loading ? <p className="rounded-xl border border-border bg-card p-4 text-muted-foreground">{copy.loading}</p> : null}
+      <main className="sf-next-return-detail-main">
+        {loading ? <p className="sf-next-return-detail-loading">{copy.loading}</p> : null}
         {!loading && !detail && errorMessage ? (
           <section className="sf-next-state-panel sf-next-return-detail-state" role="status">
             <span className="sf-next-state-panel__icon" aria-hidden>
@@ -416,36 +411,9 @@ export default function ReturnDetail() {
               ) : null}
             </section>
 
-            <section className="sf-next-return-detail-summary sf-next-stats-grid">
-              <div className="sf-next-stat">
-                <span className="sf-next-stat__icon"><PackageCheck size={17} aria-hidden /></span>
-                <strong>{returnQuantity}</strong>
-                <span>{copy.quantity}</span>
-                <small>{returnTypeLabel}</small>
-              </div>
-              <div className="sf-next-stat">
-                <span className="sf-next-stat__icon"><CreditCard size={17} aria-hidden /></span>
-                <strong>{returnRefundAmount > 0 ? money(returnRefundAmount) : copy.noRefund}</strong>
-                <span>{copy.currentRefund}</span>
-                <small>{refundStatusLabel}</small>
-              </div>
-              <div className="sf-next-stat">
-                <span className="sf-next-stat__icon"><Truck size={17} aria-hidden /></span>
-                <strong>{detail.shipments?.length || 0}</strong>
-                <span>{copy.returnShipments}</span>
-                <small>{detail.logistics_tracks?.length || 0} 条轨迹</small>
-              </div>
-              <div className="sf-next-stat">
-                <span className="sf-next-stat__icon"><RotateCcw size={17} aria-hidden /></span>
-                <strong>{orderRefundedAmount > 0 ? money(orderRefundedAmount) : "-"}</strong>
-                <span>{copy.orderRefunded}</span>
-                <small>{formatDateTime(detail.updated_at)}</small>
-              </div>
-            </section>
-
-            <section className="sf-next-return-detail-product-card rounded-2xl border border-border bg-card p-4 shadow-sm">
-              <div className="flex items-start gap-3">
-                <div className="w-14 shrink-0 overflow-hidden rounded-xl bg-secondary" style={THEME_PRODUCT_MEDIA_ASPECT_STYLE}>
+            <section className="sf-next-return-detail-product-card">
+              <div className="sf-next-return-detail-product">
+                <div className="sf-next-return-detail-product__media" style={THEME_PRODUCT_MEDIA_ASPECT_STYLE}>
                   {image ? (
                     <ProductCoverImage
                       url={image}
@@ -455,17 +423,17 @@ export default function ReturnDetail() {
                     />
                   ) : null}
                 </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h1 className="truncate text-base font-semibold text-foreground">{getReturnItemName(detail, locale)}</h1>
-                    <span className={`rounded-full px-2 py-0.5 text-[10px] ${getReturnStatusBadgeClass(detail.status)}`}>
+                <div className="sf-next-return-detail-product__copy">
+                  <div className="sf-next-return-detail-product__title-row">
+                    <h1>{getReturnItemName(detail, locale)}</h1>
+                    <span className={`sf-next-return-detail-product__status ${getReturnStatusBadgeClass(detail.status)}`}>
                       {getReturnStatusLabel(detail.status, locale)}
                     </span>
                   </div>
-                  <p className="mt-1 text-xs text-muted-foreground">
+                  <p>
                     {getReturnTypeLabel(detail.type, locale)} · {copy.order} {detail.order_no}
                   </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
+                  <p>
                     {copy.quantity} {returnQuantity}
                     {detail.refund_amount != null && Number(detail.refund_amount) > 0 ? ` · ${copy.refund} ${money(detail.refund_amount)}` : ""}
                   </p>
@@ -473,28 +441,28 @@ export default function ReturnDetail() {
               </div>
             </section>
 
-            <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-              <h2 className="font-semibold text-foreground">{copy.progress}</h2>
+            <section className="sf-next-return-detail-panel">
+              <h2>{copy.progress}</h2>
               <StatusTimeline items={progressItems} className="mt-4 sf-next-return-detail-timeline" />
             </section>
 
             {action?.key === "evidence" ? (
-              <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-                <h2 className="font-semibold text-foreground">{copy.evidenceTitle}</h2>
+              <section className="sf-next-return-detail-panel sf-next-return-detail-action-panel">
+                <h2>{copy.evidenceTitle}</h2>
                 <textarea
                   value={evidenceText}
                   onChange={(e) => setEvidenceText(e.target.value)}
                   rows={4}
                   placeholder={copy.evidencePlaceholder}
-                  className="mt-3 w-full rounded-xl border border-border bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-[var(--theme-primary)]"
+                  className="sf-next-return-detail-textarea"
                 />
                 <div className="mt-3 flex items-center justify-between">
-                  <UnifiedButton type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading} className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs disabled:opacity-60">
+                  <UnifiedButton type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading} className="sf-next-return-detail-secondary-action">
                     {uploading ? <Loader2 size={14} className="animate-spin" /> : <ImagePlus size={14} />}
                     {copy.uploadImage}
                   </UnifiedButton>
                   <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => { void uploadImages(Array.from(e.target.files || [])); e.currentTarget.value = ""; }} />
-                  <UnifiedButton type="button" onClick={submitEvidence} disabled={submitting || uploading} className="rounded-lg bg-[var(--theme-primary)] px-4 py-2 text-xs font-semibold text-[var(--theme-primary-foreground)] disabled:opacity-60">
+                  <UnifiedButton type="button" onClick={submitEvidence} disabled={submitting || uploading} className="sf-next-return-detail-primary-action">
                     {copy.submitEvidence}
                   </UnifiedButton>
                 </div>
@@ -508,7 +476,7 @@ export default function ReturnDetail() {
                           className="aspect-square w-full"
                           imgClassName="object-cover"
                         />
-                        <UnifiedButton type="button" aria-label={copy.deleteImage} onClick={() => setEvidenceImages((prev) => prev.filter((item) => item !== url))} className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/55 text-white">
+                        <UnifiedButton type="button" aria-label={copy.deleteImage} onClick={() => setEvidenceImages((prev) => prev.filter((item) => item !== url))} className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-[var(--sf-overlay)] text-[var(--theme-primary-foreground)]">
                           <X size={13} />
                         </UnifiedButton>
                       </div>
@@ -519,43 +487,43 @@ export default function ReturnDetail() {
             ) : null}
 
             {action?.key === "logistics" ? (
-              <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-                <h2 className="flex items-center gap-2 font-semibold text-foreground"><Truck size={16} />{copy.logisticsTitle}</h2>
-                <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                  <input value={carrier} onChange={(e) => setCarrier(e.target.value)} placeholder={copy.carrier} className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--theme-primary)]" />
-                  <input value={trackingNo} onChange={(e) => setTrackingNo(e.target.value)} placeholder={copy.trackingNo} className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--theme-primary)]" />
-                  <input value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} placeholder={copy.contactPhone} className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--theme-primary)]" />
-                  <input value={logisticsNote} onChange={(e) => setLogisticsNote(e.target.value)} placeholder={copy.noteOptional} className="rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--theme-primary)]" />
+              <section className="sf-next-return-detail-panel sf-next-return-detail-action-panel">
+                <h2 className="sf-next-return-detail-heading-with-icon"><Truck size={16} />{copy.logisticsTitle}</h2>
+                <div className="sf-next-return-detail-fields">
+                  <input value={carrier} onChange={(e) => setCarrier(e.target.value)} placeholder={copy.carrier} />
+                  <input value={trackingNo} onChange={(e) => setTrackingNo(e.target.value)} placeholder={copy.trackingNo} />
+                  <input value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} placeholder={copy.contactPhone} />
+                  <input value={logisticsNote} onChange={(e) => setLogisticsNote(e.target.value)} placeholder={copy.noteOptional} />
                 </div>
-                <UnifiedButton type="button" onClick={submitLogistics} disabled={submitting} className="mt-3 w-full rounded-xl bg-[var(--theme-primary)] px-4 py-2.5 text-sm font-semibold text-[var(--theme-primary-foreground)] disabled:opacity-60">
+                <UnifiedButton type="button" onClick={submitLogistics} disabled={submitting} className="sf-next-return-detail-primary-action sf-next-return-detail-primary-action--wide">
                   {copy.submitLogistics}
                 </UnifiedButton>
               </section>
             ) : null}
 
             {action?.key === "confirm" ? (
-              <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-                <h2 className="flex items-center gap-2 font-semibold text-foreground"><PackageCheck size={16} />{copy.confirmTitle}</h2>
-                <p className="mt-2 text-xs text-muted-foreground">{copy.confirmDescription}</p>
-                <UnifiedButton type="button" onClick={confirmCompleted} disabled={submitting} className="mt-3 w-full rounded-xl bg-[var(--theme-primary)] px-4 py-2.5 text-sm font-semibold text-[var(--theme-primary-foreground)] disabled:opacity-60">
+              <section className="sf-next-return-detail-panel sf-next-return-detail-action-panel">
+                <h2 className="sf-next-return-detail-heading-with-icon"><PackageCheck size={16} />{copy.confirmTitle}</h2>
+                <p className="sf-next-return-detail-description">{copy.confirmDescription}</p>
+                <UnifiedButton type="button" onClick={confirmCompleted} disabled={submitting} className="sf-next-return-detail-primary-action sf-next-return-detail-primary-action--wide">
                   {copy.confirmButton}
                 </UnifiedButton>
               </section>
             ) : null}
 
             {action?.key === "cancel" ? (
-              <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-                <h2 className="flex items-center gap-2 font-semibold text-foreground"><RotateCcw size={16} />{copy.cancelTitle}</h2>
-                <p className="mt-2 text-xs text-muted-foreground">{copy.cancelDescription}</p>
-                <UnifiedButton type="button" onClick={cancelReturn} disabled={submitting} className="mt-3 w-full rounded-xl border border-border px-4 py-2.5 text-sm font-semibold text-foreground disabled:opacity-60">
+              <section className="sf-next-return-detail-panel sf-next-return-detail-action-panel">
+                <h2 className="sf-next-return-detail-heading-with-icon"><RotateCcw size={16} />{copy.cancelTitle}</h2>
+                <p className="sf-next-return-detail-description">{copy.cancelDescription}</p>
+                <UnifiedButton type="button" onClick={cancelReturn} disabled={submitting} className="sf-next-return-detail-secondary-action sf-next-return-detail-secondary-action--wide">
                   {copy.cancelButton}
                 </UnifiedButton>
               </section>
             ) : null}
 
-            <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-              <h2 className="flex items-center gap-2 font-semibold text-foreground"><CreditCard size={16} />{copy.refundStatus}</h2>
-              <div className="mt-3 rounded-xl bg-secondary/60 p-3 text-xs text-muted-foreground">
+            <section className="sf-next-return-detail-panel">
+              <h2 className="sf-next-return-detail-heading-with-icon"><CreditCard size={16} />{copy.refundStatus}</h2>
+              <div className="sf-next-return-detail-refund-summary">
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
                   <span>{copy.orderRefundStatus}: {getOrderRefundStatusLabel(detail.refund_summary?.order_refund_status || detail.refund_summary?.order_payment_status, locale)}</span>
                   {Number(detail.refund_summary?.refund_amount || detail.refund_amount || 0) > 0 ? (
@@ -569,7 +537,7 @@ export default function ReturnDetail() {
               {detail.refund_records?.length ? (
                 <div className="mt-3 space-y-2">
                   {detail.refund_records.map((record) => (
-                    <div key={record.id} className="rounded-xl border border-border bg-background/60 p-3 text-xs">
+                    <div key={record.id} className="sf-next-return-detail-record">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <p className="font-medium text-foreground">{getRefundRecordStatusLabel(record, locale)}</p>
                         <p className="text-muted-foreground">{formatDateTime(record.created_at)}</p>
@@ -584,14 +552,14 @@ export default function ReturnDetail() {
                   ))}
                 </div>
               ) : (
-                <p className="mt-3 rounded-xl border border-dashed border-border p-3 text-xs text-muted-foreground">
+                <p className="sf-next-return-detail-empty-note">
                   {copy.noRefundRecords}
                 </p>
               )}
             </section>
 
-            <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-              <h2 className="font-semibold text-foreground">{copy.applicationInfo}</h2>
+            <section className="sf-next-return-detail-panel">
+              <h2>{copy.applicationInfo}</h2>
               <div className="mt-3 space-y-2 text-xs text-muted-foreground">
                 <p>{copy.reason}: {detail.reason || "-"}</p>
                 {detail.description ? <p className="whitespace-pre-wrap">{copy.description}: {detail.description}</p> : null}
@@ -613,11 +581,11 @@ export default function ReturnDetail() {
             </section>
 
             {detail.shipments?.length ? (
-              <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-                <h2 className="font-semibold text-foreground">{copy.returnShipments}</h2>
+              <section className="sf-next-return-detail-panel">
+                <h2>{copy.returnShipments}</h2>
                 <div className="mt-3 space-y-2">
                   {detail.shipments.map((item) => (
-                    <div key={item.id} className="rounded-xl bg-secondary/60 p-3 text-xs">
+                    <div key={item.id} className="sf-next-return-detail-record">
                       <p className="font-medium text-foreground">{item.carrier} {item.tracking_no}</p>
                       {item.note ? <p className="mt-1 text-muted-foreground">{item.note}</p> : null}
                       <p className="mt-1 text-muted-foreground">{formatDateTime(item.created_at)}</p>
@@ -628,12 +596,12 @@ export default function ReturnDetail() {
             ) : null}
 
             {detail.shipments?.length || detail.logistics_tracks?.length ? (
-              <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-                <h2 className="flex items-center gap-2 font-semibold text-foreground"><Truck size={16} />{copy.logisticsTracks}</h2>
+              <section className="sf-next-return-detail-panel">
+                <h2 className="sf-next-return-detail-heading-with-icon"><Truck size={16} />{copy.logisticsTracks}</h2>
                 {detail.logistics_tracks?.length ? (
                   <StatusTimeline items={logisticsTrackItems} className="mt-3 sf-next-return-detail-timeline" />
                 ) : (
-                  <p className="mt-3 rounded-xl border border-dashed border-border p-3 text-xs text-muted-foreground">
+                  <p className="sf-next-return-detail-empty-note">
                     {copy.noCarrierTracks}
                   </p>
                 )}

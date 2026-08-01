@@ -19,6 +19,7 @@ import { EMPTY_SITE_SETTINGS } from "./siteSettingsDefaults";
 import {
   getSectionById,
   getSectionFieldKeys,
+  readSiteSettingsSectionIdFromHash,
   SITE_SETTINGS_SECTIONS,
 } from "./siteSettingsSections";
 import {
@@ -73,10 +74,17 @@ export default function SiteSettingsPage() {
   }, []);
 
   useEffect(() => {
-    if (loading || location.hash !== "#policy-paths") return;
-    setActiveSectionId("footer");
+    if (loading) return;
+    const sectionId = readSiteSettingsSectionIdFromHash(location.hash);
+    if (!sectionId && location.hash !== "#policy-paths") return;
+    const nextSectionId = location.hash === "#policy-paths" ? "footer" : sectionId;
+    if (!nextSectionId) return;
+    setActiveSectionId(nextSectionId);
     const t = window.setTimeout(() => {
-      document.getElementById("policy-paths")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      const targetId = location.hash === "#policy-paths"
+        ? "policy-paths"
+        : `site-settings-section-${nextSectionId}`;
+      document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 150);
     return () => window.clearTimeout(t);
   }, [location.hash, loading]);
@@ -330,7 +338,9 @@ export default function SiteSettingsPage() {
         helpPanel={<SiteSettingsHelpPanel {...helpProps} />}
       >
         <SiteSettingsHelpPanelMobile {...helpProps} />
-        {renderSectionForm()}
+        <div id={`site-settings-section-${activeSectionId}`}>
+          {renderSectionForm()}
+        </div>
       </SiteSettingsLayout>
     </AdminPageShell>
   );

@@ -109,7 +109,7 @@ export default function PaymentMethodPicker({
   ].filter((opt) => shouldShowPaymentOption(opt.id, showOnline, showCustomerService));
 
   return (
-    <div className="space-y-2">
+    <div className="sf-next-payment-options">
       {options.map((opt) => {
         const isActive = value === opt.id;
         const isDisabled = opt.disabled;
@@ -117,49 +117,41 @@ export default function PaymentMethodPicker({
         return (
           <div
             key={opt.id}
-            className={`sf-next-payment-option rounded-xl border transition-colors ${
-              isActive
-                ? "border-[var(--theme-price)] bg-[color-mix(in_srgb,var(--theme-price)_7%,var(--theme-surface))]"
-                : "border-border hover:border-[color-mix(in_srgb,var(--theme-price)_40%,var(--theme-border))]"
-            } ${isDisabled ? "opacity-50" : ""}`}
+            className={`sf-next-payment-option ${isActive ? "is-active" : ""} ${isDisabled ? "is-disabled" : ""}`}
           >
             <UnifiedButton
               type="button"
               onClick={() => !isDisabled && onChange(opt.id)}
               disabled={isDisabled}
-              className={`flex w-full items-start gap-3 p-3.5 text-left ${isDisabled ? "cursor-not-allowed" : ""}`}
+              className="sf-next-payment-option__button"
             >
               <opt.icon
                 size={22}
-                className={`mt-0.5 flex-shrink-0 ${
-                  isActive ? "text-theme-price" : "text-muted-foreground"
-                }`}
+                className="sf-next-payment-option__icon"
               />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="text-sm font-semibold text-foreground">
+              <div className="sf-next-payment-option__copy">
+                <div className="sf-next-payment-option__title-row">
+                  <p>
                     {opt.title}
                   </p>
                   {opt.recommended && !isDisabled && (
-                    <span className="rounded-full bg-[color-mix(in_srgb,var(--theme-price)_10%,var(--theme-surface))] px-2 py-0.5 text-[10px] font-bold text-theme-price">
+                    <span className="sf-next-payment-option__recommended">
                       {copy.recommended}
                     </span>
                   )}
                 </div>
-                <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+                <p className="sf-next-payment-option__description">
                   {isDisabled ? opt.disabledHint : opt.desc}
                 </p>
               </div>
               <div
-                className={`mt-1 h-4 w-4 rounded-full border-2 flex-shrink-0 ${
-                  isActive ? "border-[var(--theme-price)] bg-[var(--theme-price)]" : "border-muted-foreground"
-                }`}
+                className="sf-next-payment-option__indicator"
               />
             </UnifiedButton>
             {showChannels ? (
-              <div className="border-t border-border/70 px-3.5 pb-3.5 pt-2">
-                <p className="mb-2 text-[11px] font-semibold text-muted-foreground">{copy.selectChannel}</p>
-                <div className="grid grid-cols-2 gap-2">
+              <div className="sf-next-payment-channels">
+                <p>{copy.selectChannel}</p>
+                <div className="sf-next-payment-channels__grid">
                   {onlineChannels.map((channel) => {
                     const selected = selectedOnlineChannelCode === channel.code;
                     const provider = String(channel.provider || "").toLowerCase();
@@ -173,13 +165,9 @@ export default function PaymentMethodPicker({
                         key={channel.code}
                         type="button"
                         onClick={() => onOnlineChannelChange?.(channel.code)}
-                        className={`sf-next-payment-channel flex items-center gap-2 rounded-lg border px-3 py-2 text-left text-xs transition-colors ${
-                          selected
-                            ? "border-[var(--theme-price)] bg-[color-mix(in_srgb,var(--theme-price)_10%,var(--theme-surface))] text-foreground"
-                            : "border-border bg-background text-muted-foreground"
-                        }`}
+                        className={`sf-next-payment-channel ${selected ? "is-selected" : ""}`}
                       >
-                        <Icon size={15} className={selected ? "text-theme-price" : "text-muted-foreground"} />
+                        <Icon size={15} />
                         <span className="min-w-0 flex-1 truncate font-semibold">{channel.name}</span>
                       </UnifiedButton>
                     );

@@ -7,7 +7,6 @@
   --admin-mobile-card-x: 12px;
   --admin-table-cell-px: clamp(0.5rem, 1.25vw, 1rem);
   --admin-table-cell-py: 0.625rem;
-  --theme-admin-mode: follow_store;
   --sf-next-brand-logo-admin-size: 2.75rem;
   --sf-next-brand-logo-admin-lg-size: 5rem;
 }
@@ -22,12 +21,12 @@
   height: var(--sf-next-brand-logo-admin-lg-size);
 }
 
-[data-theme-density="compact"] [data-admin-shell] .admin-table-scope table:not(.admin-table-fixed) th,
-[data-theme-density="compact"] [data-admin-shell] .admin-table-scope table:not(.admin-table-fixed) td {
+[data-density="compact"] [data-admin-shell] .admin-table-scope table:not(.admin-table-fixed) th,
+[data-density="compact"] [data-admin-shell] .admin-table-scope table:not(.admin-table-fixed) td {
   --admin-table-cell-py: 0.375rem;
 }
 
-[data-theme-density="compact"] .admin-table-row {
+[data-density="compact"] .admin-table-row {
   min-height: var(--theme-density-row, 2.25rem);
 }
 

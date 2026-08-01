@@ -4,6 +4,7 @@ import {
   registerDownloadConfirmDialog,
   type DownloadConfirmRequest,
 } from "@/utils/downloadConfirm";
+import "@/styles/fixed-storefront-overlays.css";
 
 type PendingConfirm = DownloadConfirmRequest & {
   resolve: (accepted: boolean) => void;
@@ -43,30 +44,35 @@ export function DownloadConfirmProvider({ children }: { children: ReactNode }) {
       {children}
       {pending ? (
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/45 px-4 py-6 backdrop-blur-sm"
+          className="sf-fixed-download-confirm"
           role="presentation"
           onClick={() => close(false)}
         >
-          <div
+          <section
             aria-modal="true"
             aria-labelledby="download-confirm-title"
             aria-describedby={pending.description ? "download-confirm-description" : undefined}
-            className="w-full max-w-sm rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-2xl"
+            className="sf-fixed-download-confirm__panel"
             role="dialog"
             onClick={(event) => event.stopPropagation()}
           >
-            <h2 id="download-confirm-title" className="text-base font-semibold">
-              {pending.title ?? "\u786e\u8ba4\u4e0b\u8f7d"}
-            </h2>
-            {pending.description ? (
-              <p id="download-confirm-description" className="mt-2 text-sm leading-6 text-muted-foreground">
-                {pending.description}
-              </p>
-            ) : null}
-            <div className="mt-5 flex justify-end gap-2">
+            <div className="sf-fixed-download-confirm__header">
+              <span className="sf-fixed-download-confirm__icon" aria-hidden>
+                <Download size={20} />
+              </span>
+              <div className="sf-fixed-download-confirm__copy">
+                <h2 id="download-confirm-title">
+                  {pending.title ?? "\u786e\u8ba4\u4e0b\u8f7d"}
+                </h2>
+                {pending.description ? (
+                  <p id="download-confirm-description">{pending.description}</p>
+                ) : null}
+              </div>
+            </div>
+            <div className="sf-fixed-download-confirm__actions">
               <button
                 type="button"
-                className="inline-flex items-center justify-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted-foreground transition hover:bg-muted"
+                className="sf-fixed-overlay-action"
                 onClick={() => close(false)}
               >
                 <X className="h-4 w-4 shrink-0" aria-hidden />
@@ -74,14 +80,15 @@ export function DownloadConfirmProvider({ children }: { children: ReactNode }) {
               </button>
               <button
                 type="button"
-                className="inline-flex items-center justify-center gap-2 rounded-lg bg-[var(--theme-primary)] px-4 py-2 text-sm font-semibold text-[var(--theme-primary-foreground)] shadow-sm transition hover:bg-[var(--theme-primary-hover,var(--theme-primary))]"
+                className="sf-fixed-overlay-action is-primary"
                 onClick={() => close(true)}
+                autoFocus
               >
                 <Download className="h-4 w-4 shrink-0" aria-hidden />
                 <span>{pending.confirmText ?? "\u4e0b\u8f7d"}</span>
               </button>
             </div>
-          </div>
+          </section>
         </div>
       ) : null}
     </>

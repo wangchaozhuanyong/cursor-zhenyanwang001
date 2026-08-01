@@ -1,7 +1,7 @@
 import os
 
 ROOT = os.path.join(os.path.dirname(__file__), "..", "src")
-SKIP_FILES = {"themePresets.ts", "starterThemeSkins.ts", "themeContrast.ts"}
+SKIP_FILES = {"themeContrast.ts"}
 
 PAIRS = [
     ("rounded-full bg-gold ", "rounded-full btn-theme-price "),

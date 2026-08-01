@@ -1,13 +1,13 @@
 # 客户端重构提交与发布执行清单
 
-更新时间：2026-06-22 23:41 PDT
+更新时间：2026-07-29 PDT
 
 ## 当前发布候选
 
-- Git 根目录：`/Users/wangchao/Desktop/真烟网/cursor-zhenyanwang001-work`
+- Git 根目录：`/Users/wangchao/Desktop/真烟网/cursor-zhenyanwang001-fixed-client`
 - 前端目录：`click-send-shop-main/click-send-shop-main`
-- 当前分支：`main`
-- 提交前基线 HEAD：`dad919c6`
+- 当前分支：`feature/fixed-client-redesign`
+- 提交前基线 HEAD：`6ff2fbd7`
 - 候选提交：客户端 SILENT COMMERCE 全站重构
 - 建议提交信息：`feat(client): redesign storefront experience`
 
@@ -17,7 +17,7 @@
 
 - 不包含 `.env`、`.env.*`、密钥、私有账号、token 或生产配置。
 - 不包含 `dist/`、`admin-dist/`、`artifacts/`。
-- 不包含 lockfile；本轮没有新增依赖。
+- `package-lock.json` 只允许同步移除已退役的 `next-themes`，不得新增依赖。
 - 不混入登录、支付、订单、库存、部署配置等无关业务改动。
 - 不回滚当前工作区内已有客户端重构改动。
 
@@ -31,13 +31,13 @@ npm run check:client-redesign-scope
 
 ```json
 {
-  "changedEntries": 118,
+  "changedEntries": 359,
   "statusCounts": {
-    "M": 98,
-    "D": 1,
-    "??": 19
+    "M": 215,
+    "D": 46,
+    "??": 98
   },
-  "scannedFiles": 117,
+  "scannedFiles": 276,
   "warnings": [],
   "failures": []
 }
@@ -51,6 +51,7 @@ npm run check:client-redesign-scope
 git add \
   .gitignore \
   click-send-shop-main/click-send-shop-main/package.json \
+  click-send-shop-main/click-send-shop-main/package-lock.json \
   click-send-shop-main/click-send-shop-main/src \
   click-send-shop-main/click-send-shop-main/scripts \
   click-send-shop-main/click-send-shop-main/docs/CLIENT_REDESIGN_RELEASE_AUDIT.md \
@@ -66,7 +67,6 @@ click-send-shop-main/click-send-shop-main/admin-dist/
 click-send-shop-main/click-send-shop-main/artifacts/
 .env
 .env.*
-package-lock.json
 pnpm-lock.yaml
 yarn.lock
 bun.lockb
@@ -79,13 +79,13 @@ bun.lockb
 ```bash
 npm run check:client-redesign-scope
 git diff --check
-BASE_URL=http://127.0.0.1:5174 npm run release:client-redesign
+BASE_URL=http://127.0.0.1:5188 npm run release:client-redesign
 ```
 
 如果要同时生成最新截图包：
 
 ```bash
-BASE_URL=http://127.0.0.1:5174 CAPTURE_CLIENT_REDESIGN=1 npm run release:client-redesign
+BASE_URL=http://127.0.0.1:5188 CAPTURE_CLIENT_REDESIGN=1 npm run release:client-redesign
 ```
 
 ## 提交命令
@@ -154,8 +154,8 @@ npm run release:client-redesign
 - 图片加载失败时有可接受的回退，不出现空白大块。
 - 登录态页面跳转符合预期，不误放开账号页、订单页、钱包页。
 
-## 已知非阻塞项
+## 已知边界
 
-- `theme:check` 当前仍会报告疑似硬编码颜色，退出码为 0，不阻塞本次客户端发布。
-- 当前设计资料以 390px 移动端为基准；桌面端已通过可用性和无重叠门禁，但如果要做大屏专属高级布局，需要另起桌面增强批次。
+- `theme:check` 已在严格模式下收敛为 `0` 项发现；后续新增客户端颜色字面量会直接阻断发布门禁。
+- 当前设计资料以 390px 移动端为基准；桌面端已经完成同体系内容栅格、可用性和无重叠验收。
 - 后台登录态路由切换验收需要单独提供 `ADMIN_BASE_URL` 和 `ADMIN_PASSWORD`。

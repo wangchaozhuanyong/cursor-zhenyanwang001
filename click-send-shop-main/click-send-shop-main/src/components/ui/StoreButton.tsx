@@ -1,6 +1,5 @@
 import type { ButtonHTMLAttributes, PropsWithChildren } from "react";
 import { cn } from "@/lib/utils";
-import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { UnifiedButton } from "./UnifiedButton";
 
 type StoreButtonVariant = "primary" | "secondary" | "ghost" | "danger" | "price";
@@ -20,9 +19,9 @@ const variantMap: Record<StoreButtonVariant, string> = {
 };
 
 const sizeMap: Record<StoreButtonSize, string> = {
-  sm: "h-8 px-3 text-xs",
-  md: "h-10 px-4 text-sm",
-  lg: "h-11 px-5 text-sm font-semibold",
+  sm: "min-h-11 px-3 text-sm",
+  md: "min-h-11 px-4 text-sm",
+  lg: "min-h-12 px-5 text-sm font-semibold",
 };
 
 export default function StoreButton({
@@ -32,27 +31,17 @@ export default function StoreButton({
   children,
   ...props
 }: PropsWithChildren<StoreButtonProps>) {
-  const { themeConfig } = useThemeRuntime();
-  const radiusClass =
-    themeConfig.buttonStyle === "pill"
-      ? "rounded-full"
-      : themeConfig.buttonStyle === "square"
-        ? "rounded-md"
-        : "";
-
   return (
     <UnifiedButton
       type="button"
       className={cn(
-        "inline-flex items-center justify-center gap-2 whitespace-nowrap transition-[transform,box-shadow,filter,background-color,border-color,color] duration-200 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-55",
+        "inline-flex items-center justify-center gap-2 rounded-md whitespace-nowrap transition-[transform,filter,background-color,border-color,color] duration-200 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-55",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--theme-bg)]",
         "hover:brightness-[1.02]",
         variantMap[variant],
         sizeMap[size],
-        radiusClass,
         className,
       )}
-      style={themeConfig.buttonStyle === "rounded" ? { borderRadius: "var(--theme-radius)" } : undefined}
       {...props}
     >
       {children}

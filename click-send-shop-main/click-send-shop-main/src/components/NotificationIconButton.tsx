@@ -18,7 +18,7 @@ export default function NotificationIconButton({
   return (
     <UnifiedButton
       type="button"
-      className={`sf-next-notification-button relative flex h-[2.625rem] w-[2.625rem] overflow-visible items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)]/50 ${className}`}
+      className={`sf-next-notification-button relative flex h-11 w-11 min-h-11 min-w-11 overflow-visible items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)]/50 ${className}`}
       onClick={onClick}
       aria-label={badgeText ? `消息通知，未读 ${badgeText}` : "消息通知"}
     >

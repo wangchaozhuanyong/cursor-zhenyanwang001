@@ -1,23 +1,21 @@
 /* Damatong standalone mobile service page. */
 html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-page {
-  --tiktok-bg: #eef2ee;
-  --tiktok-surface: #fffffb;
-  --tiktok-muted: #f5f7f3;
-  --tiktok-line: #dbe1da;
-  --tiktok-ink: #19201b;
-  --tiktok-hero: #19201b;
-  --tiktok-soft-ink: #647069;
-  --tiktok-accent: #2d6d56;
-  --tiktok-accent-soft: #e1efe7;
-  --tiktok-warm: #dcc9aa;
+  --tiktok-bg: var(--sf-canvas);
+  --tiktok-surface: var(--sf-surface);
+  --tiktok-muted: var(--sf-surface-muted);
+  --tiktok-line: var(--sf-line);
+  --tiktok-ink: var(--sf-ink);
+  --tiktok-hero: var(--sf-ink);
+  --tiktok-soft-ink: var(--sf-muted);
+  --tiktok-accent: var(--sf-primary);
+  --tiktok-accent-soft: var(--sf-primary-soft);
+  --tiktok-warm: var(--sf-premium);
   min-height: 100dvh;
   width: 100%;
   max-width: 31rem;
   margin: 0 auto;
   overflow-x: hidden;
-  background:
-    linear-gradient(180deg, rgb(255 255 251 / 0.72), transparent 15rem),
-    var(--tiktok-bg);
+  background: var(--tiktok-bg);
   color: var(--tiktok-ink);
   padding: 0 0 calc(5.8rem + env(safe-area-inset-bottom));
 }
@@ -69,7 +67,7 @@ html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-brand__logo {
   place-items: center;
   overflow: hidden;
   border: 1px solid var(--tiktok-line);
-  border-radius: 0.7rem;
+  border-radius: 6px;
   background: var(--tiktok-surface);
 }
 
@@ -114,8 +112,8 @@ html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-search__field
   gap: 0.55rem;
   min-height: 2.9rem;
   border: 1px solid var(--tiktok-line);
-  border-radius: 1.1rem;
-  background: rgb(255 255 251 / 0.74);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--tiktok-surface) 94%, transparent);
   padding: 0 0.85rem;
   color: var(--tiktok-soft-ink);
 }
@@ -130,7 +128,7 @@ html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-search__field
 }
 
 html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-search__field input::placeholder {
-  color: #8a948f;
+  color: var(--sf-ink-quiet);
 }
 
 html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-search__field button {
@@ -204,15 +202,23 @@ html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-hero {
   display: grid;
   min-width: 0;
   overflow: hidden;
-  min-height: 11.4rem;
+  min-height: 12.4rem;
   margin: var(--sf-space-3);
-  border: 1px solid rgb(255 255 255 / 0.08);
-  border-radius: 1.35rem;
-  background:
-    radial-gradient(circle at 86% 26%, rgb(220 201 170 / 0.34), transparent 0 3.5rem, transparent 3.55rem),
-    radial-gradient(circle at 82% 71%, rgb(194 223 211 / 0.28), transparent 0 2.25rem, transparent 2.3rem),
-    linear-gradient(135deg, #1a211d 0%, #20271f 52%, #141a16 100%);
-  box-shadow: 0 20px 52px -38px rgb(11 16 13 / 0.7);
+  border: 1px solid var(--tiktok-line);
+  border-radius: 8px;
+  background: var(--tiktok-surface);
+  box-shadow: none;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-hero__media {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-hero__media img {
+  object-position: 54% center;
 }
 
 html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-hero__body {
@@ -221,9 +227,9 @@ html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-hero__body {
   display: grid;
   min-width: 0;
   align-content: center;
-  max-width: 68%;
+  max-width: 62%;
   gap: 0.75rem;
-  padding: 1.2rem 1rem 1.25rem;
+  padding: 1.25rem 1rem;
 }
 
 html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-hero__body > span,
@@ -246,7 +252,7 @@ html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-support h2 {
 }
 
 html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-hero h1 {
-  color: #f8faf5;
+  color: var(--tiktok-ink);
   font-size: clamp(1.45rem, 8vw, 2.25rem);
   text-wrap: balance;
 }
@@ -254,7 +260,7 @@ html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-hero h1 {
 html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-hero p,
 html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-support p {
   margin: 0;
-  color: rgb(238 242 236 / 0.78);
+  color: var(--tiktok-soft-ink);
   font-size: var(--sf-font-sm);
   line-height: 1.58;
   overflow-wrap: anywhere;
@@ -270,70 +276,33 @@ html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-hero__actions
 
 html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-hero__actions > :where(button) {
   min-height: 2.75rem;
-  border-radius: 0.75rem !important;
+  border-radius: 4px !important;
   font-size: var(--sf-font-sm);
   font-weight: 850;
 }
 
 html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-hero__actions > :first-child {
   gap: 0.35rem;
-  background: #f7f8f2 !important;
-  color: var(--tiktok-hero) !important;
+  background: var(--tiktok-accent) !important;
+  color: var(--theme-primary-foreground) !important;
 }
 
 html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-hero__actions > :last-child {
-  border: 1px solid rgb(255 255 255 / 0.18);
-  background: rgb(255 255 255 / 0.08);
-  color: #f8faf5;
+  border: 1px solid var(--tiktok-line);
+  background: color-mix(in srgb, var(--tiktok-surface) 90%, transparent);
+  color: var(--tiktok-ink);
 }
 
-html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-hero__art {
-  position: absolute;
-  right: 1.1rem;
-  bottom: 1.15rem;
-  width: 7rem;
-  height: 7rem;
-  pointer-events: none;
+html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-section {
+  min-width: 0;
+  margin: var(--sf-space-3);
 }
 
-html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-hero__shape {
-  position: absolute;
-  display: block;
-  box-shadow: 0 18px 38px -28px rgb(0 0 0 / 0.62);
-}
-
-html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-hero__shape--primary {
-  right: 2.2rem;
-  bottom: 0.9rem;
-  width: 4.1rem;
-  height: 5.2rem;
-  background: #0f1411;
-}
-
-html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-hero__shape--warm {
-  top: 0.4rem;
-  right: 0.25rem;
-  width: 3rem;
-  height: 3rem;
-  border-radius: 999px;
-  background: var(--tiktok-warm);
-}
-
-html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-hero__shape--mint {
-  right: 0.65rem;
-  bottom: 0.4rem;
-  width: 3.2rem;
-  height: 3.2rem;
-  background: #c6ded4;
-}
-
-html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-section,
 html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-support {
   min-width: 0;
   margin: var(--sf-space-3);
   border: 1px solid var(--tiktok-line);
-  border-radius: 1.2rem;
-  background: var(--tiktok-surface);
+  border-radius: 8px;
   padding: 0.95rem;
 }
 
@@ -374,8 +343,8 @@ html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-service-card_
   align-items: center;
   gap: 0.75rem;
   border: 1px solid var(--tiktok-line);
-  border-radius: 0.95rem;
-  background: rgb(245 247 243 / 0.86);
+  border-radius: 6px;
+  background: var(--tiktok-muted);
   padding: 0.75rem;
   color: var(--tiktok-ink);
   text-align: left;
@@ -393,7 +362,7 @@ html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-service-card_
   height: 2.15rem;
   flex: 0 0 auto;
   place-items: center;
-  border-radius: 0.75rem;
+  border-radius: 6px;
   background: var(--tiktok-accent-soft);
   color: var(--tiktok-accent);
 }
@@ -435,8 +404,8 @@ html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-city-list but
   gap: var(--sf-space-2);
   min-height: 4.25rem;
   border: 1px solid var(--tiktok-line);
-  border-radius: 0.9rem;
-  background: rgb(245 247 243 / 0.86);
+  border-radius: 6px;
+  background: var(--tiktok-muted);
   padding: 0.8rem;
   color: var(--tiktok-ink);
   text-align: left;
@@ -474,9 +443,7 @@ html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-city-list em 
 html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-support {
   display: grid;
   gap: var(--sf-space-3);
-  background:
-    linear-gradient(135deg, rgb(40 107 85 / 0.12), transparent 60%),
-    var(--tiktok-surface);
+  background: var(--tiktok-surface);
 }
 
 html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-support h2 {
@@ -491,9 +458,9 @@ html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-support p {
 
 html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-support > button {
   min-height: 2.9rem;
-  border-radius: var(--sf-radius-full) !important;
+  border-radius: 4px !important;
   background: var(--tiktok-ink) !important;
-  color: #fff !important;
+  color: var(--theme-primary-foreground) !important;
   font-size: var(--sf-font-sm);
   font-weight: 850;
 }
@@ -509,7 +476,7 @@ html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-bottom-nav {
   margin: 0 auto;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   border-top: 1px solid var(--tiktok-line);
-  background: rgb(255 255 251 / 0.94);
+  background: color-mix(in srgb, var(--tiktok-surface) 94%, transparent);
   padding: 0.45rem 0.75rem calc(0.45rem + env(safe-area-inset-bottom));
   backdrop-filter: blur(14px);
 }
@@ -535,8 +502,72 @@ html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-bottom-nav bu
 
 @media (min-width: 760px) {
   html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-page {
-    border-right: 1px solid var(--tiktok-line);
-    border-left: 1px solid var(--tiktok-line);
+    display: grid;
+    width: min(100%, 1180px);
+    max-width: 1180px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+    padding: 0 24px 40px;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-header,
+  html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-search,
+  html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-suggestions,
+  html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-hero,
+  html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-support {
+    grid-column: 1 / -1;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-header {
+    padding-inline: 0;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-search,
+  html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-section,
+  html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-support,
+  html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-hero {
+    margin: 0;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-search {
+    padding: 0;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-hero {
+    min-height: 360px;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-hero__body {
+    max-width: 48%;
+    gap: 16px;
+    padding: 40px;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-hero h1 {
+    font-size: 42px;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-hero p {
+    max-width: 480px;
+    font-size: 15px;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-section {
+    padding: 4px 0 0;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-support {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    padding: 20px 24px;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-support > button {
+    min-width: 144px;
+  }
+
+  html[data-app-scope="store"][data-storefront-ui="next"] .tiktok-v2-bottom-nav {
+    display: none;
   }
 }
 

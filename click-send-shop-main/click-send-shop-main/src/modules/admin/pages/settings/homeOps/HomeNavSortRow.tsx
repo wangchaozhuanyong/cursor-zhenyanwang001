@@ -1,18 +1,29 @@
 import { useEffect, useRef, useState } from "react";
-import { ExternalLink, GripVertical, Loader2, Pencil, Trash2 } from "lucide-react";
+import { AlertTriangle, ExternalLink, GripVertical, Loader2, Pencil, Sparkles, Trash2 } from "lucide-react";
 import { Tx } from "@/components/admin/AdminText";
 import { AdminTableCell } from "@/components/admin/AdminTableCell";
 import PermissionGate from "@/components/admin/PermissionGate";
 import type { HomeNavItem } from "@/types/content";
-import { THEME_BADGE_MUTED, THEME_BADGE_SUCCESS, THEME_HOVER_TEXT_DANGER } from "@/utils/themeVisuals";
+import {
+  THEME_BADGE_DANGER,
+  THEME_BADGE_MUTED,
+  THEME_BADGE_SUCCESS,
+  THEME_BORDER_DANGER_SOFT,
+  THEME_HOVER_TEXT_DANGER,
+  THEME_TEXT_DANGER,
+} from "@/utils/themeVisuals";
 import HomeNavIconPreview from "./HomeNavIconPreview";
 import { useAdminT } from "@/hooks/useAdminT";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import type { HomeNavRepairSuggestion } from "./homeNavUtils";
 
 type Props = {
   item: HomeNavItem;
   displayIndex: number;
   linkLabel: string;
+  validationIssue?: string;
+  repairSuggestion?: HomeNavRepairSuggestion;
+  repairingSuggestion: boolean;
   canManage: boolean;
   savingOrder: boolean;
   isDragging: boolean;
@@ -22,6 +33,7 @@ type Props = {
   onDragEnd: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  onApplySuggestion: (suggestion: HomeNavRepairSuggestion) => void;
   onPositionChange: (position: number) => void | Promise<void>;
 };
 
@@ -29,6 +41,9 @@ export default function HomeNavSortRow({
   item,
   displayIndex,
   linkLabel,
+  validationIssue,
+  repairSuggestion,
+  repairingSuggestion,
   canManage,
   savingOrder,
   isDragging,
@@ -38,6 +53,7 @@ export default function HomeNavSortRow({
   onDragEnd,
   onEdit,
   onDelete,
+  onApplySuggestion,
   onPositionChange,
 }: Props) {
   const { tText } = useAdminT();
@@ -74,7 +90,9 @@ export default function HomeNavSortRow({
       onDragOver={canManage ? onDragOver : undefined}
       onDrop={canManage ? onDrop : undefined}
       onDragEnd={canManage ? onDragEnd : undefined}
-      className={`flex items-center gap-2 rounded-xl border border-border bg-background p-3 sm:gap-3 ${
+      className={`flex items-center gap-2 rounded-xl border bg-background p-3 sm:gap-3 ${
+        validationIssue ? THEME_BORDER_DANGER_SOFT : "border-border"
+      } ${
         item.enabled ? "" : "opacity-60"
       } ${isDragging ? "opacity-50" : ""} ${canManage && !savingOrder ? "" : ""} ${savingOrder ? "pointer-events-none" : ""}`}
     >
@@ -125,18 +143,40 @@ export default function HomeNavSortRow({
 
       <div className="min-w-0 flex-1">
         <div className="font-medium text-foreground">{item.title}</div>
-        <div className="mt-0.5 flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
-          <ExternalLink size={11} className="shrink-0" />
-          <AdminTableCell value={linkLabel} fullText={linkLabel} maxWidth="100%" muted />
+        <div className={`mt-0.5 flex min-w-0 items-center gap-1 text-xs ${validationIssue ? THEME_TEXT_DANGER : "text-muted-foreground"}`}>
+          {validationIssue
+            ? <AlertTriangle size={12} className="shrink-0" aria-hidden />
+            : <ExternalLink size={11} className="shrink-0" />}
+          <AdminTableCell
+            value={validationIssue || linkLabel}
+            fullText={validationIssue || linkLabel}
+            maxWidth="100%"
+            muted={!validationIssue}
+          />
         </div>
+        {repairSuggestion ? (
+          <PermissionGate permission="home_ops.manage">
+            <UnifiedButton
+              type="button"
+              disabled={repairingSuggestion || savingOrder}
+              onClick={() => onApplySuggestion(repairSuggestion)}
+              className="mt-2 inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 text-xs font-semibold text-foreground hover:border-[var(--theme-primary)] disabled:opacity-60"
+            >
+              {repairingSuggestion
+                ? <Loader2 size={14} className="animate-spin" />
+                : <Sparkles size={14} />}
+              {repairingSuggestion ? "处理中..." : repairSuggestion.label}
+            </UnifiedButton>
+          </PermissionGate>
+        ) : null}
       </div>
 
       <span
         className={`shrink-0 rounded-full px-2 py-1 text-xs font-semibold ${
-          item.enabled ? THEME_BADGE_SUCCESS : THEME_BADGE_MUTED
+          validationIssue ? THEME_BADGE_DANGER : item.enabled ? THEME_BADGE_SUCCESS : THEME_BADGE_MUTED
         }`}
       >
-        {item.enabled ? "启用" : "禁用"}
+        {validationIssue ? "需修复" : item.enabled ? "启用" : "禁用"}
       </span>
 
       <PermissionGate permission="home_ops.manage">

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Star } from "lucide-react";
+import { Send, Star } from "lucide-react";
 import { showStoreToast } from "@/utils/storeToast";
 import { AppModal, LoadingButton } from "@/modules/micro-interactions";
 import * as reviewService from "@/services/reviewService";
@@ -70,9 +70,10 @@ export default function ReviewComposerSheet({
     <LoadingButton
       type="button"
       state={submitting ? "loading" : "normal"}
-      className="min-h-12 w-full rounded-full !bg-[var(--theme-primary)] !text-[var(--theme-primary-foreground)] text-sm font-semibold"
+      className="sf-fixed-modal-primary"
       onClick={() => void submit()}
       loadingText="提交评价"
+      leftIcon={<Send size={16} aria-hidden />}
     >
       提交评价
     </LoadingButton>

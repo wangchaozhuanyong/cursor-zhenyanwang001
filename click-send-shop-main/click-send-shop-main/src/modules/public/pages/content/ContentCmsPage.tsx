@@ -14,7 +14,7 @@ import { sanitizeCmsHtml } from "@/utils/cmsSanitizer";
 import { STORE_COPY } from "@/constants/storeCopy";
 import { formatDateTime } from "@/utils/formatDateTime";
 import RouteStatePanel from "@/modules/storefront-v2/design/components/RouteStatePanel";
-import "@/styles/secondary-routes.css";
+import "@/styles/content-routes.css";
 
 const CONTACT_US_SLUG = "contact-us";
 
@@ -105,9 +105,9 @@ export default function ContentCmsPage() {
           <div className="sf-next-content-meta" aria-label="内容信息">
             <span>
               <FileText size={14} aria-hidden />
-              CMS
+              内容更新
             </span>
-            {page.updated_at ? <time>{formatDateTime(page.updated_at)}</time> : null}
+            {page.updated_at ? <time>更新于 {formatDateTime(page.updated_at)}</time> : null}
           </div>
         ) : null}
 

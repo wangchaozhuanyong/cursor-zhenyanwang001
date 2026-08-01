@@ -3,6 +3,7 @@ const { activeProductWhere } = require('../../product/productLifecycle');
 
 const cartLineSelect = `
   SELECT p.*,
+         c.name AS category_name,
          ci.qty,
          ci.variant_id,
          ci.sku_code,
@@ -17,6 +18,7 @@ const cartLineSelect = `
          COALESCE(pv.stock, p.stock) AS stock
   FROM cart_items ci
   JOIN products p ON ci.product_id = p.id
+  LEFT JOIN categories c ON c.id = p.category_id
   LEFT JOIN product_variants pv ON ci.variant_id <> '' AND pv.id = ci.variant_id AND pv.deleted_at IS NULL AND pv.enabled = 1
 `;
 

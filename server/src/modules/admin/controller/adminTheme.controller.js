@@ -4,6 +4,14 @@ function getThemeApi() {
   return /** @type {any} */ (require('../../theme/publicApi')) || {};
 }
 
+exports.retiredThemeWrite = asyncRoute(async (_req, res) => {
+  res.status(410).json({
+    success: false,
+    code: 'THEME_STUDIO_RETIRED',
+    message: '客户端已切换为固定设计，皮肤编辑功能已停用。',
+  });
+});
+
 exports.updateTheme = asyncRoute(async (req, res) => {
   const data = await getThemeApi().updateThemeConfig(req.body, req.user?.id, req);
   res.success(data, 'Theme config updated');
@@ -15,8 +23,8 @@ exports.updateThemeSkins = asyncRoute(async (req, res) => {
 });
 
 exports.getThemeSkins = asyncRoute(async (_req, res) => {
-  const data = await getThemeApi().getAdminThemeSkins();
-  res.success(data, 'Theme skins loaded');
+  const data = await getThemeApi().getThemeSkins();
+  res.success(data, 'Fixed storefront design loaded');
 });
 
 exports.saveThemeSkinDraft = asyncRoute(async (req, res) => {

@@ -26,20 +26,20 @@ export default function StoreAmountToken({
   return (
     <span
       className={cn(
-        "inline-flex min-w-0 rounded-2xl border border-[color-mix(in_srgb,var(--theme-price)_24%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-price)_7%,var(--theme-surface))] px-3 py-2 shadow-[inset_0_1px_0_color-mix(in_srgb,var(--sf-surface)_52%,transparent)]",
+        "inline-flex min-w-0 rounded-md border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2",
         layout === "stacked" ? "flex-col items-start gap-1" : "items-center justify-between gap-2",
         className,
       )}
     >
       {label ? (
-        <span className={cn("min-w-0 text-[11px] font-semibold leading-none text-[var(--theme-text-muted)]", labelClassName)}>
+        <span className={cn("min-w-0 text-xs font-medium leading-none text-[var(--theme-text-muted)]", labelClassName)}>
           {label}
         </span>
       ) : null}
       <StorePriceAmount
         amount={amount}
         amountClassName={cn("text-base font-extrabold leading-none", amountClassName)}
-        currencyClassName={cn("mr-0.5 text-[10px] font-bold leading-none", currencyClassName)}
+        currencyClassName={cn("mr-0.5 text-xs font-semibold leading-none", currencyClassName)}
       />
     </span>
   );

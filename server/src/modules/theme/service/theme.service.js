@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const repo = require('../repository/theme.repository');
 const { DEFAULT_THEME_CONFIG } = require('../theme.default');
+const { FIXED_THEME_CONFIG, FIXED_THEME_ID, FIXED_THEME_PAYLOAD } = require('../theme.fixed');
 const {
   DEFAULT_SKIN_ID,
   DEFAULT_HOLIDAY_SKIN_ID,
@@ -525,7 +526,7 @@ async function readTableThemeSkins({ includeDrafts = false } = {}) {
 }
 
 async function getThemeSkins() {
-  return await readTableThemeSkins({ includeDrafts: false }) || publicPayloadFrom(await readLegacyThemeSkins());
+  return FIXED_THEME_PAYLOAD;
 }
 
 async function getAdminThemeSkins() {
@@ -533,10 +534,7 @@ async function getAdminThemeSkins() {
 }
 
 async function getActiveThemeConfig() {
-  const data = await getThemeSkins();
-  const runtimeId = data.runtimeSkinId || resolveRuntimeThemeSkinId(data);
-  const active = data.skins.find((s) => s.id === runtimeId) || data.skins[0];
-  return active?.config || DEFAULT_THEME_CONFIG;
+  return FIXED_THEME_CONFIG;
 }
 
 function toRepositoryRow(skin) {
@@ -570,13 +568,32 @@ async function upsertPayloadToTable(payload) {
   return normalized;
 }
 
-async function syncLegacySiteSettings(payload) {
+function resolveLegacyThemeCompatibility(payload, date = new Date()) {
+  const isFixedPayload = payload?.defaultSkinId === FIXED_THEME_ID
+    && payload?.activeSkinId === FIXED_THEME_ID
+    && Array.isArray(payload?.skins)
+    && payload.skins.some((skin) => skin?.id === FIXED_THEME_ID);
+  if (isFixedPayload) {
+    return {
+      full: FIXED_THEME_PAYLOAD,
+      activeConfig: FIXED_THEME_CONFIG,
+    };
+  }
+
   const full = normalizeThemeSkinsPayload(payload);
   const publicFull = publicPayloadFrom(full);
-  await repo.upsertThemeSkins(JSON.stringify(full));
-  const runtimeId = publicFull.runtimeSkinId || resolveRuntimeThemeSkinId(publicFull);
+  const runtimeId = resolveRuntimeThemeSkinId(publicFull, date);
   const active = publicFull.skins.find((s) => s.id === runtimeId) || publicFull.skins[0];
-  await repo.upsertThemeConfig(JSON.stringify(active?.config || DEFAULT_THEME_CONFIG));
+  return {
+    full,
+    activeConfig: active?.config || DEFAULT_THEME_CONFIG,
+  };
+}
+
+async function syncLegacySiteSettings(payload) {
+  const { full, activeConfig } = resolveLegacyThemeCompatibility(payload);
+  await repo.upsertThemeSkins(JSON.stringify(full));
+  await repo.upsertThemeConfig(JSON.stringify(activeConfig));
 }
 
 async function updateThemeConfig(themeConfig, adminUserId, req) {
@@ -647,7 +664,6 @@ async function saveThemeSkinDraft(themeKey, data, adminUserId, req) {
     });
   }
   if (data?.isDefault === true) await repo.setOnlyDefaultThemeSkin(themeKey);
-  const next = await getAdminThemeSkins();
   await syncLegacySiteSettings(await getThemeSkins());
   await writeAuditLog({
     req,
@@ -755,6 +771,7 @@ async function disableThemeSkin(themeKey, adminUserId, req) {
 module.exports = {
   normalizeThemeConfig,
   normalizeThemeSkinsPayload,
+  resolveLegacyThemeCompatibility,
   resolveRuntimeThemeSkinId,
   getActiveThemeConfig,
   updateThemeConfig,

@@ -29,7 +29,7 @@ export default function ProfileWechatBindSection({
         onClick={onNavigateSettings}
         className={`${cardClass} flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left ${menuTapClass}`}
       >
-        <span className="flex items-center gap-2 text-sm font-medium text-[#07C160]">
+        <span className="flex items-center gap-2 text-sm font-medium text-[var(--brand-wechat)]">
           <WeChatIcon size={20} />
           绑定微信，扫码快捷登录
         </span>

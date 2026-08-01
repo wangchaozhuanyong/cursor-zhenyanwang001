@@ -54,33 +54,33 @@ export default function ProductActivityPanel({ activity, className = "" }: Produ
 
   return (
     <section
-      className={`mt-3 rounded-2xl border border-[color-mix(in_srgb,var(--theme-price)_28%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-price)_8%,var(--theme-surface))] px-3 py-3 ${className}`}
+      className={`sf-next-product-activity ${className}`}
       aria-label="商品活动"
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
+      <div className="sf-next-product-activity__head">
+        <div>
+          <div className="sf-next-product-activity__title">
             <StorefrontBadge tone="sale">{badgeLabel}</StorefrontBadge>
             <span className="sf-next-product-activity-status">{statusText}</span>
-            <p className="min-w-0 text-sm font-bold leading-5 text-[var(--theme-text)]">{displayTitle}</p>
+            <p>{displayTitle}</p>
           </div>
           {displayDescription ? (
-            <p className="mt-1 text-xs leading-5 text-[var(--theme-text-muted)]">{displayDescription}</p>
+            <p className="sf-next-product-activity__description">{displayDescription}</p>
           ) : null}
         </div>
-        <div className="shrink-0 text-right text-xs font-semibold text-[var(--theme-price)]">
+        <div className="sf-next-product-activity__label">
           {isActivityPrice ? "活动价" : "优惠"}
         </div>
       </div>
 
-      <div className="mt-2 grid gap-2 text-xs text-[var(--theme-text-muted)] sm:grid-cols-2">
-        <div className="flex items-center gap-1.5">
+      <div className="sf-next-product-activity__facts">
+        <div>
           <Clock3 size={14} aria-hidden />
           <span>
             {formatDateTime(activity.start_at)} - {formatDateTime(activity.end_at)}
           </span>
         </div>
-        <div className="flex items-center gap-1.5">
+        <div>
           <ShieldCheck size={14} aria-hidden />
           <span>
             {isActivityPrice

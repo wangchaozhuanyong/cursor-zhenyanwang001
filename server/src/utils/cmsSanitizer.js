@@ -13,7 +13,7 @@ const ALLOWED_ATTRIBUTES = {
 };
 
 function sanitizeCmsHtml(input) {
-  const cleaned = sanitizeHtml(String(input || ''), {
+  return sanitizeHtml(String(input || ''), {
     allowedTags: ALLOWED_TAGS,
     allowedAttributes: ALLOWED_ATTRIBUTES,
     allowedSchemes: ['http', 'https', 'mailto', 'tel'],
@@ -32,9 +32,20 @@ function sanitizeCmsHtml(input) {
     disallowedTagsMode: 'discard',
     enforceHtmlBoundary: true,
   });
-  return cleaned.replace(/<a\b(?![^>]*\shref=)/gi, '<a href="#"');
+}
+
+function hasVisibleCmsContent(input) {
+  const textOnly = sanitizeHtml(String(input || ''), {
+    allowedTags: [],
+    allowedAttributes: {},
+    disallowedTagsMode: 'discard',
+    enforceHtmlBoundary: true,
+  });
+
+  return textOnly.replace(/&(?:nbsp|#160|#xA0);/gi, ' ').trim().length > 0;
 }
 
 module.exports = {
+  hasVisibleCmsContent,
   sanitizeCmsHtml,
 };

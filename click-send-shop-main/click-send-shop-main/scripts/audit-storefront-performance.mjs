@@ -192,13 +192,6 @@ async function stubLocalApi(page, baseUrl) {
           newUserGift: null,
         },
       };
-    } else if (pathname === "/theme/skins") {
-      data = {
-        defaultSkinId: "default_life_green",
-        activeSkinId: "default_life_green",
-        holidayRules: [],
-        skins: [],
-      };
     }
     await route.fulfill({
       status: 200,

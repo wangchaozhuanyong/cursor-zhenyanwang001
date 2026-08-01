@@ -2,7 +2,6 @@ import { act, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { ThemeRuntimeProvider } from "@/contexts/ThemeRuntimeProvider";
 import AdminUserSecurity from "./AdminUserSecurity";
 
 const serviceMock = vi.hoisted(() => ({
@@ -124,9 +123,7 @@ describe("AdminUserSecurity", () => {
     await act(async () => {
       root?.render(
         <MemoryRouter initialEntries={["/admin/user-security"]}>
-          <ThemeRuntimeProvider>
-            <AdminUserSecurity />
-          </ThemeRuntimeProvider>
+          <AdminUserSecurity />
         </MemoryRouter>,
       );
     });

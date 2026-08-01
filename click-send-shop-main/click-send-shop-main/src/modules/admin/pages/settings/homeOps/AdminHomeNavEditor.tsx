@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Grid3X3 } from "lucide-react";
+import { AlertTriangle, Grid3X3 } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Tx } from "@/components/admin/AdminText";
 import AdminFieldHint from "@/components/admin/AdminFieldHint";
@@ -13,11 +14,22 @@ import type { Category } from "@/types/category";
 import { toastErrorMessage } from "@/utils/errorMessage";
 import { adminQueryKeys } from "@/lib/adminQueryKeys";
 import { invalidateHomeModuleSettingsCache } from "@/hooks/useHomeModuleSettings";
-import { emptyNavForm, flattenCategories, moveNavItemToPosition, type NavForm } from "./homeNavUtils";
+import {
+  emptyNavForm,
+  flattenCategories,
+  getHomeNavValidationIssue,
+  getHomeNavRepairSuggestion,
+  moveNavItemToPosition,
+  readHomeNavRepairScopeFromSearch,
+  type HomeNavRepairSuggestion,
+  type NavForm,
+} from "./homeNavUtils";
 import HomeNavFormPanel from "./HomeNavFormPanel";
 import HomeNavSortableList from "./HomeNavSortableList";
 import { useHomeNavReorder } from "./useHomeNavReorder";
 import { useAdminT } from "@/hooks/useAdminT";
+import { THEME_ALERT_DANGER_SHELL } from "@/utils/themeVisuals";
+import AdminHomeNavRepairBar from "./AdminHomeNavRepairBar";
 
 type Props = {
   onDirtyChange?: (dirty: boolean) => void;
@@ -41,7 +53,9 @@ export default function AdminHomeNavEditor({ onDirtyChange }: Props) {
   const { confirm } = useAdminConfirm();
   const queryClient = useQueryClient();
   const capabilities = useSiteCapabilities();
+  const [urlSearchParams, setUrlSearchParams] = useSearchParams();
   const [saving, setSaving] = useState(false);
+  const [repairingNavId, setRepairingNavId] = useState<string | null>(null);
   const [editingNavId, setEditingNavId] = useState<string | null>(null);
   const [navForm, setNavForm] = useState<NavForm>(emptyNavForm);
 
@@ -81,6 +95,42 @@ export default function AdminHomeNavEditor({ onDirtyChange }: Props) {
   const supportChannelNameMap = new Map(
     supportChannels.map((c) => [c.id, `${c.name}${c.account ? ` · ${c.account}` : ""}`]),
   );
+  const publicCategoryIds = new Set(categoryOptions.map((category) => category.id));
+  const enabledSupportChannelIds = new Set(supportChannels.map((channel) => channel.id));
+  const navValidationIssues = new Map(
+    navItems
+      .filter((item) => item.enabled)
+      .map((item) => [
+        item.id,
+        getHomeNavValidationIssue(item, {
+          publicCategoryIds,
+          enabledSupportChannelIds,
+          supportNavEnabled,
+        }),
+      ] as const)
+      .filter((entry): entry is readonly [string, string] => Boolean(entry[1])),
+  );
+  const navRepairSuggestions = new Map(
+    navItems
+      .map((item) => [
+        item.id,
+        getHomeNavRepairSuggestion(item, categories, navValidationIssues.get(item.id)),
+      ] as const)
+      .filter((entry): entry is readonly [string, HomeNavRepairSuggestion] => Boolean(entry[1])),
+  );
+  const repairMode = readHomeNavRepairScopeFromSearch(`?${urlSearchParams.toString()}`) === "invalid";
+  const repairQueueItems = repairMode
+    ? navItems.filter((item) => (
+      navValidationIssues.has(item.id) || navRepairSuggestions.has(item.id)
+    ))
+    : navItems;
+  const firstRepairItem = repairQueueItems[0];
+
+  const exitRepairQueue = () => {
+    const next = new URLSearchParams(urlSearchParams);
+    next.delete("repair_scope");
+    setUrlSearchParams(next, { replace: true });
+  };
 
   useEffect(() => {
     if (editingNavId) return;
@@ -202,6 +252,30 @@ export default function AdminHomeNavEditor({ onDirtyChange }: Props) {
     });
   };
 
+  const applyRepairSuggestion = (item: HomeNavItem, suggestion: HomeNavRepairSuggestion) => {
+    confirm({
+      title: suggestion.label,
+      description: suggestion.description,
+      confirmText: "确认修复",
+      onConfirm: async () => {
+        setRepairingNavId(item.id);
+        try {
+          await homeOpsService.updateHomeNavItem(item.id, suggestion.payload);
+          invalidateHomeModuleSettingsCache();
+          await Promise.all([
+            invalidateHomeOps(),
+            queryClient.invalidateQueries({ queryKey: adminQueryKeys.storefrontReadiness() }),
+          ]);
+          toast.success(tText("入口已按建议修复"));
+        } catch (error) {
+          toast.error(toastErrorMessage(error, "修复入口失败"));
+        } finally {
+          setRepairingNavId(null);
+        }
+      },
+    });
+  };
+
   return (
     <section className="rounded-2xl border border-border bg-card p-3 sm:p-4">
       <div className="mb-4 flex items-center gap-2">
@@ -214,30 +288,69 @@ export default function AdminHomeNavEditor({ onDirtyChange }: Props) {
         </div>
       </div>
 
-      <HomeNavFormPanel
-        navForm={navForm}
-        setNavForm={setNavForm}
-        editingNavId={editingNavId}
-        saving={saving}
-        onSave={saveNav}
-        categoryOptions={categoryOptions}
-        supportChannels={supportChannels}
-        supportNavEnabled={supportNavEnabled}
-        nextSortOrder={nextSortOrder}
-      />
+      {repairMode ? (
+        <AdminHomeNavRepairBar
+          total={repairQueueItems.length}
+          firstItemTitle={firstRepairItem?.title || ""}
+          loading={loading}
+          onStart={() => {
+            if (!firstRepairItem) return;
+            const suggestion = navRepairSuggestions.get(firstRepairItem.id);
+            if (suggestion) {
+              applyRepairSuggestion(firstRepairItem, suggestion);
+              return;
+            }
+            startEdit(firstRepairItem);
+          }}
+          onExit={exitRepairQueue}
+        />
+      ) : null}
+
+      {!repairMode || editingNavId ? (
+        <HomeNavFormPanel
+          navForm={navForm}
+          setNavForm={setNavForm}
+          editingNavId={editingNavId}
+          saving={saving}
+          onSave={saveNav}
+          categoryOptions={categoryOptions}
+          supportChannels={supportChannels}
+          supportNavEnabled={supportNavEnabled}
+          nextSortOrder={nextSortOrder}
+        />
+      ) : null}
+
+      {navValidationIssues.size > 0 ? (
+        <div className={`mt-4 flex items-start gap-2 rounded-xl p-3 text-sm ${THEME_ALERT_DANGER_SHELL}`} role="alert">
+          <AlertTriangle size={18} className="mt-0.5 shrink-0" aria-hidden />
+          <div className="min-w-0">
+            <p className="font-semibold">
+              发现 {navValidationIssues.size} 个已启用入口需要修复
+            </p>
+            <p className="mt-0.5 text-xs opacity-80">
+              这些入口不会出现在新客户端。请编辑为有效目标，或者暂时禁用。
+            </p>
+          </div>
+        </div>
+      ) : null}
 
       <HomeNavSortableList
         loading={loading}
-        navItems={navItems}
+        navItems={repairQueueItems}
         categoryNameMap={categoryNameMap}
         supportChannelNameMap={supportChannelNameMap}
+        validationIssues={navValidationIssues}
+        repairSuggestions={navRepairSuggestions}
+        repairingNavId={repairingNavId}
         draggingId={draggingId}
         savingOrder={savingOrder}
         setDraggingId={setDraggingId}
         onDrop={handleDrop}
         onEdit={startEdit}
         onDelete={handleDelete}
+        onApplySuggestion={applyRepairSuggestion}
         onPositionChange={handlePositionChange}
+        repairMode={repairMode}
       />
     </section>
   );

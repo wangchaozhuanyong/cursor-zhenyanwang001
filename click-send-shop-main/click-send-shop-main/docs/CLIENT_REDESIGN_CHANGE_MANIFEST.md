@@ -134,7 +134,6 @@
 - `src/routes/StoreAppRoutes.tsx`
 - `src/constants/storeLayout.ts`
 - `src/constants/pointsClientFeatures.ts`
-- `src/contexts/ThemeRuntimeProvider.tsx`
 - `src/utils/categoryNavIcon.ts`
 - `src/utils/clientDesignStyle.ts`
 - `src/utils/themeVisuals.ts`
@@ -167,7 +166,7 @@
 - Product Detail 旧 `store-product-detail-page`、`store-detail-*`、`store-price-detail` 不再作为正式运行/兼容选择器，后续商品详情只能在 `sf-next-product-*` 下扩展。
 - Checkout 旧 `store-checkout-page`、`store-checkout-card`、`store-checkout-step`、`store-checkout-item*`、`store-checkout-media`、`store-mobile-submit-bar` 不再作为正式运行/兼容选择器，后续结算页只能在 `sf-next-checkout-*` 下扩展。
 - Category/List 旧 `store-category-page`、`store-category-main`、`store-listing-page`、`store-product-grid`、`store-category-filter-*`、`store-category-sort*`、`store-category-rail*`、`store-category-tile*`、`store-category-subtab*`、`store-category-side*`、`store-category-tool-icon`、`store-filter-reset-button`、`store-filter-confirm-button` 不再作为正式运行 class，后续分类、搜索和商品网格只能在 `sf-next-category-*`、`sf-next-listing-*`、`sf-next-product-grid`、`sf-next-filter-*`、`sf-next-sort*` 下扩展。
-- Home Quick Entry 旧 `store-nav-action`、`store-icon-tile` 不再作为快捷入口/金刚区正式运行 class；后台主题预览和客户端首页统一使用 `sf-next-quick-entry__item`、`sf-next-quick-entry__icon`、`sf-next-quick-entry__copy`。
+- Home Quick Entry 旧 `store-nav-action`、`store-icon-tile` 不再作为快捷入口/金刚区正式运行 class；客户端首页统一使用 `sf-next-quick-entry__item`、`sf-next-quick-entry__icon`、`sf-next-quick-entry__copy`。
 
 ### 7. 验收脚本和发布文档
 
@@ -178,9 +177,15 @@
 - `scripts/audit-ui-overlap.mjs`
 - `scripts/smoke-restructure.mjs`
 - `scripts/verify-client-e2e.mjs`
-- `scripts/verify-theme-studio.mjs`
 - `scripts/check-public-theme-hardcoded-colors.mjs`
 - `scripts/baselines/theme-hardcoded-colors.json`
+- `src/constants/fixedHomeBannerRecommendations.ts`
+- `src/constants/fixedHomeBannerRecommendations.test.ts`
+- `src/modules/admin/pages/product/AdminCategoryBannerRepairBar.tsx`
+- `src/modules/admin/pages/product/AdminCategoryBannerRepairBar.test.tsx`
+- `src/modules/admin/pages/product/AdminProductMediaRepairBar.tsx`
+- `src/modules/admin/pages/product/AdminProductMediaRepairBar.test.tsx`
+- `src/modules/admin/pages/settings/site/siteSettingsSections.test.ts`
 - `package.json`
 - `docs/CLIENT_DESIGN_SYSTEM_CONTRACT.md`
 - `docs/CLIENT_REDESIGN_RELEASE_AUDIT.md`
@@ -191,8 +196,11 @@
 作用：
 
 - 把本次客户端重构的 smoke、E2E、重叠扫描、路由切换、截图采集、提交范围检查收口成可重复命令。
-- `theme:check` 使用基线锁住历史硬编码颜色债务，新增硬编码颜色会阻断发布门禁。
-- 固化客户端设计系统与后台皮肤契约，阻止旧首页结构和旧快捷入口视觉回流。
+- `theme:check` 的固定客户端基线已经收敛为 `0` 项；所有正式 UI 颜色必须来自语义令牌，品牌官方色和生成式海报调色板需要带明确允许说明，新增无说明颜色字面量会阻断发布门禁。
+- 后台轮播管理可以在人工确认后套用与当前标题匹配的已审核移动端/桌面端素材；发布准备入口现在进入 7 项专用双图修复队列，按首页展示顺序排列并定位当前首项，同时保留普通轮播管理页。快捷入口管理根据实时分类生成逐项修复建议，并增加包含 5 个失效入口和 1 个外部地址的 6 项专用队列，避免手工查找与查 ID，同时不允许无确认批量改写。
+- 分类主图链接进入 7 项专用审阅队列，匹配已审核 `1200×525` 推荐图，采用后仍需人工保存；首页缺图商品链接一次加载 41 项并按首页曝光顺序排列，保存真实图片后自动刷新剩余项，同时保留普通缺图筛选的全库分页用途；合规链接直接定位到年龄确认设置，但仍沿用原有人工确认保存流程。
+- 删除 `index.css` 中被后续规则覆盖的重复平板导航块，首屏共享 decoded CSS 回落到约 `218.7KB`。
+- 固化唯一客户端设计系统，并阻止旧首页结构、旧快捷入口和皮肤运行时视觉回流。
 - 记录通过证据、提交范围、发布步骤和人工抽查重点。
 - `.gitignore` 只补设计预览产物忽略规则，避免本地预览产物进入发布提交。
 
@@ -203,7 +211,7 @@
 - `artifacts/`
 - `.env`
 - `.env.*`
-- 任何 lockfile
+- `pnpm-lock.yaml`、`yarn.lock`、`bun.lockb`
 - 任何本地预览或下载参考素材
 
 ## 最终审查口径
@@ -214,7 +222,7 @@
 npm run check:client-redesign-scope
 npm run theme:check
 git diff --check
-BASE_URL=http://127.0.0.1:5174 npm run release:client-redesign
+BASE_URL=http://127.0.0.1:5188 npm run release:client-redesign
 ```
 
 发布后以真实环境重跑：

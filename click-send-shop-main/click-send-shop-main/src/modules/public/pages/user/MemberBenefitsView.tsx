@@ -75,10 +75,9 @@ function MemberFolio({
   return (
     <section className="sc-benefits__folio" aria-label="当前会员等级">
       <div className="sc-benefits__folio-top">
-        <span className="sc-benefits__folio-kicker">MEMBER FOLIO</span>
+        <span className="sc-benefits__folio-kicker">会员等级</span>
         <span className="sc-benefits__level-chip">
-          <span aria-hidden="true">◇</span>
-          当前等级
+          当前
         </span>
       </div>
 
@@ -358,7 +357,7 @@ export default function MemberBenefitsView({
 
       <p className="sc-benefits__note">
         <Info aria-hidden="true" />
-        <span>有效消费与有效订单将在订单完成后自动统计，权益以当前会员配置为准。</span>
+        <span>有效消费与有效订单将在订单完成后自动统计。</span>
       </p>
     </div>
   );

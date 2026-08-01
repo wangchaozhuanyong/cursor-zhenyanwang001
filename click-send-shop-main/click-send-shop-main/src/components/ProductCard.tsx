@@ -7,7 +7,7 @@ import ProductCoverImage from "@/components/ProductCoverImage";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import type { SiteInfo } from "@/types/content";
-import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
+import { useFixedStorefrontDesign } from "@/hooks/useFixedStorefrontDesign";
 import { getRestrictedProductMinimumAge } from "@/utils/ageGate";
 import { isRestrictedProduct } from "@/utils/restrictedProduct";
 import ProductTagList from "@/components/ProductTagList";
@@ -151,7 +151,7 @@ export default memo(ProductCard);
 function ProductCardWithHooks(props: Props) {
   const capabilities = useSiteCapabilities();
   const siteInfo = useSiteInfo();
-  const { themeConfig } = useThemeRuntime();
+  const { themeConfig } = useFixedStorefrontDesign();
   return (
     <ProductCardInner
       {...props}
@@ -226,7 +226,7 @@ function ProductCardInner({
   const nameRow = (
     <h3
       className={cn(
-        "sf-next-product-card__title line-clamp-2 text-[13.5px] leading-snug",
+        "sf-next-product-card__title line-clamp-2 text-sm leading-snug",
         cardCenter && "text-center",
       )}
     >
@@ -250,7 +250,7 @@ function ProductCardInner({
           amount={priceDisplay}
           className="sf-next-product-card__price"
           amountClassName="sf-next-price__amount text-[15px] leading-tight sm:text-base"
-          currencyClassName="sf-next-price__currency mr-0.5 text-[11px] leading-none sm:text-xs"
+          currencyClassName="sf-next-price__currency mr-0.5 text-xs leading-none"
         />
       ) : (
         <StorePriceAmount className="sf-next-product-card__price" amount={priceDisplay} />
@@ -307,26 +307,7 @@ function ProductCardInner({
             ) : null}
           </div>
           <div className="flex min-w-0 flex-1 flex-col justify-between gap-2 py-0.5">
-            <div className="space-y-1.5">
-              {nameRow}
-              {isListRow &&
-              (product.active_activity || product.is_hot || showNewBadge || (product.tags?.length ?? 0) > 0) ? (
-                <div className="flex flex-wrap gap-1">
-                  {product.active_activity ? (
-                    <StoreBadge type="sale">
-                      {activityBadgeLabel(product.active_activity.type)}
-                    </StoreBadge>
-                  ) : null}
-                  {product.is_hot ? <StoreBadge type="hot">热销</StoreBadge> : null}
-                  {showNewBadge ? (
-                    <UnifiedButton type="button" onClick={openNewArrivals} className={cn(badgeButtonClass, "cursor-pointer")}>
-                      <StoreBadge type="new">新品</StoreBadge>
-                    </UnifiedButton>
-                  ) : null}
-                  <ProductTagList tags={product.tags} max={productTagBadgeMax} />
-                </div>
-              ) : null}
-            </div>
+            <div>{nameRow}</div>
             <div className="mt-auto w-full">{metaRow}</div>
           </div>
         </div>

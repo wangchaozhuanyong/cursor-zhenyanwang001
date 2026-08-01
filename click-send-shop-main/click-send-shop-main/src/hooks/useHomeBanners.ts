@@ -17,12 +17,13 @@ const BANNER_BACKGROUND_REFRESH_DELAY_MS = 16_000;
 function sanitizeBanners(list: Banner[]): Banner[] {
   if (!Array.isArray(list)) return [];
   return list.filter((item) => {
-    const image = String(item?.image || "").trim();
-    return Boolean(item?.id) && Boolean(image);
+    const hasImage = [item?.image, item?.image_mobile, item?.image_desktop]
+      .some((image) => Boolean(String(image || "").trim()));
+    return Boolean(item?.id) && hasImage;
   });
 }
 
-function normalizeBootstrapBanners(raw: unknown): Banner[] {
+export function normalizeBootstrapBanners(raw: unknown): Banner[] {
   if (!Array.isArray(raw)) return [];
   return sanitizeBanners(
     raw.map((item: any) => ({
@@ -31,6 +32,8 @@ function normalizeBootstrapBanners(raw: unknown): Banner[] {
       description: String(item?.description || item?.subtitle || ""),
       cta_text: String(item?.cta_text || item?.ctaText || ""),
       image: String(item?.image || item?.image_url || ""),
+      image_mobile: String(item?.image_mobile || ""),
+      image_desktop: String(item?.image_desktop || ""),
       link: String(item?.link || item?.url || ""),
       sort_order: Number(item?.sort_order || 0),
       enabled: item?.enabled !== false,

@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { ArrowLeft, KeyRound, ShieldCheck } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
-import "@/styles/storefront-next.extended-routes.css";
 import "@/styles/auth-route.css";
 import { useAuthStore } from "@/stores/useAuthStore";
 import * as authService from "@/services/authService";

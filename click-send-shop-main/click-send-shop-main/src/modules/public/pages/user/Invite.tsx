@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Copy, Download, Gift, QrCode, Share2, Users } from "lucide-react";
-import "@/styles/storefront-next.extended-routes.css";
+import "@/styles/loyalty-routes.css";
 import { formatDateTime } from "@/utils/formatDateTime";
 import { useGoBack } from "@/hooks/useGoBack";
 
@@ -51,6 +51,7 @@ type PosterTemplate = {
   palette: PosterPalette;
 };
 
+// theme-hardcode-allowed-start: fixed colors used only inside downloaded poster artwork
 const POSTER_TEMPLATES: readonly PosterTemplate[] = [
   {
     id: "shopping",
@@ -370,6 +371,7 @@ async function createPosterCanvas({
 
   return canvas;
 }
+// theme-hardcode-allowed-end
 
 export default function Invite() {
   const navigate = useStorefrontNavigate();

@@ -1,6 +1,7 @@
 import { del, get, post, put } from "@/api/request";
 import type { HomeModuleSettings } from "@/constants/homeModules";
 import type { HomeNavItem } from "@/types/content";
+import type { StorefrontReadiness } from "@/types/storefrontReadiness";
 
 export function getHomeOpsSettings() {
   return get<HomeModuleSettings>("/admin/home-ops/settings");
@@ -12,6 +13,10 @@ export function updateHomeOpsSettings(data: Partial<HomeModuleSettings>) {
 
 export function getHomeNavItems() {
   return get<HomeNavItem[]>("/admin/home-ops/nav-items");
+}
+
+export function getStorefrontReadiness() {
+  return get<StorefrontReadiness>("/admin/home-ops/storefront-readiness");
 }
 
 export type HomeNavSupportChannelOption = {

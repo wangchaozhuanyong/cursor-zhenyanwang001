@@ -1,5 +1,6 @@
 const { asyncRoute } = require('../../../middleware/asyncRoute');
 const svc = require('../service/adminHomeOps.service');
+const readinessSvc = require('../service/adminStorefrontReadiness.service');
 
 function sendResult(res, result) {
   if (result?.error) return res.fail(result.error.code, result.error.message);
@@ -39,3 +40,6 @@ exports.updateSettings = asyncRoute(async (req, res) => {
   res.success(result.data, result.message);
 });
 
+exports.getStorefrontReadiness = asyncRoute(async (_req, res) => {
+  res.success(await readinessSvc.getStorefrontReadiness());
+});

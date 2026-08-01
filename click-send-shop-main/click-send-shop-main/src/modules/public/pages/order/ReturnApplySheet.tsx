@@ -368,7 +368,7 @@ export default function ReturnApplySheet({ orderId, open, onClose, onSuccess }: 
                       type="button"
                       aria-label={copy.deleteImage}
                       onClick={() => setImages((prev) => prev.filter((item) => item !== url))}
-                      className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/55 text-white"
+                      className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-[var(--sf-overlay)] text-[var(--theme-primary-foreground)]"
                     >
                       <X size={13} />
                     </UnifiedButton>

@@ -5,7 +5,7 @@ import DeferredStoreCartBadge from "@/components/store/DeferredStoreCartBadge";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { useSiteInfo, useSiteInfoLoaded } from "@/hooks/useSiteInfo";
 import { cn } from "@/lib/utils";
-import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
+import { useFixedStorefrontDesign } from "@/hooks/useFixedStorefrontDesign";
 import { getStoreHeaderSurfaceClass } from "@/utils/storeHeaderSurface";
 import { navigateWithStoreTransition } from "@/utils/storeNavigationTransition";
 import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
@@ -41,7 +41,7 @@ export default function StoreTabletBar({ className }: { className?: string }) {
   const siteInfo = useSiteInfo();
   const siteInfoLoaded = useSiteInfoLoaded();
   const capabilities = useSiteCapabilities();
-  const { themeConfig } = useThemeRuntime();
+  const { themeConfig } = useFixedStorefrontDesign();
   const { localizedPath, t } = usePublicLocale();
   const currentPathname = stripPublicLocaleFromPathname(location.pathname);
   const siteName = siteInfo.siteName || STORE_COPY.brandName;

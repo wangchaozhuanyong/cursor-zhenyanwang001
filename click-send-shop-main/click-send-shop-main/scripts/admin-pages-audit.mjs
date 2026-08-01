@@ -38,7 +38,6 @@ const PATHS = [
   "/admin/reports",
   "/admin/exports",
   "/admin/settings/site",
-  "/admin/settings/theme",
   "/admin/settings/shipping",
   "/admin/settings/points",
   "/admin/settings/referral",

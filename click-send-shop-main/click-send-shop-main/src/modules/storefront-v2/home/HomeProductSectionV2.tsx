@@ -15,6 +15,7 @@ type HomeProductSectionV2Props = {
   emptyText?: string;
   emptyActionLabel?: string;
   showPrice?: boolean;
+  showQuickAction?: boolean;
   previewLimit?: number;
   className?: string;
   onNavigate: (path: string) => void;
@@ -30,6 +31,7 @@ export default function HomeProductSectionV2({
   emptyText = "暂无商品",
   emptyActionLabel = "去分类",
   showPrice = true,
+  showQuickAction = true,
   previewLimit,
   className,
   onNavigate,
@@ -65,6 +67,7 @@ export default function HomeProductSectionV2({
                 product={product}
                 index={index}
                 showPrice={showPrice}
+                showQuickAction={showQuickAction}
               />
           ))}
         </div>

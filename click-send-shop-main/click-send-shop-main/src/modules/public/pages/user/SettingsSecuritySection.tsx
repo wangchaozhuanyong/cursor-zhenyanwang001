@@ -8,11 +8,8 @@ import { useAuthStore } from "@/stores/useAuthStore";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
-const CARD =
-  "rounded-[1.25rem] border border-[color-mix(in_srgb,var(--theme-border)_72%,transparent)] bg-[var(--theme-surface)] p-4 shadow-[var(--theme-shadow)]";
-const SECTION_TITLE = "px-1 text-[13px] font-semibold text-[var(--theme-text)]";
-const INPUT =
-  "h-11 w-full rounded-[14px] bg-[var(--theme-surface)] px-4 text-sm ring-1 ring-[color-mix(in_srgb,var(--theme-border)_76%,transparent)] outline-none focus:ring-2 disabled:opacity-60";
+const CARD = "sf-next-settings-card";
+const INPUT = "sf-next-settings-security-input";
 
 type SecurityPanel = "password" | "cancel";
 
@@ -42,7 +39,7 @@ function SecurityActionRow({
   const panelId = `${rowId}-panel`;
 
   return (
-    <div className="border-t border-[color-mix(in_srgb,var(--theme-border)_68%,transparent)] first:border-t-0">
+    <div className={`sf-next-settings-security-row${danger ? " is-danger" : ""}${expanded ? " is-expanded" : ""}`}>
       <UnifiedButton
         type="button"
         id={`${rowId}-trigger`}
@@ -50,38 +47,18 @@ function SecurityActionRow({
         aria-controls={panelId}
         disabled={disabled}
         onClick={onToggle}
-        className={`grid w-full grid-cols-[2.75rem_minmax(0,1fr)_1.25rem] items-start gap-x-3 px-0 py-4 text-left disabled:cursor-not-allowed disabled:opacity-50 ${
-          danger && expanded
-            ? "bg-[color-mix(in_srgb,var(--theme-danger)_5%,transparent)]"
-            : danger
-              ? "bg-transparent"
-              : ""
-        }`}
+        className="sf-next-settings-security-trigger"
       >
-        <span
-          className={`mt-0.5 flex h-11 w-11 items-center justify-center rounded-full ${
-            danger
-              ? "bg-[color-mix(in_srgb,var(--theme-danger)_10%,var(--theme-surface))] text-[var(--theme-danger)]"
-              : "bg-[color-mix(in_srgb,var(--theme-primary)_8%,var(--theme-surface))] text-[var(--theme-primary)]"
-          }`}
-        >
+        <span className="sf-next-settings-security-icon">
           {icon}
         </span>
-        <span className="min-w-0">
-          <span
-            className={`block text-sm font-medium leading-snug ${
-              danger ? "text-[var(--theme-danger)]" : "text-[var(--theme-text)]"
-            }`}
-          >
-            {title}
-          </span>
-          <span className="mt-0.5 block text-xs leading-relaxed text-[var(--theme-muted)]">{description}</span>
+        <span className="sf-next-settings-security-copy">
+          <span className="sf-next-settings-security-title">{title}</span>
+          <span className="sf-next-settings-security-description">{description}</span>
         </span>
         <ChevronRight
           size={16}
-          className={`mt-1 shrink-0 text-[var(--theme-muted)] transition-transform duration-200 ${
-            expanded ? "rotate-90" : ""
-          }`}
+          className="sf-next-settings-security-chevron"
           aria-hidden
         />
       </UnifiedButton>
@@ -91,11 +68,7 @@ function SecurityActionRow({
           id={panelId}
           role="region"
           aria-labelledby={`${rowId}-trigger`}
-          className={`mb-4 rounded-[16px] px-3 py-3 ${
-            danger
-              ? "bg-[color-mix(in_srgb,var(--theme-danger)_6%,var(--theme-surface))]"
-              : "bg-[var(--theme-bg)]"
-          }`}
+          className="sf-next-settings-security-panel"
         >
           {children}
         </div>
@@ -187,8 +160,7 @@ export default function SettingsSecuritySection() {
   const cancelConfirmReady = cancelConfirmText.trim() === "注销账号";
 
   return (
-    <section className="space-y-2">
-      <h2 className={SECTION_TITLE}>账户安全</h2>
+    <section className="sf-next-settings-section" aria-label="账户安全">
       <div className={CARD}>
         <SecurityActionRow
           rowId={`${sectionId}-password`}
@@ -199,7 +171,7 @@ export default function SettingsSecuritySection() {
           disabled={panelBusy}
           onToggle={() => togglePanel("password")}
         >
-          <form className="space-y-3" onSubmit={handleChangePwd} aria-busy={panelBusy}>
+          <form className="sf-next-settings-security-form" onSubmit={handleChangePwd} aria-busy={panelBusy}>
             <input
               type="password"
               autoComplete="current-password"
@@ -207,7 +179,7 @@ export default function SettingsSecuritySection() {
               onChange={(e) => setOldPwd(e.target.value)}
               placeholder="当前密码"
               disabled={panelBusy}
-              className={`${INPUT} focus:ring-[var(--theme-primary)]`}
+              className={INPUT}
             />
             <input
               type="password"
@@ -216,7 +188,7 @@ export default function SettingsSecuritySection() {
               onChange={(e) => setNewPwd(e.target.value)}
               placeholder="新密码（至少 6 位）"
               disabled={panelBusy}
-              className={`${INPUT} focus:ring-[var(--theme-primary)]`}
+              className={INPUT}
             />
             <input
               type="password"
@@ -225,12 +197,12 @@ export default function SettingsSecuritySection() {
               onChange={(e) => setConfirmPwd(e.target.value)}
               placeholder="确认新密码"
               disabled={panelBusy}
-              className={`${INPUT} focus:ring-[var(--theme-primary)]`}
+              className={INPUT}
             />
             <UnifiedButton
               type="submit"
               disabled={panelBusy}
-              className="w-full rounded-full bg-[var(--theme-primary)] py-3 text-sm font-semibold text-[var(--theme-primary-foreground)] disabled:opacity-60"
+              className="sf-next-settings-security-submit"
             >
               {panelBusy ? "修改中..." : "确认修改密码"}
             </UnifiedButton>
@@ -247,8 +219,8 @@ export default function SettingsSecuritySection() {
           disabled={panelBusy}
           onToggle={() => togglePanel("cancel")}
         >
-          <form className="space-y-3" onSubmit={handleCancelAccount} aria-busy={panelBusy}>
-            <p className="text-xs leading-5 text-[var(--theme-muted)]">
+          <form className="sf-next-settings-security-form" onSubmit={handleCancelAccount} aria-busy={panelBusy}>
+            <p className="sf-next-settings-security-help">
               按照提示输入“注销账号”，即可注销成功。如再次使用本站需重新注册。
             </p>
             <input
@@ -256,12 +228,12 @@ export default function SettingsSecuritySection() {
               onChange={(e) => setCancelConfirmText(e.target.value)}
               placeholder="输入“注销账号”确认"
               disabled={panelBusy}
-              className={`${INPUT} focus:ring-[var(--theme-danger)]`}
+              className={INPUT}
             />
             <UnifiedButton
               type="submit"
               disabled={panelBusy || !cancelConfirmReady}
-              className="w-full rounded-full bg-[var(--theme-danger)] py-3 text-sm font-semibold text-[var(--theme-danger-foreground)] disabled:opacity-60"
+              className="sf-next-settings-security-submit sf-next-settings-security-submit--danger"
             >
               {panelBusy ? "注销中..." : "确认注销账号"}
             </UnifiedButton>

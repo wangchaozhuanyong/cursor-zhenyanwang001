@@ -97,6 +97,8 @@
     --theme-shadow-control: inset 0 1px 0 rgba(255,255,255,0.42), 0 10px 22px -18px rgba(0,0,0,0.28);
     --theme-shadow-control-hover: inset 0 1px 0 rgba(255,255,255,0.5), 0 14px 28px -20px rgba(0,0,0,0.34);
     --theme-focus-ring: 0 0 0 3px color-mix(in srgb, var(--theme-primary) 20%, transparent);
+    --legacy-overlay-soft: rgba(0, 0, 0, 0.06);
+    --legacy-danger-soft: rgba(220, 38, 38, 0.12);
     --theme-image-fit: cover;
     --theme-card-align: left;
     --theme-card-shell-bg: var(--theme-surface);
@@ -453,11 +455,6 @@
   }
 
   /* 悬浮底栏（navStyle=floating）比贴底栏更高，统一抬高 --sf-bottom-nav-height */
-  @media (max-width: 767px) {
-    html[data-app-scope="store"][data-theme-nav-style="floating"] {
-      --sf-bottom-nav-height: 86px;
-    }
-  }
 
   .z-header { z-index: 40; }
   .z-bottom-nav { z-index: 50; }
@@ -477,7 +474,7 @@
   .app-bottom-sheet-backdrop,
   .app-country-picker-backdrop {
     background:
-      linear-gradient(180deg, rgba(7, 10, 15, 0.14), var(--sheet-veil-deep)),
+      linear-gradient(180deg, color-mix(in srgb, var(--theme-text) 14%, transparent), var(--sheet-veil-deep)),
       radial-gradient(120% 70% at 50% 100%, color-mix(in srgb, var(--theme-price) 10%, transparent), transparent 58%),
       var(--sheet-veil);
     backdrop-filter: none;
@@ -494,7 +491,7 @@
     box-shadow:
       inset 0 1px 0 var(--sheet-highlight),
       inset 0 -1px 0 color-mix(in srgb, var(--theme-border) 62%, transparent),
-      0 -34px 80px -48px rgba(15, 23, 42, 0.58),
+      0 -34px 80px -48px color-mix(in srgb, var(--theme-text) 58%, transparent),
       0 -12px 28px -24px var(--sheet-glow);
   }
 
@@ -576,13 +573,13 @@
     background:
       linear-gradient(180deg, color-mix(in srgb, var(--theme-surface) 72%, transparent), var(--theme-surface)),
       var(--theme-surface);
-    box-shadow: 0 -14px 28px -28px rgba(15, 23, 42, 0.42);
+    box-shadow: 0 -14px 28px -28px color-mix(in srgb, var(--theme-text) 42%, transparent);
   }
 
   .app-country-picker-sheet {
     box-shadow:
       inset 0 1px 0 var(--sheet-highlight),
-      0 -28px 68px -44px rgba(15, 23, 42, 0.54),
+      0 -28px 68px -44px color-mix(in srgb, var(--theme-text) 54%, transparent),
       0 -8px 24px -20px var(--sheet-glow);
   }
 
@@ -746,7 +743,7 @@
       0 6px 12px color-mix(in srgb, var(--theme-price) 18%, transparent);
   }
 
-  [data-theme-density="compact"] .sf-next-surface-card {
+  [data-density="compact"] .sf-next-surface-card {
     padding: var(--theme-density-pad, 0.5rem);
   }
   /**
@@ -1190,7 +1187,7 @@ html[data-app-scope="store"] .sf-next-bottom-nav-inner {
     inset 0 1px 0 color-mix(in srgb, white 82%, transparent),
     inset 0 -1px 0 color-mix(in srgb, var(--theme-accent) 12%, transparent),
     0 20px 48px -30px color-mix(in srgb, var(--theme-primary) 38%, transparent),
-    0 10px 26px -24px rgba(15, 23, 42, 0.3);
+    0 10px 26px -24px color-mix(in srgb, var(--theme-text) 30%, transparent);
 }
 
 html[data-app-scope="store"] .sf-next-bottom-nav-inner::before {
@@ -1273,8 +1270,8 @@ html[data-app-scope="store"] .sf-next-search-field {
   }
 
   html[data-app-scope="store"] .sf-next-order-header-search-field .sf-next-search-field {
-    height: 2.375rem;
-    min-height: 2.375rem;
+    height: 2.75rem;
+    min-height: 2.75rem;
     padding-left: 2.1rem;
     padding-right: 0.9rem;
     font-size: 0.875rem;
@@ -1389,401 +1386,11 @@ html[data-app-scope="store"] .sf-next-bottom-nav-badge-bump {
   }
 }
 
-html[data-app-scope="store"][data-theme-skin-id="default_life_green"] body {
-  background-image:
-    linear-gradient(180deg, color-mix(in srgb, white 52%, var(--store-page-top)) 0%, var(--store-page-base) 25rem, var(--store-page-tint) 100%),
-    linear-gradient(120deg, color-mix(in srgb, var(--theme-primary) 5%, transparent) 0%, transparent 46%),
-    linear-gradient(240deg, color-mix(in srgb, var(--theme-accent) 5%, transparent) 0%, transparent 52%),
-    repeating-linear-gradient(0deg, color-mix(in srgb, var(--theme-primary) 4%, transparent) 0 1px, transparent 1px 58px),
-    repeating-linear-gradient(90deg, color-mix(in srgb, white 12%, transparent) 0 1px, transparent 1px 66px);
-}
-
-html[data-app-scope="store"][data-theme-skin-id="default_life_green"] .sf-next-store-shell::before {
-  background:
-    linear-gradient(90deg, color-mix(in srgb, white 18%, transparent) 0%, transparent 24%, transparent 78%, color-mix(in srgb, var(--store-page-base) 38%, transparent) 100%),
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-primary) 4%, transparent), transparent 40%, color-mix(in srgb, var(--theme-accent) 3%, transparent)),
-    repeating-linear-gradient(0deg, color-mix(in srgb, var(--theme-primary) 4%, transparent) 0 1px, transparent 1px 54px),
-    repeating-linear-gradient(90deg, color-mix(in srgb, var(--theme-accent) 4%, transparent) 0 1px, transparent 1px 62px);
-  opacity: 0.44;
-}
-
-html[data-app-scope="store"][data-theme-skin-id="default_life_green"] .sf-next-surface-card {
-  border-color: color-mix(in srgb, var(--theme-primary) 10%, var(--store-card-border));
-  background:
-    linear-gradient(180deg, color-mix(in srgb, white 48%, transparent), transparent 44%),
-    radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--theme-primary) 4%, transparent), transparent 34%),
-    var(--store-card-bg);
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, white 76%, transparent),
-    0 18px 42px -32px color-mix(in srgb, var(--theme-primary) 36%, transparent),
-    0 8px 24px -22px rgba(23, 33, 31, 0.22);
-}
-
-html[data-app-scope="store"][data-theme-skin-id="premium_ivory_jade"] body {
-  background-image:
-    linear-gradient(180deg, #fffdf8 0%, #f7f4ec 23rem, #eff1e7 100%),
-    linear-gradient(118deg, rgba(15, 95, 76, 0.032) 0%, transparent 44%),
-    linear-gradient(240deg, rgba(198, 161, 91, 0.04) 0%, transparent 50%),
-    repeating-linear-gradient(0deg, rgba(198, 161, 91, 0.026) 0 1px, transparent 1px 62px),
-    repeating-linear-gradient(90deg, rgba(15, 95, 76, 0.018) 0 1px, transparent 1px 72px);
-}
-
-html[data-app-scope="store"][data-theme-skin-id="premium_ivory_jade"] .sf-next-store-shell::before {
-  background:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.2) 0%, transparent 24%, transparent 78%, rgba(239, 241, 231, 0.34) 100%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.16), transparent 38%, rgba(15, 95, 76, 0.02)),
-    repeating-linear-gradient(0deg, rgba(15, 95, 76, 0.018) 0 1px, transparent 1px 58px),
-    repeating-linear-gradient(90deg, rgba(198, 161, 91, 0.024) 0 1px, transparent 1px 68px);
-  opacity: 0.34;
-}
-
-html[data-app-scope="store"][data-theme-skin-id="premium_ivory_jade"] .sf-next-surface-card {
-  border-color: color-mix(in srgb, var(--theme-accent) 18%, var(--store-card-border));
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.34) 42%, transparent 100%),
-    linear-gradient(128deg, color-mix(in srgb, var(--theme-primary) 4%, transparent), transparent 34%),
-    linear-gradient(306deg, color-mix(in srgb, var(--theme-accent) 6%, transparent), transparent 38%),
-    var(--store-card-bg);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.88),
-    inset 0 -1px 0 color-mix(in srgb, var(--theme-accent) 12%, transparent),
-    0 24px 58px -42px color-mix(in srgb, var(--theme-primary) 36%, transparent),
-    0 10px 28px -24px rgba(31, 39, 35, 0.28);
-}
-
-html[data-app-scope="store"][data-theme-skin-id="premium_ivory_jade"] .sf-next-bottom-nav-inner {
-  border-color: color-mix(in srgb, var(--theme-accent) 20%, var(--sf-bottom-nav-border));
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.84), color-mix(in srgb, var(--theme-secondary) 12%, transparent)),
-    var(--sf-bottom-nav-bg);
-}
-
 /* Customer-side texture tuning for the 7 premium light skins. */
-html[data-app-scope="store"][data-theme-skin-id="premium_champagne_ivory"] {
-  --home-hero-jade: #be2633;
-  --home-hero-jade-deep: #2b1715;
-  --home-hero-gold: #ad7b3a;
-  --home-hero-ivory: #fffdf9;
-  --premium-skin-ink: #201a17;
-  --premium-skin-deep: #2b1715;
-  --premium-skin-metal: #ad7b3a;
-  --premium-skin-metal-soft: #efd7ad;
-  --premium-skin-paper: #fffdf9;
-  --premium-skin-paper-deep: #f3e6dd;
-  --premium-skin-wash: #f7f3ee;
-  --premium-skin-line: #d8b277;
-  --premium-skin-ticket-main: #d84024;
-  --premium-skin-ticket-deep: #8a1c17;
-  --premium-skin-ticket-soft: #e66a4f;
-}
-
-html[data-app-scope="store"][data-theme-skin-id="premium_pearl_blush"] {
-  --home-hero-jade: #b52d35;
-  --home-hero-jade-deep: #2a1714;
-  --home-hero-gold: #c49a4a;
-  --home-hero-ivory: #ffffff;
-  --premium-skin-ink: #2a1714;
-  --premium-skin-deep: #531a19;
-  --premium-skin-metal: #c49a4a;
-  --premium-skin-metal-soft: #f5ddb0;
-  --premium-skin-paper: #ffffff;
-  --premium-skin-paper-deep: #eadbd0;
-  --premium-skin-wash: #f8f1ea;
-  --premium-skin-line: #d9b06a;
-  --premium-skin-ticket-main: #b52d35;
-  --premium-skin-ticket-deep: #701118;
-  --premium-skin-ticket-soft: #d35860;
-}
-
-html[data-app-scope="store"][data-theme-skin-id="premium_porcelain_jade"] {
-  --home-hero-jade: #5a6f45;
-  --home-hero-jade-deep: #26301f;
-  --home-hero-gold: #a58f58;
-  --home-hero-ivory: #fbfaf3;
-  --premium-skin-ink: #26301f;
-  --premium-skin-deep: #303a28;
-  --premium-skin-metal: #a58f58;
-  --premium-skin-metal-soft: #e8ddbd;
-  --premium-skin-paper: #fbfaf3;
-  --premium-skin-paper-deep: #deddd2;
-  --premium-skin-wash: #f0efe7;
-  --premium-skin-line: #c8bf9c;
-  --premium-skin-ticket-main: #5a6f45;
-  --premium-skin-ticket-deep: #34402a;
-  --premium-skin-ticket-soft: #7f9568;
-}
-
-html[data-app-scope="store"][data-theme-skin-id="premium_sky_silk"] {
-  --home-hero-jade: #2e5f90;
-  --home-hero-jade-deep: #172033;
-  --home-hero-gold: #a9955e;
-  --home-hero-ivory: #ffffff;
-  --premium-skin-ink: #172033;
-  --premium-skin-deep: #243247;
-  --premium-skin-metal: #a9955e;
-  --premium-skin-metal-soft: #e5d9b8;
-  --premium-skin-paper: #ffffff;
-  --premium-skin-paper-deep: #dbe4ed;
-  --premium-skin-wash: #f4f7fa;
-  --premium-skin-line: #c4ced8;
-  --premium-skin-ticket-main: #2e5f90;
-  --premium-skin-ticket-deep: #1d3e62;
-  --premium-skin-ticket-soft: #5f8fbb;
-}
-
-html[data-app-scope="store"][data-theme-skin-id="premium_apricot_sand"] {
-  --home-hero-jade: #8a4a31;
-  --home-hero-jade-deep: #2f1f16;
-  --home-hero-gold: #b98a49;
-  --home-hero-ivory: #fff8ef;
-  --premium-skin-ink: #2f1f16;
-  --premium-skin-deep: #4f2c1e;
-  --premium-skin-metal: #b98a49;
-  --premium-skin-metal-soft: #f1d6ac;
-  --premium-skin-paper: #fff8ef;
-  --premium-skin-paper-deep: #e8d6c0;
-  --premium-skin-wash: #f3e7d7;
-  --premium-skin-line: #d2a86e;
-  --premium-skin-ticket-main: #8a4a31;
-  --premium-skin-ticket-deep: #56301f;
-  --premium-skin-ticket-soft: #ad6b4b;
-}
-
-html[data-app-scope="store"][data-theme-skin-id="festival_spring_ruby_gold"] {
-  --home-hero-jade: #c9202d;
-  --home-hero-jade-deep: #3d070a;
-  --home-hero-gold: #f1c15d;
-  --home-hero-ivory: #fff5ec;
-  --premium-skin-ink: #7a1119;
-  --premium-skin-deep: #3d070a;
-  --premium-skin-metal: #f1c15d;
-  --premium-skin-metal-soft: #fff0b4;
-  --premium-skin-paper: #fff5ec;
-  --premium-skin-paper-deep: #f1d2a7;
-  --premium-skin-wash: #fff5ec;
-  --premium-skin-line: #e4b75c;
-  --premium-skin-ticket-main: #c9202d;
-  --premium-skin-ticket-deep: #780b12;
-  --premium-skin-ticket-soft: #e3414a;
-}
-
-html[data-app-scope="store"][data-theme-skin-id="festival_moon_orange_gold"] {
-  --home-hero-jade: #d85d2a;
-  --home-hero-jade-deep: #3f1b08;
-  --home-hero-gold: #f0b44f;
-  --home-hero-ivory: #fff7e8;
-  --premium-skin-ink: #7d3412;
-  --premium-skin-deep: #3f1b08;
-  --premium-skin-metal: #f0b44f;
-  --premium-skin-metal-soft: #fff1b7;
-  --premium-skin-paper: #fff7e8;
-  --premium-skin-paper-deep: #efcb94;
-  --premium-skin-wash: #fff7e8;
-  --premium-skin-line: #e0ac5d;
-  --premium-skin-ticket-main: #d85d2a;
-  --premium-skin-ticket-deep: #7f2e10;
-  --premium-skin-ticket-soft: #f0783c;
-}
-
-html[data-app-scope="store"][data-theme-skin-id="client_blue_portal"] {
-  --premium-skin-ink: #0f172a;
-  --premium-skin-deep: #1e3a8a;
-  --premium-skin-metal: #2563eb;
-  --premium-skin-metal-soft: #dbeafe;
-  --premium-skin-paper: #ffffff;
-  --premium-skin-paper-deep: #e8f1ff;
-  --premium-skin-wash: #f5f8ff;
-  --premium-skin-line: #bcd3f7;
-  --premium-skin-ticket-main: #2563eb;
-  --premium-skin-ticket-deep: #1d4ed8;
-  --premium-skin-ticket-soft: #60a5fa;
-}
-
-html[data-app-scope="store"][data-theme-skin-id="client_sky_tech"] {
-  --premium-skin-ink: #111827;
-  --premium-skin-deep: #0f4770;
-  --premium-skin-metal: #0ea5e9;
-  --premium-skin-metal-soft: #dff4ff;
-  --premium-skin-paper: #ffffff;
-  --premium-skin-paper-deep: #e7f4ff;
-  --premium-skin-wash: #f7fbff;
-  --premium-skin-line: #bde4f9;
-  --premium-skin-ticket-main: #0ea5e9;
-  --premium-skin-ticket-deep: #0369a1;
-  --premium-skin-ticket-soft: #67d3ff;
-}
-
-html[data-app-scope="store"][data-theme-skin-id="client_black_gold"] {
-  --premium-skin-ink: #1a1a1a;
-  --premium-skin-deep: #0a0a0a;
-  --premium-skin-metal: #d4af37;
-  --premium-skin-metal-soft: #f4df96;
-  --premium-skin-paper: #ffffff;
-  --premium-skin-paper-deep: #f1e8d2;
-  --premium-skin-wash: #f5f5f3;
-  --premium-skin-line: #d9c799;
-  --premium-skin-ticket-main: #d4af37;
-  --premium-skin-ticket-deep: #7a5b19;
-  --premium-skin-ticket-soft: #f1cf67;
-}
-
-html[data-app-scope="store"][data-theme-skin-id="client_deep_enterprise"] {
-  --premium-skin-ink: #0f172a;
-  --premium-skin-deep: #101b34;
-  --premium-skin-metal: #1d4ed8;
-  --premium-skin-metal-soft: #dbeafe;
-  --premium-skin-paper: #ffffff;
-  --premium-skin-paper-deep: #e8eef8;
-  --premium-skin-wash: #f5f8fd;
-  --premium-skin-line: #bfd0eb;
-  --premium-skin-ticket-main: #1d4ed8;
-  --premium-skin-ticket-deep: #1e3a8a;
-  --premium-skin-ticket-soft: #60a5fa;
-}
-
-html[data-app-scope="store"][data-client-design-style="blue_portal"] body,
-html[data-app-scope="store"][data-client-design-style="sky_tech"] body,
-html[data-app-scope="store"][data-client-design-style="deep_enterprise"] body {
-  background:
-    radial-gradient(ellipse at 10% 0%, color-mix(in srgb, var(--premium-skin-metal) 10%, transparent), transparent 28rem),
-    linear-gradient(180deg, var(--premium-skin-wash) 0%, var(--theme-bg) 30rem, var(--theme-bg) 100%);
-}
-
-html[data-app-scope="store"][data-client-design-style="black_gold"] body {
-  background:
-    radial-gradient(ellipse at 18% 0%, color-mix(in srgb, var(--premium-skin-metal) 12%, transparent), transparent 30rem),
-    linear-gradient(180deg, var(--premium-skin-wash) 0%, var(--theme-bg) 30rem, var(--theme-bg) 100%);
-}
-
-html[data-app-scope="store"]:where(
-  [data-theme-skin-id="premium_champagne_ivory"],
-  [data-theme-skin-id="premium_pearl_blush"],
-  [data-theme-skin-id="premium_porcelain_jade"],
-  [data-theme-skin-id="premium_sky_silk"],
-  [data-theme-skin-id="premium_apricot_sand"],
-  [data-theme-skin-id="festival_spring_ruby_gold"],
-  [data-theme-skin-id="festival_moon_orange_gold"]
-) body {
-  background-image:
-    radial-gradient(ellipse at 8% 4%, color-mix(in srgb, var(--premium-skin-metal) 13%, transparent), transparent 32rem),
-    radial-gradient(ellipse at 92% 0%, color-mix(in srgb, var(--premium-skin-line) 11%, transparent), transparent 28rem),
-    linear-gradient(180deg, var(--premium-skin-wash) 0%, var(--theme-bg) 30rem, var(--theme-bg) 100%);
-}
 
 /* Damatong supermarket client redesign: first production slice. */
 
 /* Store home V2 visual refinement: scoped to the current homepage only. */
-
-@media (min-width: 768px) and (max-width: 1279px) {
-  :root {
-    --sf-bottom-nav-height: 0px;
-    --sf-next-header-tablet-height: 3.25rem;
-  }
-
-  .sf-next-bottom-safe,
-.sf-next-product-action-space {
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-  }
-
-  html[data-app-scope="store"][data-theme-nav-style="floating"] {
-    --sf-bottom-nav-height: 0px;
-  }
-
-  html[data-app-scope="store"] .sf-next-header-tablet {
-    border-color: color-mix(in srgb, var(--theme-primary) 12%, var(--theme-border));
-    background:
-      linear-gradient(180deg, color-mix(in srgb, white 78%, transparent), color-mix(in srgb, var(--theme-surface) 78%, transparent)),
-      color-mix(in srgb, var(--theme-surface) 94%, transparent);
-    box-shadow:
-      inset 0 1px 0 color-mix(in srgb, white 82%, transparent),
-      0 14px 32px -28px color-mix(in srgb, var(--theme-primary) 38%, transparent);
-  }
-
-  html[data-app-scope="store"] .sf-next-header-tablet__inner {
-    max-width: 56rem;
-    min-width: 0;
-  }
-
-  html[data-app-scope="store"] .sf-next-header-tablet__brand .sf-next-brand-logo {
-    width: 2.35rem;
-    height: 2.35rem;
-  }
-
-  html[data-app-scope="store"] .sf-next-header-tablet__nav {
-    display: grid;
-    flex: 1 1 auto;
-    min-width: 0;
-    overflow: hidden;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    align-items: center;
-    gap: 0.38rem;
-    border: 1px solid color-mix(in srgb, var(--theme-primary) 10%, var(--theme-border));
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--theme-bg) 64%, transparent);
-    padding: 0.28rem;
-  }
-
-  html[data-app-scope="store"] .sf-next-header-tablet__nav-item {
-    position: relative;
-    display: inline-flex;
-    min-height: 2.78rem;
-    min-width: 0;
-    align-items: center;
-    justify-content: center;
-    gap: 0.35rem;
-    border-radius: 999px;
-    color: color-mix(in srgb, var(--theme-text) 74%, var(--theme-text-muted));
-    font-size: 0.86rem;
-    font-weight: 760;
-    transition:
-      background-color 180ms ease,
-      box-shadow 180ms ease,
-      color 180ms ease,
-      transform 180ms ease;
-  }
-
-  html[data-app-scope="store"] .sf-next-header-tablet__nav-item[aria-current="page"],
-  html[data-app-scope="store"] .sf-next-header-tablet__nav-link.is-active {
-    background:
-      linear-gradient(180deg, color-mix(in srgb, white 68%, transparent), color-mix(in srgb, var(--theme-primary) 8%, transparent)),
-      color-mix(in srgb, var(--theme-surface) 92%, white);
-    color: var(--theme-primary);
-    box-shadow:
-      inset 0 1px 0 color-mix(in srgb, white 88%, transparent),
-      0 10px 22px -20px color-mix(in srgb, var(--theme-primary) 52%, transparent);
-  }
-
-  html[data-app-scope="store"] .sf-next-header-tablet__nav-icon {
-    position: relative;
-    display: inline-flex;
-    width: 1.35rem;
-    height: 1.35rem;
-    flex: 0 0 auto;
-    align-items: center;
-    justify-content: center;
-  }
-
-  html[data-app-scope="store"] .sf-next-header-tablet__nav-label {
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  html[data-app-scope="store"] .sf-next-header-search-button {
-    display: inline-flex;
-    width: 2.78rem;
-    height: 2.78rem;
-    flex: 0 0 auto;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid color-mix(in srgb, var(--theme-primary) 12%, var(--theme-border));
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--theme-surface) 92%, white);
-    color: var(--theme-text);
-    box-shadow: 0 10px 22px -20px color-mix(in srgb, var(--theme-primary) 40%, transparent);
-  }
-}
 
 @media (min-width: 768px) and (max-width: 1279px) {
   :root {
@@ -1954,147 +1561,12 @@ html[data-app-scope="store"]:where(
 
 }
 
-html[data-app-scope="store"]:where(
-  [data-theme-skin-id="premium_champagne_ivory"],
-  [data-theme-skin-id="premium_pearl_blush"],
-  [data-theme-skin-id="premium_porcelain_jade"],
-  [data-theme-skin-id="premium_sky_silk"],
-  [data-theme-skin-id="premium_apricot_sand"],
-  [data-theme-skin-id="festival_spring_ruby_gold"],
-  [data-theme-skin-id="festival_moon_orange_gold"]
-) .bg-theme-member-card {
-  position: relative;
-  isolation: isolate;
-  overflow: hidden;
-  background:
-    radial-gradient(ellipse at 12% 8%, color-mix(in srgb, white 26%, transparent), transparent 34%),
-    radial-gradient(ellipse at 92% 8%, color-mix(in srgb, var(--premium-skin-metal-soft) 24%, transparent), transparent 42%),
-    linear-gradient(128deg, color-mix(in srgb, var(--premium-skin-ticket-deep) 90%, var(--premium-skin-ticket-main)), color-mix(in srgb, var(--premium-skin-ticket-main) 72%, var(--premium-skin-deep)) 54%, var(--premium-skin-deep));
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, white 34%, transparent),
-    inset 0 0 0 1px color-mix(in srgb, var(--premium-skin-metal-soft) 18%, transparent),
-    0 22px 52px -34px color-mix(in srgb, var(--premium-skin-deep) 58%, transparent);
-}
-
-html[data-app-scope="store"]:where(
-  [data-theme-skin-id="premium_champagne_ivory"],
-  [data-theme-skin-id="premium_pearl_blush"],
-  [data-theme-skin-id="premium_porcelain_jade"],
-  [data-theme-skin-id="premium_sky_silk"],
-  [data-theme-skin-id="premium_apricot_sand"],
-  [data-theme-skin-id="festival_spring_ruby_gold"],
-  [data-theme-skin-id="festival_moon_orange_gold"]
-) .bg-theme-member-card::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background:
-    linear-gradient(100deg, transparent 0%, color-mix(in srgb, white 18%, transparent) 44%, transparent 62%),
-    repeating-linear-gradient(118deg, color-mix(in srgb, var(--premium-skin-metal-soft) 9%, transparent) 0 1px, transparent 1px 18px);
-  opacity: 0.56;
-}
-
-html[data-app-scope="store"]:where(
-  [data-theme-skin-id="premium_champagne_ivory"],
-  [data-theme-skin-id="premium_pearl_blush"],
-  [data-theme-skin-id="premium_porcelain_jade"],
-  [data-theme-skin-id="premium_sky_silk"],
-  [data-theme-skin-id="premium_apricot_sand"],
-  [data-theme-skin-id="festival_spring_ruby_gold"],
-  [data-theme-skin-id="festival_moon_orange_gold"]
-) .bg-theme-member-card::after {
-  content: "";
-  position: absolute;
-  left: 1rem;
-  right: 1rem;
-  bottom: 0.9rem;
-  z-index: 0;
-  height: 1px;
-  pointer-events: none;
-  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--premium-skin-metal-soft) 42%, transparent), transparent);
-  opacity: 0.72;
-}
-
-html[data-app-scope="store"]:where(
-  [data-theme-skin-id="premium_champagne_ivory"],
-  [data-theme-skin-id="premium_pearl_blush"],
-  [data-theme-skin-id="premium_porcelain_jade"],
-  [data-theme-skin-id="premium_sky_silk"],
-  [data-theme-skin-id="premium_apricot_sand"],
-  [data-theme-skin-id="festival_spring_ruby_gold"],
-  [data-theme-skin-id="festival_moon_orange_gold"]
-) .bg-theme-member-card > * {
-  position: relative;
-  z-index: 1;
-}
-
-html[data-app-scope="store"][data-theme-skin-id="default_life_green"] .sf-next-bottom-nav-inner {
-  border-color: color-mix(in srgb, var(--theme-primary) 18%, var(--sf-bottom-nav-border));
-  background:
-    linear-gradient(180deg, color-mix(in srgb, white 72%, transparent), color-mix(in srgb, var(--theme-secondary) 13%, transparent)),
-    var(--sf-bottom-nav-bg);
-}
-
-html[data-app-scope="store"][data-theme-scene="holiday"] body {
-  background-image:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--theme-secondary) 40%, white) 0%,
-      var(--store-page-base) 26rem,
-      color-mix(in srgb, var(--theme-primary) 5%, var(--store-page-tint)) 100%
-    ),
-    linear-gradient(118deg, color-mix(in srgb, var(--theme-accent) 7%, transparent) 0%, transparent 48%),
-    linear-gradient(242deg, color-mix(in srgb, var(--theme-primary) 5%, transparent) 0%, transparent 54%),
-    repeating-linear-gradient(0deg, color-mix(in srgb, var(--theme-accent) 6%, transparent) 0 1px, transparent 1px 58px),
-    repeating-linear-gradient(90deg, color-mix(in srgb, white 12%, transparent) 0 1px, transparent 1px 66px);
-}
-
-html[data-app-scope="store"][data-theme-scene="holiday"] .sf-next-store-shell::before {
-  background:
-    linear-gradient(90deg, color-mix(in srgb, white 16%, transparent) 0%, transparent 24%, transparent 78%, color-mix(in srgb, var(--store-page-base) 34%, transparent) 100%),
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-accent) 6%, transparent), transparent 42%, color-mix(in srgb, var(--theme-primary) 3%, transparent)),
-    repeating-linear-gradient(0deg, color-mix(in srgb, var(--theme-primary) 4%, transparent) 0 1px, transparent 1px 54px),
-    repeating-linear-gradient(90deg, color-mix(in srgb, var(--theme-accent) 4%, transparent) 0 1px, transparent 1px 62px);
-  opacity: 0.46;
-}
-
-html[data-app-scope="store"][data-theme-scene="holiday"] .sf-next-surface-card {
-  border-color: color-mix(in srgb, var(--theme-accent) 24%, var(--store-card-border));
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, white 70%, transparent),
-    0 16px 42px -34px color-mix(in srgb, var(--theme-primary) 54%, transparent);
-}
-
-html[data-app-scope="store"][data-theme-scene="holiday"] .sf-next-bottom-nav-inner {
-  border-color: color-mix(in srgb, var(--theme-accent) 28%, var(--store-header-border));
-  background:
-    linear-gradient(180deg, color-mix(in srgb, white 68%, transparent), color-mix(in srgb, var(--theme-secondary) 16%, transparent)),
-    var(--sf-bottom-nav-bg);
-}
-
-html[data-app-scope="store"][data-theme-scene="holiday"] .sf-next-bottom-nav-item[aria-current="page"] .sf-next-bottom-nav-icon {
-  background:
-    linear-gradient(180deg, color-mix(in srgb, white 58%, transparent), color-mix(in srgb, var(--theme-accent) 10%, transparent)),
-    var(--store-icon-bg);
-}
-
 html[data-app-scope="store"] .skeleton-base {
   background:
     linear-gradient(135deg, var(--store-skeleton-a), var(--store-skeleton-b));
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, white 44%, transparent),
     inset 0 -1px 0 color-mix(in srgb, var(--store-border) 42%, transparent);
-}
-
-html[data-app-scope="store"][data-theme-scene="holiday"] .skeleton-base {
-  background:
-    linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--theme-secondary) 26%, var(--store-skeleton-a)),
-      color-mix(in srgb, var(--theme-accent) 12%, var(--store-skeleton-b))
-    );
 }
 
 html[data-app-scope="store"] .sf-image-loading-base {
@@ -2108,15 +1580,6 @@ html[data-app-scope="store"] .sf-image-loading-base {
     inset 0 -1px 0 color-mix(in srgb, var(--store-border) 42%, transparent);
 }
 
-html[data-app-scope="store"][data-theme-scene="holiday"] .sf-image-loading-base {
-  background:
-    linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--theme-secondary) 26%, var(--store-skeleton-a)),
-      color-mix(in srgb, var(--theme-accent) 12%, var(--store-skeleton-b))
-    );
-}
-
 html[data-app-scope="store"] .sf-image-loading-shimmer::after {
   content: "";
   position: absolute;
@@ -2126,9 +1589,9 @@ html[data-app-scope="store"] .sf-image-loading-shimmer::after {
     linear-gradient(
       100deg,
       transparent 0%,
-      color-mix(in srgb, var(--theme-bg, #fff) 38%, transparent) 42%,
+      color-mix(in srgb, var(--theme-bg) 38%, transparent) 42%,
       color-mix(in srgb, var(--theme-text, hsl(var(--foreground))) 6%, transparent) 50%,
-      color-mix(in srgb, var(--theme-bg, #fff) 30%, transparent) 58%,
+      color-mix(in srgb, var(--theme-bg) 30%, transparent) 58%,
       transparent 100%
     );
   animation: sf-image-loading-sheen 2.4s ease-in-out infinite;
@@ -2160,9 +1623,9 @@ html[data-app-scope="store"] .sf-image-loading-shimmer::after {
   background-image: linear-gradient(
     100deg,
     transparent 0%,
-    color-mix(in srgb, var(--theme-bg, #fff) 38%, transparent) 42%,
+    color-mix(in srgb, var(--theme-bg) 38%, transparent) 42%,
     color-mix(in srgb, var(--theme-text, hsl(var(--foreground))) 6%, transparent) 50%,
-    color-mix(in srgb, var(--theme-bg, #fff) 30%, transparent) 58%,
+    color-mix(in srgb, var(--theme-bg) 30%, transparent) 58%,
     transparent 100%
   );
   animation: skeleton-shimmer 2.4s ease-in-out infinite;
@@ -2280,25 +1743,25 @@ html[data-app-scope="store"] .sf-image-loading-shimmer::after {
   }
 
   @media (max-width: 1023px) {
-    html[data-app-scope="store"][data-pwa-standalone="true"] .sf-next-bottom-nav:not([data-theme-nav-style="floating"]) {
+    html[data-app-scope="store"][data-pwa-standalone="true"] .sf-next-bottom-nav {
       background:
         linear-gradient(180deg, color-mix(in srgb, white 82%, transparent), color-mix(in srgb, var(--theme-secondary) 8%, transparent)),
         color-mix(in srgb, var(--theme-surface) 94%, white);
       box-shadow:
         inset 0 1px 0 color-mix(in srgb, white 82%, transparent),
-        0 -16px 34px -28px rgba(15, 23, 42, 0.38);
+        0 -16px 34px -28px color-mix(in srgb, var(--theme-text) 38%, transparent);
       -webkit-backdrop-filter: none;
       backdrop-filter: none;
     }
 
-    html[data-app-scope="store"][data-pwa-standalone="true"] .sf-next-bottom-nav:not([data-theme-nav-style="floating"]) .sf-next-bottom-nav-inner {
+    html[data-app-scope="store"][data-pwa-standalone="true"] .sf-next-bottom-nav .sf-next-bottom-nav-inner {
       overflow: visible;
       border-color: transparent;
       background: transparent;
       box-shadow: none;
     }
 
-    html[data-app-scope="store"][data-pwa-standalone="true"] .sf-next-bottom-nav:not([data-theme-nav-style="floating"]) .sf-next-bottom-nav-inner::before {
+    html[data-app-scope="store"][data-pwa-standalone="true"] .sf-next-bottom-nav .sf-next-bottom-nav-inner::before {
       opacity: 0;
     }
   }
@@ -2338,11 +1801,11 @@ html[data-app-scope="store"] .sf-image-loading-shimmer::after {
 /* Fallbacks for older Chromium/WebKit shells that reject modern CSS functions. */
 @supports not (background: color-mix(in srgb, black, white)) {
   [class*="bg-[color-mix"] {
-    background-color: rgba(0, 0, 0, 0.06);
+    background-color: var(--legacy-overlay-soft);
   }
 
   [class*="bg-[color-mix"][class*="theme-price"] {
-    background-color: rgba(220, 38, 38, 0.12);
+    background-color: var(--legacy-danger-soft);
   }
 
   [class*="bg-[color-mix"][class*="theme-bg"] {

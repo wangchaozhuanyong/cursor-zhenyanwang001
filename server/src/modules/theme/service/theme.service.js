@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const repo = require('../repository/theme.repository');
 const { DEFAULT_THEME_CONFIG } = require('../theme.default');
+const { FIXED_THEME_CONFIG, FIXED_THEME_PAYLOAD } = require('../theme.fixed');
 const {
   DEFAULT_SKIN_ID,
   DEFAULT_HOLIDAY_SKIN_ID,
@@ -525,7 +526,7 @@ async function readTableThemeSkins({ includeDrafts = false } = {}) {
 }
 
 async function getThemeSkins() {
-  return await readTableThemeSkins({ includeDrafts: false }) || publicPayloadFrom(await readLegacyThemeSkins());
+  return FIXED_THEME_PAYLOAD;
 }
 
 async function getAdminThemeSkins() {
@@ -533,10 +534,7 @@ async function getAdminThemeSkins() {
 }
 
 async function getActiveThemeConfig() {
-  const data = await getThemeSkins();
-  const runtimeId = data.runtimeSkinId || resolveRuntimeThemeSkinId(data);
-  const active = data.skins.find((s) => s.id === runtimeId) || data.skins[0];
-  return active?.config || DEFAULT_THEME_CONFIG;
+  return FIXED_THEME_CONFIG;
 }
 
 function toRepositoryRow(skin) {

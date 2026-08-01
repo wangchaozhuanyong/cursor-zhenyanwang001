@@ -26,7 +26,7 @@ import {
   AdminUsers, AdminUserDetail, AdminUserSecurity, AdminUserFavorites, AdminUserHistory, AdminPrivacyRequests, AdminFeedback, AdminMemberLevels, AdminInvites,
   AdminCoupons, AdminCouponForm, AdminCouponRecords, AdminCouponCampaigns, AdminCouponCampaignForm, AdminActivities, AdminMarketingDashboard, AdminActivityForm, AdminMarketingPoints, AdminMarketingRewards,
   AdminReviews, AdminNotifications, AdminNotificationDetail, AdminEventCenter,
-  AdminSiteSettings, AdminFeatureSettings, AdminSupportDownload, AdminTelegramSettings, AdminThemeSettings, AdminContent, AdminHomeOps, AdminMyInvois,
+  AdminSiteSettings, AdminFeatureSettings, AdminSupportDownload, AdminTelegramSettings, AdminContent, AdminHomeOps, AdminMyInvois,
   AdminRoles, AdminLogs, AdminRecycleBin, AdminDataRetention, AdminBackupCenter,
   AdminPaymentChannels, AdminPaymentOrders, AdminPaymentEvents, AdminPaymentReconciliations,
   AdminMonitoringOverview, AdminMonitoringAnomalies, AdminMonitoringAnomalyDetail,
@@ -130,7 +130,6 @@ function AdminShellRouteContent() {
             <Route path="settings/features" element={<AdminFeatureSettings />} />
             <Route path="settings/telegram" element={<CapabilityRoute enabled={capabilities.telegramOrderNotifyEnabled}><AdminTelegramSettings /></CapabilityRoute>} />
             <Route path="support-download" element={<CapabilityRoute enabled={capabilities.customerServiceDownloadEnabled}><AdminSupportDownload /></CapabilityRoute>} />
-            <Route path="settings/theme" element={<AdminThemeSettings />} />
             <Route path="home-ops" element={<AdminHomeOps />} />
             <Route path="myinvois" element={<AdminMyInvois />} />
             <Route path="settings/shipping" element={<CapabilityRoute enabled={capabilities.shippingEnabled}><AdminShipping /></CapabilityRoute>} />

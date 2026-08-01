@@ -3,7 +3,7 @@ import { CheckCircle2, ChevronRight, Clock3, Minus, Plus, ShieldCheck, Ticket } 
 import CouponPicker from "@/components/CouponPicker";
 import type { Product, ProductActiveActivity, ProductVariant } from "@/types/product";
 import type { CheckoutPickerCoupon } from "@/types/coupon";
-import { AppModal, SquishButton } from "@/modules/micro-interactions";
+import { AppModal } from "@/modules/micro-interactions";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { cn } from "@/lib/utils";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
@@ -127,9 +127,9 @@ export default function ProductVariantSheet({
   const selectedValueImage = specGroups
     .flatMap((group) => group.values ?? [])
     .find((value) => selectedValueIds.has(value.id) && value.image_url)?.image_url;
-  const heroImage = ensureMediaUrl(
-    selected?.image_url || selectedValueImage || product.cover_image || product.images?.[0] || "",
-  );
+  const selectedHeroImage = ensureMediaUrl(selected?.image_url || selectedValueImage || "");
+  const productHeroImage = ensureMediaUrl(product.cover_image || product.images?.[0] || "");
+  const heroImage = selectedHeroImage || productHeroImage;
   const selectedSpecLabel = selected?.spec_text || selected?.title || selected?.sku_code || "默认规格";
   const productDetailItems = buildProductDetailItems(product.description);
   const selectedCouponLabel = couponEnabled
@@ -139,14 +139,9 @@ export default function ProductVariantSheet({
   const footerActionLabel = soldOut ? "已售罄" : intent === "buy" ? "立即支付" : "加入购物车";
   const footerActionContent = intent === "buy" && !soldOut ? (
     <>
-      <span className="shrink-0 text-[var(--theme-price-foreground)]">{footerActionLabel}</span>
-      <span
-        className="h-5 w-px shrink-0 bg-[color-mix(in_srgb,var(--theme-price-foreground)_30%,transparent)]"
-        aria-hidden
-      />
-      <span className="inline-flex shrink-0 items-baseline gap-1 rounded-full bg-[color-mix(in_srgb,var(--theme-price-foreground)_14%,transparent)] px-2.5 py-1 text-[color-mix(in_srgb,var(--theme-price-foreground)_78%,rgb(250,204,21))]">
-        <span className="text-[11px] font-bold leading-none">RM</span>
-        <span className="text-base font-black leading-none tabular-nums">{formatMoney(currentPrice)}</span>
+      <span>{footerActionLabel}</span>
+      <span className="sf-next-variant-submit__amount">
+        RM {formatMoney(currentPrice)}
       </span>
     </>
   ) : (
@@ -251,12 +246,12 @@ export default function ProductVariantSheet({
   };
 
   const qtyStepper = (
-    <div className="grid w-40 shrink-0 grid-cols-[2.75rem_1fr_2.75rem] overflow-hidden rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)]">
+    <div className="sf-next-variant-qty">
       <UnifiedButton
         type="button"
         disabled={qty <= 1 || soldOut}
         onClick={() => tryChangeQty(qty - 1, "minus")}
-        className="flex h-11 min-w-[2.75rem] items-center justify-center p-0 disabled:opacity-40"
+        className="sf-next-variant-qty__button"
         aria-label="减少"
       >
         <Minus size={16} />
@@ -283,14 +278,14 @@ export default function ProductVariantSheet({
           }
           if (parsed > maxQty) onQtyChange(clampQty(parsed));
         }}
-        className="h-11 min-w-0 bg-transparent px-1 text-center text-sm font-semibold tabular-nums outline-none"
+        className="sf-next-variant-qty__input"
         aria-label="数量"
       />
       <UnifiedButton
         type="button"
         disabled={soldOut || qty >= maxQty}
         onClick={() => tryChangeQty(qty + 1, "plus")}
-        className="flex h-11 min-w-[2.75rem] items-center justify-center p-0 disabled:opacity-40"
+        className="sf-next-variant-qty__button"
         aria-label="增加"
       >
         <Plus size={16} />
@@ -299,44 +294,45 @@ export default function ProductVariantSheet({
   );
 
   const productSummary = (
-    <div className="overflow-hidden rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] p-3 lg:p-4">
+    <div className="sf-next-variant-summary">
       <RatioImage
         src={heroImage || undefined}
+        fallbackSrc={selectedHeroImage ? productHeroImage : undefined}
         alt={`${product.name} ${selectedSpecLabel}`}
         ratio={THEME_PRODUCT_MEDIA_RATIO}
-        rounded="xl"
-        className="mx-auto w-full max-w-[24rem] border border-[var(--theme-border)] bg-[var(--theme-bg)]"
+        rounded="none"
+        className="sf-next-variant-summary__media"
         imgClassName="object-contain"
         sizes="(max-width: 767px) calc(100vw - 4rem), 384px"
         loading="eager"
         fetchPriority="high"
       />
-      <div className="mt-3 min-w-0">
-        <p className="line-clamp-2 text-sm font-semibold leading-snug text-[var(--theme-text)] lg:text-base">
+      <div className="sf-next-variant-summary__copy">
+        <p className="sf-next-variant-summary__title">
           {product.name}
         </p>
-        <div className="mt-2 flex min-w-0 flex-wrap items-end gap-x-2 gap-y-1">
-          <span className="pb-1 text-xs font-bold leading-none text-[var(--theme-price)]">RM</span>
-          <span className="text-[1.85rem] font-black leading-none tabular-nums text-[var(--theme-price)]">
+        <div className="sf-next-variant-summary__price">
+          <span>RM</span>
+          <strong>
             {formatMoney(currentPrice)}
-          </span>
+          </strong>
           {showOriginalPrice ? (
-            <span className="pb-1 text-xs text-[var(--theme-text-muted)] line-through">
+            <del>
               RM {formatMoney(originalTotal)}
-            </span>
+            </del>
           ) : null}
         </div>
         {intent === "buy" && totalDiscount > 0 ? (
           <UnifiedButton
             type="button"
             onClick={() => setDiscountDetailOpen(true)}
-            className="mt-2 inline-flex min-h-7 items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--theme-price)_10%,var(--theme-surface))] px-2.5 py-1 text-xs font-semibold text-[var(--theme-price)]"
+            className="sf-next-variant-discount-link"
           >
             共减 RM {formatMoney(totalDiscount)}
             <ChevronRight size={12} />
           </UnifiedButton>
         ) : null}
-        <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-[var(--theme-text-muted)]">
+        <p className="sf-next-variant-summary__selection">
           已选：{selectedSpecLabel}
           {selectedCouponLabel ? ` / ${selectedCouponLabel}` : ""}
         </p>
@@ -345,11 +341,11 @@ export default function ProductVariantSheet({
   );
 
   const variantSelector = hasMatrix ? (
-    <div className="space-y-4">
+    <div className="sf-next-variant-groups">
       {specGroups.map((group) => (
         <div key={group.id}>
-          <p className="mb-2 text-sm font-semibold text-[var(--theme-text)]">{group.name}</p>
-          <div className="flex flex-wrap gap-2">
+          <p className="sf-next-variant-label">{group.name}</p>
+          <div className="sf-next-variant-options">
             {(group.values ?? []).map((value) => {
               const active = selectedValueIds.has(value.id);
               const disabled = !isValueAvailable(group.id, value.id);
@@ -361,10 +357,8 @@ export default function ProductVariantSheet({
                   disabled={disabled}
                   onClick={() => selectSpecValue(group.id, value.id)}
                   className={cn(
-                    "sf-next-variant-option relative min-h-11 rounded-xl border px-3 py-2 text-sm transition disabled:opacity-45",
-                    active
-                      ? "border-[var(--theme-price)] bg-[color-mix(in_srgb,var(--theme-price)_10%,var(--theme-surface))] font-semibold text-[var(--theme-price)]"
-                      : "border-[var(--theme-border)] bg-[var(--theme-surface)] text-[var(--theme-text)] hover:border-[color-mix(in_srgb,var(--theme-price)_45%,var(--theme-border))]",
+                    "sf-next-variant-option",
+                    active && "is-active",
                   )}
                 >
                   {value.image_url ? (
@@ -383,7 +377,7 @@ export default function ProductVariantSheet({
                   {value.value}
                   {active ? <CheckCircle2 size={13} className="ml-1 inline-block align-[-2px]" /> : null}
                   {outOfStock ? (
-                    <span className="absolute -right-1 -top-1 rounded-full bg-[var(--theme-muted)] px-1.5 py-0.5 text-[10px] leading-none text-[var(--theme-surface)]">
+                    <span className="sf-next-variant-option__stock">
                       缺货
                     </span>
                   ) : null}
@@ -396,8 +390,8 @@ export default function ProductVariantSheet({
     </div>
   ) : variants.length > 0 ? (
     <div>
-      <p className="mb-2 text-sm font-semibold text-[var(--theme-text)]">规格</p>
-      <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
+      <p className="sf-next-variant-label">规格</p>
+      <div className="sf-next-variant-options sf-next-variant-options--grid">
         {variants.map((variant) => {
           const active = variant.id === selectedVariantId;
           const disabled = variant.enabled === false || variant.stock <= 0;
@@ -408,10 +402,8 @@ export default function ProductVariantSheet({
               disabled={disabled}
               onClick={() => onSelectVariant(variant.id)}
               className={cn(
-                "sf-next-variant-option relative flex min-h-12 items-center justify-center gap-2 rounded-xl border px-3 py-2 text-center text-xs transition disabled:opacity-45",
-                active
-                  ? "border-[var(--theme-price)] bg-[color-mix(in_srgb,var(--theme-price)_10%,var(--theme-surface))] font-semibold text-[var(--theme-price)]"
-                  : "border-[var(--theme-border)] bg-[var(--theme-surface)] text-[var(--theme-text)] hover:border-[color-mix(in_srgb,var(--theme-price)_45%,var(--theme-border))]",
+                "sf-next-variant-option",
+                active && "is-active",
               )}
             >
               {variant.image_url ? (
@@ -432,7 +424,7 @@ export default function ProductVariantSheet({
               </span>
               {active ? <CheckCircle2 size={13} className="shrink-0" /> : null}
               {variant.stock <= 0 ? (
-                <span className="absolute -right-1 -top-1 rounded-full bg-[var(--theme-muted)] px-1.5 py-0.5 text-[10px] leading-none text-[var(--theme-surface)]">
+                <span className="sf-next-variant-option__stock">
                   缺货
                 </span>
               ) : null}
@@ -444,8 +436,8 @@ export default function ProductVariantSheet({
   ) : null;
 
   const couponSelector = couponEnabled && purchaseCoupon ? (
-    <div className="space-y-2">
-      <div className="flex items-center gap-2 text-sm font-semibold text-[var(--theme-text)]">
+    <div className="sf-next-variant-coupon">
+      <div className="sf-next-variant-label">
         <Ticket size={16} className="text-[var(--theme-price)]" />
         优惠
       </div>
@@ -529,7 +521,7 @@ export default function ProductVariantSheet({
   ) : null;
 
   const selectedSummary = (
-    <div className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 py-3 text-xs leading-relaxed text-[var(--theme-text-muted)]">
+    <div className="sf-next-variant-selected-summary">
       已选：
       <span className="font-semibold text-[var(--theme-text)]"> {selectedSpecLabel}</span>
       {selectedCouponLabel ? <span>，{selectedCouponLabel}</span> : null}
@@ -538,13 +530,13 @@ export default function ProductVariantSheet({
   );
 
   const productDetailList = (
-    <div className="space-y-2">
-      <h3 className="text-sm font-semibold text-[var(--theme-text)]">商品详情</h3>
-      <div className="rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-3">
-        <ul className="space-y-2">
+    <div className="sf-next-variant-detail">
+      <h3>商品详情</h3>
+      <div className="sf-next-variant-detail__list">
+        <ul>
           {productDetailItems.map((item, index) => (
-            <li key={`${item}-${index}`} className="flex gap-2 text-xs leading-relaxed text-[var(--theme-text)]">
-              <CheckCircle2 size={14} className="mt-0.5 shrink-0 text-[var(--theme-success)]" />
+            <li key={`${item}-${index}`}>
+              <CheckCircle2 size={14} aria-hidden />
               <span>{item}</span>
             </li>
           ))}
@@ -554,11 +546,11 @@ export default function ProductVariantSheet({
   );
 
   const purchaseControls = (
-    <div className="space-y-4">
+    <div className="sf-next-variant-controls">
       {variantSelector}
 
       {selected ? (
-        <p className="text-xs text-[var(--theme-text-muted)]">
+        <p className="sf-next-variant-stock">
           {selected.spec_text || selected.title || selected.sku_code || "默认规格"} · 库存 {selected.stock}
         </p>
       ) : null}
@@ -567,8 +559,8 @@ export default function ProductVariantSheet({
 
       {couponSelector}
 
-      <div className="flex items-center justify-between gap-3">
-        <span className="text-sm font-semibold text-[var(--theme-text)]">数量</span>
+      <div className="sf-next-variant-quantity-row">
+        <span className="sf-next-variant-label">数量</span>
         {qtyStepper}
       </div>
 
@@ -593,22 +585,21 @@ export default function ProductVariantSheet({
             : undefined
         }
         className={cn(
-          "bg-[var(--theme-surface)]",
+          "sf-next-variant-sheet",
           intent === "buy" &&
             "[&_.app-bottom-sheet-header]:px-4 [&_.app-bottom-sheet-header]:pb-2 [&_.app-bottom-sheet-header]:pt-1 [&_.app-bottom-sheet-content]:pt-1",
         )}
         stickyFooter
         footer={
           intent === "buy" ? (
-            <SquishButton
+            <UnifiedButton
               type="button"
-              variant="gold"
               disabled={soldOut || maxQty <= 0 || (hasMatrix && !selected)}
               onClick={onConfirm}
-              className="min-h-12 w-full gap-3 rounded-full px-5 text-base font-bold"
+              className="sf-next-variant-submit"
             >
               {footerActionContent}
-            </SquishButton>
+            </UnifiedButton>
           ) : (
             <div className="flex items-center gap-3">
               <div className="min-w-0 flex-1">
@@ -617,20 +608,19 @@ export default function ProductVariantSheet({
                   RM {formatMoney(currentPrice)}
                 </p>
               </div>
-              <SquishButton
+              <UnifiedButton
                 type="button"
-                variant="gold"
                 disabled={soldOut || maxQty <= 0 || (hasMatrix && !selected)}
                 onClick={onConfirm}
-                className="min-h-12 w-[46%] min-w-[9rem] rounded-full text-sm font-semibold md:w-[14rem]"
+                className="sf-next-variant-submit sf-next-variant-submit--compact"
               >
                 {footerActionContent}
-              </SquishButton>
+              </UnifiedButton>
             </div>
           )
         }
       >
-        <div className="space-y-5 pb-2 lg:grid lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:gap-6 lg:space-y-0">
+        <div className="sf-next-variant-sheet__layout">
           <div className="space-y-4">
             {productSummary}
             <div className="hidden lg:block">{productDetailList}</div>

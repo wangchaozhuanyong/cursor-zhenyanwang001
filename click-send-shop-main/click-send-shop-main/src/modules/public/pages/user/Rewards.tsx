@@ -3,7 +3,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowRight, CircleHelp, Clock, Gift, Loader2, ShoppingBag, TrendingDown, TrendingUp, Users, Wallet } from "lucide-react";
 import { useGoBack } from "@/hooks/useGoBack";
 
-import { motion } from "framer-motion";
 import * as rewardService from "@/services/rewardService";
 import { useLoyaltyVisibility } from "@/hooks/useLoyaltyVisibility";
 import type { RewardConfig, RewardTransaction, RewardTransactionCategory } from "@/types/reward";
@@ -137,10 +136,7 @@ export default function Rewards() {
         className="sf-next-page sf-next-route-page sf-next-account-route-page sf-next-rewards-page pb-8"
         mainClassName="sf-next-account-main sm:px-4 xl:py-6"
       >
-      <motion.div
-        initial={false}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.18, ease: "easeOut" }}
+      <section
         className="sf-next-folio sf-next-rewards-folio"
       >
         <div className="sf-next-folio__topline">
@@ -182,7 +178,7 @@ export default function Rewards() {
             );
           })}
         </div>
-      </motion.div>
+      </section>
 
       <section className="sf-next-rewards-actions" aria-label="返现操作">
         <div className={cn("sf-next-rewards-actions__grid", inviteEnabled ? "is-two" : "is-one")}>

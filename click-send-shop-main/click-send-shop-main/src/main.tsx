@@ -7,8 +7,8 @@ import "@/styles/store-tablet-visual.css";
 import "@/styles/storefront-foundation.css";
 import "@/styles/storefront-next.tokens.css";
 import "@/styles/storefront-next.primitives-core.css";
-import "@/styles/storefront-next.final-contract.css";
 import "@/styles/storefront-motion.css";
+import "@/styles/fixed-storefront.css";
 import { initPwaOfflineNavigation, markStoreSpaReady } from "@/lib/pwaOfflineNavigation";
 import AppVersionReadyMarker from "@/components/AppVersionReadyMarker";
 import AppBootReady from "@/components/AppBootReady";
@@ -20,18 +20,15 @@ import { lazyPublicRouteWithPreload } from "@/routes/lazyWithPreload";
 const TikTokLanding = lazyPublicRouteWithPreload(() => import("@/modules/public/pages/content/TikTokLanding"));
 
 const StoreShell = lazy(async () => {
-  const [{ default: StoreApp }, { ThemeRuntimeProvider }] = await Promise.all([
-    import("./StoreApp.tsx"),
-    import("@/contexts/ThemeRuntimeProvider"),
-  ]);
+  const { default: StoreApp } = await import("./StoreApp.tsx");
 
   return {
     default: function StoreShellComponent() {
       return (
-        <ThemeRuntimeProvider>
+        <>
           <AppVersionReadyMarker appName="storefront" onReady={markStoreSpaReady} />
           <StoreApp />
-        </ThemeRuntimeProvider>
+        </>
       );
     },
   };

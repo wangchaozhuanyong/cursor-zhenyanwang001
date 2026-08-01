@@ -61,7 +61,7 @@ export default function StoreStandardPageShell({
               <UnifiedButton
                 type="button"
                 onClick={handleBack}
-                className="mb-2 inline-flex h-8 items-center gap-1 rounded-full px-0 text-sm font-medium text-[var(--theme-text-muted)] hover:text-[var(--theme-text)]"
+                className="mb-1 inline-flex min-h-11 items-center gap-1 px-0 text-sm font-medium text-[var(--theme-text-muted)] hover:text-[var(--theme-text)]"
               >
                 <ChevronLeft size={16} />
                 {desktopBackLabel}
@@ -78,7 +78,7 @@ export default function StoreStandardPageShell({
                   ))}
                 </nav>
               ) : null}
-              <h1 className="truncate text-2xl font-bold tracking-normal text-[var(--theme-text)]">{title}</h1>
+              <h1 className="max-w-full text-2xl font-bold tracking-normal text-[var(--theme-text)] [overflow-wrap:anywhere]">{title}</h1>
             </div>
             {rightSlot ? <div className="shrink-0">{rightSlot}</div> : null}
           </div>

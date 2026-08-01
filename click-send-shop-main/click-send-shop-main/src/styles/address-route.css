@@ -1,0 +1,224 @@
+html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-address-add-button,
+html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-address-action {
+  display: inline-flex;
+  min-width: 0;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: 4px;
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-address-add-button {
+  border: 1px solid var(--sf-primary);
+  background: var(--sf-primary);
+  color: var(--theme-primary-foreground);
+}
+
+html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-address-list {
+  min-width: 0;
+}
+
+html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-address-card {
+  display: grid;
+  min-width: 0;
+  gap: 14px;
+  border: 1px solid var(--sf-line);
+  border-radius: 6px;
+  background: var(--sf-surface);
+  padding: 16px;
+  box-shadow: none;
+}
+
+html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-address-pin {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 4px;
+  background: var(--sf-primary-soft);
+  color: var(--sf-primary);
+}
+
+html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-address-default-label {
+  color: var(--sf-primary);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-address-card__actions {
+  display: grid;
+  min-width: 0;
+  gap: 8px;
+  border-top: 1px solid var(--sf-line);
+  padding-top: 12px;
+}
+
+html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-address-action--default,
+html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-address-action--edit {
+  border: 1px solid var(--sf-line-strong);
+  background: var(--sf-surface);
+  color: var(--sf-ink);
+}
+
+html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-address-action--default {
+  justify-content: flex-start;
+}
+
+html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-address-action--delete {
+  border: 1px solid color-mix(in srgb, var(--sf-danger) 34%, var(--sf-line));
+  background: var(--sf-surface);
+  color: var(--sf-danger);
+}
+
+html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-address-default-check {
+  display: grid;
+  width: 16px;
+  height: 16px;
+  place-items: center;
+  border: 1px solid var(--sf-line-strong);
+  border-radius: 50%;
+  color: var(--theme-primary-foreground);
+}
+
+html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-address-default-check.is-active {
+  border-color: var(--sf-primary);
+  background: var(--sf-primary);
+}
+
+html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-address-form {
+  display: grid;
+  min-width: 0;
+  gap: 14px;
+}
+
+html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-address-form-grid {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-address-field {
+  display: grid;
+  min-width: 0;
+  gap: 7px;
+}
+
+html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-address-field > span {
+  color: var(--sf-ink);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-address-control {
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
+  border: 1px solid var(--sf-line-strong);
+  border-radius: 6px;
+  background: var(--sf-surface);
+  color: var(--sf-ink);
+  padding: 0 13px;
+  font-size: 14px;
+  outline: 0;
+}
+
+html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-address-control:focus {
+  border-color: var(--sf-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--sf-primary) 10%, transparent);
+}
+
+html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-address-default-toggle {
+  display: flex;
+  min-height: 46px;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid var(--sf-line);
+  border-radius: 6px;
+  background: var(--sf-surface);
+  padding: 0 13px;
+  color: var(--sf-ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-address-default-toggle input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--sf-primary);
+}
+
+html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-address-empty {
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+  border-radius: 6px;
+  padding: 22px 18px;
+  text-align: left;
+}
+
+html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-address-empty .sf-next-state-panel__icon {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--sf-primary-soft);
+  color: var(--sf-primary);
+}
+
+html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-address-empty h2,
+html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-address-empty p {
+  margin: 0;
+}
+
+html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-address-empty h2 {
+  color: var(--sf-ink);
+  font-size: 17px;
+  font-weight: 700;
+}
+
+html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-address-empty p {
+  color: var(--sf-muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-address-empty .sf-next-state-panel__primary {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin-top: 6px;
+  border-radius: 4px;
+  background: var(--sf-primary);
+  padding: 0 18px;
+  color: var(--theme-primary-foreground);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+@media (min-width: 720px) {
+  html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-address-card__actions {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
+}
+
+@media (max-width: 390px) {
+  html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-address-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-address-action {
+    padding-inline: 8px;
+  }
+}

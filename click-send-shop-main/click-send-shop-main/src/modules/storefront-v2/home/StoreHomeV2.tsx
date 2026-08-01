@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import {
   RefreshCw,
   Users,
@@ -15,7 +15,7 @@ import { useHomeModuleSettings } from "@/hooks/useHomeModuleSettings";
 import { useLoyaltyVisibility } from "@/hooks/useLoyaltyVisibility";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
-import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
+import { useFixedStorefrontDesign } from "@/hooks/useFixedStorefrontDesign";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useProductStore } from "@/stores/useProductStore";
 import { cn } from "@/lib/utils";
@@ -24,7 +24,6 @@ import { scheduleIdleTask } from "@/utils/idleScheduler";
 import { buildCanonical } from "@/utils/seo";
 import { buildOrganizationJsonLd, buildWebsiteJsonLd } from "@/utils/structuredData";
 import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
-import { appendThemePreviewParams } from "@/utils/themePreviewParams";
 import { NEW_ARRIVAL_CATEGORY_PATH } from "@/constants/newArrivalNavigation";
 import { getHomeModuleTitle, isHomeModuleEnabled } from "@/constants/homeModules";
 import { STORE_COPY } from "@/constants/storeCopy";
@@ -38,21 +37,21 @@ import type { Product } from "@/types/product";
 import { filterVisibleHomeNavItems } from "@/utils/homeNavCapabilities";
 import { normalizeHomeNavText, openHomeNavItemTarget } from "@/utils/homeNavTarget";
 import { isLoyaltyFeatureEnabled } from "@/utils/loyaltyFeatureVisibility";
-import { useClientDesignStyle } from "../design/useClientDesignStyle";
-import type { StorefrontCampaignVm } from "../campaign/campaignTypes";
-import {
-  fetchStorefrontCampaigns,
-  recordStorefrontCampaignClick,
-  recordStorefrontCampaignImpression,
-} from "../campaign/campaignService";
 import { storefrontPageClassName } from "../design/classes";
 import HomeHeroV2 from "./HomeHeroV2";
-import HomePrimaryCampaignV2 from "./HomePrimaryCampaignV2";
-import { buildHomeCampaignEntrances, dedupeFooterNav, parseFooterNav, uniqueProducts } from "./homeV2Utils";
+import { dedupeFooterNav, parseFooterNav, uniqueProducts } from "./homeV2Utils";
 import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
 const GuestMobileFooter = lazy(() => import("@/components/GuestMobileFooter"));
 const HomeProductSectionV2 = lazy(() => import("./HomeProductSectionV2"));
+
+const HOME_PREVIEW_CATEGORY_IMAGES = [
+  "/assets/fixed-storefront/category-visa-hero.webp",
+  "/assets/fixed-storefront/category-snacks-drinks-hero.webp",
+  "/assets/fixed-storefront/category-second-home-hero.webp",
+  "/assets/fixed-storefront/category-study-hero.webp",
+  "/assets/fixed-storefront/category-renovation-hero.webp",
+] as const;
 
 type MemberHomeSignals = {
   cartItems: CartItem[];
@@ -77,9 +76,8 @@ export default function StoreHomeV2() {
   const audience = isAuthenticated ? "member" : "guest";
   const siteInfo = useSiteInfo();
   const siteCapabilities = useSiteCapabilities();
-  const { themeConfig } = useThemeRuntime();
+  const { themeConfig } = useFixedStorefrontDesign();
   const { localizedPath } = usePublicLocale();
-  const clientStyle = useClientDesignStyle();
   const { settings: homeModules, navItems, ready: homeModulesReady } = useHomeModuleSettings();
   const { config: loyaltyConfig, loading: loyaltyLoading } = useLoyaltyVisibility();
   const { banners, loading: bannersLoading } = useHomeBanners();
@@ -91,9 +89,7 @@ export default function StoreHomeV2() {
   const homeError = useProductStore((state) => state.error);
   const loadHomeData = useProductStore((state) => state.loadHomeData);
 
-  const [campaigns, setCampaigns] = useState<StorefrontCampaignVm[]>([]);
-  const [campaignsLoading, setCampaignsLoading] = useState(true);
-  const [deferredHomeContentReady, setDeferredHomeContentReady] = useState(false);
+  const [deferredHomeContentReady, setDeferredHomeContentReady] = useState(true);
   const [guestFooterReady, setGuestFooterReady] = useState(false);
   const [memberHomeSignals, setMemberHomeSignals] = useState<MemberHomeSignals>(EMPTY_MEMBER_HOME_SIGNALS);
   const [memberRecommendations, setMemberRecommendations] = useState<Product[]>([]);
@@ -262,25 +258,6 @@ export default function StoreHomeV2() {
     };
   }, [deferredHomeContentReady]);
 
-  useEffect(() => {
-    let cancelled = false;
-    setCampaignsLoading(true);
-    void fetchStorefrontCampaigns()
-      .then((next) => {
-        if (cancelled) return;
-        setCampaigns(next);
-      })
-      .catch(() => {
-        if (!cancelled) setCampaigns([]);
-      })
-      .finally(() => {
-        if (!cancelled) setCampaignsLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
   const siteName = siteInfo.siteName || STORE_COPY.brandName;
   const logoSrc = resolveSiteLogoUrl(siteInfo);
   const slogan = siteInfo.siteSlogan || STORE_COPY.siteSlogan;
@@ -288,19 +265,6 @@ export default function StoreHomeV2() {
   const seoTitle = siteInfo.seoTitle || siteName;
   const seoDescription = siteInfo.seoDescription || description;
   const seoImage = siteInfo.ogImageUrl || logoSrc || "/og-default.png";
-
-  const enabledCampaigns = useMemo(
-    () => campaigns.filter((campaign) => isCampaignEnabled(campaign, homeModules, audience)),
-    [audience, campaigns, homeModules],
-  );
-  const fallbackCampaignEntrances = useMemo(() => {
-    if (!homeModulesReady) return [];
-    const types: Parameters<typeof buildHomeCampaignEntrances>[0] = [];
-    if (isHomeModuleEnabled(homeModules, "flash_sale_section", audience)) types.push("flash_sale");
-    if (isHomeModuleEnabled(homeModules, "coupon_center", audience)) types.push("coupon", "new_user_gift");
-    if (isHomeModuleEnabled(homeModules, "full_reduction_notice", audience)) types.push("full_reduction", "full_discount");
-    return buildHomeCampaignEntrances(types);
-  }, [audience, homeModules, homeModulesReady]);
 
   const newArrivalDisplayCount = useMemo(
     () => clampNewArrivalDisplayCount(siteInfo.newArrivalDisplayCount),
@@ -371,37 +335,13 @@ export default function StoreHomeV2() {
       window.open(path, "_blank", "noopener,noreferrer");
       return;
     }
-    navigateWithStoreTransition(navigate, appendThemePreviewParams(localizedPath(path)));
+    navigateWithStoreTransition(navigate, localizedPath(path));
   };
-
-  const buildCampaignEventContext = useCallback(
-    (campaign: StorefrontCampaignVm, position: string) => ({
-      campaignType: campaign.type,
-      position,
-      audience,
-      title: campaign.title,
-      href: campaign.href,
-    }),
-    [audience],
-  );
-
-  const handleCampaignImpression = useCallback(
-    (campaign: StorefrontCampaignVm, position: string) => {
-      void recordStorefrontCampaignImpression(campaign.id, buildCampaignEventContext(campaign, position));
-    },
-    [buildCampaignEventContext],
-  );
-
-  const handleCampaignClick = useCallback(
-    (campaign: StorefrontCampaignVm, position: string) => {
-      void recordStorefrontCampaignClick(campaign.id, buildCampaignEventContext(campaign, position));
-    },
-    [buildCampaignEventContext],
-  );
 
   const showBanner = isHomeModuleEnabled(homeModules, "banner", audience);
   const showTrustBar = isHomeModuleEnabled(homeModules, "trust_bar", audience);
   const showNavGrid = isHomeModuleEnabled(homeModules, "nav_grid", audience);
+  const showFlashSale = isHomeModuleEnabled(homeModules, "flash_sale_section", audience);
   const showNewArrivals = isHomeModuleEnabled(homeModules, "new_arrivals", audience);
   const showHotSales = isHomeModuleEnabled(homeModules, "hot_sales", audience);
   const showRecommend = isAuthenticated && isHomeModuleEnabled(homeModules, "recommend", "member");
@@ -415,7 +355,6 @@ export default function StoreHomeV2() {
         "sf-next-page sf-next-storefront-root sf-next-home-page text-[var(--sf-ink)]",
       )}
       data-storefront-layout="silent-commerce"
-      data-storefront-client-style={clientStyle}
     >
       <SeoHead
         title={seoTitle}
@@ -459,21 +398,31 @@ export default function StoreHomeV2() {
           />
         ) : null}
 
-        <HomePrimaryCampaignV2
-          campaigns={enabledCampaigns}
-          fallbackCampaigns={fallbackCampaignEntrances}
-          loading={campaignsLoading || !homeModulesReady}
-          onNavigate={navigatePath}
-          onCampaignImpression={handleCampaignImpression}
-          onCampaignClick={handleCampaignClick}
-        />
-
         {showTrustBar ? <HomeTrustBar className="sf-next-home-trust-compact" /> : null}
+
+        {deferredHomeContentReady && siteCapabilities.mallEnabled && showFlashSale ? (
+          <Suspense fallback={null}>
+            <HomeProductSectionV2
+              title="限时活动"
+              className="sf-next-product-shelf--compact"
+              products={hotHomeProducts}
+              loading={homeLoading && hotHomeProducts.length === 0}
+              actionLabel="更多活动"
+              actionPath="/promotions?type=flash_sale"
+              emptyText="当前暂无限时商品，可以先查看全部活动。"
+              emptyActionLabel="查看活动"
+              showQuickAction={false}
+              previewLimit={4}
+              onNavigate={navigatePath}
+            />
+          </Suspense>
+        ) : null}
 
         {deferredHomeContentReady && siteCapabilities.mallEnabled && showNewArrivals ? (
           <Suspense fallback={null}>
             <HomeProductSectionV2
               title={newArrivalTitle}
+              className="sf-next-product-shelf--editorial"
               products={newArrivalProducts}
               loading={homeLoading && newArrivalProducts.length === 0}
               actionLabel="查看新品"
@@ -491,6 +440,7 @@ export default function StoreHomeV2() {
           <Suspense fallback={null}>
             <HomeProductSectionV2
               title={getHomeModuleTitle(homeModules, "guest_recommend", "精选商品")}
+              className="sf-next-product-shelf--editorial"
               products={guestProducts}
               loading={homeLoading && guestProducts.length === 0}
               actionLabel="全部商品"
@@ -514,6 +464,7 @@ export default function StoreHomeV2() {
           <Suspense fallback={null}>
             <HomeProductSectionV2
               title={getHomeModuleTitle(homeModules, "hot_sales", "今日热销")}
+              className="sf-next-product-shelf--editorial"
               products={hotHomeProducts}
               loading={homeLoading && hotHomeProducts.length === 0}
               actionLabel="热销榜"
@@ -530,6 +481,7 @@ export default function StoreHomeV2() {
           <Suspense fallback={null}>
             <HomeProductSectionV2
               title={getHomeModuleTitle(homeModules, "recommend", "猜你喜欢")}
+              className="sf-next-product-shelf--editorial"
               products={memberRecommendations}
               loading={homeLoading && memberRecommendations.length === 0}
               actionLabel="更多推荐"
@@ -595,7 +547,7 @@ function HomeQuickEntryPanel({
   onNavigate: (path: string) => void;
 }) {
   const actions = useMemo(
-    () => filterVisibleHomeNavItems(Array.isArray(navItems) ? navItems : [], capabilities).slice(0, 10),
+    () => filterVisibleHomeNavItems(Array.isArray(navItems) ? navItems : [], capabilities).slice(0, 6),
     [capabilities, navItems],
   );
 
@@ -607,13 +559,13 @@ function HomeQuickEntryPanel({
       aria-label="快捷入口"
       aria-busy={!ready ? true : undefined}
       data-home-nav-source="admin-home-ops"
-      data-command-count={ready ? actions.length : 10}
+      data-command-count={ready ? actions.length : 6}
     >
       {!ready ? (
         <StorefrontQuietLoading label="快捷入口加载中" className="sf-motion-inline-loading--shelf" />
       ) : (
         <div className="sf-next-quick-entry__grid">
-          {actions.map((action) => (
+          {actions.map((action, index) => (
             <UnifiedButton
               key={action.id}
               type="button"
@@ -622,9 +574,10 @@ function HomeQuickEntryPanel({
             >
               <span className="sf-next-quick-entry__icon">
                 <HomeNavIcon
-                  value={action.icon_url}
+                  value={resolveFixedQuickEntryImage(action, index)}
                   className="sf-next-quick-entry__icon-media"
                   imageClassName="sf-next-quick-entry__icon-image"
+                  objectFit="cover"
                 />
               </span>
               <span className="sf-next-quick-entry__copy">
@@ -636,6 +589,25 @@ function HomeQuickEntryPanel({
       )}
     </section>
   );
+}
+
+function resolveFixedQuickEntryImage(action: HomeNavItem, index: number) {
+  const title = normalizeHomeNavText(action.title, "").replace(/\s+/g, "");
+  const fixedImageByTitle: Array<[RegExp, string]> = [
+    [/烟草|香烟|烟品/, "/assets/fixed-storefront/quick-tobacco.webp"],
+    [/全部|分类/, "/assets/fixed-storefront/quick-all-categories.webp"],
+    [/酒水|酒类|饮品/, "/assets/fixed-storefront/quick-wine.webp"],
+    [/装修|家装|施工/, "/assets/fixed-storefront/quick-renovation.webp"],
+    [/邀请|返现|奖励/, "/assets/fixed-storefront/quick-invite.webp"],
+    [/槟榔/, "/assets/fixed-storefront/quick-betel.webp"],
+    [/签证|入境|护照/, "/assets/fixed-storefront/category-visa-hero.webp"],
+    [/第二家园|长期居住|居留/, "/assets/fixed-storefront/category-second-home-hero.webp"],
+    [/留学|升学|教育/, "/assets/fixed-storefront/category-study-hero.webp"],
+    [/床上|家居|家纺/, "/assets/fixed-storefront/category-home-hero.webp"],
+  ];
+  const matched = fixedImageByTitle.find(([pattern]) => pattern.test(title));
+  if (matched) return matched[1];
+  return HOME_PREVIEW_CATEGORY_IMAGES[index % HOME_PREVIEW_CATEGORY_IMAGES.length];
 }
 
 function HomeInviteEntry({
@@ -670,18 +642,6 @@ function clampNewArrivalDisplayCount(value?: string) {
   const count = Number.parseInt(String(value ?? ""), 10);
   if (!Number.isFinite(count)) return 8;
   return Math.min(16, Math.max(1, count));
-}
-
-function isCampaignEnabled(
-  campaign: StorefrontCampaignVm,
-  settings: Parameters<typeof isHomeModuleEnabled>[0],
-  audience: "member" | "guest",
-) {
-  if (campaign.type === "flash_sale") return isHomeModuleEnabled(settings, "flash_sale_section", audience);
-  if (campaign.type === "full_reduction" || campaign.type === "full_discount") return isHomeModuleEnabled(settings, "full_reduction_notice", audience);
-  if (campaign.type === "coupon" || campaign.type === "new_user_gift") return isHomeModuleEnabled(settings, "coupon_center", audience);
-  if (campaign.type === "promotion") return isHomeModuleEnabled(settings, "promotion_banner", audience);
-  return true;
 }
 
 function buildSupportNav(customNav: FooterNavItem[] | null) {

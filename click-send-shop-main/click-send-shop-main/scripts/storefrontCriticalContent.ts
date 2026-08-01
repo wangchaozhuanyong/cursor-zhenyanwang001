@@ -8,7 +8,6 @@ const STATIC_IMPORT_RE = /(?:import|export)\s+(?:type\s+)?(?:[^'"]*?\sfrom\s*)?[
 const STOREFRONT_CRITICAL_ENTRIES = [
   "src/main.tsx",
   "src/StoreApp.tsx",
-  "src/contexts/ThemeRuntimeProvider.tsx",
   "src/modules/storefront-v2/home/StoreHomeV2.tsx",
   "src/modules/storefront-v2/home/HomeProductSectionV2.tsx",
   "src/components/BannerCarousel.tsx",

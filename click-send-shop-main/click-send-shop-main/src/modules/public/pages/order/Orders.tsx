@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { RefreshCw, SearchX, ShoppingBag } from "lucide-react";
+import { RefreshCw, Search, SearchX, ShoppingBag, X } from "lucide-react";
 import { useLocation, useSearchParams } from "react-router-dom";
 import { showStoreToast } from "@/utils/storeToast";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
@@ -115,6 +115,16 @@ function canViewLogistics(order: Order) {
   return order.status === "shipped" || order.status === "completed" || order.status === "refunded";
 }
 
+function hasOrderMoreActions(order: Order, reviewEnabled: boolean) {
+  return (
+    (reviewEnabled && hasPendingReview(order))
+    || (canApplyAfterSale(order) && (order.status === "shipped" || order.status === "completed"))
+    || canViewLogistics(order)
+    || canRepurchaseOrder(order)
+    || canBuyerDeleteOrder(order)
+  );
+}
+
 function money(value: unknown) {
   const amount = Number(value);
   return Number.isFinite(amount) ? amount.toFixed(2) : "0.00";
@@ -150,6 +160,7 @@ export default function Orders() {
   const [returnApplyOrderId, setReturnApplyOrderId] = useState<string | null>(null);
   const [repurchaseConfirmOrder, setRepurchaseConfirmOrder] = useState<Order | null>(null);
   const [searchText, setSearchText] = useState(keyword);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(Boolean(keyword));
 
   useEffect(() => {
     setSearchText(keyword);
@@ -260,9 +271,9 @@ export default function Orders() {
 
   const emptyOrderText = keyword ? copy.emptyKeyword(keyword) : copy.emptyByTab[tab];
 
-  const actionBtn = "min-h-8 rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-1.5 text-xs leading-none whitespace-nowrap";
-  const primaryActionBtn = "min-h-8 rounded-full border border-[var(--theme-primary)] bg-[var(--theme-primary)] px-3 py-1.5 text-xs leading-none whitespace-nowrap text-[var(--theme-primary-foreground)]";
-  const moreActionBtn = "flex w-full items-center justify-between rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-3 text-left text-sm font-semibold text-[var(--theme-text)]";
+  const actionBtn = "sf-next-order-action";
+  const primaryActionBtn = "sf-next-order-action sf-next-order-action--primary";
+  const moreActionBtn = "sf-next-order-more-action";
   const renderOrderSearchField = (className: string) => (
     <StoreSearchField
       mode="filter"
@@ -279,14 +290,39 @@ export default function Orders() {
       title={copy.accountTitle}
       className="sf-next-page sf-next-orders-page"
       mainClassName="sm:p-0 xl:py-6"
-      rightSlot={renderOrderSearchField("sf-next-order-header-search-field w-[9.5rem] max-w-[44vw] flex-none sm:w-44 xl:hidden")}
+      rightSlot={(
+        <UnifiedButton
+          type="button"
+          className={`sf-next-order-header-search-trigger ${mobileSearchOpen ? "is-active" : ""}`}
+          aria-label={mobileSearchOpen ? copy.clearSearch : copy.searchPlaceholder}
+          aria-expanded={mobileSearchOpen}
+          onClick={() => {
+            if (mobileSearchOpen) {
+              if (searchText) {
+                setSearchText("");
+                updateKeywordParam("");
+              }
+              setMobileSearchOpen(false);
+              return;
+            }
+            setMobileSearchOpen(true);
+          }}
+        >
+          {mobileSearchOpen ? <X size={19} aria-hidden /> : <Search size={19} aria-hidden />}
+        </UnifiedButton>
+      )}
     >
-        <div className="sf-next-glass-surface sticky top-0 z-10 -mx-[var(--store-page-x)] mb-3 border-b py-2 backdrop-blur-xl sm:-mx-4 md:top-[var(--sf-next-header-tablet-sticky-top)] md:mx-0 md:rounded-xl md:border md:px-3 xl:top-[var(--sf-next-header-desktop-sticky-top)]">
-          <div className="flex flex-col gap-2 md:gap-3 xl:flex-row xl:items-center">
-            <div className="relative min-w-0 overflow-hidden md:flex-1 md:overflow-visible">
+        {mobileSearchOpen ? (
+          <div className="sf-next-orders-mobile-search">
+            {renderOrderSearchField("sf-next-order-mobile-search-field")}
+          </div>
+        ) : null}
+        <div className="sf-next-orders-toolbar">
+          <div className="sf-next-orders-toolbar__inner">
+            <div className="sf-next-orders-tabs-shell">
               <div
                 ref={tabsRef}
-                className="no-scrollbar flex snap-x snap-mandatory gap-2 overflow-x-auto overflow-y-hidden scroll-smooth px-[var(--store-page-x)] pb-1 [-webkit-overflow-scrolling:touch] sm:px-4 md:flex-wrap md:overflow-visible md:px-0 md:pb-0"
+                className="sf-next-orders-tabs no-scrollbar"
                 role="tablist"
                 aria-label={copy.tabsAria}
               >
@@ -300,7 +336,7 @@ export default function Orders() {
                     type="button"
                     role="tab"
                     aria-selected={active}
-                    className={`snap-center whitespace-nowrap rounded-full px-3 py-1.5 text-xs transition-colors md:snap-none ${active ? "bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)] shadow-sm" : "bg-[var(--theme-surface)] text-[var(--theme-text-muted)]"}`}
+                    className={`sf-next-orders-tab ${active ? "is-active" : ""}`}
                     onClick={() => {
                       scrollTabToKey(t.key);
                       switchTab(t.key);
@@ -311,10 +347,8 @@ export default function Orders() {
                 );
               })}
               </div>
-              <span className="pointer-events-none absolute inset-y-0 left-0 w-5 bg-gradient-to-r from-[var(--theme-surface)] to-transparent md:hidden" aria-hidden />
-              <span className="pointer-events-none absolute inset-y-0 right-0 w-5 bg-gradient-to-l from-[var(--theme-surface)] to-transparent md:hidden" aria-hidden />
             </div>
-            {renderOrderSearchField("hidden xl:flex xl:w-72 xl:flex-none")}
+            {renderOrderSearchField("hidden md:flex md:w-60 md:flex-none xl:w-72")}
           </div>
         </div>
 
@@ -361,7 +395,7 @@ export default function Orders() {
           </section>
         ) : null}
 
-        <div className="space-y-3">
+        <div className="sf-next-orders-list">
           {displayOrders.map((order, orderIndex) => {
             const shownItems = order.items.slice(0, 3);
             const totalItems = order.items.reduce((s, i) => s + i.qty, 0);
@@ -374,13 +408,8 @@ export default function Orders() {
                   </div>
                   <span className={`sf-next-order-card__status ${getStatusTone(order)}`}>{getBuyerOrderStatusTextLocalized(order, locale)}</span>
                 </div>
-                <div className="sf-next-order-card__products-label">
-                  <span>
-                    {isGiftOrder(order.order_type) ? copy.giftOrder : copy.orderProducts}
-                  </span>
-                </div>
                 {isGiftOrder(order.order_type) && Number(order.points_used || 0) > 0 ? (
-                  <p className="mb-2 text-xs text-muted-foreground">{copy.pointsUsed} {order.points_used}</p>
+                  <p className="sf-next-order-card__points">{copy.giftOrder} · {copy.pointsUsed} {order.points_used}</p>
                 ) : null}
 
                 {order.status === "pending" ? (
@@ -428,22 +457,25 @@ export default function Orders() {
 
                 {order.items.length > 3 ? <p className="mt-2 text-xs text-[var(--theme-text-muted)]">{copy.itemCount(totalItems)}</p> : null}
 
-                <div className="mt-3 flex justify-end text-sm">
-                  <span className="sf-next-body-small">{copy.itemCount(totalItems)}，{copy.paidTotal} <span className="text-[15px] font-semibold text-[var(--theme-price)]">RM {money(order.total_amount || 0)}</span></span>
-                </div>
-
-                <div className="mt-3 flex items-center justify-between gap-2">
-                  <UnifiedButton
-                    type="button"
-                    className={actionBtn}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setMoreOrder(order);
-                    }}
-                  >
-                    {copy.more}
-                  </UnifiedButton>
-                  <div className="flex min-w-0 flex-1 flex-wrap justify-end gap-2">
+                <div className="sf-next-order-card__action-row">
+                  <div className="sf-next-order-card__total">
+                    <span>{copy.itemCount(totalItems)}</span>
+                    <span>{copy.paidTotal}</span>
+                    <strong>RM {money(order.total_amount || 0)}</strong>
+                  </div>
+                  <div className="sf-next-order-card__action-group">
+                    {hasOrderMoreActions(order, capabilities.reviewEnabled) ? (
+                      <UnifiedButton
+                        type="button"
+                        className={actionBtn}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setMoreOrder(order);
+                        }}
+                      >
+                        {copy.more}
+                      </UnifiedButton>
+                    ) : null}
                     {canUserCancelOrder(order) ? (
                       <UnifiedButton
                         className={actionBtn}
@@ -475,56 +507,30 @@ export default function Orders() {
                     ) : null}
 
                     {order.status === "shipped" ? (
-                      <>
-                        {canApplyAfterSale(order) ? (
-                          <UnifiedButton
-                            className={actionBtn}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setReturnApplyOrderId(order.id);
-                            }}
-                          >
-                            {copy.applyAfterSale}
-                          </UnifiedButton>
-                        ) : null}
-                        <UnifiedButton
-                          className={primaryActionBtn}
-                          disabled={actingId === order.id}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setConfirmReceiveOrder(order);
-                          }}
-                        >
-                          {copy.receive}
-                        </UnifiedButton>
-                      </>
+                      <UnifiedButton
+                        className={primaryActionBtn}
+                        disabled={actingId === order.id}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setConfirmReceiveOrder(order);
+                        }}
+                      >
+                        {copy.receive}
+                      </UnifiedButton>
                     ) : null}
 
                     {order.status === "completed" ? (
-                      <>
-                        {canApplyAfterSale(order) ? (
-                          <UnifiedButton
-                            className={actionBtn}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setReturnApplyOrderId(order.id);
-                            }}
-                          >
-                            {copy.applyAfterSale}
-                          </UnifiedButton>
-                        ) : null}
-                        {canRepurchaseOrder(order) ? (
-                          <UnifiedButton
-                            className={primaryActionBtn}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setRepurchaseConfirmOrder(order);
-                            }}
-                          >
-                            {copy.repurchase}
-                          </UnifiedButton>
-                        ) : null}
-                      </>
+                      canRepurchaseOrder(order) ? (
+                        <UnifiedButton
+                          className={primaryActionBtn}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setRepurchaseConfirmOrder(order);
+                          }}
+                        >
+                          {copy.repurchase}
+                        </UnifiedButton>
+                      ) : null
                     ) : null}
 
                     {canRepurchaseOrder(order) && order.status === "cancelled" ? (
@@ -550,18 +556,18 @@ export default function Orders() {
         </div>
 
         {showOrderPagingFooter ? (
-          <div className="flex justify-center pt-2">
+          <div className="sf-next-orders-paging">
             {hasMoreOrders ? (
               <UnifiedButton
                 type="button"
-                className="min-h-10 rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-5 py-2 text-sm font-medium text-[var(--theme-text)] disabled:cursor-not-allowed disabled:opacity-60"
+                className="sf-next-orders-load-more"
                 disabled={loading || loadingMore}
                 onClick={loadMoreOrders}
               >
                 {loadingMore ? copy.loadingMore : copy.loadMore}
               </UnifiedButton>
             ) : (
-              <p className="text-xs text-[var(--theme-text-muted)]">{copy.allLoaded}</p>
+              <p className="sf-next-orders-paging__done">{copy.allLoaded}</p>
             )}
           </div>
         ) : null}
@@ -573,7 +579,7 @@ export default function Orders() {
           height="auto"
         >
           {moreOrder ? (
-            <div className="space-y-2">
+            <div className="sf-next-order-more-list">
               {capabilities.reviewEnabled && hasPendingReview(moreOrder) ? (
                 <UnifiedButton
                   type="button"
@@ -641,14 +647,8 @@ export default function Orders() {
                   <span className="text-xs font-normal text-[var(--theme-text-muted)]">{copy.deleteHint}</span>
                 </UnifiedButton>
               ) : null}
-              {!(
-                (capabilities.reviewEnabled && hasPendingReview(moreOrder))
-                || (canApplyAfterSale(moreOrder) && (moreOrder.status === "shipped" || moreOrder.status === "completed"))
-                || canViewLogistics(moreOrder)
-                || canRepurchaseOrder(moreOrder)
-                || canBuyerDeleteOrder(moreOrder)
-              ) ? (
-                <p className="rounded-2xl bg-[var(--theme-bg)] px-4 py-5 text-center text-sm text-[var(--theme-text-muted)]">
+              {!hasOrderMoreActions(moreOrder, capabilities.reviewEnabled) ? (
+                <p className="sf-next-order-more-empty">
                   {copy.noMoreActions}
                 </p>
               ) : null}

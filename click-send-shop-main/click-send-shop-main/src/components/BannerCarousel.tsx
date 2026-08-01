@@ -1,9 +1,7 @@
-import { useCallback, useEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
-import { ArrowRight } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
+import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import "@/styles/banner-carousel.css";
-import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { useMotionConfig } from "@/modules/micro-interactions/hooks/useMotionConfig";
-import { getBannerContainerClassName } from "@/utils/themeVisuals";
 import { trackEventLazy } from "@/services/trackEventLazy";
 import { getBannerCtaText } from "@/utils/bannerCta";
 import {
@@ -18,6 +16,7 @@ import RatioImage, { type ClientImageRatio } from "@/components/client/RatioImag
 import { getBannerCopyToneFromImage, type BannerCopyTone } from "@/utils/bannerTextTone";
 import { hasLoadedImage, markImageLoaded, rememberLoadedImageFromElement } from "@/utils/imageLoadMemory";
 import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
+import { resolveBannerMedia, type ResolvedBannerMedia } from "@/utils/bannerMedia";
 
 interface BannerCarouselProps {
   banners: Banner[];
@@ -34,26 +33,19 @@ interface BannerCarouselProps {
 const AUTO_ROTATE_MS = 5200;
 const INITIAL_AUTO_ROTATE_DELAY_MS = 2200;
 const USER_INTERACTION_PAUSE_MS = 7200;
-const STATIC_HOME_BANNER_RE = /^(.*\/assets\/home-banners\/home-hero-\d{2}-[^?#]+?)(-mobile)?(\.webp)(\?.*)?$/i;
 const STATIC_HOME_BANNER_VERSION = String(import.meta.env.VITE_STATIC_HOME_BANNER_VERSION || "").trim();
 type SlideDirection = "forward" | "backward";
 
-function preloadBannerImage(image: string, priority: "high" | "low" = "low") {
-  if (!image || hasLoadedImage(image)) return;
-  const responsiveImage = getResponsiveBannerImage(image);
-  if (hasLoadedImage(image, responsiveImage.src, responsiveImage.srcSet)) return;
+function preloadBannerImage(media: ResolvedBannerMedia, priority: "high" | "low" = "low") {
+  if (!media.preloadSrc || hasLoadedImage(media.src, media.preloadSrc, media.sourceKey)) return;
 
   const img = new Image();
   img.decoding = "async";
   (img as HTMLImageElement & { fetchPriority?: "high" | "low" }).fetchPriority = priority;
   img.onload = () => {
-    markImageLoaded(image, responsiveImage.src, responsiveImage.srcSet, img.currentSrc, img.src);
+    markImageLoaded(media.src, media.preloadSrc, media.sourceKey, img.currentSrc, img.src);
   };
-  if (responsiveImage.srcSet) {
-    img.srcset = responsiveImage.srcSet;
-    img.sizes = responsiveImage.sizes || "100vw";
-  }
-  img.src = responsiveImage.src;
+  img.src = media.preloadSrc;
 }
 
 function warnLargeBannerImage(image: string, id?: string) {
@@ -74,24 +66,8 @@ function resolveBannerLink(link: string): string {
   return value;
 }
 
-function appendStaticBannerVersion(url: string): string {
-  if (!STATIC_HOME_BANNER_VERSION || /[?&]hbv=/.test(url)) return url;
-  return `${url}${url.includes("?") ? "&" : "?"}hbv=${encodeURIComponent(STATIC_HOME_BANNER_VERSION)}`;
-}
-
-function getResponsiveBannerImage(image: string): { src: string; srcSet?: string; sizes?: string } {
-  const src = image.trim();
-  const match = src.match(STATIC_HOME_BANNER_RE);
-  if (!match) return { src };
-
-  const [, base, , ext, query = ""] = match;
-  const desktop = appendStaticBannerVersion(`${base}${ext}${query}`);
-  const mobile = appendStaticBannerVersion(`${base}-mobile${ext}${query}`);
-  return {
-    src: desktop,
-    srcSet: `${mobile} 1080w, ${desktop} 1920w`,
-    sizes: "(max-width: 768px) 100vw, 1200px",
-  };
+function getResponsiveBannerImageForBanner(banner?: Banner | null) {
+  return resolveBannerMedia(banner, { staticAssetVersion: STATIC_HOME_BANNER_VERSION });
 }
 
 function splitBannerDescription(description: string): { subtitle: string; body: string } {
@@ -122,28 +98,31 @@ export default function BannerCarousel({
   showCopyLayer = true,
   onActiveBannerChange,
 }: BannerCarouselProps) {
-  const { themeConfig: runtimeConfig } = useThemeRuntime();
-  const bannerStyle = themeConfigOverride?.bannerStyle ?? runtimeConfig.bannerStyle;
-  const bannerContainerClass = getBannerContainerClassName(bannerStyle);
+  const bannerStyle = "naturalWindow";
+  void themeConfigOverride;
   const { enabled: motionEnabled } = useMotionConfig();
   const [current, setCurrent] = useState(0);
   const safeIndex = banners.length > 0 && current < banners.length ? current : 0;
   const banner = banners[safeIndex] ?? null;
-  const activeImage = banner?.image?.trim() || "";
-  const responsiveImage = getResponsiveBannerImage(activeImage);
+  const responsiveImage = getResponsiveBannerImageForBanner(banner);
+  const activeImage = responsiveImage.src;
   const bannerLink = resolveBannerLink(banner?.link ?? "");
   const bannerTitle = banner?.title?.trim() || "";
   const bannerDescription = banner?.description?.trim() || "";
   const bannerCopy = splitBannerDescription(bannerDescription);
   const bannerCtaText = banner ? getBannerCtaText(banner) : "";
+  const rootIsInteractive = Boolean(bannerLink && !bannerCtaText);
   const hasTextLayer = showCopyLayer && Boolean(bannerTitle || bannerDescription || bannerCtaText);
   const showControls = banners.length > 1;
   const fallbackLabel = `${ariaLabelPrefix} ${safeIndex + 1}`;
-  const nextBannerImage = banners.length > 1
-    ? banners[(safeIndex + 1) % banners.length]?.image?.trim() || ""
-    : "";
+  const nextBannerMedia = useMemo(
+    () => (banners.length > 1
+      ? getResponsiveBannerImageForBanner(banners[(safeIndex + 1) % banners.length])
+      : null),
+    [banners, safeIndex],
+  );
   const [activeImageLoaded, setActiveImageLoaded] = useState(() => (
-    hasLoadedImage(activeImage, responsiveImage.src, responsiveImage.srcSet)
+    hasLoadedImage(activeImage, responsiveImage.preloadSrc, responsiveImage.sourceKey)
   ));
   const [activeImageFailed, setActiveImageFailed] = useState(false);
   const [touchStart, setTouchStart] = useState(0);
@@ -168,9 +147,9 @@ export default function BannerCarousel({
     setCopyTone(getBannerCopyToneFromImage(activeImageRef.current, copyPanelRef.current, "light"));
   }, [hasTextLayer]);
 
-  const goTo = useCallback((index: number, userDriven = false) => {
+  const goTo = useCallback((index: number, userDriven = false, direction?: SlideDirection) => {
     const nextIndex = Math.max(0, Math.min(index, banners.length - 1));
-    setSlideDirection(nextIndex >= current ? "forward" : "backward");
+    setSlideDirection(direction ?? (nextIndex >= current ? "forward" : "backward"));
     setCurrent(nextIndex);
     if (userDriven) {
       setManualPauseUntil(Date.now() + USER_INTERACTION_PAUSE_MS);
@@ -184,17 +163,17 @@ export default function BannerCarousel({
   }, [banners.length, current]);
 
   useEffect(() => {
-    setActiveImageLoaded(hasLoadedImage(activeImage, responsiveImage.src, responsiveImage.srcSet));
+    setActiveImageLoaded(hasLoadedImage(activeImage, responsiveImage.preloadSrc, responsiveImage.sourceKey));
     setActiveImageFailed(false);
     setCopyTone("light");
-  }, [activeImage, responsiveImage.src, responsiveImage.srcSet]);
+  }, [activeImage, responsiveImage.preloadSrc, responsiveImage.sourceKey]);
 
   useEffect(() => {
     const img = activeImageRef.current;
     if (!img || !activeImage) return;
 
     const markLoadedIfReady = () => {
-      if (!rememberLoadedImageFromElement(img, activeImage, responsiveImage.src, responsiveImage.srcSet)) return;
+      if (!rememberLoadedImageFromElement(img, activeImage, responsiveImage.preloadSrc, responsiveImage.sourceKey)) return;
       setActiveImageLoaded(true);
       setActiveImageFailed(false);
       refreshCopyTone();
@@ -207,7 +186,7 @@ export default function BannerCarousel({
       window.cancelAnimationFrame(frame);
       window.clearTimeout(timer);
     };
-  }, [activeImage, refreshCopyTone, responsiveImage.src, responsiveImage.srcSet]);
+  }, [activeImage, refreshCopyTone, responsiveImage.preloadSrc, responsiveImage.sourceKey]);
 
   useEffect(() => {
     if (!hasTextLayer || !activeImageReady) return;
@@ -223,12 +202,12 @@ export default function BannerCarousel({
   }, [activeImageReady, hasTextLayer, refreshCopyTone, safeIndex]);
 
   useEffect(() => {
-    if (!nextBannerImage || nextBannerImage === activeImage) return;
+    if (!nextBannerMedia?.preloadSrc || nextBannerMedia.preloadSrc === responsiveImage.preloadSrc) return;
     const timer = window.setTimeout(() => {
-      preloadBannerImage(nextBannerImage);
+      preloadBannerImage(nextBannerMedia);
     }, 120);
     return () => window.clearTimeout(timer);
-  }, [activeImage, banners, nextBannerImage, safeIndex]);
+  }, [nextBannerMedia, responsiveImage.preloadSrc]);
 
   useEffect(() => {
     if (paused || hoverPaused || !motionEnabled || banners.length <= 1) return;
@@ -256,7 +235,11 @@ export default function BannerCarousel({
     if (banners.length <= 1) return;
     const diff = touchStart - e.changedTouches[0].clientX;
     if (Math.abs(diff) > 50) {
-      goTo(diff > 0 ? (current + 1) % banners.length : (current - 1 + banners.length) % banners.length, true);
+      const direction = diff > 0 ? "forward" : "backward";
+      const nextIndex = direction === "forward"
+        ? (current + 1) % banners.length
+        : (current - 1 + banners.length) % banners.length;
+      goTo(nextIndex, true, direction);
     }
   };
 
@@ -264,10 +247,10 @@ export default function BannerCarousel({
     if (!loading) return null;
     return (
       <div
-        className={`sf-next-banner-carousel sf-next-banner-carousel--showcase sf-next-banner-loading-shell sf-next-banner-skin relative w-full overflow-hidden border border-[var(--theme-border)] bg-[var(--theme-surface)] ${bannerContainerClass}`}
+        className="sf-next-banner-carousel sf-next-banner-carousel--showcase sf-next-banner-loading-shell sf-next-banner-skin relative w-full overflow-hidden"
         data-banner-style={bannerStyle}
         data-theme-banner-style={bannerStyle}
-        style={{ aspectRatio: BANNER_ASPECT_CSS, borderRadius: "var(--theme-radius)" }}
+        style={{ aspectRatio: BANNER_ASPECT_CSS }}
         aria-busy="true"
       >
         <div className="sf-image-loading-base sf-image-loading-shimmer absolute inset-0" />
@@ -304,9 +287,9 @@ export default function BannerCarousel({
   };
 
   const bannerImageNodes = banners.map((item, index) => {
-    const image = item.image?.trim() || "";
+    const itemResponsiveImage = getResponsiveBannerImageForBanner(item);
+    const image = itemResponsiveImage.src;
     if (!image) return null;
-    const itemResponsiveImage = getResponsiveBannerImage(image);
     const isActive = index === safeIndex;
     const isNext = showControls && index === (safeIndex + 1) % banners.length;
     if (!isActive && !isNext) return null;
@@ -317,8 +300,7 @@ export default function BannerCarousel({
         key={item.id || image || index}
         imgRef={isActive ? activeImageRef : undefined}
         src={itemResponsiveImage.src}
-        srcSet={itemResponsiveImage.srcSet}
-        sizes={itemResponsiveImage.sizes}
+        sources={itemResponsiveImage.sources}
         alt={isActive ? itemTitle : ""}
         ariaHidden={!isActive}
         ratio={BANNER_ASPECT_CSS as ClientImageRatio}
@@ -335,8 +317,8 @@ export default function BannerCarousel({
           if (event.currentTarget.naturalWidth <= 0) return;
           markImageLoaded(
             image,
-            itemResponsiveImage.src,
-            itemResponsiveImage.srcSet,
+            itemResponsiveImage.preloadSrc,
+            itemResponsiveImage.sourceKey,
             event.currentTarget.currentSrc,
             event.currentTarget.src,
           );
@@ -357,13 +339,12 @@ export default function BannerCarousel({
   });
   const rootStyle = {
     aspectRatio: BANNER_ASPECT_CSS,
-    borderRadius: bannerStyle === "premium" || bannerStyle === "fresh" ? undefined : "var(--theme-radius)",
     "--sf-next-banner-auto-rotate-ms": `${resolvedAutoRotateMs}ms`,
   } as CSSProperties;
 
   return (
     <div
-      className={`sf-next-banner-carousel sf-next-banner-carousel--showcase sf-next-banner-skin relative w-full overflow-hidden ${bannerContainerClass} ${bannerLink ? "cursor-pointer" : ""}`}
+      className={`sf-next-banner-carousel sf-next-banner-carousel--showcase sf-next-banner-skin relative w-full overflow-hidden ${rootIsInteractive ? "cursor-pointer" : ""}`}
       data-banner-style={bannerStyle}
       data-theme-banner-style={bannerStyle}
       data-banner-has-copy={hasTextLayer ? "true" : "false"}
@@ -375,11 +356,11 @@ export default function BannerCarousel({
       onTouchEnd={handleTouchEnd}
       onMouseEnter={() => setHoverPaused(true)}
       onMouseLeave={() => setHoverPaused(false)}
-      onClick={handleOpenBanner}
-      onKeyDown={handleKeyDown}
-      role={bannerLink ? "button" : undefined}
-      tabIndex={bannerLink ? 0 : undefined}
-      aria-label={bannerLink ? `打开轮播图：${bannerTitle || fallbackLabel}` : undefined}
+      onClick={rootIsInteractive ? handleOpenBanner : undefined}
+      onKeyDown={rootIsInteractive ? handleKeyDown : undefined}
+      role={rootIsInteractive ? "button" : undefined}
+      tabIndex={rootIsInteractive ? 0 : undefined}
+      aria-label={rootIsInteractive ? `打开轮播图：${bannerTitle || fallbackLabel}` : undefined}
     >
       <div className="absolute inset-0">
         <div
@@ -441,24 +422,36 @@ export default function BannerCarousel({
         <div
           className="sf-next-banner-indicators pointer-events-auto absolute z-30"
           onClick={(e) => e.stopPropagation()}
-          aria-label="轮播图分页"
+          aria-label="轮播图切换"
         >
-          <div className="sf-next-banner-dots">
-            {banners.map((_, index) => (
-              <UnifiedButton
-                key={index}
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  goTo(index, true);
-                }}
-                className="sf-next-banner-dot-button"
-                aria-label={`第 ${index + 1} 张轮播图`}
-                aria-current={index === safeIndex ? "true" : undefined}
-              >
-                <span className="sf-next-banner-dot block rounded-full transition-all duration-200" />
-              </UnifiedButton>
-            ))}
+          <div className="sf-next-banner-pager">
+            <UnifiedButton
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                goTo((safeIndex - 1 + banners.length) % banners.length, true, "backward");
+              }}
+              className="sf-next-banner-page-button"
+              aria-label="上一张轮播图"
+            >
+              <ChevronLeft size={17} strokeWidth={1.75} aria-hidden="true" />
+            </UnifiedButton>
+            <span className="sf-next-banner-page-count" aria-live="polite">
+              <strong>{safeIndex + 1}</strong>
+              <span aria-hidden="true">/</span>
+              <span>{banners.length}</span>
+            </span>
+            <UnifiedButton
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                goTo((safeIndex + 1) % banners.length, true, "forward");
+              }}
+              className="sf-next-banner-page-button"
+              aria-label="下一张轮播图"
+            >
+              <ChevronRight size={17} strokeWidth={1.75} aria-hidden="true" />
+            </UnifiedButton>
           </div>
         </div>
       ) : null}

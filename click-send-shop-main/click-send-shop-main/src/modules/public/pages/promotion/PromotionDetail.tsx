@@ -478,9 +478,7 @@ export default function PromotionDetail() {
               </div>
             ) : (
               <div className="sf-next-promotion-detail-hero__media sf-next-promotion-detail-hero__media--placeholder" aria-hidden="true">
-                <span />
-                <i />
-                <b />
+                <ShoppingBag size={34} />
               </div>
             )}
           </section>
@@ -544,17 +542,17 @@ export default function PromotionDetail() {
                   <Link className="sf-next-promotion-detail-product-row" key={item.product_id} to={localizedPath(`/product/${item.product_id}`)}>
                     <div className="sf-next-promotion-detail-product-row__media">
                       {item.cover_image ? (
-                        <img className="h-full w-full object-cover" src={item.cover_image} alt={storefrontDisplayText(item.product_name, "活动商品")} />
+                        <img className="sf-next-promotion-detail-product-row__image" src={item.cover_image} alt={storefrontDisplayText(item.product_name, "活动商品")} />
                       ) : (
                         <ShoppingBag size={22} aria-hidden />
                       )}
                     </div>
                     <div className="sf-next-promotion-detail-product-row__content">
-                      <h3 className="line-clamp-2 text-sm font-semibold text-[var(--theme-text)]">{storefrontDisplayText(item.product_name, "活动商品")}</h3>
+                      <h3>{storefrontDisplayText(item.product_name, "活动商品")}</h3>
                       <div className="sf-next-promotion-detail-product-row__price">
-                        {item.activity_price > 0 ? <strong className="text-[var(--theme-price)]">{money(item.activity_price)}</strong> : null}
+                        {item.activity_price > 0 ? <strong>{money(item.activity_price)}</strong> : null}
                         {item.product_price > item.activity_price && item.activity_price > 0 ? (
-                          <span className="text-[var(--theme-text-muted)] line-through">{money(item.product_price)}</span>
+                          <span>{money(item.product_price)}</span>
                         ) : null}
                         {item.saving_amount > 0 ? (
                           <span className="sf-next-promotion-detail-product-row__save">

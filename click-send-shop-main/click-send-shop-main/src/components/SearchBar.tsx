@@ -70,7 +70,7 @@ export default function SearchBar({
   return (
     <div
       className={cn(
-        "app-search-bar flex min-h-[44px] items-center gap-2 rounded-xl border border-border bg-background px-3.5 py-2 shadow-sm transition-[border-color,box-shadow,background-color]",
+        "app-search-bar flex min-h-[44px] items-center gap-2 rounded-md border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3.5 py-2 transition-[border-color,box-shadow,background-color]",
         "focus-within:border-[var(--theme-primary)] focus-within:ring-2 focus-within:ring-[var(--theme-primary)]/20",
         className,
       )}

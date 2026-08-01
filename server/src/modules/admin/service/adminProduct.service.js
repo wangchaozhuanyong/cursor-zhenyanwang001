@@ -9,6 +9,7 @@ const variantRepo = require('../repository/adminProductVariant.repository');
 const adminExtendedRepo = require('../repository/adminExtended.repository');
 const inventoryRepo = require('../repository/adminInventory.repository');
 const categoryService = require('./adminCategory.service');
+const { buildProductMediaFilterSql } = require('./adminProductMediaFilter');
 const {
   DEFAULT_VARIANT_TITLE: YINBAO_DEFAULT_VARIANT_TITLE,
   groupYinbaoRows,
@@ -188,7 +189,14 @@ function normalizeProductIdsInput(value) {
 function buildListWhere(query) {
   let where = 'WHERE p.deleted_at IS NULL';
   const params = [];
-  const { keyword, category_id, status, stock_status: stockStatus, cost_status: costStatus } = query;
+  const {
+    keyword,
+    category_id,
+    status,
+    stock_status: stockStatus,
+    cost_status: costStatus,
+    media_status: mediaStatus,
+  } = query;
   const selectedIds = normalizeProductIdsInput(query.ids || query.product_ids || query.productIds);
   if (selectedIds.length > MAX_PRODUCT_EXPORT_IDS) {
     throw new ValidationError(`单次最多导出 ${MAX_PRODUCT_EXPORT_IDS} 个勾选商品`);
@@ -296,6 +304,7 @@ function buildListWhere(query) {
         AND (v.cost_price IS NULL OR v.cost_price <= 0)
     )`;
   }
+  where += buildProductMediaFilterSql(mediaStatus);
   return { where, params };
 }
 
@@ -441,6 +450,7 @@ function formatAdminProductListRow(row) {
   if (!base) return null;
   return {
     ...base,
+    effective_cover_image: row.effective_cover_image || row.cover_image || '',
     category_name: row.category_name || '',
     sku_count: Number(row.sku_count || 0),
     enabled_sku_count: Number(row.enabled_sku_count || 0),

@@ -43,7 +43,7 @@ const LOGISTICS_PAGE_COPY: Record<PublicLocale, {
 }> = {
   zh: {
     title: "物流详情",
-    subtitle: "配送状态以后台订单物流数据为准，不读取 URL 参数判断结果。",
+    subtitle: "配送进度会在这里持续更新。",
     loading: "物流信息加载中...",
     loadFailed: "物流信息加载失败",
     authRequired: "请登录后查看该订单物流。",
@@ -66,7 +66,7 @@ const LOGISTICS_PAGE_COPY: Record<PublicLocale, {
   },
   en: {
     title: "Delivery details",
-    subtitle: "Delivery status comes from the backend order record, not URL parameters.",
+    subtitle: "Delivery updates will appear here as the parcel moves.",
     loading: "Loading delivery details...",
     loadFailed: "Failed to load delivery details",
     authRequired: "Please sign in to view delivery details.",
@@ -180,7 +180,7 @@ export default function OrderLogistics() {
       ) : null}
 
       {!loading && !error && order ? (
-        <div className="space-y-4">
+        <div className="sf-next-logistics-stack">
           <section className={`sf-next-logistics-hero ${snapshot?.hasException ? "is-exception" : ""}`}>
             <div className="sf-next-logistics-hero__icon">
               {snapshot?.hasException ? <AlertTriangle size={24} aria-hidden /> : <PackageCheck size={24} aria-hidden />}
@@ -233,7 +233,7 @@ export default function OrderLogistics() {
               />
             </div>
             {trackingUrl ? (
-              <div className="mt-4 flex justify-end">
+              <div className="sf-next-logistics-external-row">
                 <UnifiedButton
                   type="button"
                   className="sf-next-logistics-external"
@@ -247,7 +247,7 @@ export default function OrderLogistics() {
           </section>
 
           <section className="sf-next-logistics-card">
-            <div className="mb-4 flex items-center justify-between gap-3">
+            <div className="sf-next-logistics-section-head">
               <div>
                 <p className="sf-next-logistics-eyebrow">{copy.latestUpdate}</p>
                 <h2 className="sf-next-logistics-section-title">{copy.timeline}</h2>

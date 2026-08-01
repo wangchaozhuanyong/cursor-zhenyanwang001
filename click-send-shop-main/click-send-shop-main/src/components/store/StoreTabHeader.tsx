@@ -4,7 +4,7 @@ import StoreSearchField from "@/components/store/StoreSearchField";
 import { StoreSearchDrawer, StoreSearchLauncher } from "@/components/store/StoreSearchDrawer";
 import { buildStoreSearchCategoryOptions, type StoreSearchTagOption } from "@/components/store/storeSearchOptions";
 import { useSiteInfo, useSiteInfoLoaded } from "@/hooks/useSiteInfo";
-import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
+import { useFixedStorefrontDesign } from "@/hooks/useFixedStorefrontDesign";
 import { getStoreHeaderSurfaceClass } from "@/utils/storeHeaderSurface";
 import { resolveSiteLogoUrl } from "@/utils/siteBrandAssets";
 import { STORE_COPY } from "@/constants/storeCopy";
@@ -15,7 +15,6 @@ import StoreBrandLogo from "@/components/store/StoreBrandLogo";
 import * as productService from "@/services/productService";
 import { useProductStore } from "@/stores/useProductStore";
 import { NEW_ARRIVAL_CATEGORY_PATH } from "@/constants/newArrivalNavigation";
-import { appendThemePreviewParams } from "@/utils/themePreviewParams";
 import { navigateWithStoreTransition } from "@/utils/storeNavigationTransition";
 import { storefrontCategoryName } from "@/utils/storefrontCopySanitizer";
 import type { ProductTag } from "@/types/product";
@@ -57,7 +56,7 @@ export default function StoreTabHeader({
   const navigate = useStorefrontNavigate();
   const siteInfo = useSiteInfo();
   const siteInfoLoaded = useSiteInfoLoaded();
-  const { themeConfig } = useThemeRuntime();
+  const { themeConfig } = useFixedStorefrontDesign();
   const [navigateSearchValue, setNavigateSearchValue] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchTags, setSearchTags] = useState<ProductTag[]>([]);
@@ -74,7 +73,7 @@ export default function StoreTabHeader({
   };
   const submitSearch = (value: string) => {
     const keyword = value.trim();
-    navigateWithStoreTransition(navigate, appendThemePreviewParams(keyword ? `/search?keyword=${encodeURIComponent(keyword)}` : "/search"));
+    navigateWithStoreTransition(navigate, keyword ? `/search?keyword=${encodeURIComponent(keyword)}` : "/search");
   };
   const goNotifications = () => navigateWithStoreTransition(navigate, "/notifications");
 
@@ -86,15 +85,15 @@ export default function StoreTabHeader({
 
   const searchCategoryOptions = useMemo(() => buildStoreSearchCategoryOptions({
     categories,
-    onAll: () => navigateWithStoreTransition(navigate, appendThemePreviewParams("/categories")),
-    onNew: () => navigateWithStoreTransition(navigate, appendThemePreviewParams(NEW_ARRIVAL_CATEGORY_PATH)),
-    onCategorySelect: (category) => navigateWithStoreTransition(navigate, appendThemePreviewParams(`/categories?cat=${encodeURIComponent(category.id)}`)),
+    onAll: () => navigateWithStoreTransition(navigate, "/categories"),
+    onNew: () => navigateWithStoreTransition(navigate, NEW_ARRIVAL_CATEGORY_PATH),
+    onCategorySelect: (category) => navigateWithStoreTransition(navigate, `/categories?cat=${encodeURIComponent(category.id)}`),
   }), [categories, navigate]);
 
   const searchTagOptions = useMemo<StoreSearchTagOption[]>(() => searchTags.map((tag) => ({
     id: tag.id,
     label: storefrontCategoryName(tag.name),
-    onSelect: () => navigateWithStoreTransition(navigate, appendThemePreviewParams(`/categories?tag_id=${encodeURIComponent(tag.id)}`)),
+    onSelect: () => navigateWithStoreTransition(navigate, `/categories?tag_id=${encodeURIComponent(tag.id)}`),
   })), [navigate, searchTags]);
 
   const nameClass = cn(
@@ -155,7 +154,7 @@ export default function StoreTabHeader({
             ) : (
               <UnifiedButton
                 type="button"
-                className="sf-next-notification-button relative flex h-[2.625rem] w-[2.625rem] overflow-visible items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)]/50"
+                className="sf-next-notification-button relative flex h-11 w-11 min-h-11 min-w-11 overflow-visible items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)]/50"
                 onClick={goNotifications}
                 aria-label="消息通知"
               >

@@ -1,4 +1,5 @@
 import { Component, lazy, Suspense, type ErrorInfo, type ReactNode } from "react";
+import "@/styles/fixed-storefront-overlays.css";
 import { isChunkLoadFailure, recoverFromChunkLoadError } from "@/lib/browserBoot";
 
 const ErrorBoundaryFallback = lazy(() => import("@/components/ErrorBoundaryFallback"));
@@ -56,10 +57,12 @@ export default class ErrorBoundary extends Component<Props, State> {
       return (
         <Suspense
           fallback={(
-            <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-background px-6 py-16 text-center">
-              <h1 className="font-display text-xl font-bold text-foreground">{title}</h1>
-              <p className="max-w-sm text-sm text-muted-foreground break-words">{message}</p>
-            </div>
+            <main className="sf-fixed-error-page">
+              <section className="sf-fixed-error-state is-loading" aria-live="polite">
+                <h1>{title}</h1>
+                <p>{message}</p>
+              </section>
+            </main>
           )}
         >
           <ErrorBoundaryFallback

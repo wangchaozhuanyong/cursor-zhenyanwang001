@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { BadgePercent, Clock, History as HistoryIcon, LogIn, PackageCheck, Search, Trash2 } from "lucide-react";
+import { Clock, LogIn, Search, Trash2 } from "lucide-react";
 
 import { useHistoryStore } from "@/stores/useHistoryStore";
 import { isLoggedIn } from "@/utils/token";
@@ -11,7 +11,7 @@ import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { BottomSheetConfirm } from "@/modules/micro-interactions";
 import { usePublicLocale } from "@/i18n/publicLocale";
 import AccountProductCard from "./components/AccountProductCard";
-import "@/styles/secondary-routes.css";
+import "@/styles/favorites-history-route.css";
 import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
 export default function History() {
@@ -52,27 +52,16 @@ export default function History() {
           </div>
         )}
         {history.length > 0 ? (
-          <section className="sf-next-summary sf-next-stats-grid sf-next-history-summary">
-            <div className="sf-next-stat">
-              <span className="sf-next-stat__icon"><Clock size={17} aria-hidden /></span>
-              <strong>{history.length}</strong>
-              <span>最近浏览</span>
-            </div>
-            <div className="sf-next-stat">
-              <span className="sf-next-stat__icon"><PackageCheck size={17} aria-hidden /></span>
-              <strong>{saleableCount}</strong>
-              <span>可售商品</span>
-            </div>
-            <div className="sf-next-stat">
-              <span className="sf-next-stat__icon"><BadgePercent size={17} aria-hidden /></span>
-              <strong>{activityCount}</strong>
-              <span>活动商品</span>
-            </div>
-            <div className="sf-next-stat">
-              <span className="sf-next-stat__icon"><HistoryIcon size={17} aria-hidden /></span>
-              <strong>{Math.min(history.length, 12)}</strong>
-              <span>快速回看</span>
-            </div>
+          <section className="sf-next-history-summary" aria-label="浏览记录摘要">
+            <span><strong>{history.length}</strong> 条记录</span>
+            <span aria-hidden>·</span>
+            <span><strong>{saleableCount}</strong> 件可售</span>
+            {activityCount > 0 ? (
+              <>
+                <span aria-hidden>·</span>
+                <span><strong>{activityCount}</strong> 件活动商品</span>
+              </>
+            ) : null}
           </section>
         ) : null}
         {loading && history.length === 0 ? (

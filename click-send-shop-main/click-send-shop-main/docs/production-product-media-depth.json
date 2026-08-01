@@ -1,0 +1,1330 @@
+{
+  "baseUrl": "https://damatong.net",
+  "checkedAt": "2026-07-29T20:04:43.792Z",
+  "sourcePlan": "docs/production-content-repair-plan.json",
+  "sourcePlanCheckedAt": "2026-07-29T20:04:29.627Z",
+  "summary": {
+    "auditedProducts": 41,
+    "recoverable_product_media": 0,
+    "recoverable_variant_media": 0,
+    "recoverable_spec_media": 0,
+    "review_description_media": 0,
+    "truly_missing_public_media": 41,
+    "detail_unavailable": 0,
+    "productsExposingInternalFields": 41
+  },
+  "items": [
+    {
+      "id": "e8a3c236-e51a-48e8-a67f-9633f92f160f",
+      "name": "7星1",
+      "priority": "P0",
+      "occurrences": [
+        {
+          "group": "hot",
+          "position": 4
+        }
+      ],
+      "classification": "truly_missing_public_media",
+      "media": {
+        "direct": [],
+        "gallery": [],
+        "variants": [],
+        "specValues": [],
+        "description": []
+      },
+      "publicInternalFields": {
+        "product": [
+          "stock_warning_threshold",
+          "stock_lower_limit",
+          "stock_upper_limit"
+        ],
+        "variants": [
+          "cost_price",
+          "barcode",
+          "stock_warning_threshold"
+        ]
+      },
+      "variantCount": 2
+    },
+    {
+      "id": "d5a148eb-81d4-4069-a216-07e4be869336",
+      "name": "卡比龙 极细支",
+      "priority": "P0",
+      "occurrences": [
+        {
+          "group": "hot",
+          "position": 5
+        }
+      ],
+      "classification": "truly_missing_public_media",
+      "media": {
+        "direct": [],
+        "gallery": [],
+        "variants": [],
+        "specValues": [],
+        "description": []
+      },
+      "publicInternalFields": {
+        "product": [
+          "stock_warning_threshold",
+          "stock_lower_limit",
+          "stock_upper_limit"
+        ],
+        "variants": [
+          "cost_price",
+          "barcode",
+          "stock_warning_threshold"
+        ]
+      },
+      "variantCount": 2
+    },
+    {
+      "id": "d44a5e7f-4553-4870-a31a-804a077b32e4",
+      "name": "蓝卡比龙",
+      "priority": "P0",
+      "occurrences": [
+        {
+          "group": "hot",
+          "position": 6
+        }
+      ],
+      "classification": "truly_missing_public_media",
+      "media": {
+        "direct": [],
+        "gallery": [],
+        "variants": [],
+        "specValues": [],
+        "description": []
+      },
+      "publicInternalFields": {
+        "product": [
+          "stock_warning_threshold",
+          "stock_lower_limit",
+          "stock_upper_limit"
+        ],
+        "variants": [
+          "cost_price",
+          "barcode",
+          "stock_warning_threshold"
+        ]
+      },
+      "variantCount": 2
+    },
+    {
+      "id": "158ac8b0-4821-4c33-a0c7-a60381d4a087",
+      "name": "蓝莓七",
+      "priority": "P0",
+      "occurrences": [
+        {
+          "group": "hot",
+          "position": 7
+        }
+      ],
+      "classification": "truly_missing_public_media",
+      "media": {
+        "direct": [],
+        "gallery": [],
+        "variants": [],
+        "specValues": [],
+        "description": []
+      },
+      "publicInternalFields": {
+        "product": [
+          "stock_warning_threshold",
+          "stock_lower_limit",
+          "stock_upper_limit"
+        ],
+        "variants": [
+          "cost_price",
+          "barcode",
+          "stock_warning_threshold"
+        ]
+      },
+      "variantCount": 2
+    },
+    {
+      "id": "c7fdfb79-af81-4b40-9243-b7198fa25f53",
+      "name": "卡细",
+      "priority": "P0",
+      "occurrences": [
+        {
+          "group": "hot",
+          "position": 8
+        }
+      ],
+      "classification": "truly_missing_public_media",
+      "media": {
+        "direct": [],
+        "gallery": [],
+        "variants": [],
+        "specValues": [],
+        "description": []
+      },
+      "publicInternalFields": {
+        "product": [
+          "stock_warning_threshold",
+          "stock_lower_limit",
+          "stock_upper_limit"
+        ],
+        "variants": [
+          "cost_price",
+          "barcode",
+          "stock_warning_threshold"
+        ]
+      },
+      "variantCount": 2
+    },
+    {
+      "id": "c3d65e8c-8cc7-43b1-94fb-ee78381522cf",
+      "name": "绿卡比龙",
+      "priority": "P1",
+      "occurrences": [
+        {
+          "group": "hot",
+          "position": 9
+        }
+      ],
+      "classification": "truly_missing_public_media",
+      "media": {
+        "direct": [],
+        "gallery": [],
+        "variants": [],
+        "specValues": [],
+        "description": []
+      },
+      "publicInternalFields": {
+        "product": [
+          "stock_warning_threshold",
+          "stock_lower_limit",
+          "stock_upper_limit"
+        ],
+        "variants": [
+          "cost_price",
+          "barcode",
+          "stock_warning_threshold"
+        ]
+      },
+      "variantCount": 1
+    },
+    {
+      "id": "c32e8adb-143a-43ae-b0ca-97c4f04dc6af",
+      "name": "软云斯顿",
+      "priority": "P1",
+      "occurrences": [
+        {
+          "group": "hot",
+          "position": 10
+        }
+      ],
+      "classification": "truly_missing_public_media",
+      "media": {
+        "direct": [],
+        "gallery": [],
+        "variants": [],
+        "specValues": [],
+        "description": []
+      },
+      "publicInternalFields": {
+        "product": [
+          "stock_warning_threshold",
+          "stock_lower_limit",
+          "stock_upper_limit"
+        ],
+        "variants": [
+          "cost_price",
+          "barcode",
+          "stock_warning_threshold"
+        ]
+      },
+      "variantCount": 2
+    },
+    {
+      "id": "c2f99676-b36e-496d-95be-7b9c83da30ff",
+      "name": "7星3",
+      "priority": "P1",
+      "occurrences": [
+        {
+          "group": "hot",
+          "position": 11
+        }
+      ],
+      "classification": "truly_missing_public_media",
+      "media": {
+        "direct": [],
+        "gallery": [],
+        "variants": [],
+        "specValues": [],
+        "description": []
+      },
+      "publicInternalFields": {
+        "product": [
+          "stock_warning_threshold",
+          "stock_lower_limit",
+          "stock_upper_limit"
+        ],
+        "variants": [
+          "cost_price",
+          "barcode",
+          "stock_warning_threshold"
+        ]
+      },
+      "variantCount": 2
+    },
+    {
+      "id": "bccef4f9-fc40-41af-b6be-f1f3c2f08870",
+      "name": "黄和平",
+      "priority": "P1",
+      "occurrences": [
+        {
+          "group": "hot",
+          "position": 12
+        }
+      ],
+      "classification": "truly_missing_public_media",
+      "media": {
+        "direct": [],
+        "gallery": [],
+        "variants": [],
+        "specValues": [],
+        "description": []
+      },
+      "publicInternalFields": {
+        "product": [
+          "stock_warning_threshold",
+          "stock_lower_limit",
+          "stock_upper_limit"
+        ],
+        "variants": [
+          "cost_price",
+          "barcode",
+          "stock_warning_threshold"
+        ]
+      },
+      "variantCount": 2
+    },
+    {
+      "id": "b00bbd49-42c2-40fb-88ef-87e200fbc72f",
+      "name": "硬白7",
+      "priority": "P1",
+      "occurrences": [
+        {
+          "group": "hot",
+          "position": 13
+        }
+      ],
+      "classification": "truly_missing_public_media",
+      "media": {
+        "direct": [],
+        "gallery": [],
+        "variants": [],
+        "specValues": [],
+        "description": []
+      },
+      "publicInternalFields": {
+        "product": [
+          "stock_warning_threshold",
+          "stock_lower_limit",
+          "stock_upper_limit"
+        ],
+        "variants": [
+          "cost_price",
+          "barcode",
+          "stock_warning_threshold"
+        ]
+      },
+      "variantCount": 1
+    },
+    {
+      "id": "ae0c8c0d-b97c-4ca4-b002-334c5dcfdfb3",
+      "name": "软白7星",
+      "priority": "P1",
+      "occurrences": [
+        {
+          "group": "hot",
+          "position": 14
+        }
+      ],
+      "classification": "truly_missing_public_media",
+      "media": {
+        "direct": [],
+        "gallery": [],
+        "variants": [],
+        "specValues": [],
+        "description": []
+      },
+      "publicInternalFields": {
+        "product": [
+          "stock_warning_threshold",
+          "stock_lower_limit",
+          "stock_upper_limit"
+        ],
+        "variants": [
+          "cost_price",
+          "barcode",
+          "stock_warning_threshold"
+        ]
+      },
+      "variantCount": 2
+    },
+    {
+      "id": "2e848fc2-1ecc-409f-88b2-4e76675606a1",
+      "name": "7星6",
+      "priority": "P1",
+      "occurrences": [
+        {
+          "group": "hot",
+          "position": 15
+        }
+      ],
+      "classification": "truly_missing_public_media",
+      "media": {
+        "direct": [],
+        "gallery": [],
+        "variants": [],
+        "specValues": [],
+        "description": []
+      },
+      "publicInternalFields": {
+        "product": [
+          "stock_warning_threshold",
+          "stock_lower_limit",
+          "stock_upper_limit"
+        ],
+        "variants": [
+          "cost_price",
+          "barcode",
+          "stock_warning_threshold"
+        ]
+      },
+      "variantCount": 2
+    },
+    {
+      "id": "aac723ef-061e-4c39-a9b6-cebaa1564fc2",
+      "name": "黑卡",
+      "priority": "P1",
+      "occurrences": [
+        {
+          "group": "hot",
+          "position": 16
+        }
+      ],
+      "classification": "truly_missing_public_media",
+      "media": {
+        "direct": [],
+        "gallery": [],
+        "variants": [],
+        "specValues": [],
+        "description": []
+      },
+      "publicInternalFields": {
+        "product": [
+          "stock_warning_threshold",
+          "stock_lower_limit",
+          "stock_upper_limit"
+        ],
+        "variants": [
+          "cost_price",
+          "barcode",
+          "stock_warning_threshold"
+        ]
+      },
+      "variantCount": 2
+    },
+    {
+      "id": "a3d39d0b-7b2b-4f01-8f5a-427f57858725",
+      "name": "和平铁罐",
+      "priority": "P2",
+      "occurrences": [
+        {
+          "group": "hot",
+          "position": 17
+        }
+      ],
+      "classification": "truly_missing_public_media",
+      "media": {
+        "direct": [],
+        "gallery": [],
+        "variants": [],
+        "specValues": [],
+        "description": []
+      },
+      "publicInternalFields": {
+        "product": [
+          "stock_warning_threshold",
+          "stock_lower_limit",
+          "stock_upper_limit"
+        ],
+        "variants": [
+          "cost_price",
+          "barcode",
+          "stock_warning_threshold"
+        ]
+      },
+      "variantCount": 1
+    },
+    {
+      "id": "33bcb398-1a41-4263-84c7-c6f2195dc76f",
+      "name": "白卡",
+      "priority": "P2",
+      "occurrences": [
+        {
+          "group": "hot",
+          "position": 18
+        }
+      ],
+      "classification": "truly_missing_public_media",
+      "media": {
+        "direct": [],
+        "gallery": [],
+        "variants": [],
+        "specValues": [],
+        "description": []
+      },
+      "publicInternalFields": {
+        "product": [
+          "stock_warning_threshold",
+          "stock_lower_limit",
+          "stock_upper_limit"
+        ],
+        "variants": [
+          "cost_price",
+          "barcode",
+          "stock_warning_threshold"
+        ]
+      },
+      "variantCount": 2
+    },
+    {
+      "id": "36fe93a6-4afd-4acc-8317-3eb39aaf589a",
+      "name": "绿卡",
+      "priority": "P2",
+      "occurrences": [
+        {
+          "group": "hot",
+          "position": 19
+        }
+      ],
+      "classification": "truly_missing_public_media",
+      "media": {
+        "direct": [],
+        "gallery": [],
+        "variants": [],
+        "specValues": [],
+        "description": []
+      },
+      "publicInternalFields": {
+        "product": [
+          "stock_warning_threshold",
+          "stock_lower_limit",
+          "stock_upper_limit"
+        ],
+        "variants": [
+          "cost_price",
+          "barcode",
+          "stock_warning_threshold"
+        ]
+      },
+      "variantCount": 1
+    },
+    {
+      "id": "01ef41da-1a5b-49eb-a961-d55b048ff5fb",
+      "name": "白硬7",
+      "priority": "P2",
+      "occurrences": [
+        {
+          "group": "hot",
+          "position": 20
+        }
+      ],
+      "classification": "truly_missing_public_media",
+      "media": {
+        "direct": [],
+        "gallery": [],
+        "variants": [],
+        "specValues": [],
+        "description": []
+      },
+      "publicInternalFields": {
+        "product": [
+          "stock_warning_threshold",
+          "stock_lower_limit",
+          "stock_upper_limit"
+        ],
+        "variants": [
+          "cost_price",
+          "barcode",
+          "stock_warning_threshold"
+        ]
+      },
+      "variantCount": 1
+    },
+    {
+      "id": "643b3cbc-0eaa-4077-bf58-84c6e6ed7c2e",
+      "name": "南阳 红双喜",
+      "priority": "P2",
+      "occurrences": [
+        {
+          "group": "hot",
+          "position": 21
+        }
+      ],
+      "classification": "truly_missing_public_media",
+      "media": {
+        "direct": [],
+        "gallery": [],
+        "variants": [],
+        "specValues": [],
+        "description": []
+      },
+      "publicInternalFields": {
+        "product": [
+          "stock_warning_threshold",
+          "stock_lower_limit",
+          "stock_upper_limit"
+        ],
+        "variants": [
+          "cost_price",
+          "barcode",
+          "stock_warning_threshold"
+        ]
+      },
+      "variantCount": 2
+    },
+    {
+      "id": "6178ed2d-4694-4cec-93b7-c99920eceb03",
+      "name": "日本硬七星七毫克",
+      "priority": "P2",
+      "occurrences": [
+        {
+          "group": "hot",
+          "position": 22
+        }
+      ],
+      "classification": "truly_missing_public_media",
+      "media": {
+        "direct": [],
+        "gallery": [],
+        "variants": [],
+        "specValues": [],
+        "description": []
+      },
+      "publicInternalFields": {
+        "product": [
+          "stock_warning_threshold",
+          "stock_lower_limit",
+          "stock_upper_limit"
+        ],
+        "variants": [
+          "cost_price",
+          "barcode",
+          "stock_warning_threshold"
+        ]
+      },
+      "variantCount": 2
+    },
+    {
+      "id": "42654141-83fe-43cf-a5a1-b3e9a88c70f4",
+      "name": "棕卡",
+      "priority": "P2",
+      "occurrences": [
+        {
+          "group": "hot",
+          "position": 23
+        }
+      ],
+      "classification": "truly_missing_public_media",
+      "media": {
+        "direct": [],
+        "gallery": [],
+        "variants": [],
+        "specValues": [],
+        "description": []
+      },
+      "publicInternalFields": {
+        "product": [
+          "stock_warning_threshold",
+          "stock_lower_limit",
+          "stock_upper_limit"
+        ],
+        "variants": [
+          "cost_price",
+          "barcode",
+          "stock_warning_threshold"
+        ]
+      },
+      "variantCount": 2
+    },
+    {
+      "id": "8eb15aef-17be-4e96-ba0f-4113d347a337",
+      "name": "和平金顶",
+      "priority": "P2",
+      "occurrences": [
+        {
+          "group": "hot",
+          "position": 24
+        }
+      ],
+      "classification": "truly_missing_public_media",
+      "media": {
+        "direct": [],
+        "gallery": [],
+        "variants": [],
+        "specValues": [],
+        "description": []
+      },
+      "publicInternalFields": {
+        "product": [
+          "stock_warning_threshold",
+          "stock_lower_limit",
+          "stock_upper_limit"
+        ],
+        "variants": [
+          "cost_price",
+          "barcode",
+          "stock_warning_threshold"
+        ]
+      },
+      "variantCount": 2
+    },
+    {
+      "id": "fe0aecce-ce2d-4514-9761-17da27fd19e7",
+      "name": "真龙海韵",
+      "priority": "P1",
+      "occurrences": [
+        {
+          "group": "recommended",
+          "position": 1
+        }
+      ],
+      "classification": "truly_missing_public_media",
+      "media": {
+        "direct": [],
+        "gallery": [],
+        "variants": [],
+        "specValues": [],
+        "description": []
+      },
+      "publicInternalFields": {
+        "product": [
+          "stock_warning_threshold",
+          "stock_lower_limit",
+          "stock_upper_limit"
+        ],
+        "variants": [
+          "cost_price",
+          "barcode",
+          "stock_warning_threshold"
+        ]
+      },
+      "variantCount": 2
+    },
+    {
+      "id": "f7b14ed1-602d-4e2f-8a35-e506e1e3e7b5",
+      "name": "荷花  粗",
+      "priority": "P1",
+      "occurrences": [
+        {
+          "group": "recommended",
+          "position": 2
+        }
+      ],
+      "classification": "truly_missing_public_media",
+      "media": {
+        "direct": [],
+        "gallery": [],
+        "variants": [],
+        "specValues": [],
+        "description": []
+      },
+      "publicInternalFields": {
+        "product": [
+          "stock_warning_threshold",
+          "stock_lower_limit",
+          "stock_upper_limit"
+        ],
+        "variants": [
+          "cost_price",
+          "barcode",
+          "stock_warning_threshold"
+        ]
+      },
+      "variantCount": 2
+    },
+    {
+      "id": "ec5ee6f6-ee14-4f3f-9e90-a7751604b975",
+      "name": "钻石",
+      "priority": "P1",
+      "occurrences": [
+        {
+          "group": "recommended",
+          "position": 3
+        }
+      ],
+      "classification": "truly_missing_public_media",
+      "media": {
+        "direct": [],
+        "gallery": [],
+        "variants": [],
+        "specValues": [],
+        "description": []
+      },
+      "publicInternalFields": {
+        "product": [
+          "stock_warning_threshold",
+          "stock_lower_limit",
+          "stock_upper_limit"
+        ],
+        "variants": [
+          "cost_price",
+          "barcode",
+          "stock_warning_threshold"
+        ]
+      },
+      "variantCount": 2
+    },
+    {
+      "id": "ebc49c0d-e73e-48b8-ab7d-cf443e2ce709",
+      "name": "中南蓝莓",
+      "priority": "P1",
+      "occurrences": [
+        {
+          "group": "recommended",
+          "position": 4
+        }
+      ],
+      "classification": "truly_missing_public_media",
+      "media": {
+        "direct": [],
+        "gallery": [],
+        "variants": [],
+        "specValues": [],
+        "description": []
+      },
+      "publicInternalFields": {
+        "product": [
+          "stock_warning_threshold",
+          "stock_lower_limit",
+          "stock_upper_limit"
+        ],
+        "variants": [
+          "cost_price",
+          "barcode",
+          "stock_warning_threshold"
+        ]
+      },
+      "variantCount": 1
+    },
+    {
+      "id": "e5741cd0-9d2f-457d-ac49-2e58833047a3",
+      "name": "南金十二钗 金",
+      "priority": "P1",
+      "occurrences": [
+        {
+          "group": "recommended",
+          "position": 5
+        }
+      ],
+      "classification": "truly_missing_public_media",
+      "media": {
+        "direct": [],
+        "gallery": [],
+        "variants": [],
+        "specValues": [],
+        "description": []
+      },
+      "publicInternalFields": {
+        "product": [
+          "stock_warning_threshold",
+          "stock_lower_limit",
+          "stock_upper_limit"
+        ],
+        "variants": [
+          "cost_price",
+          "barcode",
+          "stock_warning_threshold"
+        ]
+      },
+      "variantCount": 2
+    },
+    {
+      "id": "d7a5d0e8-82ce-4033-81e4-9f1427b389ef",
+      "name": "硬金典",
+      "priority": "P1",
+      "occurrences": [
+        {
+          "group": "recommended",
+          "position": 6
+        }
+      ],
+      "classification": "truly_missing_public_media",
+      "media": {
+        "direct": [],
+        "gallery": [],
+        "variants": [],
+        "specValues": [],
+        "description": []
+      },
+      "publicInternalFields": {
+        "product": [
+          "stock_warning_threshold",
+          "stock_lower_limit",
+          "stock_upper_limit"
+        ],
+        "variants": [
+          "cost_price",
+          "barcode",
+          "stock_warning_threshold"
+        ]
+      },
+      "variantCount": 1
+    },
+    {
+      "id": "ce8fe761-547a-4278-a24a-496e61011b68",
+      "name": "云烟紫云烟",
+      "priority": "P1",
+      "occurrences": [
+        {
+          "group": "recommended",
+          "position": 7
+        }
+      ],
+      "classification": "truly_missing_public_media",
+      "media": {
+        "direct": [],
+        "gallery": [],
+        "variants": [],
+        "specValues": [],
+        "description": []
+      },
+      "publicInternalFields": {
+        "product": [
+          "stock_warning_threshold",
+          "stock_lower_limit",
+          "stock_upper_limit"
+        ],
+        "variants": [
+          "cost_price",
+          "barcode",
+          "stock_warning_threshold"
+        ]
+      },
+      "variantCount": 2
+    },
+    {
+      "id": "c6d17a11-7078-4b74-abbf-36cba8a90ca8",
+      "name": "贵烟 中支",
+      "priority": "P1",
+      "occurrences": [
+        {
+          "group": "recommended",
+          "position": 8
+        }
+      ],
+      "classification": "truly_missing_public_media",
+      "media": {
+        "direct": [],
+        "gallery": [],
+        "variants": [],
+        "specValues": [],
+        "description": []
+      },
+      "publicInternalFields": {
+        "product": [
+          "stock_warning_threshold",
+          "stock_lower_limit",
+          "stock_upper_limit"
+        ],
+        "variants": [
+          "cost_price",
+          "barcode",
+          "stock_warning_threshold"
+        ]
+      },
+      "variantCount": 2
+    },
+    {
+      "id": "944d8a93-7f8b-4cae-8ee9-2b0d66a3bac2",
+      "name": "十二银钗",
+      "priority": "P2",
+      "occurrences": [
+        {
+          "group": "recommended",
+          "position": 10
+        }
+      ],
+      "classification": "truly_missing_public_media",
+      "media": {
+        "direct": [],
+        "gallery": [],
+        "variants": [],
+        "specValues": [],
+        "description": []
+      },
+      "publicInternalFields": {
+        "product": [
+          "stock_warning_threshold",
+          "stock_lower_limit",
+          "stock_upper_limit"
+        ],
+        "variants": [
+          "cost_price",
+          "barcode",
+          "stock_warning_threshold"
+        ]
+      },
+      "variantCount": 2
+    },
+    {
+      "id": "92418863-7867-4439-9ba5-7bc68267a536",
+      "name": "中支 平安宽窄",
+      "priority": "P2",
+      "occurrences": [
+        {
+          "group": "recommended",
+          "position": 11
+        }
+      ],
+      "classification": "truly_missing_public_media",
+      "media": {
+        "direct": [],
+        "gallery": [],
+        "variants": [],
+        "specValues": [],
+        "description": []
+      },
+      "publicInternalFields": {
+        "product": [
+          "stock_warning_threshold",
+          "stock_lower_limit",
+          "stock_upper_limit"
+        ],
+        "variants": [
+          "cost_price",
+          "barcode",
+          "stock_warning_threshold"
+        ]
+      },
+      "variantCount": 2
+    },
+    {
+      "id": "8762e84a-622b-4097-b383-f749011d2262",
+      "name": "宽窄 粗",
+      "priority": "P2",
+      "occurrences": [
+        {
+          "group": "recommended",
+          "position": 13
+        }
+      ],
+      "classification": "truly_missing_public_media",
+      "media": {
+        "direct": [],
+        "gallery": [],
+        "variants": [],
+        "specValues": [],
+        "description": []
+      },
+      "publicInternalFields": {
+        "product": [
+          "stock_warning_threshold",
+          "stock_lower_limit",
+          "stock_upper_limit"
+        ],
+        "variants": [
+          "cost_price",
+          "barcode",
+          "stock_warning_threshold"
+        ]
+      },
+      "variantCount": 2
+    },
+    {
+      "id": "7d3cbe55-b4bb-4c3d-8298-0ca537df8876",
+      "name": "真龙源起",
+      "priority": "P2",
+      "occurrences": [
+        {
+          "group": "recommended",
+          "position": 14
+        }
+      ],
+      "classification": "truly_missing_public_media",
+      "media": {
+        "direct": [],
+        "gallery": [],
+        "variants": [],
+        "specValues": [],
+        "description": []
+      },
+      "publicInternalFields": {
+        "product": [
+          "stock_warning_threshold",
+          "stock_lower_limit",
+          "stock_upper_limit"
+        ],
+        "variants": [
+          "cost_price",
+          "barcode",
+          "stock_warning_threshold"
+        ]
+      },
+      "variantCount": 2
+    },
+    {
+      "id": "75b69902-9656-4be8-ab31-3529693e7324",
+      "name": "经典喜",
+      "priority": "P2",
+      "occurrences": [
+        {
+          "group": "recommended",
+          "position": 15
+        }
+      ],
+      "classification": "truly_missing_public_media",
+      "media": {
+        "direct": [],
+        "gallery": [],
+        "variants": [],
+        "specValues": [],
+        "description": []
+      },
+      "publicInternalFields": {
+        "product": [
+          "stock_warning_threshold",
+          "stock_lower_limit",
+          "stock_upper_limit"
+        ],
+        "variants": [
+          "cost_price",
+          "barcode",
+          "stock_warning_threshold"
+        ]
+      },
+      "variantCount": 1
+    },
+    {
+      "id": "5d507055-09f3-4eb1-9e39-b200cd267ba4",
+      "name": "硬 红双喜",
+      "priority": "P2",
+      "occurrences": [
+        {
+          "group": "recommended",
+          "position": 16
+        }
+      ],
+      "classification": "truly_missing_public_media",
+      "media": {
+        "direct": [],
+        "gallery": [],
+        "variants": [],
+        "specValues": [],
+        "description": []
+      },
+      "publicInternalFields": {
+        "product": [
+          "stock_warning_threshold",
+          "stock_lower_limit",
+          "stock_upper_limit"
+        ],
+        "variants": [
+          "cost_price",
+          "barcode",
+          "stock_warning_threshold"
+        ]
+      },
+      "variantCount": 1
+    },
+    {
+      "id": "57902fbe-7907-41de-b54e-43d036c7f2b7",
+      "name": "黑软七",
+      "priority": "P2",
+      "occurrences": [
+        {
+          "group": "recommended",
+          "position": 17
+        }
+      ],
+      "classification": "truly_missing_public_media",
+      "media": {
+        "direct": [],
+        "gallery": [],
+        "variants": [],
+        "specValues": [],
+        "description": []
+      },
+      "publicInternalFields": {
+        "product": [
+          "stock_warning_threshold",
+          "stock_lower_limit",
+          "stock_upper_limit"
+        ],
+        "variants": [
+          "cost_price",
+          "barcode",
+          "stock_warning_threshold"
+        ]
+      },
+      "variantCount": 2
+    },
+    {
+      "id": "53bad999-7879-4952-af5a-cdd0e57fad03",
+      "name": "荷花中支",
+      "priority": "P2",
+      "occurrences": [
+        {
+          "group": "recommended",
+          "position": 18
+        }
+      ],
+      "classification": "truly_missing_public_media",
+      "media": {
+        "direct": [],
+        "gallery": [],
+        "variants": [],
+        "specValues": [],
+        "description": []
+      },
+      "publicInternalFields": {
+        "product": [
+          "stock_warning_threshold",
+          "stock_lower_limit",
+          "stock_upper_limit"
+        ],
+        "variants": [
+          "cost_price",
+          "barcode",
+          "stock_warning_threshold"
+        ]
+      },
+      "variantCount": 1
+    },
+    {
+      "id": "248da3b8-c522-432e-9abf-5c029bc2459c",
+      "name": "经典 红双喜",
+      "priority": "P2",
+      "occurrences": [
+        {
+          "group": "recommended",
+          "position": 19
+        }
+      ],
+      "classification": "truly_missing_public_media",
+      "media": {
+        "direct": [],
+        "gallery": [],
+        "variants": [],
+        "specValues": [],
+        "description": []
+      },
+      "publicInternalFields": {
+        "product": [
+          "stock_warning_threshold",
+          "stock_lower_limit",
+          "stock_upper_limit"
+        ],
+        "variants": [
+          "cost_price",
+          "barcode",
+          "stock_warning_threshold"
+        ]
+      },
+      "variantCount": 1
+    },
+    {
+      "id": "1f28b681-35c8-4bf4-8c27-e0a3e587b0b8",
+      "name": "荷中",
+      "priority": "P2",
+      "occurrences": [
+        {
+          "group": "recommended",
+          "position": 20
+        }
+      ],
+      "classification": "truly_missing_public_media",
+      "media": {
+        "direct": [],
+        "gallery": [],
+        "variants": [],
+        "specValues": [],
+        "description": []
+      },
+      "publicInternalFields": {
+        "product": [
+          "stock_warning_threshold",
+          "stock_lower_limit",
+          "stock_upper_limit"
+        ],
+        "variants": [
+          "cost_price",
+          "barcode",
+          "stock_warning_threshold"
+        ]
+      },
+      "variantCount": 1
+    },
+    {
+      "id": "077461b8-b8ba-489a-8ad5-8170234652ff",
+      "name": "上海喜",
+      "priority": "P2",
+      "occurrences": [
+        {
+          "group": "recommended",
+          "position": 22
+        }
+      ],
+      "classification": "truly_missing_public_media",
+      "media": {
+        "direct": [],
+        "gallery": [],
+        "variants": [],
+        "specValues": [],
+        "description": []
+      },
+      "publicInternalFields": {
+        "product": [
+          "stock_warning_threshold",
+          "stock_lower_limit",
+          "stock_upper_limit"
+        ],
+        "variants": [
+          "cost_price",
+          "barcode",
+          "stock_warning_threshold"
+        ]
+      },
+      "variantCount": 2
+    },
+    {
+      "id": "199bda9e-12b2-4ff9-bb70-04098deaade0",
+      "name": "蘭州",
+      "priority": "P2",
+      "occurrences": [
+        {
+          "group": "recommended",
+          "position": 24
+        }
+      ],
+      "classification": "truly_missing_public_media",
+      "media": {
+        "direct": [],
+        "gallery": [],
+        "variants": [],
+        "specValues": [],
+        "description": []
+      },
+      "publicInternalFields": {
+        "product": [
+          "stock_warning_threshold",
+          "stock_lower_limit",
+          "stock_upper_limit"
+        ],
+        "variants": [
+          "cost_price",
+          "barcode",
+          "stock_warning_threshold"
+        ]
+      },
+      "variantCount": 2
+    }
+  ]
+}

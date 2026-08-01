@@ -1,4 +1,5 @@
 import { AlertTriangle, Home, RefreshCw } from "lucide-react";
+import "@/styles/fixed-storefront-overlays.css";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
 type ErrorBoundaryFallbackProps = {
@@ -21,38 +22,33 @@ export default function ErrorBoundaryFallback({
   onReload,
 }: ErrorBoundaryFallbackProps) {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-background px-6 py-16 text-center">
-      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-danger)_10%,var(--theme-surface))]">
-        <AlertTriangle className="h-8 w-8 text-[var(--theme-danger)]" />
-      </div>
-      <div>
-        <h1 className="font-display text-xl font-bold text-foreground">
-          {title}
-        </h1>
-        <p className="mt-2 max-w-sm text-sm text-muted-foreground break-words">
-          {message}
-        </p>
+    <main className="sf-fixed-error-page">
+      <section className="sf-fixed-error-state" aria-labelledby="app-error-title">
+        <div className="sf-fixed-error-state__icon" aria-hidden>
+          <AlertTriangle size={24} />
+        </div>
+        <div className="sf-fixed-error-state__copy">
+          <h1 id="app-error-title">{title}</h1>
+          <p>{message}</p>
+        </div>
         {details ? (
-          <p className="mt-2 max-w-sm break-words rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
+          <p className="sf-fixed-error-state__details">
             {details}
           </p>
         ) : null}
-      </div>
-      <div className="flex flex-wrap justify-center gap-3">
-        <UnifiedButton
-          type="button"
-          onClick={onReload}
-          className="inline-flex items-center gap-2 rounded-full btn-theme-price px-6 py-3 text-sm font-bold text-[var(--theme-price-foreground)]"
-        >
-          <RefreshCw size={16} /> {refreshLabel}
-        </UnifiedButton>
-        <a
-          href={homeHref}
-          className="inline-flex items-center gap-2 rounded-full border border-border px-6 py-3 text-sm font-semibold text-foreground"
-        >
-          <Home size={16} /> {homeLabel}
-        </a>
-      </div>
-    </div>
+        <div className="sf-fixed-error-state__actions">
+          <UnifiedButton
+            type="button"
+            onClick={onReload}
+            className="sf-fixed-overlay-action is-primary"
+          >
+            <RefreshCw size={16} aria-hidden /> {refreshLabel}
+          </UnifiedButton>
+          <a href={homeHref} className="sf-fixed-overlay-action">
+            <Home size={16} aria-hidden /> {homeLabel}
+          </a>
+        </div>
+      </section>
+    </main>
   );
 }

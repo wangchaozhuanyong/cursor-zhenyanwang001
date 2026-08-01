@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import { Download, FileDown, Loader2, Pencil, PackageSearch, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import SearchBar from "@/components/SearchBar";
@@ -34,10 +35,17 @@ import { useAdminT } from "@/hooks/useAdminT";
 import { useAdminConfirm } from "@/modules/admin/context/AdminConfirmContext";
 import { AdminSideDrawer } from "@/modules/admin/components/AdminSideDrawer";
 import AdminProductForm from "@/modules/admin/pages/product/AdminProductForm";
+import AdminProductMediaRepairBar from "@/modules/admin/pages/product/AdminProductMediaRepairBar";
+import { fetchStorefrontReadiness } from "@/services/admin/homeOpsService";
 import {
+  DEFAULT_ADMIN_PRODUCTS_VIEW_STATE,
   readAdminProductsViewState,
+  readProductMediaFilterFromSearch,
+  readProductMediaRepairScopeFromSearch,
+  sortProductsByRepairPriority,
   writeAdminProductsViewState,
   type ProductCostFilter,
+  type ProductMediaFilter,
   type ProductSortValue,
   type ProductStockFilter,
 } from "@/modules/admin/pages/product/adminProductsViewState";
@@ -75,6 +83,11 @@ const STOCK_LABELS: Record<Exclude<ProductStockFilter, "">, string> = {
 const COST_LABELS: Record<Exclude<ProductCostFilter, "">, string> = {
   normal: "成本正常",
   missing: "缺成本",
+};
+
+const MEDIA_LABELS: Record<Exclude<ProductMediaFilter, "">, string> = {
+  normal: "图片正常",
+  missing: "缺商品图",
 };
 
 function statusMeta(status: ProductStatus | string, tText: (zh: string) => string) {
@@ -145,38 +158,106 @@ export default function AdminProducts() {
   const { tText } = useAdminT();
   const { confirm } = useAdminConfirm();
   const queryClient = useQueryClient();
-  const initialViewState = useMemo(() => readAdminProductsViewState(), []);
+  const [urlSearchParams, setUrlSearchParams] = useSearchParams();
+  const initialViewState = useMemo(() => {
+    const stored = readAdminProductsViewState();
+    const requestedMediaFilter = readProductMediaFilterFromSearch(window.location.search);
+    const requestedRepairScope = readProductMediaRepairScopeFromSearch(window.location.search);
+    if (requestedMediaFilter === "missing" && requestedRepairScope === "home") {
+      return {
+        ...DEFAULT_ADMIN_PRODUCTS_VIEW_STATE,
+        mediaFilter: requestedMediaFilter,
+      };
+    }
+    return requestedMediaFilter
+      ? { ...stored, page: 1, mediaFilter: requestedMediaFilter }
+      : stored;
+  }, []);
   const [page, setPage] = useState(initialViewState.page);
   const [search, setSearch] = useState(initialViewState.search);
   const [selected, setSelected] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState<"" | ProductStatus>(initialViewState.statusFilter);
   const [stockFilter, setStockFilter] = useState<ProductStockFilter>(initialViewState.stockFilter);
   const [costFilter, setCostFilter] = useState<ProductCostFilter>(initialViewState.costFilter);
+  const [mediaFilter, setMediaFilter] = useState<ProductMediaFilter>(initialViewState.mediaFilter);
   const [sort, setSort] = useState<ProductSortValue>(initialViewState.sort);
   const [exportingScope, setExportingScope] = useState<"filtered" | "selected" | null>(null);
   const [importOpen, setImportOpen] = useState(false);
   const [editingProductId, setEditingProductId] = useState("");
+  const mediaRepairMode = mediaFilter === "missing";
+  const homeMediaRepairMode = mediaRepairMode
+    && readProductMediaRepairScopeFromSearch(urlSearchParams.toString()) === "home";
+
+  const readinessQuery = useQuery({
+    queryKey: adminQueryKeys.storefrontReadiness(),
+    queryFn: fetchStorefrontReadiness,
+    enabled: homeMediaRepairMode,
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+  });
+  const repairPriorityIds = useMemo(
+    () => readinessQuery.data?.products.items.map((item) => item.id).filter(Boolean) ?? [],
+    [readinessQuery.data?.products.items],
+  );
+  const repairQueryIds = useMemo(
+    () => (
+      homeMediaRepairMode
+        ? (repairPriorityIds.length ? repairPriorityIds : ["__no_home_missing_products__"])
+        : undefined
+    ),
+    [homeMediaRepairMode, repairPriorityIds],
+  );
+  const queryPageSize = homeMediaRepairMode ? 50 : PAGE_SIZE;
 
   const queryParams = useMemo<ProductListParams>(() => ({
+    page: homeMediaRepairMode ? 1 : page,
+    pageSize: queryPageSize,
+    keyword: homeMediaRepairMode ? undefined : search.trim() || undefined,
+    status: homeMediaRepairMode ? undefined : statusFilter || undefined,
+    stock_status: homeMediaRepairMode ? undefined : stockFilter || undefined,
+    cost_status: homeMediaRepairMode ? undefined : costFilter || undefined,
+    media_status: mediaFilter || undefined,
+    sort: homeMediaRepairMode ? DEFAULT_PRODUCT_LIST_SORT : sort,
+    ids: repairQueryIds,
+  }), [
+    costFilter,
+    homeMediaRepairMode,
+    mediaFilter,
     page,
-    pageSize: PAGE_SIZE,
-    keyword: search.trim() || undefined,
-    status: statusFilter || undefined,
-    stock_status: stockFilter || undefined,
-    cost_status: costFilter || undefined,
+    queryPageSize,
+    repairQueryIds,
+    search,
     sort,
-  }), [costFilter, page, search, sort, statusFilter, stockFilter]);
+    statusFilter,
+    stockFilter,
+  ]);
 
   const mfaStepUpPending = useAdminMfaStepUpPending();
 
   useEffect(() => {
-    writeAdminProductsViewState({ page, search, statusFilter, stockFilter, costFilter, sort });
-  }, [costFilter, page, search, sort, statusFilter, stockFilter]);
+    writeAdminProductsViewState({ page, search, statusFilter, stockFilter, costFilter, mediaFilter, sort });
+  }, [costFilter, mediaFilter, page, search, sort, statusFilter, stockFilter]);
+
+  useEffect(() => {
+    const currentMediaFilter = readProductMediaFilterFromSearch(urlSearchParams.toString());
+    const scopeShouldClear = mediaFilter !== "missing" && urlSearchParams.has("repair_scope");
+    if (
+      currentMediaFilter === mediaFilter
+      && (mediaFilter || !urlSearchParams.has("media_status"))
+      && !scopeShouldClear
+    ) return;
+    const next = new URLSearchParams(urlSearchParams);
+    if (mediaFilter) next.set("media_status", mediaFilter);
+    else next.delete("media_status");
+    if (mediaFilter !== "missing") next.delete("repair_scope");
+    setUrlSearchParams(next, { replace: true });
+  }, [mediaFilter, setUrlSearchParams, urlSearchParams]);
 
   const productsQuery = useQuery({
     queryKey: adminQueryKeys.products(queryParams),
     queryFn: () => fetchProducts(queryParams),
-    placeholderData: (previous) => previous,
+    enabled: !homeMediaRepairMode || readinessQuery.isSuccess,
+    placeholderData: (previous) => (homeMediaRepairMode ? undefined : previous),
     staleTime: 60_000,
     refetchOnMount: true,
     refetchInterval: mfaStepUpPending ? false : 120_000,
@@ -219,8 +300,16 @@ export default function AdminProducts() {
     onError: (error) => toast.error(toastErrorMessage(error, tText("批量更新状态失败"))),
   });
 
-  const products = useMemo(() => productsQuery.data?.list || [], [productsQuery.data?.list]);
-  const total = productsQuery.data?.total || 0;
+  const products = useMemo(
+    () => sortProductsByRepairPriority(
+      productsQuery.data?.list || [],
+      homeMediaRepairMode ? repairPriorityIds : [],
+    ),
+    [homeMediaRepairMode, productsQuery.data?.list, repairPriorityIds],
+  );
+  const total = homeMediaRepairMode
+    ? Number(readinessQuery.data?.products.missing_count || 0)
+    : productsQuery.data?.total || 0;
   const drawerOpen = Boolean(editingProductId);
   const editingProduct = useMemo(
     () => products.find((product) => product.id === editingProductId) || null,
@@ -243,7 +332,7 @@ export default function AdminProducts() {
   const selectedOffShelfCount = selectedOffShelfIdsOnPage.length;
   const selectedNonOffShelfCountOnPage = Math.max(0, selectedProductsOnPage.length - selectedOffShelfCount);
   const hasProductFilters = Boolean(
-    search.trim() || statusFilter || stockFilter || costFilter || sort !== DEFAULT_PRODUCT_LIST_SORT,
+    search.trim() || statusFilter || stockFilter || costFilter || mediaFilter || sort !== DEFAULT_PRODUCT_LIST_SORT,
   );
 
   const filterChips = useMemo(() => {
@@ -252,11 +341,12 @@ export default function AdminProducts() {
     if (statusFilter) chips.push({ key: "status", label: `${tText("状态")}：${tText(PRODUCT_STATUS_LABELS[statusFilter])}` });
     if (stockFilter) chips.push({ key: "stock", label: `${tText("库存")}：${tText(STOCK_LABELS[stockFilter])}` });
     if (costFilter) chips.push({ key: "cost", label: `${tText("成本")}：${tText(COST_LABELS[costFilter])}` });
+    if (mediaFilter) chips.push({ key: "media", label: `${tText("图片")}：${tText(MEDIA_LABELS[mediaFilter])}` });
     if (sort !== DEFAULT_PRODUCT_LIST_SORT) {
       chips.push({ key: "sort", label: `${tText("排序")}：${tText(PRODUCT_SORT_LABELS[sort] || sort)}` });
     }
     return chips;
-  }, [costFilter, search, sort, statusFilter, stockFilter, tText]);
+  }, [costFilter, mediaFilter, search, sort, statusFilter, stockFilter, tText]);
 
   const emptyGuide = useLocalizedAdminEmptyGuide(
     hasProductFilters ? ADMIN_EMPTY_GUIDES.productsFiltered : ADMIN_EMPTY_GUIDES.products,
@@ -309,6 +399,7 @@ export default function AdminProducts() {
     setStatusFilter("");
     setStockFilter("");
     setCostFilter("");
+    setMediaFilter("");
     setSort(DEFAULT_PRODUCT_LIST_SORT);
     setPage(1);
   };
@@ -323,17 +414,29 @@ export default function AdminProducts() {
     if (key === "status") setStatusFilter("");
     if (key === "stock") setStockFilter("");
     if (key === "cost") setCostFilter("");
+    if (key === "media") setMediaFilter("");
     if (key === "sort") setSort(DEFAULT_PRODUCT_LIST_SORT);
     setPage(1);
   };
 
   const exportFilterParams = useMemo<ProductListParams>(() => ({
-    keyword: search.trim() || undefined,
-    status: statusFilter || undefined,
-    stock_status: stockFilter || undefined,
-    cost_status: costFilter || undefined,
-    sort: sort !== DEFAULT_PRODUCT_LIST_SORT ? sort : undefined,
-  }), [costFilter, search, sort, statusFilter, stockFilter]);
+    keyword: homeMediaRepairMode ? undefined : search.trim() || undefined,
+    status: homeMediaRepairMode ? undefined : statusFilter || undefined,
+    stock_status: homeMediaRepairMode ? undefined : stockFilter || undefined,
+    cost_status: homeMediaRepairMode ? undefined : costFilter || undefined,
+    media_status: mediaFilter || undefined,
+    sort: !homeMediaRepairMode && sort !== DEFAULT_PRODUCT_LIST_SORT ? sort : undefined,
+    ids: homeMediaRepairMode ? repairPriorityIds : undefined,
+  }), [
+    costFilter,
+    homeMediaRepairMode,
+    mediaFilter,
+    repairPriorityIds,
+    search,
+    sort,
+    statusFilter,
+    stockFilter,
+  ]);
 
   const handleExportFiltered = async () => {
     setExportingScope("filtered");
@@ -477,6 +580,7 @@ export default function AdminProducts() {
     const checked = selected.includes(product.id);
     const missingCost = Number(product.missing_cost_sku_count || 0) > 0;
     const stockBadge = getProductStockBadge(product);
+    const productImage = product.cover_image || product.effective_cover_image || "";
     const margin = getDisplayMargin(product);
     const marginClass = getMarginClass(margin);
 
@@ -490,10 +594,10 @@ export default function AdminProducts() {
             aria-label={`选择${product.name}`}
             className="mt-1"
           />
-          {product.cover_image ? (
-            <SafeImage src={product.cover_image} alt={product.name} className="h-12 w-12 shrink-0 rounded-lg border border-border object-cover" />
+          {productImage ? (
+            <SafeImage src={productImage} alt={product.name} className="h-12 w-12 shrink-0 rounded-lg border border-border object-cover" />
           ) : (
-            <div className="h-12 w-12 shrink-0 rounded-lg border border-border bg-secondary" />
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-border bg-secondary text-[10px] text-muted-foreground"><Tx>缺图</Tx></div>
           )}
           <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-2">
@@ -501,6 +605,7 @@ export default function AdminProducts() {
               <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${meta.className}`}>{meta.label}</span>
             </div>
             <p className="mt-0.5 text-xs text-muted-foreground">{product.category_name || "-"}</p>
+            {!productImage ? <span className={`mt-1 inline-flex rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${THEME_BADGE_DANGER}`}><Tx>缺商品图</Tx></span> : null}
           </div>
         </div>
 
@@ -554,9 +659,14 @@ export default function AdminProducts() {
         hint={<Tx>管理商品上下架、库存与成本，支持导入导出与批量操作。</Tx>}
         toolbar={(
         <div className="flex flex-wrap items-center gap-2">
-          <AdminFilterButton onClick={handleExportFiltered} disabled={exportingScope !== null} variant="card" className="gap-1 font-medium disabled:opacity-60">
+          <AdminFilterButton
+            onClick={handleExportFiltered}
+            disabled={exportingScope !== null || (homeMediaRepairMode && !readinessQuery.isSuccess)}
+            variant="card"
+            className="gap-1 font-medium disabled:opacity-60"
+          >
             {exportingScope === "filtered" ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
-            <Tx>导出筛选结果</Tx>
+            <Tx>{homeMediaRepairMode ? "导出缺图清单" : "导出筛选结果"}</Tx>
           </AdminFilterButton>
           <PermissionGate permission="product.manage">
             <AdminFilterButton onClick={() => void downloadProductCsvTemplate()} variant="card" className="gap-1 font-medium">
@@ -581,7 +691,7 @@ export default function AdminProducts() {
           <AdminFilterButton onClick={() => void productsQuery.refetch()} variant="card" className="font-medium"><Tx>刷新</Tx></AdminFilterButton>
         </div>
       )}
-      filters={(
+      filters={homeMediaRepairMode ? undefined : (
         <div className="space-y-2">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <SearchBar
@@ -610,12 +720,38 @@ export default function AdminProducts() {
                 <option value="normal"><Tx>成本正常</Tx></option>
                 <option value="missing"><Tx>缺成本</Tx></option>
               </AdminFilterSelect>
+              <AdminFilterSelect value={mediaFilter} onChange={(e) => { setMediaFilter(e.target.value as ProductMediaFilter); setPage(1); }} variant="card">
+                <option value=""><Tx>全部图片</Tx></option>
+                <option value="normal"><Tx>图片正常</Tx></option>
+                <option value="missing"><Tx>缺商品图</Tx></option>
+              </AdminFilterSelect>
             </div>
           </div>
           <AdminFilterSummaryBar chips={filterChips} onClearAll={clearFilters} onRemove={removeFilterChip} />
         </div>
       )}
       >
+
+      {homeMediaRepairMode ? (
+        <AdminProductMediaRepairBar
+          total={total}
+          visibleCount={products.length}
+          firstProductName={products[0]?.name}
+          loading={readinessQuery.isLoading || (productsQuery.isLoading && !productsQuery.data)}
+          onStart={() => {
+            const firstProduct = products[0];
+            if (firstProduct) openProductDrawer(firstProduct.id);
+          }}
+          onExit={() => {
+            const next = new URLSearchParams(urlSearchParams);
+            next.delete("media_status");
+            next.delete("repair_scope");
+            setUrlSearchParams(next, { replace: true });
+            setMediaFilter("");
+            setPage(1);
+          }}
+        />
+      ) : null}
 
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-xs text-muted-foreground">{tText("已选")} {selected.length} {tText("件")}</span>
@@ -676,7 +812,11 @@ export default function AdminProducts() {
         onOpenChange={(open) => {
           if (!open) closeProductDrawer();
         }}
-        title={editingProductId === "new" ? tText("新增商品") : editingProduct?.name || tText("编辑商品")}
+        title={editingProductId === "new"
+          ? tText("新增商品")
+          : homeMediaRepairMode && editingProduct
+            ? `${tText("补充商品图片")}：${editingProduct.name}`
+            : editingProduct?.name || tText("编辑商品")}
         className="lg:w-[min(86vw,1180px)] xl:w-[min(82vw,1280px)]"
         bodyClassName="bg-[var(--theme-bg)] px-3 py-4 sm:px-5"
       >
@@ -688,6 +828,7 @@ export default function AdminProducts() {
             onClose={closeProductDrawer}
             onSaved={async () => {
               await productsQuery.refetch();
+              await queryClient.invalidateQueries({ queryKey: adminQueryKeys.storefrontReadiness() });
             }}
             onDeleted={async () => {
               setSelected((prev) => prev.filter((id) => id !== editingProductId));
@@ -787,7 +928,9 @@ export default function AdminProducts() {
             <AdminTableSortHeader label={tText("操作")} sortable={false} align="right" className={ACTION_COLUMN_CLASS} />
           </tr>
         )}
-        footer={<Pagination total={total} page={page} pageSize={PAGE_SIZE} onPageChange={setPage} onPageSizeChange={() => undefined} showPageSizeSelect={false} />}
+        footer={homeMediaRepairMode
+          ? undefined
+          : <Pagination total={total} page={page} pageSize={PAGE_SIZE} onPageChange={setPage} onPageSizeChange={() => undefined} showPageSizeSelect={false} />}
         renderMobileCard={renderMobileCard}
         renderRow={(product) => {
           const displayStatus = getProductDisplayStatus(product);
@@ -796,6 +939,7 @@ export default function AdminProducts() {
           const checked = selected.includes(product.id);
           const missingCost = Number(product.missing_cost_sku_count || 0) > 0;
           const stockBadge = getProductStockBadge(product);
+          const productImage = product.cover_image || product.effective_cover_image || "";
           const margin = getDisplayMargin(product);
           const marginClass = getMarginClass(margin);
 
@@ -804,9 +948,10 @@ export default function AdminProducts() {
               <td className="w-10"><input type="checkbox" checked={checked} onChange={() => toggleSelect(product.id)} aria-label={`选择${product.name}`} /></td>
               <td className={adminTdClassName("max-w-[14rem]", "left")}>
                 <div className="flex items-center gap-3">
-                  {product.cover_image ? <SafeImage src={product.cover_image} alt={product.name} className="h-11 w-11 shrink-0 rounded-lg border border-border object-cover" /> : <div className="h-11 w-11 shrink-0 rounded-lg border border-border bg-secondary" />}
+                  {productImage ? <SafeImage src={productImage} alt={product.name} className="h-11 w-11 shrink-0 rounded-lg border border-border object-cover" /> : <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-border bg-secondary text-[10px] text-muted-foreground"><Tx>缺图</Tx></div>}
                   <div className="min-w-0">
                     <AdminTableCell value={product.name} fullText={product.name} maxWidth="13.5rem" />
+                    {!productImage ? <span className={`mt-1 inline-flex rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${THEME_BADGE_DANGER}`}><Tx>缺商品图</Tx></span> : null}
                   </div>
                 </div>
               </td>

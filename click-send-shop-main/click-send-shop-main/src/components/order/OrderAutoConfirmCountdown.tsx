@@ -124,7 +124,7 @@ export function OrderAutoConfirmCountdown({
               )}
         </p>
         {!compact && order.auto_confirm_receive_days != null ? (
-          <p className="mt-0.5 text-[11px] opacity-80">
+          <p className="mt-0.5 text-xs opacity-80">
             {copy.rulePrefix} {order.auto_confirm_receive_days} {copy.ruleSuffix}
           </p>
         ) : null}

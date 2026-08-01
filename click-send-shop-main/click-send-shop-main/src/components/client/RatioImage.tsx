@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type CSSProperties, type ImgHTMLAttributes, type Ref } from "react";
 import { ImageOff } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { BannerPictureSource } from "@/utils/bannerMedia";
 
 export type ClientImageRatio =
   | "var(--theme-image-ratio, 1 / 1)"
@@ -24,6 +25,7 @@ export type RatioImageProps = {
   fetchPriority?: "high" | "low" | "auto";
   srcSet?: string;
   sizes?: string;
+  sources?: BannerPictureSource[];
   width?: number;
   height?: number;
   imgRef?: Ref<HTMLImageElement>;
@@ -57,6 +59,7 @@ export default function RatioImage({
   fetchPriority = "auto",
   srcSet,
   sizes,
+  sources = [],
   width,
   height,
   imgRef,
@@ -106,42 +109,49 @@ export default function RatioImage({
         <div className={cn("sf-next-ratio-image__loading", placeholderClassName)} aria-hidden="true" />
       ) : null}
       {shouldShowImage ? (
-        <img
-          ref={imgRef}
-          src={displaySrc}
-          srcSet={displaySrc === normalizedSrc ? srcSet : undefined}
-          alt={alt}
-          width={width}
-          height={height}
-          loading={loading}
-          decoding="async"
-          draggable={false}
-          sizes={sizes}
-          {...fetchPriorityProps}
-          className={cn("sf-next-ratio-image__img", imgClassName)}
-          style={imageStyle}
-          onLoad={(event) => {
-            setIsLoaded(true);
-            onLoad?.(event);
-          }}
-          onError={(event) => {
-            if (normalizedFallbackSrc && displaySrc !== normalizedFallbackSrc) {
-              setDisplaySrc(normalizedFallbackSrc);
-              setHasError(false);
+        <picture className="contents">
+          {displaySrc === normalizedSrc
+            ? sources.map((source) => (
+                <source key={`${source.media}:${source.srcSet}`} media={source.media} srcSet={source.srcSet} />
+              ))
+            : null}
+          <img
+            ref={imgRef}
+            src={displaySrc}
+            srcSet={displaySrc === normalizedSrc ? srcSet : undefined}
+            alt={alt}
+            width={width}
+            height={height}
+            loading={loading}
+            decoding="async"
+            draggable={false}
+            sizes={sizes}
+            {...fetchPriorityProps}
+            className={cn("sf-next-ratio-image__img", imgClassName)}
+            style={imageStyle}
+            onLoad={(event) => {
+              setIsLoaded(true);
+              onLoad?.(event);
+            }}
+            onError={(event) => {
+              if (normalizedFallbackSrc && displaySrc !== normalizedFallbackSrc) {
+                setDisplaySrc(normalizedFallbackSrc);
+                setHasError(false);
+                setIsLoaded(false);
+                return;
+              }
+              if (normalizedFinalFallbackSrc && displaySrc !== normalizedFinalFallbackSrc) {
+                setDisplaySrc(normalizedFinalFallbackSrc);
+                setHasError(false);
+                setIsLoaded(false);
+                return;
+              }
+              setHasError(true);
               setIsLoaded(false);
-              return;
-            }
-            if (normalizedFinalFallbackSrc && displaySrc !== normalizedFinalFallbackSrc) {
-              setDisplaySrc(normalizedFinalFallbackSrc);
-              setHasError(false);
-              setIsLoaded(false);
-              return;
-            }
-            setHasError(true);
-            setIsLoaded(false);
-            onError?.(event);
-          }}
-        />
+              onError?.(event);
+            }}
+          />
+        </picture>
       ) : (
         <div className={cn("sf-next-ratio-image__placeholder", placeholderClassName)}>
           <ImageOff size={18} aria-hidden />

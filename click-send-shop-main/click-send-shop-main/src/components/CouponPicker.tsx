@@ -100,7 +100,7 @@ function CouponListBody(props: {
               </div>
             ) : null}
             {!usable && (
-              <p className="mt-1 px-2 text-[11px] text-[var(--theme-danger)]">
+              <p className="mt-1 px-2 text-xs text-[var(--theme-danger)]">
                 {coupon.reason || (totalAmount < coupon.condition ? `还差 RM ${coupon.condition - totalAmount} 可用` : "当前订单无运费可抵扣")}
               </p>
             )}
@@ -189,7 +189,7 @@ export default function CouponPicker({ totalAmount, shippingFee = 0, selectedCou
                   {selectedDiscountAmount > 0 ? `-RM ${selectedDiscountAmount}` : "结算页确认"}
                 </span>
               ) : usableCount > 0 ? (
-                <span className="rounded-full bg-[color-mix(in_srgb,var(--theme-danger)_12%,var(--theme-surface))] px-2.5 py-1 text-[11px] font-medium text-[var(--theme-danger)]">{usableCount} 张可用</span>
+                <span className="rounded-full bg-[color-mix(in_srgb,var(--theme-danger)_12%,var(--theme-surface))] px-2.5 py-1 text-xs font-medium text-[var(--theme-danger)]">{usableCount} 张可用</span>
               ) : (
                 <span className="text-xs text-[var(--theme-text-muted-on-surface)]">暂无可用</span>
               )}

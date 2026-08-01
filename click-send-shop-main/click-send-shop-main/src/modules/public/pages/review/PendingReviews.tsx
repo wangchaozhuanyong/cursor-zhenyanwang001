@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 
-import { CheckCircle2, MessageSquareText, PackageCheck, RefreshCw, Star } from "lucide-react";
+import { MessageSquareText, PackageCheck, RefreshCw } from "lucide-react";
 import * as reviewService from "@/services/reviewService";
 import type { PendingReviewItem } from "@/types/review";
 import ReviewComposerSheet from "@/components/review/ReviewComposerSheet";
@@ -67,15 +67,10 @@ export default function PendingReviews() {
         </UnifiedButton>
       }
     >
-      <div className="mx-auto w-full max-w-3xl space-y-4">
-        <section className="sf-next-pending-reviews-hero">
-          <span className="sf-next-pending-reviews-hero__icon" aria-hidden>
-            <Star size={22} />
-          </span>
-          <div className="min-w-0">
-            <p>评价中心</p>
-            <h2>{items.length} 件商品待评价</h2>
-          </div>
+      <div className="sf-next-pending-reviews-main">
+        <section className="sf-next-pending-reviews-summary" aria-live="polite">
+          <strong>{items.length}</strong>
+          <span>件商品待评价</span>
         </section>
 
         {loading ? (
@@ -177,25 +172,6 @@ export default function PendingReviews() {
           </div>
         ) : null}
 
-        {!loading && !error ? (
-          <section className="sf-next-pending-reviews-guide" aria-label="评价说明">
-            <h2>评价规范</h2>
-            <ul>
-              <li>
-                <CheckCircle2 size={16} aria-hidden />
-                <span>确认收货后，符合评价条件的商品会自动进入待评价列表。</span>
-              </li>
-              <li>
-                <CheckCircle2 size={16} aria-hidden />
-                <span>提交后评价会进入审核流程，通过后展示在商品页。</span>
-              </li>
-              <li>
-                <CheckCircle2 size={16} aria-hidden />
-                <span>已评价商品会从待评价列表移除，不会重复提醒。</span>
-              </li>
-            </ul>
-          </section>
-        ) : null}
       </div>
       <ReviewComposerSheet
         open={!!orderItemId}

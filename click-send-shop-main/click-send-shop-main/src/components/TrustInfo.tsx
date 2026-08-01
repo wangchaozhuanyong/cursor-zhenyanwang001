@@ -62,7 +62,7 @@ export default function TrustInfo({ className = "", variant = "row" }: Props) {
           <it.icon size={14} className="mt-0.5 flex-shrink-0 text-[var(--theme-success)]" />
           <div className="min-w-0">
             <p className="font-medium text-foreground">{it.title}</p>
-            <p className="mt-0.5 line-clamp-3 text-[11px] leading-snug text-muted-foreground">{it.desc}</p>
+            <p className="mt-0.5 line-clamp-3 text-xs leading-snug text-muted-foreground">{it.desc}</p>
           </div>
         </div>
       ))}

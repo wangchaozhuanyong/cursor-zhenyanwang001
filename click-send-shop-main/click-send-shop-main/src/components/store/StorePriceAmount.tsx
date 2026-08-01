@@ -13,7 +13,7 @@ type Props = {
 export default function StorePriceAmount({
   amount,
   amountClassName = "sf-next-price__amount",
-  currencyClassName = "sf-next-price__currency mr-0.5 text-[11px] leading-none sm:text-xs",
+  currencyClassName = "sf-next-price__currency mr-0.5 text-xs leading-none sm:text-xs",
   className,
 }: Props) {
   return (

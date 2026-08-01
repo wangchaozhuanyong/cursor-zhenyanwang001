@@ -31,6 +31,7 @@ function withViteBase(path: string): string {
 }
 
 const FALLBACK_LOGO_SRC = withViteBase("/assets/tiktok-logo.jpeg");
+const HERO_IMAGE_SRC = withViteBase("/assets/tiktok-hero-platform.webp");
 const OFFICIAL_TARGET = "/";
 const SUPPORT_TARGET = "/support-download?tab=support";
 
@@ -252,6 +253,7 @@ export default function TikTokLanding() {
     const root = document.documentElement;
     root.setAttribute("data-app-scope", "store");
     root.setAttribute("data-storefront-ui", "next");
+    root.setAttribute("data-fixed-storefront", "true");
     window.dispatchEvent(new CustomEvent("app:scope-changed", { detail: { scope: "store" } }));
   }, []);
 
@@ -349,6 +351,17 @@ export default function TikTokLanding() {
       ) : null}
 
       <section className="tiktok-v2-hero">
+        <StableImage
+          src={HERO_IMAGE_SRC}
+          alt=""
+          width={1920}
+          height={820}
+          className="tiktok-v2-hero__media"
+          imgClassName="h-full w-full object-cover"
+          loading="eager"
+          fetchPriority="high"
+          objectFit="cover"
+        />
         <div className="tiktok-v2-hero__body">
           <span>Malaysia living guide</span>
           <h1>在马来西亚的生活服务入口</h1>
@@ -362,11 +375,6 @@ export default function TikTokLanding() {
               客服咨询
             </button>
           </div>
-        </div>
-        <div className="tiktok-v2-hero__art" aria-hidden>
-          <span className="tiktok-v2-hero__shape tiktok-v2-hero__shape--primary" />
-          <span className="tiktok-v2-hero__shape tiktok-v2-hero__shape--warm" />
-          <span className="tiktok-v2-hero__shape tiktok-v2-hero__shape--mint" />
         </div>
       </section>
 

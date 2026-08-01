@@ -156,26 +156,23 @@ export default function Notifications() {
     <span className="inline-flex items-center gap-2">
       <span>消息通知</span>
       {unreadBadgeText ? (
-        <span className="inline-flex h-5 min-w-[24px] items-center justify-center rounded-full btn-theme-price px-1.5 text-[10px] font-bold leading-none text-[var(--theme-price-foreground)]">
-          {unreadBadgeText}
+        <span className="sf-next-notifications-unread-count" aria-label={`${unreadCount} 条未读消息`}>
+          未读 {unreadBadgeText}
         </span>
       ) : null}
     </span>
   );
 
   return (
-    <div className="pb-6">
+    <>
       <StoreAccountLayout
         title={notificationTitle}
         onBack={goBack}
         className="sf-next-page sf-next-route-page sf-next-account-route-page sf-next-notifications-page"
-        mainClassName="sf-next-account-main sm:px-4 xl:py-6"
+        mainClassName="sf-next-account-main sm:px-4 xl:pb-12 xl:pt-6"
       >
         <div className="sf-next-notifications-toolbar">
-          <div>
-            <strong>消息分类</strong>
-            <span>{unreadCount > 0 ? `还有 ${unreadCount} 条未读` : "暂无未读消息"}</span>
-          </div>
+          <p>{unreadCount > 0 ? `还有 ${unreadCount} 条消息未读` : "消息均已读"}</p>
           {unreadCount > 0 ? (
             <UnifiedButton type="button" onClick={markAllAsRead} className="sf-next-notifications-mark-read">
               <Check size={15} aria-hidden />
@@ -202,26 +199,13 @@ export default function Notifications() {
                   <Icon size={14} aria-hidden className="shrink-0" />
                   <span className="truncate">{item.label}</span>
                 </span>
-                <span className="shrink-0 text-[11px] font-black">{filterCounts[item.key]}</span>
+                <span className="shrink-0 text-xs font-black">{filterCounts[item.key]}</span>
               </UnifiedButton>
             );
           })}
         </div>
         {!loading && notifications.length === 0 && (
           <section className="sf-next-state-panel sf-next-account-status-panel sf-next-notifications-empty">
-            <div className="sf-next-notifications-empty-lines" aria-hidden>
-              {[
-                ["订单消息", "付款、发货、售后状态"],
-                ["优惠提醒", "优惠券、活动和积分更新"],
-                ["系统通知", "账号、安全和服务说明"],
-              ].map(([title, text]) => (
-                <span key={title}>
-                  <i />
-                  <b>{title}</b>
-                  <em>{text}</em>
-                </span>
-              ))}
-            </div>
             <span className="sf-next-state-panel__icon" aria-hidden>
               <Bell size={28} />
             </span>
@@ -244,28 +228,26 @@ export default function Notifications() {
             const Icon = config.icon;
             const display = normalizeNotificationDisplay(n.title, n.content);
             return (
-              <div
+              <UnifiedButton
                 key={n.id}
                 style={{ animationDelay: `${i * 40}ms` }}
                 onClick={() => handleOpenNotification(n.id, n.link_url)}
                 className={`sf-next-notifications-card ${n.is_read ? "" : "is-unread"}`}
               >
                 {!n.is_read && (
-                  <div className="absolute right-4 top-4 h-2 w-2 rounded-full bg-[var(--theme-price)]" />
+                  <span className="sf-next-notifications-unread-dot" aria-label="未读" />
                 )}
-                <div className="flex gap-3">
-                  <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl ${config.color}`}>
-                    <Icon size={18} />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-foreground">{display.title}</p>
-                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground line-clamp-2">
-                      {display.content}
-                    </p>
-                    <p className="mt-2 text-[11px] text-muted-foreground/60">{formatDateTime(n.created_at)}</p>
-                  </div>
+                <div className={`sf-next-notifications-card__icon ${config.color}`}>
+                  <Icon size={18} aria-hidden />
                 </div>
-              </div>
+                <div className="sf-next-notifications-card__copy">
+                  <div className="sf-next-notifications-card__heading">
+                    <p>{display.title}</p>
+                    <time>{formatDateTime(n.created_at)}</time>
+                  </div>
+                  <p className="sf-next-notifications-card__content">{display.content}</p>
+                </div>
+              </UnifiedButton>
             );
           })}
         </div>
@@ -287,6 +269,6 @@ export default function Notifications() {
           </LazyNotificationsAppModal>
         </Suspense>
       ) : null}
-    </div>
+    </>
   );
 }

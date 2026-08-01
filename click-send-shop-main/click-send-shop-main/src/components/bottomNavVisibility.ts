@@ -12,3 +12,11 @@ export function shouldHideBottomNav(pathname: string): boolean {
     canonicalPathname.startsWith("/promotions/")
   );
 }
+
+export function shouldSkipIdleTabRoutePreload(): boolean {
+  if (typeof navigator === "undefined" || typeof window === "undefined") return false;
+  const minScreen = Math.min(window.screen?.width || window.innerWidth, window.screen?.height || window.innerHeight);
+  const minViewport = Math.min(window.innerWidth || minScreen, window.innerHeight || minScreen);
+  const compactEdge = Math.min(minScreen || minViewport, minViewport || minScreen);
+  return navigator.maxTouchPoints > 0 && compactEdge > 0 && compactEdge <= 768;
+}

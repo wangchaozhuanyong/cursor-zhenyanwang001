@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { Check, Settings2, ShieldCheck } from "lucide-react";
+import "@/styles/fixed-storefront-overlays.css";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import {
   DEFAULT_TRACKING_CONSENT,
@@ -66,60 +68,68 @@ export default function CookieConsentBanner() {
 
   return (
     <div
-      className="fixed inset-x-0 z-[70] px-4 pb-4"
+      className="sf-fixed-consent"
       style={{ bottom: fixedBottom }}
     >
-      <div className="mx-auto max-w-3xl rounded-2xl border border-border bg-card/95 p-4 text-card-foreground shadow-2xl backdrop-blur-md md:p-5">
-        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-foreground">浏览器 Cookie / 同意管理</p>
-            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+      <section className="sf-fixed-consent__panel" aria-labelledby="tracking-consent-title">
+        <div className="sf-fixed-consent__header">
+          <div className="sf-fixed-consent__copy">
+            <p id="tracking-consent-title">Cookie 与隐私选择</p>
+            <p>
               我们会使用必要 Cookie 保持网站正常运行。只有在你同意后，才会加载分析或广告追踪脚本。详细说明可查看{" "}
-              <Link to={siteInfo.privacyPolicyPath || "/content/privacy-policy"} className="font-medium text-theme-price underline-offset-2 hover:underline">
+              <Link to={siteInfo.privacyPolicyPath || "/content/privacy-policy"}>
                 隐私政策
               </Link>
               。
             </p>
           </div>
-          <div className="flex flex-shrink-0 flex-wrap gap-2 md:justify-end">
-            <UnifiedButton type="button" onClick={rejectOptional} className="rounded-full border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-secondary">
+          <div className="sf-fixed-consent__actions">
+            <UnifiedButton type="button" onClick={rejectOptional} className="sf-fixed-overlay-action">
+              <ShieldCheck size={15} aria-hidden />
               仅必要
             </UnifiedButton>
-            <UnifiedButton type="button" onClick={() => setExpanded((v) => !v)} className="rounded-full border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-secondary">
+            <UnifiedButton
+              type="button"
+              onClick={() => setExpanded((v) => !v)}
+              className="sf-fixed-overlay-action"
+              aria-expanded={expanded}
+            >
+              <Settings2 size={15} aria-hidden />
               自定义
             </UnifiedButton>
-            <UnifiedButton type="button" onClick={acceptAll} className="rounded-full btn-theme-price px-4 py-2 text-xs font-semibold text-[var(--theme-price-foreground)] shadow-[0_18px_34px_-26px_var(--theme-price)]">
+            <UnifiedButton type="button" onClick={acceptAll} className="sf-fixed-overlay-action is-primary">
+              <Check size={15} aria-hidden />
               接受全部
             </UnifiedButton>
           </div>
         </div>
 
         {expanded && (
-          <div className="mt-4 rounded-xl border border-border bg-background/70 p-3">
-            <div className="space-y-3">
+          <div className="sf-fixed-consent__preferences">
+            <div className="sf-fixed-consent__preference-list">
               {categories.map((item) => (
-                <label key={item.key} className="flex cursor-pointer items-start gap-3">
+                <label key={item.key} className="sf-fixed-consent__preference">
                   <input
                     type="checkbox"
                     checked={draft[item.key]}
                     onChange={(e) => setDraft((prev) => ({ ...prev, [item.key]: e.target.checked }))}
-                    className="mt-1 h-4 w-4 accent-[var(--theme-primary)]"
                   />
                   <span>
-                    <span className="block text-xs font-semibold text-foreground">{item.label}</span>
-                    <span className="mt-0.5 block text-[11px] leading-relaxed text-muted-foreground">{item.description}</span>
+                    <strong>{item.label}</strong>
+                    <small>{item.description}</small>
                   </span>
                 </label>
               ))}
             </div>
-            <div className="mt-3 flex justify-end">
-              <UnifiedButton type="button" onClick={saveCustom} className="rounded-full bg-foreground px-4 py-2 text-xs font-semibold text-background">
+            <div className="sf-fixed-consent__save">
+              <UnifiedButton type="button" onClick={saveCustom} className="sf-fixed-overlay-action is-primary">
+                <Check size={15} aria-hidden />
                 保存选择
               </UnifiedButton>
             </div>
           </div>
         )}
-      </div>
+      </section>
     </div>
   );
 }

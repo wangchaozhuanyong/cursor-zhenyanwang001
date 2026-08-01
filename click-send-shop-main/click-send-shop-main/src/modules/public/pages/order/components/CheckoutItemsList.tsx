@@ -9,40 +9,40 @@ interface CheckoutItemsListProps {
 
 export function CheckoutItemsList({ items }: CheckoutItemsListProps) {
   return (
-    <div className="sf-next-checkout-card rounded-[20px] border border-[color-mix(in_srgb,var(--theme-border)_70%,transparent)] bg-[var(--theme-surface)] p-4 shadow-[0_14px_38px_rgba(65,45,28,0.08)] md:p-5">
-      <div className="mb-2 flex items-center justify-between gap-3">
+    <div className="sf-next-checkout-card">
+      <div className="sf-next-checkout-card__head">
         <div>
-          <h3 className="text-[15px] font-bold text-foreground md:text-base">商品信息</h3>
-          <p className="mt-0.5 text-xs text-muted-foreground">请核对商品、规格和数量</p>
+          <h3 className="sf-next-checkout-section-title">商品信息</h3>
+          <p className="sf-next-checkout-section-description">请核对商品、规格和数量</p>
         </div>
-        <span className="text-xs font-semibold text-muted-foreground">共 {items.reduce((sum, item) => sum + item.qty, 0)} 件</span>
+        <span className="sf-next-checkout-section-meta">共 {items.reduce((sum, item) => sum + item.qty, 0)} 件</span>
       </div>
       {items.map((item, index) => (
         <div
           key={`${item.product.id}:${item.variant_id || ""}`}
-          className="sf-next-checkout-item grid grid-cols-[5rem_minmax(0,1fr)] items-stretch gap-3 border-b border-[var(--theme-border)] py-3 last:border-0 sm:grid-cols-[5.5rem_minmax(0,1fr)] sm:gap-3.5"
+          className="sf-next-checkout-item"
         >
           <ProductCoverImage
             url={item.product.cover_image}
             alt={item.product.name}
-            className="sf-next-checkout-media h-20 w-20 self-stretch rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-bg)] object-cover sm:h-[5.5rem] sm:w-[5.5rem]"
+            className="sf-next-checkout-media"
             imgClassName="h-full w-full object-cover"
             sizes="(max-width: 640px) 80px, 88px"
             loading={index === 0 ? "eager" : "lazy"}
             fetchPriority={index === 0 ? "high" : "low"}
           />
-          <div className="sf-next-checkout-item-copy grid h-20 min-h-20 min-w-0 grid-rows-[auto_auto_minmax(0,1fr)_auto] sm:h-[5.5rem] sm:min-h-[5.5rem]">
-            <p className="sf-next-checkout-item-title line-clamp-2 text-foreground">{item.product.name}</p>
-            <div className="sf-next-checkout-item-meta-row mt-1 flex min-w-0 items-start justify-between gap-2">
-              <p className="sf-next-checkout-item-meta min-w-0 truncate text-muted-foreground">
+          <div className="sf-next-checkout-item-copy">
+            <p className="sf-next-checkout-item-title">{item.product.name}</p>
+            <div className="sf-next-checkout-item-meta-row">
+              <p className="sf-next-checkout-item-meta">
                 {item.variant_name ? `规格：${item.variant_name}` : "规格：默认规格"}
               </p>
-              <span className="shrink-0 rounded-full border border-[color-mix(in_srgb,var(--theme-border)_80%,transparent)] bg-[var(--theme-bg)] px-2 py-0.5 text-xs font-bold text-[var(--theme-text-muted)]">
+              <span className="sf-next-checkout-item-quantity">
                 x{item.qty}
               </span>
             </div>
-            <div className="sf-next-checkout-item-amount mt-auto flex min-w-0 items-center justify-between gap-2 rounded-xl border border-[color-mix(in_srgb,var(--theme-border)_70%,transparent)] bg-[color-mix(in_srgb,var(--theme-bg)_72%,var(--theme-surface))] px-2.5 py-2">
-              <span className="min-w-0 text-[11px] font-semibold text-[var(--theme-text-muted)]">商品金额</span>
+            <div className="sf-next-checkout-item-amount">
+              <span>商品金额</span>
               <StoreAmountToken
                 amount={getCartLinePrice(item)}
                 className="shrink-0 border-0 bg-transparent p-0 shadow-none"

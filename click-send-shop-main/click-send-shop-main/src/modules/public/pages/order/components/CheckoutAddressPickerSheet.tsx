@@ -28,7 +28,7 @@ export function CheckoutAddressPickerSheet({ open, onClose, addresses, selectedI
   const footer = (
     <UnifiedButton
       type="button"
-      className="flex min-h-12 w-full items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] text-sm font-semibold text-[var(--theme-text)]"
+      className="sf-next-checkout-secondary-action sf-next-checkout-secondary-action--wide"
       onClick={() => {
         onClose();
         navigate(localizedPath("/address"));
@@ -52,7 +52,7 @@ export function CheckoutAddressPickerSheet({ open, onClose, addresses, selectedI
       {addresses.length === 0 ? (
         <p className="pb-4 text-sm text-[var(--theme-text-muted)]">{t("checkout.addressEmpty")}</p>
       ) : (
-        <ul className="space-y-2 pb-2">
+        <ul className="sf-next-checkout-address-list">
           {addresses.map((addr) => {
             const selected = addr.id === selectedId;
             return (
@@ -61,10 +61,8 @@ export function CheckoutAddressPickerSheet({ open, onClose, addresses, selectedI
                   type="button"
                   onClick={() => pick(addr)}
                   className={cn(
-                    "flex w-full items-start justify-between gap-3 rounded-xl border px-4 py-3.5 text-left",
-                    selected
-                      ? "border-[var(--theme-primary)] bg-[color-mix(in_srgb,var(--theme-primary)_10%,transparent)]"
-                      : "border-[var(--theme-border)] bg-[var(--theme-bg)]",
+                    "sf-next-checkout-address-option",
+                    selected && "is-selected",
                   )}
                 >
                   <span className="min-w-0 flex-1">
@@ -72,7 +70,7 @@ export function CheckoutAddressPickerSheet({ open, onClose, addresses, selectedI
                       {addr.recipient_name}
                       <span className="font-normal text-[var(--theme-text-muted)]">{addr.phone}</span>
                       {addr.isDefault ? (
-                        <span className="rounded-full bg-[color-mix(in_srgb,var(--theme-primary)_12%,transparent)] px-2 py-0.5 text-[10px] font-semibold text-[var(--theme-primary)]">
+                        <span className="sf-next-checkout-address-default">
                           {t("checkout.addressDefault")}
                         </span>
                       ) : null}
@@ -82,7 +80,7 @@ export function CheckoutAddressPickerSheet({ open, onClose, addresses, selectedI
                     </span>
                   </span>
                   {selected ? (
-                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]">
+                    <span className="sf-next-checkout-address-check">
                       <Check size={14} strokeWidth={3} />
                     </span>
                   ) : null}

@@ -12,7 +12,7 @@ import type { ContentPage } from "@/types/content";
 import { sanitizeCmsHtml } from "@/utils/cmsSanitizer";
 import { buildCanonical, stripHtml, truncateText } from "@/utils/seo";
 import { STORE_COPY } from "@/constants/storeCopy";
-import "@/styles/secondary-routes.css";
+import "@/styles/content-routes.css";
 import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
 const deliveryZones = [
@@ -133,7 +133,7 @@ export default function Delivery() {
       </div>
 
       {hasCmsDelivery ? (
-        <section className="sf-next-info-card mt-4" aria-labelledby="delivery-cms-title">
+        <section className="sf-next-delivery-document" aria-labelledby="delivery-cms-title">
           <div className="sf-next-card-title" id="delivery-cms-title">
             <PackageCheck size={18} aria-hidden />
             配送政策正文

@@ -90,7 +90,8 @@ async function fileObjectMissing() {
     }
   }
   for (const banner of banners) {
-    for (const filePath of extractPaths(banner.image)) {
+    const bannerImages = [banner.image, banner.image_mobile, banner.image_desktop];
+    for (const filePath of extractPaths(bannerImages)) {
       if (!(await objectPathExists(filePath))) rows.push({ entityType: 'banner', entityId: banner.id, title: banner.title, filePath });
     }
   }

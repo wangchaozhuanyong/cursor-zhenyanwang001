@@ -509,7 +509,14 @@ async function selectFileReferenceRows() {
   const variants = await tableExists('product_variants')
     ? (await db.query(`SELECT id, product_id, title, image_url FROM product_variants WHERE image_url IS NOT NULL AND image_url <> ''`))[0]
     : [];
-  const [banners] = await db.query(`SELECT id, title, image FROM banners WHERE image IS NOT NULL AND image <> ''`);
+  const bannerColumns = ['image'];
+  if (await columnExists('banners', 'image_mobile')) bannerColumns.push('image_mobile');
+  if (await columnExists('banners', 'image_desktop')) bannerColumns.push('image_desktop');
+  const [banners] = await db.query(
+    `SELECT id, title, ${bannerColumns.join(', ')}
+       FROM banners
+      WHERE ${bannerColumns.map((column) => `(${column} IS NOT NULL AND ${column} <> '')`).join(' OR ')}`,
+  );
   return { products, variants, banners };
 }
 

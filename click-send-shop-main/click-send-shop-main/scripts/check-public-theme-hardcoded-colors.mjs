@@ -6,6 +6,7 @@ const baselinePath = path.join(root, "scripts/baselines/theme-hardcoded-colors.j
 const scanRoots = ["src/components", "src/modules/public", "src/styles", "src/index.css"];
 const ignored = [
   "/admin/",
+  "src/styles/admin.css",
   ".test.",
   ".spec.",
   ".d.ts",
@@ -13,9 +14,11 @@ const ignored = [
   "dist",
   "admin-dist",
 ];
-const patterns = [
+const literalPatterns = [
   /#[0-9a-fA-F]{3,8}\b/g,
   /\brgba?\(/g,
+];
+const utilityColorPatterns = [
   /\bbg-(?:white|black)\b/g,
   /\btext-(?:white|black)\b/g,
   /\bborder-(?:white|black)\b/g,
@@ -26,6 +29,10 @@ const patterns = [
   /\btext-\[#/g,
   /\bborder-\[#/g,
 ];
+
+function isCssCustomPropertyDefinition(file, line) {
+  return file.endsWith(".css") && /^\s*--[A-Za-z0-9_-]+\s*:/.test(line);
+}
 
 function walk(entry) {
   const abs = path.join(root, entry);
@@ -45,8 +52,24 @@ const findings = [];
 for (const file of scanRoots.flatMap(walk).filter(shouldScan)) {
   const rel = path.relative(root, file).replaceAll(path.sep, "/");
   const lines = fs.readFileSync(file, "utf8").split(/\r?\n/);
+  let allowLiteralColorBlock = false;
   lines.forEach((line, index) => {
+    if (line.includes("theme-hardcode-allowed-start")) {
+      allowLiteralColorBlock = true;
+      return;
+    }
+    if (line.includes("theme-hardcode-allowed-end")) {
+      allowLiteralColorBlock = false;
+      return;
+    }
+    if (allowLiteralColorBlock) return;
     if (line.includes("theme-hardcode-allowed")) return;
+    // Literal colors belong in named CSS tokens. Count their use in page rules,
+    // but do not report the token declarations themselves as design debt.
+    if (isCssCustomPropertyDefinition(rel, line)) return;
+    const patterns = rel.endsWith(".css")
+      ? literalPatterns
+      : [...literalPatterns, ...utilityColorPatterns];
     const matched = patterns.some((pattern) => {
       pattern.lastIndex = 0;
       return pattern.test(line);
@@ -72,7 +95,7 @@ function buildBaseline(findingsToRecord) {
   }
   return {
     version: 1,
-    description: "Known storefront hardcoded color findings. New entries should be replaced with theme/storefront tokens instead of expanding this baseline.",
+    description: "Known fixed-storefront literal color usages outside CSS custom-property definitions. New entries should use semantic storefront tokens instead of expanding this baseline.",
     total: findingsToRecord.length,
     entries: [...counts.values()].sort((a, b) => (
       a.file.localeCompare(b.file) || a.text.localeCompare(b.text)
@@ -153,7 +176,7 @@ if (baseline?.entries?.length) {
 
   const added = newEntries.reduce((sum, item) => sum + item.count, 0);
   console.error(
-    `[theme:check] 新增 ${added} 处前台硬编码颜色，不允许扩大主题债务。` +
+    `[theme:check] 新增 ${added} 处前台硬编码颜色，不允许扩大固定客户端设计债务。` +
     ` 请改用 --theme-* / --sf-* token，或在确认合理后运行 THEME_CHECK_UPDATE_BASELINE=1 npm run theme:check 更新基线。`,
   );
   summarizeFindings(newEntries);

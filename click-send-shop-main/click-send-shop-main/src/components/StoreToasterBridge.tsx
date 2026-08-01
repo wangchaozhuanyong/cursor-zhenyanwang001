@@ -32,5 +32,5 @@ export default function StoreToasterBridge() {
     return subscribeStoreToast(presentStoreToast);
   }, []);
 
-  return <Toaster />;
+  return <Toaster theme="light" />;
 }

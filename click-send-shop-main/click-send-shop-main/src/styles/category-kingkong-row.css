@@ -66,7 +66,12 @@ html[data-app-scope="store"] .sf-next-category-tile-skeleton::after {
   display: block;
   border-radius: 999px;
   background:
-    linear-gradient(90deg, rgba(214, 181, 107, 0.18), rgba(255, 255, 255, 0.72), rgba(214, 181, 107, 0.18));
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--sf-premium) 18%, transparent),
+      color-mix(in srgb, var(--sf-surface) 72%, transparent),
+      color-mix(in srgb, var(--sf-premium) 18%, transparent)
+    );
 }
 
 html[data-app-scope="store"] .sf-next-category-tile-skeleton::before {

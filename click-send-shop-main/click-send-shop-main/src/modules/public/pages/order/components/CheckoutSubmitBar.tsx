@@ -25,8 +25,8 @@ export function CheckoutSubmitBar({
   const blocked = disabled && Boolean(disabledHint);
 
   return (
-    <div className="sf-next-checkout-submit-bar fixed bottom-0 left-0 right-0 z-checkout-bar border-t border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md pb-safe safe-bottom-bar md:hidden" aria-live="polite">
-      <div className="sf-next-checkout-submit-bar__inner mx-auto grid max-w-lg grid-cols-[minmax(0,1fr)_auto] items-center gap-2.5 px-3 py-2">
+    <div className="sf-next-checkout-submit-bar md:hidden" aria-live="polite">
+      <div className="sf-next-checkout-submit-bar__inner">
         <span
           className={`sf-next-checkout-submit-total${blocked ? " sf-next-checkout-submit-total--blocked" : ""}`}
           role={blocked ? "status" : undefined}
@@ -49,7 +49,7 @@ export function CheckoutSubmitBar({
           disabled={submitting || disabled}
           variant="solid"
           leftIcon={<CreditCard size={16} strokeWidth={2.4} aria-hidden="true" />}
-          className="sf-next-checkout-submit-cta h-11 min-h-11 w-[8.75rem] shrink-0 rounded-xl px-2.5 py-0 text-sm font-bold btn-theme-gradient sf-next-theme-shadow disabled:opacity-60"
+          className="sf-next-checkout-submit-cta"
           loadingText={submitCtaLabel(paymentMethod, true)}
         >
           {ctaText}

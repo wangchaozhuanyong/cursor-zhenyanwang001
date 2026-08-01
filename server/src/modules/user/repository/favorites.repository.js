@@ -10,9 +10,10 @@ async function countByUser(userId) {
 
 async function selectPage(userId, pageSize, offset) {
   const [rows] = await db.query(
-    `SELECT f.id AS fav_id, f.created_at AS fav_at, p.*
+    `SELECT f.id AS fav_id, f.created_at AS fav_at, p.*, c.name AS category_name
      FROM favorites f
      JOIN products p ON f.product_id = p.id
+     LEFT JOIN categories c ON c.id = p.category_id
      WHERE f.user_id = ?
      ORDER BY f.created_at DESC
      LIMIT ? OFFSET ?`,
@@ -50,6 +51,5 @@ module.exports = {
   insert,
   deleteByUserAndProduct,
 };
-
 
 

@@ -7,12 +7,11 @@ import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import { BottomSheetConfirm, BottomSheetForm } from "@/modules/micro-interactions";
 import { MALAYSIA_STATES } from "@/types/address";
 import { formatAddressForDisplay } from "@/services/addressService";
-import { THEME_ACCENT_CHIP_CLASS } from "@/utils/themeVisuals";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 import StorefrontQuietLoading from "@/components/storefront-motion/StorefrontQuietLoading";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { usePublicLocale } from "@/i18n/publicLocale";
-import "@/styles/secondary-routes.css";
+import "@/styles/address-route.css";
 
 type AddressForm = Omit<Address, "id">;
 const CARD = "sf-next-address-card";
@@ -148,7 +147,7 @@ export default function AddressManage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="text-base font-black text-[var(--theme-text-on-surface)]">{addr.recipient_name}</span>
-                      {addr.isDefault && <span className={THEME_ACCENT_CHIP_CLASS}>{t("address.defaultAddress")}</span>}
+                      {addr.isDefault && <span className="sf-next-address-default-label">{t("address.defaultAddress")}</span>}
                     </div>
                     <p className="mt-1 flex items-center gap-1.5 text-xs font-medium text-[var(--theme-text-muted-on-surface)]">
                       <Phone size={12} aria-hidden />
@@ -164,8 +163,8 @@ export default function AddressManage() {
                     disabled={addr.isDefault}
                     className="sf-next-address-action sf-next-address-action--default"
                   >
-                    <span className={`flex h-4 w-4 items-center justify-center rounded-full border ${addr.isDefault ? "border-[var(--theme-primary)] bg-[var(--theme-primary)]" : "border-[var(--theme-border)]"}`}>
-                      {addr.isDefault && <Check size={10} className="text-[var(--theme-primary-foreground)]" aria-hidden />}
+                    <span className={`sf-next-address-default-check${addr.isDefault ? " is-active" : ""}`}>
+                      {addr.isDefault && <Check size={10} aria-hidden />}
                     </span>
                     {addr.isDefault ? t("address.defaultAddress") : t("address.setDefault")}
                   </UnifiedButton>

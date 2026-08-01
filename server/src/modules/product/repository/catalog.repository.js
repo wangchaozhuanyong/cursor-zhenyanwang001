@@ -55,7 +55,7 @@ async function publicRows(label, sql, params = []) {
 async function selectActiveBanners() {
   return publicRows(
     'banners',
-    `SELECT id, title, description, cta_text, image, link, sort_order, enabled
+    `SELECT id, title, description, cta_text, image, image_mobile, image_desktop, link, sort_order, enabled
      FROM banners
      WHERE enabled = 1 AND deleted_at IS NULL
      ORDER BY sort_order ASC
@@ -67,7 +67,7 @@ async function selectActiveBannersLite(limit = 3) {
   const lim = Math.min(5, Math.max(1, Number(limit) || 3));
   return publicRows(
     'banners:lite',
-    `SELECT id, title, description, cta_text, image, link, sort_order, enabled
+    `SELECT id, title, description, cta_text, image, image_mobile, image_desktop, link, sort_order, enabled
      FROM banners
      WHERE enabled = 1 AND deleted_at IS NULL
      ORDER BY sort_order ASC
@@ -138,7 +138,7 @@ async function selectDefaultVariantsByProductIds(productIds) {
   if (!ids.length) return [];
   const [rows] = await db.query(
     `SELECT id, product_id, sku_code, title, price, original_price, stock, sort_order, is_default,
-            cost_price, barcode, image_url, weight, enabled
+            image_url, enabled
      FROM product_variants
      WHERE product_id IN (${ids.map(() => '?').join(',')})
        AND deleted_at IS NULL
@@ -177,7 +177,10 @@ async function selectVariantPriceRangesByProductIds(productIds) {
 
 async function selectProductById(id) {
   const [[row]] = await db.query(
-    `SELECT * FROM products WHERE id = ? AND ${ACTIVE_PRODUCT_WHERE}`,
+    `SELECT products.*, c.name AS category_name
+     FROM products
+     LEFT JOIN categories c ON c.id = products.category_id
+     WHERE products.id = ? AND ${activeProductWhere('products')}`,
     [id],
   );
   return row || null;
@@ -186,7 +189,7 @@ async function selectProductById(id) {
 async function selectProductVariants(productId) {
   const [rows] = await db.query(
     `SELECT id, product_id, sku_code, title, price, original_price, stock, sort_order, is_default,
-            cost_price, barcode, image_url, weight, enabled
+            image_url, weight, enabled
      FROM product_variants
      WHERE product_id = ?
        AND deleted_at IS NULL

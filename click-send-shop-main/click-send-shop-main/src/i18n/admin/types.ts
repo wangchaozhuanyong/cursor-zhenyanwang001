@@ -15,6 +15,9 @@ export type AdminMessages = {
     language: string;
     languageZh: string;
     languageEn: string;
+    appearance: string;
+    appearanceLight: string;
+    appearanceDark: string;
     mainNav: string;
     mobileHome: string;
     mobileProducts: string;

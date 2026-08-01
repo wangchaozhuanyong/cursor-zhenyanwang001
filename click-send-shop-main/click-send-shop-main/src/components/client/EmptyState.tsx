@@ -18,7 +18,7 @@ export default function EmptyState({
   className,
 }: ClientEmptyStateProps) {
   return (
-    <div className={cn("sf-next-empty-state sf-next-card", className)} role="status">
+    <div className={cn("sf-next-empty-state", className)} role="status">
       <div className="sf-next-empty-state__icon" aria-hidden>
         {icon ?? <SearchX size={30} />}
       </div>

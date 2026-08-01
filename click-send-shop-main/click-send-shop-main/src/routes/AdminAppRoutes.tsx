@@ -15,7 +15,7 @@ import { scheduleIdleTask } from "@/utils/idleScheduler";
 const AdminLogin = lazy(() => import("@/modules/admin/pages/auth/AdminLogin"));
 const AdminRouteFallback = lazy(() => import("@/modules/admin/pages/error/AdminRouteFallback"));
 const AdminShellRoutes = lazy(() => import("@/routes/AdminShellRoutes"));
-const AdminToastHost = lazy(() => import("@/components/ui/sonner").then((module) => ({ default: module.Toaster })));
+const AdminToastHost = lazy(() => import("@/components/admin/AdminToastHost"));
 
 const CRITICAL_ADMIN_ROUTE_PRELOADS = [
   "/admin",

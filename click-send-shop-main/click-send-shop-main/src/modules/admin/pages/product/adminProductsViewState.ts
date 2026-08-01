@@ -3,6 +3,8 @@ import { DEFAULT_PRODUCT_LIST_SORT, PRODUCT_SORT_LABELS } from "@/utils/adminPro
 
 export type ProductStockFilter = "" | NonNullable<ProductListParams["stock_status"]>;
 export type ProductCostFilter = "" | NonNullable<ProductListParams["cost_status"]>;
+export type ProductMediaFilter = "" | NonNullable<ProductListParams["media_status"]>;
+export type ProductMediaRepairScope = "" | "home";
 export type ProductSortValue = NonNullable<ProductListParams["sort"]>;
 
 export type AdminProductsViewState = {
@@ -11,6 +13,7 @@ export type AdminProductsViewState = {
   statusFilter: "" | ProductStatus;
   stockFilter: ProductStockFilter;
   costFilter: ProductCostFilter;
+  mediaFilter: ProductMediaFilter;
   sort: ProductSortValue;
 };
 
@@ -22,6 +25,7 @@ export const DEFAULT_ADMIN_PRODUCTS_VIEW_STATE: AdminProductsViewState = {
   statusFilter: "",
   stockFilter: "",
   costFilter: "",
+  mediaFilter: "",
   sort: DEFAULT_PRODUCT_LIST_SORT,
 };
 
@@ -46,6 +50,10 @@ function isCostFilter(value: unknown): value is ProductCostFilter {
   return value === "" || value === "normal" || value === "missing";
 }
 
+function isMediaFilter(value: unknown): value is ProductMediaFilter {
+  return value === "" || value === "normal" || value === "missing";
+}
+
 function isProductSortValue(value: unknown): value is ProductSortValue {
   return typeof value === "string" && Object.prototype.hasOwnProperty.call(PRODUCT_SORT_LABELS, value);
 }
@@ -60,6 +68,7 @@ export function normalizeAdminProductsViewState(
     statusFilter: value.statusFilter === "" || isProductStatus(value.statusFilter) ? value.statusFilter : "",
     stockFilter: isStockFilter(value.stockFilter) ? value.stockFilter : "",
     costFilter: isCostFilter(value.costFilter) ? value.costFilter : "",
+    mediaFilter: isMediaFilter(value.mediaFilter) ? value.mediaFilter : "",
     sort: isProductSortValue(value.sort) ? value.sort : DEFAULT_PRODUCT_LIST_SORT,
   };
 }
@@ -83,4 +92,34 @@ export function writeAdminProductsViewState(value: AdminProductsViewState) {
   } catch {
     // sessionStorage can be unavailable in private or embedded contexts.
   }
+}
+
+export function readProductMediaFilterFromSearch(search: string): ProductMediaFilter {
+  try {
+    const value = new URLSearchParams(search).get("media_status");
+    return value === "normal" || value === "missing" ? value : "";
+  } catch {
+    return "";
+  }
+}
+
+export function readProductMediaRepairScopeFromSearch(search: string): ProductMediaRepairScope {
+  try {
+    return new URLSearchParams(search).get("repair_scope") === "home" ? "home" : "";
+  } catch {
+    return "";
+  }
+}
+
+export function sortProductsByRepairPriority<T extends { id: string }>(
+  products: T[],
+  priorityIds: string[],
+): T[] {
+  if (!products.length || !priorityIds.length) return products;
+  const priorityById = new Map(priorityIds.map((id, index) => [id, index]));
+  return [...products].sort((left, right) => {
+    const leftPriority = priorityById.get(left.id) ?? Number.MAX_SAFE_INTEGER;
+    const rightPriority = priorityById.get(right.id) ?? Number.MAX_SAFE_INTEGER;
+    return leftPriority - rightPriority;
+  });
 }

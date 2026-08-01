@@ -79,7 +79,7 @@ export function OrderPaymentCountdown({
               {copy.prefix} <span className="font-mono tabular-nums text-[var(--theme-price)]">{timeText}</span> {copy.suffix}
             </p>
             {order.payment_timeout_minutes != null && !compact ? (
-              <p className="mt-0.5 text-[11px] opacity-80">
+              <p className="mt-0.5 text-xs opacity-80">
                 {copy.timeoutPrefix} {order.payment_timeout_minutes} {copy.timeoutSuffix}
               </p>
             ) : null}

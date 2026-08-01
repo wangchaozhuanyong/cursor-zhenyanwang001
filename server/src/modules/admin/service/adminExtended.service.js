@@ -405,10 +405,24 @@ async function listBanners() {
 }
 
 async function createBanner(body, adminUserId, req) {
-  const { title, description, cta_text, image, link, sort_order, enabled, publish_status } = body;
-  if (!image) return { error: { code: 400, message: '图片地址必填' } };
+  const { title, description, cta_text, image, image_mobile, image_desktop, link, sort_order, enabled, publish_status } = body;
+  const fallbackImage = image || image_desktop || image_mobile;
+  if (!fallbackImage) return { error: { code: 400, message: '至少需要上传一张轮播图片' } };
   const id = generateId();
-  await repo.insertBanner({ id, title, description, cta_text, image, link, sort_order, enabled: enabled !== false ? 1 : 0, publish_status: publish_status || 'published', last_modified_by: adminUserId });
+  await repo.insertBanner({
+    id,
+    title,
+    description,
+    cta_text,
+    image: fallbackImage,
+    image_mobile: image_mobile || '',
+    image_desktop: image_desktop || '',
+    link,
+    sort_order,
+    enabled: enabled !== false ? 1 : 0,
+    publish_status: publish_status || 'published',
+    last_modified_by: adminUserId,
+  });
   const row = await repo.selectBannerById(id);
   safeClearCatalogCache();
   await writeAuditLog({ req, operatorId: adminUserId, actionType: 'banner.create', objectType: 'banner', objectId: id, summary: `创建 Banner ${title || id}`, after: { title, cta_text, image }, result: 'success' });
@@ -416,10 +430,26 @@ async function createBanner(body, adminUserId, req) {
 }
 
 async function updateBanner(id, body, adminUserId, req) {
+  const current = await repo.selectBannerById(id);
+  if (!current) return { error: { code: 404, message: 'Banner 不存在' } };
+  const nextImage = body.image !== undefined ? String(body.image || '').trim() : String(current.image || '').trim();
+  const nextMobileImage = body.image_mobile !== undefined
+    ? String(body.image_mobile || '').trim()
+    : String(current.image_mobile || '').trim();
+  const nextDesktopImage = body.image_desktop !== undefined
+    ? String(body.image_desktop || '').trim()
+    : String(current.image_desktop || '').trim();
+  const fallbackImage = nextImage || nextDesktopImage || nextMobileImage;
+  if (!fallbackImage) return { error: { code: 400, message: '至少需要保留一张轮播图片' } };
+
+  const normalizedBody = { ...body };
+  if (body.image !== undefined || !nextImage) {
+    normalizedBody.image = fallbackImage;
+  }
   const setFragments = [];
   const values = [];
-  for (const f of ['title', 'description', 'cta_text', 'image', 'link']) {
-    if (body[f] !== undefined) { setFragments.push(`${f} = ?`); values.push(body[f]); }
+  for (const f of ['title', 'description', 'cta_text', 'image', 'image_mobile', 'image_desktop', 'link']) {
+    if (normalizedBody[f] !== undefined) { setFragments.push(`${f} = ?`); values.push(normalizedBody[f]); }
   }
   if (body.sort_order !== undefined) { setFragments.push('sort_order = ?'); values.push(body.sort_order); }
   if (body.enabled !== undefined) { setFragments.push('enabled = ?'); values.push(body.enabled ? 1 : 0); }

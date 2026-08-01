@@ -37,7 +37,6 @@ export const STOREFRONT_THEME_DEFAULTS = {
   categoryIconStyle: "soft",
   motionLevel: "rich",
   density: "comfortable",
-  adminThemeMode: "fixed",
   texture: {
     material: "quietPaper",
     intensity: "subtle",
@@ -54,16 +53,6 @@ export const STOREFRONT_THEME_DEFAULTS = {
     temperature: "neutral",
     imageContrast: 0.9,
     imageSaturation: 0.86,
-  },
-  festival: {
-    mode: "none",
-    activation: "manual",
-    dateMode: "solar",
-    leadDays: 0,
-    tailDays: 0,
-    decorativeDensity: "quiet",
-    showCountdown: false,
-    fallbackSkinId: null,
   },
 } satisfies Pick<
   ThemeConfig,
@@ -87,9 +76,7 @@ export const STOREFRONT_THEME_DEFAULTS = {
   | "categoryIconStyle"
   | "motionLevel"
   | "density"
-  | "adminThemeMode"
   | "texture"
-  | "festival"
 >;
 
 export function applyStorefrontDesignDefaults(config: Partial<ThemeConfig>): ThemeConfig {

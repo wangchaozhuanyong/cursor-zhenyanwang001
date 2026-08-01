@@ -769,7 +769,6 @@ export function generateThemePalette(adminConfig: ThemeConfig) {
     "--theme-coupon-style": config.couponStyle || "ticket",
     "--theme-member-card-style": config.memberCardStyle || "light",
     "--theme-category-icon-style": config.categoryIconStyle || "circle",
-    "--theme-admin-mode": config.adminThemeMode || "fixed",
     "--theme-texture-material": config.texture.material,
     "--theme-texture-surface": config.texture.surface,
     "--theme-texture-grain": config.texture.grain,

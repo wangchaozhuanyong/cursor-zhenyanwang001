@@ -42,6 +42,27 @@ async function selectNavTargetById(id) {
   return row || null;
 }
 
+async function selectPublicCategoryIds(ids) {
+  const normalizedIds = [...new Set(
+    (Array.isArray(ids) ? ids : [])
+      .map((id) => String(id || '').trim())
+      .filter(Boolean),
+  )];
+  if (!normalizedIds.length) return [];
+
+  const placeholders = normalizedIds.map(() => '?').join(', ');
+  const [rows] = await db.query(
+    `SELECT id
+     FROM categories
+     WHERE id IN (${placeholders})
+       AND deleted_at IS NULL
+       AND is_active = 1
+       AND is_visible = 1`,
+    normalizedIds,
+  );
+  return rows.map((row) => row.id);
+}
+
 async function deleteNavItem(id) {
   await db.query('DELETE FROM home_nav_items WHERE id = ?', [id]);
 }
@@ -66,6 +87,7 @@ async function batchUpdateNavSort(items) {
 module.exports = {
   selectNavItems,
   selectNavTargetById,
+  selectPublicCategoryIds,
   insertNavItem,
   updateNavItem,
   deleteNavItem,

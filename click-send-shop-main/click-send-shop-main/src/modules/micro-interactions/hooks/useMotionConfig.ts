@@ -1,5 +1,5 @@
 import { useMemo, useSyncExternalStore } from "react";
-import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
+import { useFixedStorefrontDesign } from "@/hooks/useFixedStorefrontDesign";
 import type { MotionTier } from "../motionConfig";
 
 type LegacyMediaQueryList = MediaQueryList & {
@@ -34,7 +34,7 @@ function getReducedMotionSnapshot() {
 }
 
 export function useMotionConfig() {
-  const { themeConfig } = useThemeRuntime();
+  const { themeConfig } = useFixedStorefrontDesign();
   const reduced = useSyncExternalStore(subscribeReducedMotion, getReducedMotionSnapshot, () => false);
 
   const level: MotionTier = useMemo(

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
-import { ClipboardList, Copy, CreditCard, PackageCheck, RefreshCw, Truck, WalletCards } from "lucide-react";
+import { ClipboardList, Copy, PackageCheck, RefreshCw, Truck } from "lucide-react";
 import { showStoreToast } from "@/utils/storeToast";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
 import StorefrontQuietLoading from "@/components/storefront-motion/StorefrontQuietLoading";
@@ -39,8 +39,7 @@ import {
 import "@/styles/orders-route.css";
 import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
-const moreActionBtn =
-  "flex w-full items-center justify-between rounded-2xl border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-3 text-left text-sm font-semibold text-[var(--theme-text)]";
+const moreActionBtn = "sf-next-order-more-action";
 
 function money(value?: number | string | null) {
   return `RM ${Number(value || 0).toFixed(2)}`;
@@ -112,7 +111,7 @@ function OrderDetailQuickActions({
     <div className={className}>
       <UnifiedButton
         type="button"
-        className="rounded-full border border-[var(--theme-border)] px-3 py-2 text-xs"
+        className="sf-next-order-detail-quick-action"
         onClick={() => navigate(localizedPath(SUPPORT_PAGE_PATH))}
       >
         {copy.support}
@@ -120,7 +119,7 @@ function OrderDetailQuickActions({
       {reviewEnabled && hasReview ? (
         <UnifiedButton
           type="button"
-          className="rounded-full border border-[var(--theme-border)] px-3 py-2 text-xs"
+          className="sf-next-order-detail-quick-action"
           onClick={() => onReview(firstReviewableId)}
         >
           {copy.review}
@@ -128,14 +127,14 @@ function OrderDetailQuickActions({
       ) : null}
       <UnifiedButton
         type="button"
-        className="rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-xs"
+        className="sf-next-order-detail-quick-action"
         onClick={onAddToCart}
       >
         {copy.addToCart}
       </UnifiedButton>
       <UnifiedButton
         type="button"
-        className="min-w-[7rem] flex-1 rounded-full bg-[var(--theme-primary)] px-3 py-2 text-xs font-medium text-[var(--theme-primary-foreground)] md:flex-none"
+        className="sf-next-order-detail-quick-action sf-next-order-detail-quick-action--primary"
         onClick={onRepurchase}
       >
         {copy.repurchase}
@@ -363,7 +362,7 @@ export default function OrderDetail() {
     }
 
     return (
-      <div className="space-y-2">
+      <div className="sf-next-order-more-list">
         {items.map((item) => (
           <UnifiedButton
             key={item.key}
@@ -376,7 +375,7 @@ export default function OrderDetail() {
           </UnifiedButton>
         ))}
         {items.length === 0 ? (
-          <p className="rounded-2xl bg-[var(--theme-bg)] px-4 py-5 text-center text-sm text-[var(--theme-text-muted)]">
+          <p className="sf-next-order-more-empty">
             {copy.noMoreActions}
           </p>
         ) : null}
@@ -422,16 +421,13 @@ export default function OrderDetail() {
   const logisticsText = order.logistics_provider?.carrier || order.carrier || order.tracking_no
     ? `${order.logistics_provider?.carrier || order.carrier || copy.logistics} ${order.logistics_provider?.tracking_no || order.tracking_no || ""}`.trim()
     : copy.noLogistics;
-  const logisticsStatus = order.logistics_snapshot?.status_label || order.logistics_status_label || pageTitle;
-  const paymentMethodLabel = labelOrderPaymentMethodLocalized(order.payment_method, order.order_type, locale);
-  const paidAtLabel = order.payment_time ? order.payment_time.replace("T", " ").slice(0, 16) : pageTitle;
 
   const mobilePrimary =
     isPendingPayment(order) ? (
       <UnifiedButton
         type="button"
         disabled={paying}
-        className="min-h-10 flex-1 rounded-full bg-[var(--theme-primary)] px-4 text-sm font-semibold text-[var(--theme-primary-foreground)] disabled:opacity-60"
+        className="sf-next-order-detail-mobile-primary"
         onClick={() => {
           void payPendingOrder(order, reload);
         }}
@@ -441,7 +437,7 @@ export default function OrderDetail() {
     ) : order.status === "shipped" ? (
       <UnifiedButton
         type="button"
-        className="min-h-10 flex-1 rounded-full bg-[var(--theme-primary)] px-4 text-sm font-semibold text-[var(--theme-primary-foreground)]"
+        className="sf-next-order-detail-mobile-primary"
         onClick={() => setConfirmReceiveOpen(true)}
       >
         {copy.receive}
@@ -449,7 +445,7 @@ export default function OrderDetail() {
     ) : quickActionProps ? (
       <UnifiedButton
         type="button"
-        className="min-h-10 flex-1 rounded-full bg-[var(--theme-primary)] px-4 text-sm font-semibold text-[var(--theme-primary-foreground)]"
+        className="sf-next-order-detail-mobile-primary"
         onClick={() => setRepurchaseConfirmOpen(true)}
       >
         {copy.repurchase}
@@ -463,7 +459,7 @@ export default function OrderDetail() {
       className="sf-next-page sf-next-order-detail-page"
       mainClassName="pb-[calc(88px+env(safe-area-inset-bottom,0px))] md:pb-0 xl:pb-12"
     >
-      <div className="space-y-3 text-sm">
+      <div className="sf-next-order-detail-stack">
         <section className="sf-next-order-detail-hero">
           <div className="sf-next-order-detail-hero__icon">
             <PackageCheck size={24} aria-hidden />
@@ -499,42 +495,7 @@ export default function OrderDetail() {
           </div>
         </section>
 
-        <section className="sf-next-order-detail-summary" aria-label="订单概览">
-          <div className="sf-next-order-detail-fact">
-            <span className="sf-next-order-detail-fact__icon"><WalletCards size={16} aria-hidden /></span>
-            <div className="sf-next-order-detail-fact__copy">
-              <span>{copy.paidAmount}</span>
-              <strong>{money(order.total_amount)}</strong>
-              <small>{Number(order.shipping_fee || 0) === 0 ? copy.freeShipping : `${copy.shippingFee} ${money(order.shipping_fee)}`}</small>
-            </div>
-          </div>
-          <div className="sf-next-order-detail-fact">
-            <span className="sf-next-order-detail-fact__icon"><CreditCard size={16} aria-hidden /></span>
-            <div className="sf-next-order-detail-fact__copy">
-              <span>{copy.paymentMethod}</span>
-              <strong>{paymentMethodLabel}</strong>
-              <small>{paidAtLabel}</small>
-            </div>
-          </div>
-          <div className="sf-next-order-detail-fact">
-            <span className="sf-next-order-detail-fact__icon"><Truck size={16} aria-hidden /></span>
-            <div className="sf-next-order-detail-fact__copy">
-              <span>{copy.logistics}</span>
-              <strong>{logisticsStatus}</strong>
-              <small>{logisticsText}</small>
-            </div>
-          </div>
-          <div className="sf-next-order-detail-fact">
-            <span className="sf-next-order-detail-fact__icon"><ClipboardList size={16} aria-hidden /></span>
-            <div className="sf-next-order-detail-fact__copy">
-              <span>{copy.productInfo}</span>
-              <strong>{order.items.length} SKU</strong>
-              <small>{itemQuantity} 件商品</small>
-            </div>
-          </div>
-        </section>
-
-        <section className="sf-next-order-detail-progress rounded-2xl border border-border bg-card p-3">
+        <section className="sf-next-order-detail-progress">
           <div className="sf-next-order-detail-section-head">
             <div>
               <p className="sf-next-order-detail-section-kicker">{copy.currentStatus}</p>
@@ -543,12 +504,12 @@ export default function OrderDetail() {
             <span>{formatDateTime(order.created_at)}</span>
           </div>
           {order.logistics_snapshot?.status_label || order.logistics_status_label ? (
-            <p className="mt-2 rounded-xl bg-[var(--theme-surface)] px-3 py-2 text-xs text-[var(--theme-text-muted)]">
+            <p className="sf-next-order-detail-notice">
               {copy.logisticsStatus}: {order.logistics_snapshot?.status_label || order.logistics_status_label}
             </p>
           ) : null}
           {order.logistics_snapshot?.has_exception || order.logistics_exception_type ? (
-            <p className="mt-2 rounded-xl bg-[color-mix(in_srgb,var(--theme-danger)_10%,var(--theme-surface))] px-3 py-2 text-xs text-[var(--theme-danger)]">
+            <p className="sf-next-order-detail-notice sf-next-order-detail-notice--danger">
               {order.logistics_snapshot?.exception_message || order.logistics_exception_message || copy.logisticsException}
             </p>
           ) : null}
@@ -558,7 +519,7 @@ export default function OrderDetail() {
             </div>
           ) : null}
           {order.has_shortage_adjustment || order.shortage_notice ? (
-            <p className="mt-2 rounded-xl bg-[color-mix(in_srgb,var(--theme-warning)_14%,var(--theme-surface))] px-3 py-2 text-xs text-[color-mix(in_srgb,var(--theme-warning)_76%,var(--theme-text-on-surface))]">
+            <p className="sf-next-order-detail-notice sf-next-order-detail-notice--warning">
               {order.shortage_notice || copy.shortageFallback}
             </p>
           ) : null}
@@ -572,7 +533,7 @@ export default function OrderDetail() {
           </div>
         </section>
 
-        <section className="sf-next-order-detail-products rounded-2xl border border-border bg-card p-3 space-y-3">
+        <section className="sf-next-order-detail-products">
           <div className="sf-next-order-detail-section-head">
             <div>
               <p className="sf-next-order-detail-section-kicker">{copy.productInfo}</p>
@@ -602,7 +563,7 @@ export default function OrderDetail() {
           })}
         </section>
 
-        <div className="sf-next-order-detail-price-card rounded-2xl border border-border bg-card p-3">
+        <div className="sf-next-order-detail-price-card">
           <p className="text-sm font-medium">{copy.priceDetail}</p>
           <div className="mt-2 flex justify-between text-sm">
             <span className="text-muted-foreground">{copy.productAmount}</span>
@@ -641,13 +602,13 @@ export default function OrderDetail() {
           </div>
         </div>
 
-        <div className="sf-next-order-detail-info-card rounded-2xl border border-border bg-card p-3">
+        <div className="sf-next-order-detail-info-card">
           <p className="text-sm font-medium">{copy.orderInfo}</p>
           <div className="mt-2 flex items-center justify-between gap-3 text-sm">
             <span className="text-muted-foreground">{copy.orderNo}</span>
             <UnifiedButton
               type="button"
-              className="inline-flex items-center gap-1 truncate rounded-full border border-[var(--theme-border)] px-2 py-1 text-xs"
+              className="sf-next-order-detail-copy-number"
               onClick={async () => {
                 await navigator.clipboard.writeText(order.order_no);
                 showStoreToast.success(copy.copiedOrderNo);
@@ -703,9 +664,9 @@ export default function OrderDetail() {
           ) : null}
         </div>
 
-        <div className="sf-next-order-detail-actions-card hidden rounded-2xl border border-border bg-card p-3 md:flex md:flex-wrap md:justify-end md:gap-2">
+        <div className="sf-next-order-detail-actions-card hidden md:flex">
           {canUserCancelOrder(order) ? (
-            <UnifiedButton type="button" className="rounded-full border px-3 py-1 text-xs" onClick={() => setCancelConfirmOpen(true)}>
+            <UnifiedButton type="button" className="sf-next-order-detail-quick-action" onClick={() => setCancelConfirmOpen(true)}>
               {copy.cancelOrder}
             </UnifiedButton>
           ) : null}
@@ -713,7 +674,7 @@ export default function OrderDetail() {
             <UnifiedButton
               type="button"
               disabled={paying}
-              className="rounded-full border border-[var(--theme-primary)] bg-[var(--theme-primary)] px-3 py-1 text-xs text-[var(--theme-primary-foreground)] disabled:opacity-60"
+              className="sf-next-order-detail-quick-action sf-next-order-detail-quick-action--primary"
               onClick={() => {
                 void payPendingOrder(order, reload);
               }}
@@ -722,21 +683,21 @@ export default function OrderDetail() {
             </UnifiedButton>
           ) : null}
           {order.status === "paid" ? (
-            <UnifiedButton type="button" className="rounded-full border px-3 py-1 text-xs" onClick={() => navigate(localizedPath(SUPPORT_PAGE_PATH))}>
+            <UnifiedButton type="button" className="sf-next-order-detail-quick-action" onClick={() => navigate(localizedPath(SUPPORT_PAGE_PATH))}>
               {copy.support}
             </UnifiedButton>
           ) : null}
           {order.status === "shipped" ? (
             <>
-              <UnifiedButton type="button" className="rounded-full border px-3 py-1 text-xs" onClick={() => viewLogistics(order)}>
+              <UnifiedButton type="button" className="sf-next-order-detail-quick-action" onClick={() => viewLogistics(order)}>
                 {copy.viewLogistics}
               </UnifiedButton>
-              <UnifiedButton type="button" className="rounded-full border px-3 py-1 text-xs" onClick={() => setReturnApplyOpen(true)}>
+              <UnifiedButton type="button" className="sf-next-order-detail-quick-action" onClick={() => setReturnApplyOpen(true)}>
                 {copy.applyAfterSale}
               </UnifiedButton>
               <UnifiedButton
                 type="button"
-                className="rounded-full border border-[var(--theme-primary)] bg-[var(--theme-primary)] px-3 py-1 text-xs text-[var(--theme-primary-foreground)]"
+                className="sf-next-order-detail-quick-action sf-next-order-detail-quick-action--primary"
                 onClick={() => setConfirmReceiveOpen(true)}
               >
                 {copy.receive}
@@ -744,12 +705,12 @@ export default function OrderDetail() {
             </>
           ) : null}
           {canApplyAfterSale(order) && order.status === "completed" ? (
-            <UnifiedButton type="button" className="rounded-full border px-3 py-1 text-xs" onClick={() => setReturnApplyOpen(true)}>
+            <UnifiedButton type="button" className="sf-next-order-detail-quick-action" onClick={() => setReturnApplyOpen(true)}>
               {copy.applyAfterSale}
             </UnifiedButton>
           ) : null}
           {(order.return_request_count || 0) > 0 || order.status === "refunding" || order.status === "refunded" ? (
-            <UnifiedButton type="button" className="rounded-full border px-3 py-1 text-xs" onClick={() => navigate(localizedPath("/returns"))}>
+            <UnifiedButton type="button" className="sf-next-order-detail-quick-action" onClick={() => navigate(localizedPath("/returns"))}>
               {copy.viewAfterSale}
             </UnifiedButton>
           ) : null}
@@ -758,17 +719,17 @@ export default function OrderDetail() {
         {quickActionProps ? (
           <OrderDetailQuickActions
             {...quickActionProps}
-            className="hidden flex-wrap items-center justify-end gap-2 border-t border-[var(--theme-border)] pt-4 md:flex"
+            className="sf-next-order-detail-quick-actions hidden md:flex"
           />
         ) : null}
       </div>
 
       {showMobileBar ? (
-        <div className="sf-next-order-detail-mobile-bar fixed bottom-0 left-0 right-0 z-checkout-bar border-t border-[var(--theme-border)] bg-[var(--theme-surface)]/95 backdrop-blur-md pb-safe safe-bottom-bar md:hidden">
-          <div className="mx-auto flex max-w-lg items-center gap-2 px-4 py-3">
+        <div className="sf-next-order-detail-mobile-bar md:hidden">
+          <div className="sf-next-order-detail-mobile-bar__inner">
             <UnifiedButton
               type="button"
-              className="min-h-10 shrink-0 rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 text-sm font-semibold text-[var(--theme-text)]"
+              className="sf-next-order-detail-mobile-more"
               onClick={() => setMoreMenuOpen(true)}
             >
               {copy.more}

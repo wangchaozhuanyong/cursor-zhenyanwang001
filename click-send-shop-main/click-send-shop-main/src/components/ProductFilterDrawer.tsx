@@ -47,9 +47,9 @@ export default function ProductFilterDrawer({ activeFilterCount, onReset, onConf
         className="sf-next-filter-button inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs font-semibold transition duration-200 hover:-translate-y-0.5 active:scale-[0.97]"
       >
         <Filter size={14} />
-        筛选
+        <span className="sf-next-filter-button__label">筛选</span>
         <span
-          className={`min-w-[1rem] rounded-full bg-[var(--theme-price)] px-1.5 py-0.5 text-center text-[10px] leading-none text-[var(--theme-price-foreground)] ${activeFilterCount > 0 ? "" : "invisible"}`}
+          className={`sf-next-filter-button__count min-w-[1rem] rounded-full bg-[var(--theme-price)] px-1.5 py-0.5 text-center text-[10px] leading-none text-[var(--theme-price-foreground)] ${activeFilterCount > 0 ? "" : "invisible"}`}
           aria-hidden={activeFilterCount === 0}
         >
           {activeFilterCount || 0}

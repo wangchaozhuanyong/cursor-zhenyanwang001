@@ -1,4 +1,4 @@
-const { generateId, formatProduct } = require('../../../utils/helpers');
+const { generateId, formatPublicProduct } = require('../../../utils/helpers');
 const { NotFoundError, ValidationError } = require('../../../errors');
 const repo = require('../repository/cart.repository');
 
@@ -8,7 +8,7 @@ function getOrderApi() {
 
 function formatCartItem(row) {
   return {
-    product: formatProduct(row),
+    product: formatPublicProduct(row),
     variant_id: row.variant_id || undefined,
     sku_code: row.sku_code || undefined,
     variant_name: row.variant_name || undefined,

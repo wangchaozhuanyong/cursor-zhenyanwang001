@@ -1,6 +1,7 @@
 import * as homeOpsApi from "@/api/admin/homeOps";
 import type { HomeModuleSettings } from "@/constants/homeModules";
 import type { HomeNavItem } from "@/types/content";
+import type { StorefrontReadiness } from "@/types/storefrontReadiness";
 import { unwrapList } from "@/services/responseNormalize";
 
 export type { HomeNavSupportChannelOption } from "@/api/admin/homeOps";
@@ -18,6 +19,11 @@ export async function updateHomeOpsSettings(data: Partial<HomeModuleSettings>): 
 export async function fetchHomeNavItems(): Promise<HomeNavItem[]> {
   const res = await homeOpsApi.getHomeNavItems();
   return unwrapList<HomeNavItem>(res.data);
+}
+
+export async function fetchStorefrontReadiness(): Promise<StorefrontReadiness> {
+  const res = await homeOpsApi.getStorefrontReadiness();
+  return res.data;
 }
 
 export async function fetchHomeNavSupportChannels(): Promise<homeOpsApi.HomeNavSupportChannelOption[]> {

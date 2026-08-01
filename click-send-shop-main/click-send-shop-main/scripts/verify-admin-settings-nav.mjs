@@ -265,7 +265,6 @@ async function mockAdminApis(page, baseUrl) {
     if (path.includes("/audit") || path.includes("/log") || path.includes("/recycle-bin")) {
       return route.fulfill(json(paginated([], 20)));
     }
-    if (path.includes("/theme/skins")) return route.fulfill(json([]));
     if (path.includes("/order-voice")) return route.fulfill(json({ enabled: false, events: [] }));
 
     return route.fulfill(json({ items: [], total: 0 }));

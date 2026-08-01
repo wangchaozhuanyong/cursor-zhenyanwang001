@@ -1,4 +1,4 @@
-const { generateId, formatProduct } = require('../../../utils/helpers');
+const { generateId, formatPublicProduct } = require('../../../utils/helpers');
 const repo = require('../repository/history.repository');
 
 async function getHistory(userId, query) {
@@ -10,7 +10,7 @@ async function getHistory(userId, query) {
   const list = rows.map((r) => ({
     id: r.history_id,
     viewed_at: r.viewed_at,
-    product: formatProduct(r),
+    product: formatPublicProduct(r),
   }));
   return { list, total, page, pageSize };
 }
@@ -41,7 +41,6 @@ module.exports = {
   addHistory,
   clearHistory,
 };
-
 
 
 

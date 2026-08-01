@@ -54,7 +54,7 @@ export default function StoreAccountNav({ className }: { className?: string }) {
             aria-disabled={false}
             onClick={() => navigateFeature(item.key)}
             className={cn(
-              "flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-colors",
+              "flex min-h-11 w-full items-center gap-2 rounded-md px-3 py-2.5 text-left text-sm font-medium transition-colors",
               active
                 ? "bg-[color-mix(in_srgb,var(--theme-primary)_12%,var(--theme-surface))] text-[var(--theme-primary)]"
                 : "text-[var(--theme-text-muted)] hover:bg-[var(--theme-bg)] hover:text-[var(--theme-text)]",
@@ -74,7 +74,7 @@ export default function StoreAccountNav({ className }: { className?: string }) {
         <UnifiedButton
           type="button"
           onClick={() => navigate(localizedPath("/login"), { state: { from: localizedPath("/profile") } })}
-          className="mt-2 w-full rounded-xl bg-[var(--theme-primary)] py-2.5 text-sm font-semibold text-[var(--theme-primary-foreground)]"
+          className="mt-2 min-h-11 w-full rounded-md bg-[var(--theme-primary)] px-3 py-2.5 text-sm font-semibold text-[var(--theme-primary-foreground)]"
         >
           {t("common.loginRegister")}
         </UnifiedButton>

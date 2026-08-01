@@ -1,8 +1,9 @@
 import { useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { ChevronDown, Languages, LogOut } from "lucide-react";
+import { ChevronDown, Languages, LogOut, Moon, Sun } from "lucide-react";
 import AdminAccountSettingsTrigger from "@/components/admin/AdminAccountSettingsTrigger";
 import AnchoredMenu from "@/components/admin/AnchoredMenu";
+import { useAdminAppearance } from "@/contexts/AdminAppearanceProvider";
 import { AdminOrderVoiceMenuItems } from "@/modules/admin/components/AdminOrderVoiceNotifier";
 import { useAdminT } from "@/hooks/useAdminT";
 import type { AdminLocale } from "@/i18n/admin";
@@ -20,6 +21,7 @@ export default function AdminAccountMenu({
   onLogout,
 }: AdminAccountMenuProps) {
   const { t, locale, setLocale } = useAdminT();
+  const { mode, setMode } = useAdminAppearance();
   const avatarBtnRef = useRef<HTMLButtonElement>(null);
   const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
 
@@ -76,6 +78,37 @@ export default function AdminAccountMenu({
                   {loc === "zh" ? t("layout.languageZh") : t("layout.languageEn")}
                 </UnifiedButton>
               ))}
+            </div>
+          </div>
+          <div className="mx-3 my-1 h-px bg-border" />
+          <div className="px-4 py-2">
+            <p className="mb-2 text-xs font-medium text-muted-foreground">
+              {t("layout.appearance")}
+            </p>
+            <div className="grid grid-cols-2 gap-2" role="group" aria-label={t("layout.appearance")}>
+              {([
+                { value: "light", label: t("layout.appearanceLight"), icon: Sun },
+                { value: "dark", label: t("layout.appearanceDark"), icon: Moon },
+              ] as const).map((item) => {
+                const Icon = item.icon;
+                const selected = mode === item.value;
+                return (
+                  <UnifiedButton
+                    key={item.value}
+                    type="button"
+                    aria-pressed={selected}
+                    onClick={() => setMode(item.value)}
+                    className={`flex min-h-[44px] items-center justify-center gap-1.5 rounded-lg border px-2 text-xs font-medium transition-colors ${
+                      selected
+                        ? "border-[var(--theme-primary)] bg-[var(--theme-primary)] text-[var(--theme-primary-foreground)]"
+                        : "border-[var(--theme-border)] bg-[var(--theme-surface)] text-foreground hover:bg-secondary"
+                    }`}
+                  >
+                    <Icon size={15} aria-hidden />
+                    {item.label}
+                  </UnifiedButton>
+                );
+              })}
             </div>
           </div>
           <div className="mx-3 my-1 h-px bg-border" />

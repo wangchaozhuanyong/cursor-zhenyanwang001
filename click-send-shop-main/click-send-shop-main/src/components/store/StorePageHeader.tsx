@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
-import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
+import { useFixedStorefrontDesign } from "@/hooks/useFixedStorefrontDesign";
 import { getStoreHeaderSurfaceClass } from "@/utils/storeHeaderSurface";
 
 export type StorePageHeaderProps = {
@@ -35,7 +35,7 @@ export default function StorePageHeader({
   transparent = false,
   className,
 }: StorePageHeaderProps) {
-  const { themeConfig } = useThemeRuntime();
+  const { themeConfig } = useFixedStorefrontDesign();
   const surfaceClass = transparent
     ? "border-transparent bg-transparent"
     : getStoreHeaderSurfaceClass(themeConfig);

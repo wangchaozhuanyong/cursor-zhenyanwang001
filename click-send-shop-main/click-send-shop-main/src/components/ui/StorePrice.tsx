@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
+import { useFixedStorefrontDesign } from "@/hooks/useFixedStorefrontDesign";
 import type { PriceStyle } from "@/types/theme";
 
 interface StorePriceProps {
@@ -25,7 +25,7 @@ export default function StorePrice({
   priceStyle,
   className,
 }: StorePriceProps) {
-  const { themeConfig } = useThemeRuntime();
+  const { themeConfig } = useFixedStorefrontDesign();
   const style = priceStyle ?? themeConfig.priceStyle;
   const sizeClass = size === "lg" ? "text-lg" : size === "sm" ? "text-sm" : "text-sm";
   const weightClass = style === "normal" ? "font-semibold" : "font-extrabold";
@@ -37,7 +37,7 @@ export default function StorePrice({
         {toMoney(price)}
       </span>
       {originalPrice !== undefined && Number(originalPrice) > Number(price) && (
-        <span className="text-xs text-[var(--theme-muted)] line-through">
+        <span className="text-xs text-[var(--theme-text-muted)] line-through">
           {showCurrency ? "RM " : ""}
           {toMoney(originalPrice)}
         </span>

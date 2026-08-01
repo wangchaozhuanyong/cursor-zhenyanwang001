@@ -9,6 +9,7 @@ const {
 } = require('../src/modules/theme/service/theme.service');
 const themeRepo = require('../src/modules/theme/repository/theme.repository');
 const { THEME_PRESETS } = require('../src/modules/theme/theme.presets');
+const { FIXED_THEME_CONFIG } = require('../src/modules/theme/theme.fixed');
 
 test('theme config forces admin mode fixed and keeps new skin fields', () => {
   const config = normalizeThemeConfig({
@@ -66,7 +67,7 @@ test('preview draft creation preserves string admin user ids', async () => {
   }
 });
 
-test('saving draft for published default skin keeps storefront public config stable', async () => {
+test('saving a legacy draft cannot replace the fixed storefront compatibility config', async () => {
   const originals = {
     selectThemeSkinRows: themeRepo.selectThemeSkinRows,
     updateThemeSkinDraft: themeRepo.updateThemeSkinDraft,
@@ -139,7 +140,7 @@ test('saving draft for published default skin keeps storefront public config sta
     assert.equal(saved.status, 'published');
     assert.equal(draftStatus, 'published');
     assert.equal(saved.config.primaryColor, '#112233');
-    assert.equal(legacyThemeConfig.primaryColor, moss.config.primaryColor);
+    assert.equal(legacyThemeConfig.primaryColor, FIXED_THEME_CONFIG.primaryColor);
   } finally {
     Object.assign(themeRepo, originals);
     if (oldAuditFlag === undefined) delete process.env.AUDIT_LOG_DISABLED;

@@ -50,9 +50,9 @@ describe("InviteRewardCard", () => {
 
   it("keeps the invite card background filled without the black outer stage", () => {
     expect(cssSource).toMatch(/\.ir-stage\s*{[^}]*background:\s*transparent;/s);
-    expect(cssSource).toMatch(/\.ir-card\s*{[^}]*inset:\s*0;/s);
+    expect(cssSource).toMatch(/\.ir-card\s*{[^}]*position:\s*relative;[^}]*display:\s*grid;[^}]*background:\s*var\(--ir-panel\);/s);
     expect(cssSource).not.toMatch(/\.ir-stage\s*{[^}]*background:\s*#000;/s);
-    expect(cssSource).not.toMatch(/\.ir-card\s*{[^}]*(left:\s*1\.86cqw|top:\s*1\.86cqw|width:\s*96\.28cqw|height:\s*45\.38cqw)/s);
+    expect(cssSource).not.toMatch(/\.ir-card\s*{[^}]*(position:\s*absolute|left:\s*1\.86cqw|top:\s*1\.86cqw|width:\s*96\.28cqw|height:\s*45\.38cqw)/s);
   });
 
   it("keeps invite, code, and record actions wired", async () => {

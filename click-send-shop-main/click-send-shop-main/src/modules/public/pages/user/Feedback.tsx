@@ -27,7 +27,7 @@ import { formatDateTime } from "@/utils/formatDateTime";
 import { isLoggedIn } from "@/utils/token";
 import { usePublicLocale } from "@/i18n/publicLocale";
 import { useHorizontalActiveScroll } from "@/hooks/useHorizontalActiveScroll";
-import "@/styles/secondary-routes.css";
+import "@/styles/feedback-route.css";
 import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
 type FeedbackForm = {
@@ -325,25 +325,25 @@ export default function Feedback() {
         />
         <div className="mx-auto w-full max-w-lg md:max-w-none">
           <section className="sf-next-feedback-success">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--theme-success)_12%,var(--theme-surface))] text-[var(--theme-success)]">
+            <div className="sf-next-feedback-success__icon">
               <CheckCircle2 size={30} />
             </div>
-            <h2 className="mt-4 text-lg font-semibold text-[var(--theme-text)]">已收到你的反馈</h2>
-            <p className="mt-2 text-sm leading-relaxed text-[var(--theme-muted)]">
+            <h2>已收到你的反馈</h2>
+            <p>
               编号 {submittedId.slice(0, 8)}
             </p>
-            <div className="mt-5 grid grid-cols-2 gap-3">
+            <div className="sf-next-feedback-success__actions">
               <UnifiedButton
                 type="button"
                 onClick={() => navigate(localizedPath("/profile"), { replace: true })}
-                className="rounded-full border border-[var(--theme-border)] bg-[var(--theme-bg)] px-4 py-3 text-sm font-semibold"
+                className="sf-next-feedback-action"
               >
                 回到我的
               </UnifiedButton>
               <UnifiedButton
                 type="button"
                 onClick={resetForm}
-                className="rounded-full bg-[var(--theme-primary)] px-4 py-3 text-sm font-semibold text-[var(--theme-primary-foreground)]"
+                className="sf-next-feedback-action sf-next-feedback-action--primary"
               >
                 再写一条
               </UnifiedButton>
@@ -351,7 +351,7 @@ export default function Feedback() {
         </section>
 
           <section className="sf-next-feedback-panel mt-3">
-            <h2 className="text-base font-semibold text-[var(--theme-text)]">我的反馈记录</h2>
+            <h2 className="sf-next-feedback-panel-title">我的反馈记录</h2>
             <div className="mt-3">{renderRecordsPanel()}</div>
           </section>
         </div>
@@ -394,7 +394,7 @@ export default function Feedback() {
         </div>
 
         {activeView === "submit" ? (
-          <>
+          <div className="sf-next-feedback-submit-layout">
             <section className="sf-next-feedback-panel">
               <div className="sf-next-feedback-type-grid">
                 {TYPE_OPTIONS.map((item) => {
@@ -415,18 +415,18 @@ export default function Feedback() {
             </section>
 
             <section className="sf-next-feedback-panel sf-next-feedback-form">
-              <label className="block text-sm font-semibold">
+              <label className="sf-next-feedback-field">
                 标题
                 <input
                   value={form.title}
                   onChange={(event) => updateForm({ title: event.target.value })}
                   maxLength={120}
                   placeholder="一句话概括问题，可不填"
-                  className="mt-2 w-full rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-3 text-sm outline-none focus:border-[var(--theme-primary)]"
+                  className="sf-next-feedback-control"
                 />
               </label>
 
-              <label className="mt-4 block text-sm font-semibold">
+              <label className="sf-next-feedback-field">
                 反馈内容
                 <textarea
                   value={form.content}
@@ -434,30 +434,30 @@ export default function Feedback() {
                   maxLength={2000}
                   rows={7}
                   placeholder="请描述问题或建议..."
-                  className="mt-2 w-full resize-none rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-3 text-sm leading-relaxed outline-none focus:border-[var(--theme-primary)]"
+                  className="sf-next-feedback-control sf-next-feedback-control--textarea"
                 />
               </label>
-              <div className="mt-1 text-right text-xs text-[var(--theme-muted)]">{form.content.length}/2000</div>
+              <div className="sf-next-feedback-count">{form.content.length}/2000</div>
 
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <label className="block text-sm font-semibold">
+              <div className="sf-next-feedback-field-grid">
+                <label className="sf-next-feedback-field">
                   联系方式
                   <input
                     value={form.contact}
                     onChange={(event) => updateForm({ contact: event.target.value })}
                     maxLength={120}
                     placeholder="手机号 / WhatsApp / 微信"
-                    className="mt-2 w-full rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-3 text-sm outline-none focus:border-[var(--theme-primary)]"
+                    className="sf-next-feedback-control"
                   />
                 </label>
-                <label className="block text-sm font-semibold">
+                <label className="sf-next-feedback-field">
                   订单号
                   <input
                     value={form.orderNo}
                     onChange={(event) => updateForm({ orderNo: event.target.value })}
                     maxLength={64}
                     placeholder="和订单有关时填写"
-                    className="mt-2 w-full rounded-xl border border-[var(--theme-border)] bg-[var(--theme-bg)] px-3 py-3 text-sm outline-none focus:border-[var(--theme-primary)]"
+                    className="sf-next-feedback-control"
                   />
                 </label>
               </div>
@@ -466,18 +466,18 @@ export default function Feedback() {
                 type="button"
                 onClick={handleSubmit}
                 disabled={submitting}
-                className="mt-5 flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--theme-primary)] px-4 text-sm font-semibold text-[var(--theme-primary-foreground)] transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+                className="sf-next-feedback-submit"
               >
                 <Send size={17} />
                 {submitting ? "提交中..." : "提交反馈"}
               </UnifiedButton>
             </section>
-          </>
+          </div>
         ) : null}
 
         {activeView === "records" ? (
           <section className="sf-next-feedback-panel">
-            <h2 className="text-base font-semibold text-[var(--theme-text)]">我的反馈记录</h2>
+            <h2 className="sf-next-feedback-panel-title">我的反馈记录</h2>
             <div className="mt-3">{renderRecordsPanel()}</div>
           </section>
         ) : null}

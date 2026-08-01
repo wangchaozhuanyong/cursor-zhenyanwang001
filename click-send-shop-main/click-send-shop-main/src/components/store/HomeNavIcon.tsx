@@ -92,6 +92,7 @@ type HomeNavIconProps = {
   imageClassName?: string;
   loading?: "eager" | "lazy";
   fetchPriority?: "high" | "low" | "auto";
+  objectFit?: "contain" | "cover";
 };
 
 export function isHomeNavImageIcon(value: string): boolean {
@@ -113,6 +114,7 @@ export default function HomeNavIcon({
   imageClassName,
   loading = "lazy",
   fetchPriority = "low",
+  objectFit = "contain",
 }: HomeNavIconProps) {
   const iconValue = value.trim();
   const token = iconValue.toLowerCase() as keyof typeof ICON_TOKENS;
@@ -148,10 +150,10 @@ export default function HomeNavIcon({
         height={48}
         sizes="48px"
         className={cn("h-full w-full rounded-xl bg-[color-mix(in_srgb,var(--theme-primary)_10%,transparent)]", className)}
-        imgClassName={cn("object-contain object-center", imageClassName)}
+        imgClassName={cn(objectFit === "cover" ? "object-cover object-center" : "object-contain object-center", imageClassName)}
         loading={loading}
         fetchPriority={fetchPriority}
-        objectFit="contain"
+        objectFit={objectFit}
         placeholderClassName="rounded-xl"
       />
     );

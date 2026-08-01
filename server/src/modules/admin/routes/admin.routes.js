@@ -527,6 +527,7 @@ router.delete('/activities/:id', adminAuth, requirePermission('activity.manage')
 /* ---- Home Ops（首页导航 / 公告）---- */
 router.get('/home-ops/settings', adminAuth, requirePermission('home_ops.manage'), homeOpsCtrl.getSettings);
 router.put('/home-ops/settings', adminAuth, requirePermission('home_ops.manage'), homeOpsCtrl.updateSettings);
+router.get('/home-ops/storefront-readiness', adminAuth, requirePermission('home_ops.manage'), homeOpsCtrl.getStorefrontReadiness);
 router.get('/home-ops/nav-items', adminAuth, requirePermission('home_ops.manage'), homeOpsCtrl.listNavItems);
 router.get('/home-ops/support-channels', adminAuth, requirePermission('home_ops.manage'), homeOpsCtrl.listSupportChannels);
 router.post('/home-ops/nav-items', adminAuth, requirePermission('home_ops.manage'), homeOpsCtrl.createNavItem);
@@ -697,13 +698,13 @@ router.post(
   settingsCtrl.uploadSiteAssetMiddleware,
   settingsCtrl.uploadSiteAsset,
 );
-router.put('/system/theme', adminAuth, requirePermission('settings.manage'), themeCtrl.updateTheme);
+router.put('/system/theme', adminAuth, requirePermission('settings.manage'), themeCtrl.retiredThemeWrite);
 router.get('/system/theme/skins', adminAuth, requirePermission('settings.manage'), themeCtrl.getThemeSkins);
-router.put('/system/theme/skins', adminAuth, requirePermission('settings.manage'), themeCtrl.updateThemeSkins);
-router.patch('/themes/:themeKey', adminAuth, requirePermission('settings.manage'), themeCtrl.saveThemeSkinDraft);
-router.post('/themes/:themeKey/preview', adminAuth, requirePermission('settings.manage'), themeCtrl.createThemePreviewDraft);
-router.post('/themes/:themeKey/publish', adminAuth, requirePermission('settings.manage'), themeCtrl.publishThemeSkin);
-router.post('/themes/:themeKey/disable', adminAuth, requirePermission('settings.manage'), themeCtrl.disableThemeSkin);
+router.put('/system/theme/skins', adminAuth, requirePermission('settings.manage'), themeCtrl.retiredThemeWrite);
+router.patch('/themes/:themeKey', adminAuth, requirePermission('settings.manage'), themeCtrl.retiredThemeWrite);
+router.post('/themes/:themeKey/preview', adminAuth, requirePermission('settings.manage'), themeCtrl.retiredThemeWrite);
+router.post('/themes/:themeKey/publish', adminAuth, requirePermission('settings.manage'), themeCtrl.retiredThemeWrite);
+router.post('/themes/:themeKey/disable', adminAuth, requirePermission('settings.manage'), themeCtrl.retiredThemeWrite);
 router.get('/content', adminAuth, requirePermission('content.manage'), settingsCtrl.listContent);
 router.post('/content', adminAuth, requirePermission('content.manage'), settingsCtrl.createContent);
 router.put('/content/:id', adminAuth, requirePermission('content.manage'), settingsCtrl.updateContent);

@@ -191,7 +191,7 @@ function PointsRecordsEmpty() {
 function PointsRecordsFooter({ hasMore }: { hasMore: boolean }) {
   if (hasMore) return null;
   return (
-    <div className="px-4 py-8 text-center text-xs text-muted-foreground">
+    <div className="sf-next-asset-ledger__footer">
       暂无更多记录
     </div>
   );
@@ -223,12 +223,9 @@ function PointsRecordsSection({
   onLoadMore: () => void;
 }) {
   return (
-    <section className="min-w-0" aria-labelledby="points-records-heading">
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <h2 id="points-records-heading" className="flex items-center gap-2 text-base font-semibold text-foreground">
-          <span className="h-5 w-1 rounded-full bg-[var(--theme-price)]" aria-hidden />
-          积分明细
-        </h2>
+    <section className="sf-next-asset-ledger" aria-labelledby="points-records-heading">
+      <div className="sf-next-asset-ledger__head">
+        <h2 id="points-records-heading" className="sf-next-asset-ledger__title">积分明细</h2>
       </div>
 
       {loading ? (
@@ -238,7 +235,7 @@ function PointsRecordsSection({
       ) : records.length === 0 ? (
         <PointsRecordsEmpty />
       ) : (
-        <div className="space-y-3">
+        <div className="sf-next-asset-record-list">
           {records.map((record) => (
             <PointsRecordRow
               key={record.id}
@@ -249,14 +246,14 @@ function PointsRecordsSection({
             />
           ))}
           {loadMoreError ? (
-            <p className="px-1 text-center text-xs text-[var(--theme-danger)]">{loadMoreError}</p>
+            <p className="sf-next-asset-ledger__error">{loadMoreError}</p>
           ) : null}
           {hasMore ? (
             <UnifiedButton
               type="button"
               onClick={onLoadMore}
               disabled={loadingMore}
-              className="w-full rounded-xl border border-border bg-card py-3 text-sm text-muted-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-60"
+              className="sf-next-asset-load-more"
             >
               {loadingMore ? "加载中..." : "加载更多"}
             </UnifiedButton>
@@ -283,23 +280,23 @@ function PointsRecordRow({
   const label = normalizePointsText(description, action) || "积分变动";
 
   return (
-    <article className="flex items-start gap-3 rounded-xl border border-border bg-card px-[var(--sf-card-x)] py-[var(--sf-card-y)] sm:p-4">
+    <article className="sf-next-asset-record">
       <div
         className={cn(
-          "mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
+          "sf-next-asset-record__icon",
           positive ? THEME_ROW_ICON_POSITIVE : THEME_ROW_ICON_NEGATIVE,
         )}
         aria-hidden
       >
         {positive ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
       </div>
-      <div className="min-w-0 flex-1">
-        <p className="break-words text-sm font-medium leading-snug text-foreground">{label}</p>
-        <p className="mt-1 text-[11px] leading-4 text-muted-foreground">{formatDateTime(createdAt)}</p>
+      <div className="sf-next-asset-record__copy">
+        <p className="sf-next-asset-record__title">{label}</p>
+        <p className="sf-next-asset-record__time">{formatDateTime(createdAt)}</p>
       </div>
       <span
         className={cn(
-          "shrink-0 pl-2 text-sm font-bold tabular-nums",
+          "sf-next-asset-record__amount",
           positive ? THEME_TEXT_SUCCESS : THEME_TEXT_DANGER,
         )}
       >
@@ -375,7 +372,7 @@ export default function Points() {
       className="sf-next-page sf-next-route-page sf-next-account-route-page sf-next-points-page"
       mainClassName="sf-next-account-main sm:py-6 xl:py-6"
     >
-      <div className="sf-next-points-stack flex flex-col gap-6">
+      <div className="sf-next-points-stack">
         <PointsHeroCard
           balance={displayBalance}
           signInConfig={signInConfig}

@@ -2,12 +2,10 @@ import { BadgePercent, Home, LayoutGrid, ShoppingCart, User } from "lucide-react
 import { type PointerEvent, useCallback, useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import DeferredStoreCartBadge from "@/components/store/DeferredStoreCartBadge";
-import { useThemeRuntime } from "@/contexts/ThemeRuntimeProvider";
 import { cn } from "@/lib/utils";
-import { getBottomNavInnerClassName, getBottomNavShellClassName } from "@/utils/themeVisuals";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
 import { isStoreNavPathVisible } from "@/utils/storeNavVisibility";
-import { shouldHideBottomNav } from "./bottomNavVisibility";
+import { shouldHideBottomNav, shouldSkipIdleTabRoutePreload } from "./bottomNavVisibility";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { getRememberedStoreTabPath, rememberCurrentStoreScrollPosition } from "@/utils/storeScrollRestoration";
 import { stripPublicLocaleFromPathname, usePublicLocale } from "@/i18n/publicLocale";
@@ -25,16 +23,8 @@ type ActivePointer = {
   maxMove: number;
 };
 
-function isSmallTouchViewportForIdlePreload() {
-  if (typeof navigator === "undefined" || typeof window === "undefined") return false;
-  const minScreen = Math.min(window.screen?.width || window.innerWidth, window.screen?.height || window.innerHeight);
-  const minViewport = Math.min(window.innerWidth || minScreen, window.innerHeight || minScreen);
-  const compactEdge = Math.min(minScreen || minViewport, minViewport || minScreen);
-  return navigator.maxTouchPoints > 0 && compactEdge > 0 && compactEdge <= 768;
-}
-
 function preloadIdleTabRoute(path: string) {
-  if (isSmallTouchViewportForIdlePreload()) return;
+  if (shouldSkipIdleTabRoutePreload()) return;
   void import("@/utils/preloadStoreRouteLazy")
     .then(({ preloadStoreRouteLazy }) => preloadStoreRouteLazy(path, "idle"))
     .catch(() => undefined);
@@ -48,9 +38,7 @@ export default function BottomNav() {
   const location = useLocation();
   const navigate = useStorefrontNavigate();
   const motion = useStorefrontMotionState();
-  const { themeConfig } = useThemeRuntime();
   const { localizedPath, t } = usePublicLocale();
-  const navStyle = themeConfig.navStyle;
   const capabilities = useSiteCapabilities();
   const activePointerRef = useRef<ActivePointer | null>(null);
   const lastNavTapRef = useRef<{ path: string; at: number } | null>(null);
@@ -200,17 +188,17 @@ export default function BottomNav() {
     <nav
       className={cn(
         "sf-next-bottom-nav sf-next-bottom-nav--stable",
-        getBottomNavShellClassName(navStyle, "sticky"),
+        "sticky bottom-0 left-0 right-0 z-bottom-nav pointer-events-auto",
+        "border-t border-[var(--sf-bottom-nav-border)] bg-[var(--sf-bottom-nav-bg)] shadow-[0_-14px_34px_-26px_var(--shadow-color)] backdrop-blur-xl",
         "md:hidden translate-y-0 opacity-100",
       )}
-      data-theme-nav-style={navStyle}
       style={{
         paddingBottom: "max(env(safe-area-inset-bottom), 0px)",
         touchAction: "manipulation",
         WebkitTapHighlightColor: "transparent",
       }}
     >
-      <div className={cn("sf-next-bottom-nav-inner sf-next-bottom-nav__inner", getBottomNavInnerClassName(navStyle))} style={{ touchAction: "manipulation" }}>
+      <div className="sf-next-bottom-nav-inner sf-next-bottom-nav__inner w-full md:mx-auto md:max-w-lg" style={{ touchAction: "manipulation" }}>
         <div className="sf-next-bottom-nav__grid grid h-[68px] items-center px-1" style={{ gridTemplateColumns: `repeat(${visibleTabs.length}, minmax(0, 1fr))` }}>
           {visibleTabs.map((tab) => {
             const isCurrent = isTabActive(tab.path);

@@ -7,7 +7,7 @@ type WhatsAppIconProps = {
 
 export default function WhatsAppIcon({
   size = 24,
-  color = "#25D366",
+  color = "#25D366", // theme-hardcode-allowed: official WhatsApp brand color
   className,
   "aria-hidden": ariaHidden,
 }: WhatsAppIconProps) {

@@ -166,6 +166,7 @@ export interface Product {
   compliance_notice?: string | null;
   allow_index?: boolean | number | null;
   category_name?: string;
+  effective_cover_image?: string;
   sku_count?: number;
   enabled_sku_count?: number;
   min_sku_price?: number | null;
@@ -209,6 +210,7 @@ export interface ProductListParams {
   sort?: ProductSortType;
   stock_status?: "normal" | "low" | "out";
   cost_status?: "normal" | "missing";
+  media_status?: "normal" | "missing";
   min_margin?: number;
   max_margin?: number;
   page?: number;

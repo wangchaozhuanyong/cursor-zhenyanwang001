@@ -43,10 +43,10 @@ export const storefrontNextSpaceScale = {
 
 export const storefrontNextSurfaceScale = {
   pageRadius: "0px",
-  sheetRadius: "18px",
-  cardRadius: "14px",
-  innerRadius: "10px",
-  fieldRadius: "12px",
+  sheetRadius: "8px",
+  cardRadius: "8px",
+  innerRadius: "6px",
+  fieldRadius: "6px",
   hairline: "1px",
 } as const;
 
@@ -68,27 +68,11 @@ export const storefrontNextComponentContract = {
     "Only the storefront next bottom navigation classes may define the mobile nav shell.",
     "Pages with their own checkout or detail action bars must reserve bottom inset through the shared next variables.",
   ],
-  themeRuntime: [
-    "Admin skins can change client palette, texture, density, and component variants.",
-    "Admin skins must not change the core type scale, product media ratio, safe-area model, or route shell structure.",
+  fixedAppearance: [
+    "The storefront uses one fixed palette, texture, density, and component system.",
+    "Admin appearance preferences never change the storefront design.",
   ],
 } as const;
-
-export const storefrontNextAdminThemeFields = [
-  "palette",
-  "surface",
-  "texture",
-  "density",
-  "motionLevel",
-  "navStyle",
-  "homeLayout",
-  "headerStyle",
-  "bannerStyle",
-  "productCardVariant",
-  "couponStyle",
-  "memberCardStyle",
-  "categoryIconStyle",
-] as const;
 
 export const storefrontNextRouteCoverage = [
   "/",

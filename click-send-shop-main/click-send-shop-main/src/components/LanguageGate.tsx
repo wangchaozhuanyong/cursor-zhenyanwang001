@@ -3,6 +3,8 @@ import { useLocation } from "react-router-dom";
 import { useSiteCapabilities, useSiteCapabilitiesReady } from "@/hooks/useSiteCapabilities";
 import { isChineseBrowserLanguage } from "@/utils/browserLanguage";
 import { getPublicLocaleFromPathname } from "@/i18n/publicLocale";
+import { Languages } from "lucide-react";
+import "@/styles/fixed-storefront-overlays.css";
 
 /** 后台路由（含 /admin/login）不受前台中文浏览器限制影响 */
 function isLanguageGateExemptPath(pathname: string): boolean {
@@ -32,19 +34,23 @@ export default function LanguageGate() {
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-background px-6 text-center"
+      className="sf-fixed-access-gate"
       role="dialog"
       aria-modal="true"
       aria-labelledby="language-gate-title"
     >
-      <div className="max-w-sm rounded-2xl border border-border bg-card p-6 shadow-lg">
-        <h1 id="language-gate-title" className="text-lg font-semibold text-foreground">
-          暂不支持当前浏览器语言
-        </h1>
-        <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-          当前站点仅面向中文浏览器用户开放。请将浏览器首选语言设置为中文（简体或繁体）后刷新页面。
-        </p>
-      </div>
+      <section className="sf-fixed-access-gate__panel">
+        <span className="sf-fixed-access-gate__icon" aria-hidden>
+          <Languages size={22} />
+        </span>
+        <div className="sf-fixed-access-gate__copy">
+          <p className="sf-fixed-access-gate__eyebrow">语言设置</p>
+          <h1 id="language-gate-title">暂不支持当前浏览器语言</h1>
+          <p>
+            当前站点仅面向中文浏览器用户开放。请将浏览器首选语言设置为中文（简体或繁体）后刷新页面。
+          </p>
+        </div>
+      </section>
     </div>
   );
 }

@@ -115,28 +115,6 @@ export function AdminSiteSettingsSkeleton() {
   );
 }
 
-export function AdminThemeStudioSkeleton() {
-  return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="skeleton-base skeleton-shimmer h-8 w-48 rounded" />
-        <div className="flex gap-2">
-          <div className="skeleton-base skeleton-shimmer h-9 w-20 rounded-lg" />
-          <div className="skeleton-base skeleton-shimmer h-9 w-20 rounded-lg" />
-        </div>
-      </div>
-      <div className="grid gap-4 lg:grid-cols-[240px_1fr]">
-        <div className="space-y-2 rounded-xl border border-border p-3">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="skeleton-base skeleton-shimmer h-10 w-full rounded-lg" />
-          ))}
-        </div>
-        <div className="skeleton-base skeleton-shimmer min-h-[480px] w-full rounded-xl" />
-      </div>
-    </div>
-  );
-}
-
 export function AdminRolesPageSkeleton() {
   return (
     <div className="space-y-4">

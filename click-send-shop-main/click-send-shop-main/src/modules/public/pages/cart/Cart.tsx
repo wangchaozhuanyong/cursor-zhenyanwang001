@@ -1,23 +1,24 @@
 import { Fragment, lazy, Suspense, useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
-import { BadgePercent, Heart, Minus, Pin, Plus, Share2, Trash2, ShoppingBag, Loader2, Check, LogIn, ShieldCheck, X } from "lucide-react";
+import { ArrowRight, BadgePercent, Heart, Minus, Pin, Plus, Share2, Trash2, ShoppingBag, Loader2, Check, LogIn, ShieldCheck, X } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import StorePageHeader from "@/components/store/StorePageHeader";
 import { STORE_MOBILE_PAGE_HEADER_CLASS } from "@/constants/storeLayout";
 import { THEME_PRODUCT_MEDIA_ASPECT_STYLE } from "@/constants/productMediaAspect";
 import { cartLineKey, useCartStore } from "@/stores/useCartStore";
 import { useFavoritesStore } from "@/stores/useFavoritesStore";
+import { useProductStore } from "@/stores/useProductStore";
 import ProductCoverImage from "@/components/ProductCoverImage";
+import ProductCardV2 from "@/modules/storefront-v2/product/ProductCardV2";
 import type { CartItem, CartPromotionPreview } from "@/types/cart";
 import type { CheckoutPickerCoupon } from "@/types/coupon";
 import type { SubmitOrderParams } from "@/types/order";
+import type { Product } from "@/types/product";
 import { isLoggedIn } from "@/utils/token";
 import { copyToClipboard } from "@/utils/clipboard";
-import TrustInfo from "@/components/TrustInfo";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
 import { parseSstEnabled } from "@/utils/sstTax";
 import MarketingPositionNotices from "@/modules/public/components/marketing/MarketingPositionNotices";
-import { THEME_ALERT_ERROR_SOFT } from "@/utils/themeVisuals";
 import StorePriceAmount from "@/components/store/StorePriceAmount";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { DesktopPurchaseCard, DesktopPurchaseTwoColumn } from "@/components/store/DesktopPurchasePattern";
@@ -101,6 +102,10 @@ export default function Cart() {
   const isFavoriteProduct = useFavoritesStore((s) => s.isFavorite);
   const toggleFavorite = useFavoritesStore((s) => s.toggleFavorite);
   const siteInfo = useSiteInfo();
+  const hotProducts = useProductStore((state) => state.hotProducts);
+  const newProducts = useProductStore((state) => state.newProducts);
+  const recommendedProducts = useProductStore((state) => state.recommendedProducts);
+  const loadHomeData = useProductStore((state) => state.loadHomeData);
   const sstCartNote = (siteInfo.sstCustomerNote || "").trim();
   const showSstCartHint = parseSstEnabled(siteInfo.sstEnabled);
   const [deleteTarget, setDeleteTarget] = useState<{ productId: string; variantId?: string; name: string } | null>(null);
@@ -136,6 +141,19 @@ export default function Cart() {
     () => items.map((item) => `${cartLineKey(item.product.id, item.variant_id)}:${item.qty}`).join("|"),
     [items],
   );
+  const hasRecommendationData = hotProducts.length > 0 || newProducts.length > 0 || recommendedProducts.length > 0;
+  const cartRecommendations = useMemo(() => {
+    const cartProductIds = new Set(items.map((item) => item.product.id));
+    const seen = new Set<string>();
+    return [...recommendedProducts, ...hotProducts, ...newProducts]
+      .filter((product) => {
+        if (!product?.id || seen.has(product.id) || cartProductIds.has(product.id)) return false;
+        if (!product.cover_image?.trim()) return false;
+        seen.add(product.id);
+        return true;
+      })
+      .slice(0, 3);
+  }, [hotProducts, items, newProducts, recommendedProducts]);
   const couponPreviewParams = useMemo<SubmitOrderParams | null>(() => {
     if (!capabilities.couponEnabled || !isLoggedIn() || selectedItems.length === 0) return null;
     return {
@@ -204,6 +222,10 @@ export default function Cart() {
   useEffect(() => {
     void loadCart();
   }, [loadCart]);
+
+  useEffect(() => {
+    void loadHomeData({ background: hasRecommendationData });
+  }, [hasRecommendationData, loadHomeData]);
 
   useEffect(() => {
     if (!isLoggedIn() || items.length === 0) {
@@ -384,7 +406,7 @@ export default function Cart() {
   };
 
   return (
-    <div className="sf-next-page sf-next-page-shell sf-next-cart-page bg-[var(--theme-bg)] text-[var(--theme-text)] md:pb-0 lg:pb-0">
+    <div className="sf-next-page sf-next-page-shell sf-next-cart-page">
       <StorePageHeader
         className={`${STORE_MOBILE_PAGE_HEADER_CLASS} sf-next-cart-mobile-header sf-next-cart-header`}
         rightSlot={items.length > 0 ? (
@@ -401,58 +423,58 @@ export default function Cart() {
         title={headerTitle}
       />
 
-      <main className="mx-auto w-full max-w-screen-xl px-[var(--store-page-x)] md:px-6 md:py-4">
+      <main className="sf-next-cart-main">
+        <div className="sf-next-cart-desktop-heading">
+          <h1>{headerTitle}</h1>
+        </div>
         {/* 桌面端：左商品列表 / 右结算摘要 */}
         {items.length > 0 ? (
           <DesktopPurchaseTwoColumn
             className="xl:grid-cols-[minmax(0,1fr)_360px]"
             aside={
               <DesktopPurchaseCard title={t("cart.summary")} className="sf-next-cart-summary">
-                <div className="space-y-2.5 text-sm">
+                <div className="sf-next-cart-summary__body">
                   <div className="sf-next-cart-summary-discount-callout">
                     <span>{estimatedDiscount > 0 ? t("cart.autoDiscountSaved") : t("cart.autoDiscountTitle")}</span>
                     <strong>{estimatedDiscount > 0 ? `RM ${formatCartMoney(estimatedDiscount)}` : t("cart.discountPending")}</strong>
                   </div>
-                  <div className="flex justify-between text-muted-foreground">
+                  <div className="sf-next-cart-summary__row">
                     <span>{t("cart.selectedItems")}</span>
                     <span>
                       {totalItemsSelected()} {t("cart.itemUnit")}
                     </span>
                   </div>
-                  <div className="flex justify-between text-muted-foreground">
+                  <div className="sf-next-cart-summary__row">
                     <span>{showSstCartHint ? t("cart.subtotalTaxIncluded") : t("cart.subtotal")}</span>
                     <span>RM {formatCartMoney(selectedAmount)}</span>
                   </div>
                   {estimatedDiscount > 0 ? (
-                    <div className="flex justify-between text-muted-foreground">
+                    <div className="sf-next-cart-summary__row">
                       <span>{t("cart.savedAmount")}</span>
                       <span className="font-semibold text-[var(--theme-price)]">-RM {formatCartMoney(estimatedDiscount)}</span>
                     </div>
                   ) : null}
                   {showSstCartHint ? (
-                    <p className="text-[11px] leading-relaxed text-muted-foreground">
+                    <p className="text-xs leading-relaxed text-muted-foreground">
                       {sstCartNote || t("cart.sstIncludedNote")}
                     </p>
                   ) : null}
-                  <div className="my-3 border-t border-[var(--theme-border)]" />
-                  <div className="flex items-baseline justify-between">
-                    <span className="text-sm text-foreground">{t("cart.total")}</span>
-                    <span className="text-[18px] font-extrabold text-[var(--theme-price)] sm:text-xl">
+                  <div className="sf-next-cart-summary__divider" />
+                  <div className="sf-next-cart-summary__total">
+                    <span>{t("cart.total")}</span>
+                    <strong>
                       RM {formatCartMoney(estimatedPayable)}
-                    </span>
+                    </strong>
                   </div>
                 </div>
                 <UnifiedButton
                   type="button"
                   onClick={handleCheckout}
                   disabled={selectedQty === 0}
-                  className="mt-5 w-full rounded-full py-3.5 text-sm font-bold transition-all hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50 !min-h-0"
+                  className="sf-next-cart-summary__checkout"
                 >
                   {checkoutLabel}
                 </UnifiedButton>
-                <div className="mt-4">
-                  <TrustInfo />
-                </div>
               </DesktopPurchaseCard>
             }
           >
@@ -474,21 +496,21 @@ export default function Cart() {
               </div>
             )}
             {error && (
-              <div className={`mb-3 flex flex-col gap-3 rounded-lg px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between ${THEME_ALERT_ERROR_SOFT}`} role="alert">
+              <div className="sf-next-cart-error" role="alert">
                 <span className="min-w-0">{error}</span>
                 <UnifiedButton
                   onClick={() => {
                     clearError();
                     loadCart({ force: true });
                   }}
-                  className="inline-flex min-h-8 shrink-0 items-center justify-center rounded-full px-3 text-xs font-semibold underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-danger)] focus-visible:ring-offset-2"
+                  className="sf-next-cart-error__retry"
                 >
                   {t("common.retry")}
                 </UnifiedButton>
               </div>
             )}
             {loading && items.length === 0 ? (
-              <div className="flex flex-col items-center py-20 text-muted-foreground" role="status" aria-live="polite">
+              <div className="sf-next-cart-loading" role="status" aria-live="polite">
                 <Loader2 size={24} className="animate-spin mb-3" />
                 <p className="text-sm">{t("cart.loading")}</p>
               </div>
@@ -496,27 +518,21 @@ export default function Cart() {
               <>
               <div
                 className="sf-next-cart-list"
-                style={{ border: 0, borderRadius: 0, background: "transparent", boxShadow: "none" }}
               >
                 {/* 桌面：列表头 + 全选 */}
-                <div className="hidden items-center justify-between border-b border-[var(--theme-border)] px-1 py-3 md:flex">
+                <div className="sf-next-cart-list-head">
                   <UnifiedButton
                     type="button"
                     onClick={() => setSelectAll(!allSelected)}
-                    className="flex items-center gap-2 rounded-none bg-transparent text-sm text-muted-foreground hover:text-foreground !min-h-0 !px-0 !py-0"
+                    className="sf-next-cart-list-head__select"
                   >
                     <span
-                      className={`flex h-5 w-5 items-center justify-center rounded border-2 ${
-                        allSelected
-                          ? "border-[var(--theme-price)] btn-theme-price"
-                          : someSelected
-                            ? "border-[color-mix(in_srgb,var(--theme-price)_60%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-price)_10%,var(--theme-surface))]"
-                            : "border-muted-foreground/40"
-                      }`}
+                      className="sf-next-cart-list-head__mark"
+                      data-selected={allSelected ? "true" : someSelected ? "mixed" : "false"}
                     >
                       {allSelected && <Check size={12} strokeWidth={3} />}
                       {!allSelected && someSelected && (
-                        <span className="h-2 w-2 rounded-sm bg-[var(--theme-price)]" />
+                        <span className="sf-next-cart-list-head__mixed" />
                       )}
                     </span>
                     {t("cart.selectAll")} ({selectedCount}/{items.length})
@@ -540,7 +556,7 @@ export default function Cart() {
                       </div>
                     ) : null}
                     <div
-                      className="sf-next-cart-item relative flex min-w-0 gap-2.5 py-4 sm:gap-3 md:py-5"
+                      className="sf-next-cart-item"
                       data-unavailable={unavailableReason ? "true" : undefined}
                     >
                       <UnifiedButton
@@ -549,24 +565,19 @@ export default function Cart() {
                           closeItemActions();
                           toggleSelect(item.product.id, item.variant_id);
                         }}
-                        className="self-center flex h-10 w-7 flex-shrink-0 items-center justify-center rounded-none border-0 bg-transparent shadow-none !p-0"
+                        className="sf-next-cart-select-button"
                         aria-label={selected ? t("cart.unselectForCheckout") : t("cart.selectForCheckout")}
                       >
                         <span
-                          className={`flex h-7 w-7 items-center justify-center rounded-full border shadow-sm transition-colors ${
-                            selected
-                              ? "border-[var(--theme-price)] bg-[color-mix(in_srgb,var(--theme-price)_12%,var(--theme-surface))] text-[var(--theme-price)]"
-                              : "border-[var(--theme-border)] bg-[var(--theme-surface)] text-transparent"
-                          }`}
+                          className="sf-next-cart-select-mark"
+                          data-selected={selected ? "true" : "false"}
                         >
                           {selected && <Check size={15} strokeWidth={3} />}
                         </span>
                       </UnifiedButton>
                       <div className="relative min-w-0 flex-1 overflow-hidden">
                         <div
-                          className={`absolute inset-y-1 right-0 flex overflow-hidden rounded-r-2xl border border-[var(--theme-border)] bg-[color-mix(in_srgb,var(--theme-surface)_70%,var(--theme-bg))] transition-opacity ${
-                            actionsOpen ? "opacity-100" : "opacity-0"
-                          }`}
+                          className={`sf-next-cart-action-tray${actionsOpen ? " is-open" : ""}`}
                           style={{ width: CART_ACTION_WIDTH }}
                           aria-hidden={!actionsOpen}
                         >
@@ -574,7 +585,7 @@ export default function Cart() {
                             type="button"
                             tabIndex={actionsOpen ? 0 : -1}
                             onClick={() => handlePinToTop(item)}
-                            className="flex min-w-0 flex-1 flex-col items-center justify-center gap-1 border-l border-[var(--theme-border)] px-1 text-[11px] font-semibold text-[var(--theme-text)]"
+                            className="sf-next-cart-action-button"
                           >
                             <Pin size={15} />
                             <span>{t("cart.pin")}</span>
@@ -583,7 +594,7 @@ export default function Cart() {
                             type="button"
                             tabIndex={actionsOpen ? 0 : -1}
                             onClick={() => handleMoveToFavorite(item)}
-                            className="flex min-w-0 flex-1 flex-col items-center justify-center gap-1 border-l border-[var(--theme-border)] px-1 text-[11px] font-semibold text-[var(--theme-price)]"
+                            className="sf-next-cart-action-button"
                           >
                             <Heart size={15} />
                             <span>{t("cart.moveToFavorite")}</span>
@@ -592,7 +603,7 @@ export default function Cart() {
                             type="button"
                             tabIndex={actionsOpen ? 0 : -1}
                             onClick={() => handleShareProduct(item)}
-                            className="flex min-w-0 flex-1 flex-col items-center justify-center gap-1 border-l border-[var(--theme-border)] px-1 text-[11px] font-semibold text-[var(--theme-primary)]"
+                            className="sf-next-cart-action-button"
                           >
                             <Share2 size={15} />
                             <span>{t("cart.share")}</span>
@@ -608,7 +619,7 @@ export default function Cart() {
                                 name: item.product.name,
                               });
                             }}
-                            className="flex min-w-0 flex-1 flex-col items-center justify-center gap-1 border-l border-[var(--theme-danger)]/20 bg-[color-mix(in_srgb,var(--theme-danger)_10%,var(--theme-surface))] px-1 text-[11px] font-semibold text-[var(--theme-danger)]"
+                            className="sf-next-cart-action-button sf-next-cart-action-button--danger"
                           >
                             <Trash2 size={15} />
                             <span>{t("cart.delete")}</span>
@@ -618,7 +629,7 @@ export default function Cart() {
                           onPointerDown={(event) => handleCartSwipeStart(event, lineKey)}
                           onPointerUp={(event) => handleCartSwipeEnd(event, lineKey)}
                           onPointerCancel={handleCartSwipeCancel}
-                          className="sf-next-cart-item-row relative z-10 flex min-w-0 gap-2.5 bg-transparent py-0.5 sm:gap-3"
+                          className="sf-next-cart-item-row"
                           style={{
                             transform: actionsOpen ? `translateX(-${CART_ACTION_WIDTH}px)` : "translateX(0)",
                             transition: "transform 180ms ease",
@@ -631,7 +642,7 @@ export default function Cart() {
                               closeItemActions();
                               navigate(localizedPath(`/product/${item.product.id}`), { state: { from: currentPath } });
                             }}
-                            className="sf-next-cart-media sf-next-cart-item-media w-14 flex-shrink-0 self-start cursor-pointer overflow-hidden rounded-xl border-0 bg-transparent p-0 sm:w-16 md:w-16 lg:w-20"
+                            className="sf-next-cart-media sf-next-cart-item-media"
                             style={THEME_PRODUCT_MEDIA_ASPECT_STYLE}
                             aria-label={`${t("common.browseProducts")} ${item.product.name}`}
                           >
@@ -644,18 +655,18 @@ export default function Cart() {
                               fetchPriority={index === 0 ? "high" : "low"}
                             />
                           </UnifiedButton>
-                          <div className="sf-next-cart-item-content flex min-w-0 flex-1 flex-col justify-between">
-                            <div className="sf-next-cart-item-copy min-w-0">
+                          <div className="sf-next-cart-item-content">
+                            <div className="sf-next-cart-item-copy">
                               <h3
                                 onClick={() => {
                                   closeItemActions();
                                   navigate(localizedPath(`/product/${item.product.id}`), { state: { from: currentPath } });
                                 }}
-                                className="sf-next-cart-item-title cursor-pointer break-words leading-tight text-foreground line-clamp-2 hover:text-theme-price"
+                                className="sf-next-cart-item-title"
                               >
                                 {item.product.name}
                               </h3>
-                              {item.variant_name ? <p className="sf-next-cart-item-variant mt-1 truncate text-muted-foreground">规格：{item.variant_name}</p> : null}
+                              {item.variant_name ? <p className="sf-next-cart-item-variant">规格：{item.variant_name}</p> : null}
                               {getCartLineDealLabel(item, t) ? (
                                 <span className="sf-next-cart-item-deal-badge">
                                   <BadgePercent size={12} aria-hidden />
@@ -666,12 +677,12 @@ export default function Cart() {
                                 <p className="sf-next-cart-line-unavailable">{unavailableReason}</p>
                               ) : null}
                             </div>
-                            <div className="sf-next-cart-item-bottom mt-2 flex min-w-0 items-center justify-between gap-2">
+                            <div className="sf-next-cart-item-bottom">
                               <StorePriceAmount
                                 amount={item.product.price}
-                                amountClassName="text-[15px] font-extrabold leading-tight sm:text-base"
+                                amountClassName="sf-next-cart-item-price"
                               />
-                              <div className="sf-next-cart-qty-control flex h-9 shrink-0 items-center overflow-hidden rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)]">
+                              <div className="sf-next-cart-qty-control">
                                 <UnifiedButton
                                   type="button"
                                   onClick={async () => {
@@ -681,7 +692,7 @@ export default function Cart() {
                                       showCartToast("error", e instanceof Error ? e.message : t("cart.updateQuantityFailed"));
                                     }
                                   }}
-                                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-transparent active:bg-[var(--theme-bg)] !p-0"
+                                  className="sf-next-cart-qty-button"
                                   aria-label={t("cart.quantityReduced")}
                                 >
                                   <Minus size={14} className="text-foreground" />
@@ -689,7 +700,7 @@ export default function Cart() {
                                 <UnifiedButton
                                   type="button"
                                   onClick={() => openQuantitySelector(item)}
-                                  className="flex min-w-[34px] items-center justify-center self-stretch px-1 text-center text-sm font-semibold tabular-nums text-foreground"
+                                  className="sf-next-cart-qty-value"
                                   aria-label={`${t("cart.quantitySelectAria")}, ${t("cart.currentQuantityPrefix")} ${item.qty} ${t("cart.quantityUnit")}`}
                                 >
                                   {item.qty}
@@ -703,18 +714,18 @@ export default function Cart() {
                                       showCartToast("error", e instanceof Error ? e.message : t("cart.updateQuantityFailed"));
                                     }
                                   }}
-                                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-transparent active:bg-[var(--theme-bg)] !p-0"
+                                  className="sf-next-cart-qty-button"
                                   aria-label={t("cart.quantityIncreased")}
                                 >
                                   <Plus size={14} className="text-foreground" />
                                 </UnifiedButton>
                               </div>
                             </div>
-                            <div className="mt-3 hidden flex-wrap items-center gap-2 md:flex">
+                            <div className="sf-next-cart-desktop-actions">
                               <UnifiedButton
                                 type="button"
                                 onClick={() => handlePinToTop(item)}
-                                className="inline-flex h-8 items-center gap-1 rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 text-xs font-semibold text-[var(--theme-text-muted)] transition hover:text-[var(--theme-text)]"
+                                className="sf-next-cart-desktop-action"
                               >
                                 <Pin size={13} />
                                 {t("cart.pin")}
@@ -722,7 +733,7 @@ export default function Cart() {
                               <UnifiedButton
                                 type="button"
                                 onClick={() => handleMoveToFavorite(item)}
-                                className="inline-flex h-8 items-center gap-1 rounded-full border border-[color-mix(in_srgb,var(--theme-price)_24%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-price)_6%,var(--theme-surface))] px-3 text-xs font-semibold text-[var(--theme-price)] transition hover:bg-[color-mix(in_srgb,var(--theme-price)_10%,var(--theme-surface))]"
+                                className="sf-next-cart-desktop-action"
                               >
                                 <Heart size={13} />
                                 {t("cart.moveToFavorite")}
@@ -730,7 +741,7 @@ export default function Cart() {
                               <UnifiedButton
                                 type="button"
                                 onClick={() => handleShareProduct(item)}
-                                className="inline-flex h-8 items-center gap-1 rounded-full border border-[color-mix(in_srgb,var(--theme-primary)_24%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-primary)_6%,var(--theme-surface))] px-3 text-xs font-semibold text-[var(--theme-primary)] transition hover:bg-[color-mix(in_srgb,var(--theme-primary)_10%,var(--theme-surface))]"
+                                className="sf-next-cart-desktop-action"
                               >
                                 <Share2 size={13} />
                                 {t("cart.share")}
@@ -745,7 +756,7 @@ export default function Cart() {
                                     name: item.product.name,
                                   });
                                 }}
-                                className="inline-flex h-8 items-center gap-1 rounded-full border border-[color-mix(in_srgb,var(--theme-danger)_28%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-danger)_6%,var(--theme-surface))] px-3 text-xs font-semibold text-[var(--theme-danger)] transition hover:bg-[color-mix(in_srgb,var(--theme-danger)_10%,var(--theme-surface))]"
+                                className="sf-next-cart-desktop-action sf-next-cart-desktop-action--danger"
                               >
                                 <Trash2 size={13} />
                                 {t("cart.delete")}
@@ -757,8 +768,7 @@ export default function Cart() {
                       {!isLastItem && (
                         <span
                           aria-hidden="true"
-                          className="pointer-events-none absolute bottom-0 left-10 right-0 h-px opacity-80"
-                          style={{ background: "linear-gradient(90deg, transparent, var(--theme-border), transparent)" }}
+                          className="sf-next-cart-item-divider"
                         />
                       )}
                     </div>
@@ -781,14 +791,18 @@ export default function Cart() {
                   t={t}
                 />
               </div>
+              <CartRecommendationSection
+                products={cartRecommendations}
+                onViewAll={() => navigate(localizedPath("/categories"))}
+              />
               </>
             )}
           </DesktopPurchaseTwoColumn>
         ) : (
-          <div className="mx-auto max-w-2xl">
+          <div className="sf-next-cart-empty-wrap">
             <MarketingPositionNotices position="cart_notice" className="mb-3" />
             {loading ? (
-              <div className="flex flex-col items-center py-20 text-muted-foreground" role="status" aria-live="polite">
+              <div className="sf-next-cart-loading" role="status" aria-live="polite">
                 <Loader2 size={24} className="animate-spin mb-3" />
                 <p className="text-sm">{t("cart.loading")}</p>
               </div>
@@ -809,33 +823,17 @@ export default function Cart() {
                 </UnifiedButton>
               </section>
             )}
+            <CartRecommendationSection
+              products={cartRecommendations}
+              onViewAll={() => navigate(localizedPath("/categories"))}
+            />
           </div>
         )}
       </main>
       {/* 移动端：结算操作块保持在内容流内，避免遮挡优惠券和商品信息。 */}
       {items.length > 0 && (
-        <div className="sf-next-cart-checkout-bar md:hidden">
+        <div className="sf-next-cart-checkout-bar">
           <div className="sf-next-cart-checkout-bar__inner">
-            <UnifiedButton
-              type="button"
-              onClick={() => setSelectAll(!allSelected)}
-              aria-pressed={allSelected}
-              className="sf-next-cart-checkout-select flex shrink-0 items-center justify-center gap-1.5 rounded-none bg-transparent text-xs font-semibold text-[var(--theme-text-muted)] !min-h-0 !px-0 !py-0"
-            >
-              <span
-                className={`sf-next-cart-checkout-select__box flex items-center justify-center rounded border-2 ${
-                  allSelected
-                    ? "border-[var(--theme-price)] btn-theme-price"
-                    : someSelected
-                      ? "border-[color-mix(in_srgb,var(--theme-price)_60%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-price)_10%,var(--theme-surface))]"
-                      : "border-muted-foreground/40"
-                }`}
-              >
-                {allSelected && <Check size={12} strokeWidth={3} />}
-                {!allSelected && someSelected && <span className="h-2 w-2 rounded-sm bg-[var(--theme-price)]" />}
-              </span>
-              {t("cart.selectAll")}
-            </UnifiedButton>
             <div className="sf-next-cart-checkout-total min-w-0 flex-1" aria-live="polite">
               <span className="sf-next-cart-checkout-total__label">{estimatedDiscount > 0 ? t("cart.estimatedPayable") : t("cart.total")}</span>
               <span className="sf-next-cart-checkout-total__price">
@@ -851,7 +849,7 @@ export default function Cart() {
               type="button"
               onClick={handleCheckout}
               disabled={selectedQty === 0}
-              className="sf-next-cart-checkout-button shrink-0 text-sm font-bold transition-all disabled:cursor-not-allowed disabled:opacity-50 !min-h-0"
+              className="sf-next-cart-checkout-button"
             >
               {checkoutLabel}
             </UnifiedButton>
@@ -953,6 +951,36 @@ export default function Cart() {
         </Suspense>
       ) : null}
     </div>
+  );
+}
+
+function CartRecommendationSection({
+  products,
+  onViewAll,
+}: {
+  products: Product[];
+  onViewAll: () => void;
+}) {
+  if (products.length === 0) return null;
+
+  return (
+    <section className="sf-next-cart-recommendations" aria-labelledby="cart-recommendations-title">
+      <header className="sf-next-cart-recommendations__header">
+        <div>
+          <h2 id="cart-recommendations-title">继续逛逛</h2>
+          <p>根据当前热销与新品为你挑选</p>
+        </div>
+        <UnifiedButton type="button" onClick={onViewAll} className="sf-next-cart-recommendations__all">
+          查看全部
+          <ArrowRight size={16} aria-hidden />
+        </UnifiedButton>
+      </header>
+      <div className="sf-next-cart-recommendations__list">
+        {products.map((product, index) => (
+          <ProductCardV2 key={product.id} product={product} index={index} variant="list" />
+        ))}
+      </div>
+    </section>
   );
 }
 

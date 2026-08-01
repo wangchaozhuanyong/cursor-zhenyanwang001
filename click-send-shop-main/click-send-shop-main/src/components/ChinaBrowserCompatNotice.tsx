@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { Info, X } from "lucide-react";
+import "@/styles/fixed-storefront-overlays.css";
 import { getChinaBrowserCompatHint } from "@/utils/chinaBrowser";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
@@ -33,17 +35,19 @@ export default function ChinaBrowserCompatNotice() {
 
   return (
     <div
-      className="fixed inset-x-0 top-0 z-[9996] px-3 pt-[max(env(safe-area-inset-top,0px),0.5rem)]"
+      className="sf-fixed-compat-notice"
       role="status"
     >
-      <div className="mx-auto flex max-w-screen-xl items-start gap-2 rounded-lg border border-[color-mix(in_srgb,var(--theme-warning)_34%,var(--theme-border))] bg-[color-mix(in_srgb,var(--theme-warning)_14%,var(--theme-surface))] px-3 py-2 text-xs leading-relaxed text-[color-mix(in_srgb,var(--theme-warning)_78%,var(--theme-text-on-surface))] shadow-sm">
-        <p className="min-w-0 flex-1">{hint}</p>
+      <div className="sf-fixed-compat-notice__panel">
+        <Info size={17} aria-hidden />
+        <p>{hint}</p>
         <UnifiedButton
           type="button"
           onClick={dismiss}
-          className="shrink-0 rounded px-2 py-0.5 font-medium text-[color-mix(in_srgb,var(--theme-warning)_78%,var(--theme-text-on-surface))] hover:bg-[color-mix(in_srgb,var(--theme-warning)_20%,var(--theme-surface))]"
+          className="sf-fixed-compat-notice__close"
+          aria-label="关闭兼容性提示"
         >
-          知道了
+          <X size={17} aria-hidden />
         </UnifiedButton>
       </div>
     </div>

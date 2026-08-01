@@ -664,7 +664,6 @@ async function saveThemeSkinDraft(themeKey, data, adminUserId, req) {
     });
   }
   if (data?.isDefault === true) await repo.setOnlyDefaultThemeSkin(themeKey);
-  const next = await getAdminThemeSkins();
   await syncLegacySiteSettings(await getThemeSkins());
   await writeAuditLog({
     req,

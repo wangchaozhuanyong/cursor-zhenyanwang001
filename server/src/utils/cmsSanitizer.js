@@ -13,7 +13,7 @@ const ALLOWED_ATTRIBUTES = {
 };
 
 function sanitizeCmsHtml(input) {
-  const cleaned = sanitizeHtml(String(input || ''), {
+  return sanitizeHtml(String(input || ''), {
     allowedTags: ALLOWED_TAGS,
     allowedAttributes: ALLOWED_ATTRIBUTES,
     allowedSchemes: ['http', 'https', 'mailto', 'tel'],
@@ -32,7 +32,6 @@ function sanitizeCmsHtml(input) {
     disallowedTagsMode: 'discard',
     enforceHtmlBoundary: true,
   });
-  return cleaned.replace(/<a\b(?![^>]*\shref=)/gi, '<a href="#"');
 }
 
 module.exports = {

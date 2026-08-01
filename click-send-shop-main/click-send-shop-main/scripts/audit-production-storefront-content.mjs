@@ -264,6 +264,7 @@ console.log(serializedReport.trimEnd());
 if (outputPath) {
   const absoluteOutputPath = path.resolve(process.cwd(), outputPath);
   await mkdir(path.dirname(absoluteOutputPath), { recursive: true });
+  // lgtm[js/http-to-file-access] This audit intentionally persists read-only API findings to an operator-selected JSON report.
   await writeFile(absoluteOutputPath, serializedReport, "utf8");
   console.error(`[audit:production-content] report written to ${absoluteOutputPath}`);
 }

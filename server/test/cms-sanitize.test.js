@@ -24,7 +24,14 @@ describe('cms html sanitize', () => {
     const cleaned = sanitize(raw);
     assert.equal(cleaned.includes('javascript:'), false);
     assert.equal(cleaned.includes('data:text/html'), false);
-    assert.equal(cleaned.includes('href="#'), true);
+    assert.equal(cleaned.includes('href='), false);
+  });
+
+  test('does not recreate a script boundary after sanitizing malformed markup', () => {
+    const raw = '<scr<script>ipt>alert(1)</scr</script>ipt><p>safe</p>';
+    const cleaned = sanitize(raw);
+    assert.equal(/<script\b/i.test(cleaned), false);
+    assert.equal(cleaned.includes('<p>safe</p>'), true);
   });
 
   test('adds tabnabbing protection to links', () => {
@@ -34,4 +41,3 @@ describe('cms html sanitize', () => {
     assert.match(cleaned, /rel="noopener noreferrer"/);
   });
 });
-

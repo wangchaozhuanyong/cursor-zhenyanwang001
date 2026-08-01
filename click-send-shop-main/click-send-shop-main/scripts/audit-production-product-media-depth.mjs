@@ -20,6 +20,7 @@ const concurrency = Math.min(
   10,
   Math.max(1, Number(concurrencyArg?.slice("--concurrency=".length)) || 5),
 );
+const PRODUCT_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const INTERNAL_PRODUCT_FIELDS = [
   "stock_warning_threshold",
   "stock_lower_limit",
@@ -134,7 +135,11 @@ function inspectPublicInternalFields(product) {
 }
 
 async function fetchProduct(id) {
-  const pathname = `/api/products/${encodeURIComponent(id)}`;
+  const productId = String(id || "").trim();
+  if (!PRODUCT_ID_RE.test(productId)) {
+    throw new Error("repair plan contains an invalid product id");
+  }
+  const pathname = `/api/products/${productId}`;
   const response = await fetch(`${baseUrl}${pathname}`, {
     headers: { accept: "application/json" },
     signal: AbortSignal.timeout(15_000),
@@ -154,7 +159,7 @@ async function mapConcurrent(items, worker) {
     while (nextIndex < items.length) {
       const index = nextIndex;
       nextIndex += 1;
-      results[index] = await worker(items[index], index);
+      results[index] = await worker(items[index]);
     }
   }
   await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, run));

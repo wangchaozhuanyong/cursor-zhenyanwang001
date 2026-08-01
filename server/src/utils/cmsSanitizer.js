@@ -34,6 +34,18 @@ function sanitizeCmsHtml(input) {
   });
 }
 
+function hasVisibleCmsContent(input) {
+  const textOnly = sanitizeHtml(String(input || ''), {
+    allowedTags: [],
+    allowedAttributes: {},
+    disallowedTagsMode: 'discard',
+    enforceHtmlBoundary: true,
+  });
+
+  return textOnly.replace(/&(?:nbsp|#160|#xA0);/gi, ' ').trim().length > 0;
+}
+
 module.exports = {
+  hasVisibleCmsContent,
   sanitizeCmsHtml,
 };

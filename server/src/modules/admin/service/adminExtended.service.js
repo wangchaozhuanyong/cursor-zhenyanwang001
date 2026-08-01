@@ -5,7 +5,7 @@ const { ORDER_STATUS, RETURN_STATUS } = require('../../../constants/status');
 const { getResolvedTriggerCopy } = require('./notificationTriggerSettings.service');
 const adminEventBus = require('./adminEventBus.service');
 const { normalizeKnownMojibakeText } = require('../../../utils/textNormalize');
-const { sanitizeCmsHtml } = require('../../../utils/cmsSanitizer');
+const { hasVisibleCmsContent, sanitizeCmsHtml } = require('../../../utils/cmsSanitizer');
 const { parseList } = require('../../../utils/shippingFee');
 
 function returnProgressTitle(status) {
@@ -1250,7 +1250,7 @@ async function updateContentPage(id, body, adminUserId, req) {
     if (
       nextPublishStatus !== 'draft'
       && sanitizedNextContent !== null
-      && sanitizedNextContent.replace(/<[^>]*>/g, '').trim().length === 0
+      && !hasVisibleCmsContent(sanitizedNextContent)
     ) {
       emitAdminEvent({
         eventType: 'content.page_empty',
@@ -1325,4 +1325,5 @@ module.exports = {
   updateContentPage,
   ensureDefaultLegalContentPages,
   _sanitizeCmsHtmlForTest: sanitizeCmsHtml,
+  _hasVisibleCmsContentForTest: hasVisibleCmsContent,
 };

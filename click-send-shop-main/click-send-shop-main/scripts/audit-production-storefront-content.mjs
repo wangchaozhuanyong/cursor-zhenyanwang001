@@ -1,17 +1,13 @@
-import { mkdir, writeFile } from "node:fs/promises";
-import path from "node:path";
 import process from "node:process";
 
 const args = process.argv.slice(2);
 const strict = args.includes("--strict");
 const baseUrlArg = args.find((arg) => !arg.startsWith("--"));
-const outputArg = args.find((arg) => arg.startsWith("--output="));
-const outputPath = outputArg ? outputArg.slice("--output=".length).trim() : "";
 const baseUrl = String(baseUrlArg || process.env.CONTENT_BASE_URL || "").replace(/\/+$/, "");
 
 if (!baseUrl) {
   console.error(
-    "Usage: npm run audit:production-content -- https://example.com [--strict] [--output=docs/report.json]",
+    "Usage: npm run audit:production-content -- https://example.com [--strict]",
   );
   process.exit(1);
 }
@@ -261,11 +257,4 @@ const report = {
 
 const serializedReport = `${JSON.stringify(report, null, 2)}\n`;
 console.log(serializedReport.trimEnd());
-if (outputPath) {
-  const absoluteOutputPath = path.resolve(process.cwd(), outputPath);
-  await mkdir(path.dirname(absoluteOutputPath), { recursive: true });
-  // lgtm[js/http-to-file-access] This audit intentionally persists read-only API findings to an operator-selected JSON report.
-  await writeFile(absoluteOutputPath, serializedReport, "utf8");
-  console.error(`[audit:production-content] report written to ${absoluteOutputPath}`);
-}
 if (strict && blockerCount > 0) process.exit(2);

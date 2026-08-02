@@ -34,6 +34,7 @@
     "check:client-redesign-scope": "node scripts/check-client-redesign-release-scope.mjs",
     "release:client-redesign": "node scripts/run-client-redesign-release-gate.mjs",
     "theme:check": "node scripts/check-public-theme-hardcoded-colors.mjs",
+    "theme:check:client-redesign": "node scripts/check-client-redesign-theme-scope.mjs",
     "check:mojibake": "node scripts/check-mojibake.mjs",
     "check:admin-i18n": "node scripts/check-admin-i18n-health.mjs",
     "check:api-paths": "node scripts/check-api-paths.mjs",

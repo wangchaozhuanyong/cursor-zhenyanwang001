@@ -11,10 +11,14 @@ let BASE = process.env.BASE_URL ? process.env.BASE_URL.replace(/\/$/, "") : "";
 let API = "";
 const FULL_AUDIT = process.argv.includes("--full") || process.env.AUDIT_FULL === "1";
 const READ_ONLY_AUDIT = process.argv.includes("--read-only") || process.env.AUDIT_READ_ONLY === "1";
+const AUDIT_SKIN = String(process.env.AUDIT_SKIN || "").trim();
 const NAV_TIMEOUT_MS = Number(process.env.AUDIT_NAV_TIMEOUT_MS || (FULL_AUDIT ? 25000 : 15000));
 const STABLE_WAIT_MS = Number(process.env.AUDIT_STABLE_WAIT_MS || (FULL_AUDIT ? 700 : 250));
 const SCROLL_WAIT_MS = Number(process.env.AUDIT_SCROLL_WAIT_MS || (FULL_AUDIT ? 400 : 150));
-const VIEWPORTS = (process.env.VIEWPORTS || "390x844,375x667,1280x800")
+const DEFAULT_VIEWPORTS = FULL_AUDIT
+  ? "375x667,390x844,768x1024,1280x800,1440x900"
+  : "390x844,375x667,1280x800";
+const VIEWPORTS = (process.env.VIEWPORTS || DEFAULT_VIEWPORTS)
   .split(",")
   .map((s) => {
     const [w, h] = s.trim().split("x").map(Number);
@@ -105,6 +109,7 @@ const PUBLIC_ROUTES = [
   { path: "/reviews/pending", name: "待评价", needsAuth: true },
   { path: "/checkout", name: "结算", needsAuth: true, needsCart: true },
 ];
+const COUPON_STYLE_ROUTE_PATHS = new Set(["/coupons"]);
 
 const ADMIN_ROUTES = [
   { path: "/admin/login", name: "后台登录" },
@@ -647,6 +652,13 @@ async function waitStable(page) {
 }
 
 async function configureReadOnlyContext(context) {
+  if (AUDIT_SKIN) {
+    await context.addInitScript((skinId) => {
+      const nextUrl = new URL(window.location.href);
+      nextUrl.searchParams.set("skin", skinId);
+      window.history.replaceState(window.history.state, "", `${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`);
+    }, AUDIT_SKIN);
+  }
   if (!READ_ONLY_AUDIT) return;
   await context.route("**/api/**", (route) => {
     const method = route.request().method().toUpperCase();
@@ -682,9 +694,9 @@ async function tryProductDetail(page, metaBase) {
   const href = await link.getAttribute("href");
   if (!href) return issues;
 
+  await page.goto(`${BASE}${href}`, { waitUntil: "domcontentloaded", timeout: NAV_TIMEOUT_MS });
+  await waitStable(page);
   for (const scroll of SCROLL_MODES) {
-    await page.goto(`${BASE}${href}`, { waitUntil: "domcontentloaded", timeout: NAV_TIMEOUT_MS });
-    await waitStable(page);
     await scrollPage(page, scroll.id);
     const hit = await scanPage(page, { ...metaBase, route: "商品详情", path: href, scroll: scroll.label });
     if (hit) issues.push(hit);
@@ -701,9 +713,9 @@ async function tryPromotionDetail(page, metaBase) {
   const href = await link.getAttribute("href");
   if (!href || href === "/promotions") return issues;
 
+  await page.goto(`${BASE}${href}`, { waitUntil: "domcontentloaded", timeout: NAV_TIMEOUT_MS });
+  await waitStable(page);
   for (const scroll of SCROLL_MODES) {
-    await page.goto(`${BASE}${href}`, { waitUntil: "domcontentloaded", timeout: NAV_TIMEOUT_MS });
-    await waitStable(page);
     await scrollPage(page, scroll.id);
     const hit = await scanPage(page, { ...metaBase, route: "活动详情", path: href, scroll: scroll.label });
     if (hit) issues.push(hit);
@@ -813,19 +825,23 @@ async function main() {
       }
     }
 
-    for (const style of COUPON_STYLES) {
+    for (const [styleIndex, style] of COUPON_STYLES.entries()) {
       await page.addInitScript((s) => {
         document.documentElement.setAttribute("data-theme-coupon-style", s);
       }, style);
 
-      for (const route of PUBLIC_ROUTES) {
+      const routesForStyle = styleIndex === 0
+        ? PUBLIC_ROUTES
+        : PUBLIC_ROUTES.filter((route) => COUPON_STYLE_ROUTE_PATHS.has(route.path));
+
+      for (const route of routesForStyle) {
         if (route.needsAuth && !userLoggedIn) continue;
         if (route.needsCart && !cartReady) continue;
 
-        for (const scroll of SCROLL_MODES) {
-          try {
-            await page.goto(`${BASE}${route.path}`, { waitUntil: "domcontentloaded", timeout: NAV_TIMEOUT_MS });
-            await waitStable(page);
+        try {
+          await page.goto(`${BASE}${route.path}`, { waitUntil: "domcontentloaded", timeout: NAV_TIMEOUT_MS });
+          await waitStable(page);
+          for (const scroll of SCROLL_MODES) {
             await scrollPage(page, scroll.id);
             pushIssue(
               report,
@@ -837,27 +853,29 @@ async function main() {
                 scroll: scroll.label,
               }),
             );
-          } catch (err) {
-            report.push({
-              viewport: vp.label,
-              couponStyle: style,
-              route: route.name,
-              path: route.path,
-              scroll: scroll.label,
-              error: err instanceof Error ? err.message : String(err),
-            });
           }
+        } catch (err) {
+          report.push({
+            viewport: vp.label,
+            couponStyle: style,
+            route: route.name,
+            path: route.path,
+            scroll: "navigation",
+            error: err instanceof Error ? err.message : String(err),
+          });
         }
       }
 
-      await page.goto(`${BASE}/`, { waitUntil: "domcontentloaded" });
-      await waitStable(page);
-      for (const hit of await tryProductDetail(page, { viewport: vp.label, couponStyle: style })) {
-        report.push(hit);
-      }
+      if (styleIndex === 0) {
+        await page.goto(`${BASE}/`, { waitUntil: "domcontentloaded" });
+        await waitStable(page);
+        for (const hit of await tryProductDetail(page, { viewport: vp.label, couponStyle: style })) {
+          report.push(hit);
+        }
 
-      for (const hit of await tryPromotionDetail(page, { viewport: vp.label, couponStyle: style })) {
-        report.push(hit);
+        for (const hit of await tryPromotionDetail(page, { viewport: vp.label, couponStyle: style })) {
+          report.push(hit);
+        }
       }
 
       if (userLoggedIn && cartReady && isMobile) {
@@ -924,6 +942,7 @@ async function main() {
 
   const summary = {
     base: BASE,
+    skin: AUDIT_SKIN || null,
     readOnly: READ_ONLY_AUDIT,
     viewports: VIEWPORTS.map((v) => v.label),
     couponStyles: COUPON_STYLES,
@@ -934,6 +953,8 @@ async function main() {
     adminAuthenticatedScan,
     apiAvailable,
     scannedPublicRoutes: PUBLIC_ROUTES.length,
+    publicRouteStylePasses: PUBLIC_ROUTES.length
+      + Math.max(COUPON_STYLES.length - 1, 0) * COUPON_STYLE_ROUTE_PATHS.size,
     scrollModes: SCROLL_MODES.length,
     issueCount: realIssues.length,
     setupSkips,

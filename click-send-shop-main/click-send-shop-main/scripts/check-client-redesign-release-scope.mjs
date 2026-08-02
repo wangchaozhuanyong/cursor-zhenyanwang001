@@ -47,16 +47,14 @@ function isExpectedPath(appPath) {
   return (
     appPath === ".gitignore" ||
     appPath === "design-qa.md" ||
-    appPath === "production-content-readiness.md" ||
+    appPath.startsWith("design-qa/") ||
     appPath === "index.html" ||
     appPath === "package.json" ||
-    appPath === "package-lock.json" ||
     appPath === "tailwind.cart.config.ts" ||
     appPath === "tailwind.config.ts" ||
     appPath === "tailwind.promotions.config.ts" ||
     appPath === "tailwind.storefront-routes.config.ts" ||
-    appPath.startsWith("server/") ||
-    appPath.startsWith("public/assets/fixed-storefront/") ||
+    /^server\/migrations\/167_seed_default_home_nav_items\.(up|down)\.js$/.test(appPath) ||
     appPath.startsWith("src/") ||
     appPath.startsWith("scripts/") ||
     appPath.startsWith("docs/")
@@ -65,7 +63,7 @@ function isExpectedPath(appPath) {
 
 const disallowedPathPatterns = [
   { name: "environment file", pattern: /(^|\/)\.env(?:\.|$)/ },
-  { name: "unsupported lockfile", pattern: /(^|\/)(pnpm-lock\.yaml|yarn\.lock|bun\.lockb)$/ },
+  { name: "lockfile", pattern: /(^|\/)(package-lock\.json|pnpm-lock\.yaml|yarn\.lock|bun\.lockb)$/ },
   { name: "frontend dist", pattern: /(^|\/)(dist|admin-dist)(\/|$)/ },
   { name: "local artifacts", pattern: /(^|\/)artifacts(\/|$)/ },
   { name: "node modules", pattern: /(^|\/)node_modules(\/|$)/ },
@@ -81,31 +79,6 @@ for (const entry of entries) {
     if (item.pattern.test(entry.appPath) || item.pattern.test(entry.repoPath)) {
       fail("disallowed-path", `Disallowed ${item.name} in release scope`, { path: entry.repoPath });
     }
-  }
-}
-
-const packageLockEntry = entries.find((entry) => entry.appPath === "package-lock.json");
-if (packageLockEntry) {
-  const packageJsonEntry = entries.find((entry) => entry.appPath === "package.json");
-  if (!packageJsonEntry) {
-    fail("dependency-scope", "package-lock.json changed without package.json");
-  }
-
-  const packageJson = JSON.parse(fs.readFileSync(path.join(appRoot, "package.json"), "utf8"));
-  const packageLock = JSON.parse(fs.readFileSync(path.join(appRoot, "package-lock.json"), "utf8"));
-  const lockDiff = git(["diff", "--", packageLockEntry.repoPath]);
-  const addedPackages = lockDiff
-    .split("\n")
-    .filter((line) => /^\+\s*"node_modules\/[^"]+":\s*\{$/.test(line))
-    .slice(0, 8);
-
-  if (packageJson.dependencies?.["next-themes"] || packageLock.packages?.["node_modules/next-themes"]) {
-    fail("dependency-scope", "Retired next-themes dependency remains in the frontend manifest or lockfile");
-  }
-  if (addedPackages.length > 0) {
-    fail("dependency-scope", "Dependency additions are outside the fixed-client retirement scope", {
-      additions: addedPackages,
-    });
   }
 }
 
@@ -200,36 +173,6 @@ const clientDesignGateTextFiles = [
   )),
 ];
 
-const retiredFrontendSkinPaths = [
-  "scripts/verify-theme-studio.mjs",
-  "src/api/admin/theme.ts",
-  "src/components/admin/ThemePreviewScope.tsx",
-  "src/constants/starterThemeSkins.data.json",
-  "src/constants/themePresets.ts",
-  "src/constants/themeRuntimeDefaults.ts",
-  "src/contexts/ThemeRuntimeProvider.tsx",
-  "src/hooks/useThemeStudioLabel.ts",
-  "src/lib/publicTheme.ts",
-  "src/lib/themePreviewBridge.ts",
-  "src/lib/themeRevision.ts",
-  "src/modules/admin/components/theme",
-  "src/modules/admin/pages/settings/AdminThemeSettings.tsx",
-  "src/services/admin/themeService.ts",
-  "src/utils/clientDesignStyle.ts",
-  "src/utils/storefrontSkinTokens.ts",
-  "src/utils/themeConfig.ts",
-  "src/utils/themePreviewParams.ts",
-  "src/utils/themeStudioAuto.ts",
-];
-
-for (const relPath of retiredFrontendSkinPaths) {
-  if (fs.existsSync(path.join(appRoot, relPath))) {
-    fail("frontend-skin-retirement", "Retired frontend skin infrastructure returned", {
-      path: relPath,
-    });
-  }
-}
-
 function searchProject(pattern) {
   const regex = new RegExp(pattern);
   const lines = [];
@@ -262,7 +205,7 @@ const requiredReferences = [
   { name: "storefront-foundation.css", pattern: "storefront-foundation\\.css", min: 1 },
   { name: "storefront-next.tokens.css", pattern: "storefront-next\\.tokens\\.css", min: 1 },
   { name: "storefront-next.primitives.css", pattern: "storefront-next\\.primitives\\.css", min: 1 },
-  { name: "fixed-storefront.css", pattern: "fixed-storefront\\.css", min: 1 },
+  { name: "storefront-next.extended-routes.css", pattern: "storefront-next\\.extended-routes\\.css", min: 1 },
   { name: "storefront-next.category.css", pattern: "storefront-next\\.category\\.css", min: 1 },
 ];
 

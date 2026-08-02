@@ -12,6 +12,10 @@ describe("formatProfileHeroName", () => {
   it("trims surrounding whitespace before limiting the name", () => {
     expect(formatProfileHeroName("  大马通会员  ")).toBe("大马通会员");
   });
+
+  it("falls back to a stable member label when upstream returns whitespace", () => {
+    expect(formatProfileHeroName("   ")).toBe("会员用户");
+  });
 });
 
 describe("profile quick links", () => {

@@ -5,6 +5,7 @@ import { CircleHelp, Gift, Headphones, Settings, Star, Ticket, Wallet } from "lu
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   ProfileAssetPanel,
+  ProfileHeroCard,
   ProfileSecondaryLinkPanel,
   ProfileServiceGrid,
   type ProfileAssetItem,
@@ -122,5 +123,48 @@ describe("ProfileAssetPanel", () => {
     expect(buttons.map((button) => button.dataset.featureKey)).toEqual(["help", "settings"]);
     expect(onNavigate).toHaveBeenCalledWith(secondaryItems[1]);
     expect(onSupportClick).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the curated member hero stable with long account data", async () => {
+    const onAssetNavigate = vi.fn();
+    const heroAssets: ProfileAssetItem[] = [
+      { key: "coupons", label: "我的优惠券", value: "99999", icon: Ticket, path: "/coupons", auth: true },
+      { key: "points", label: "可用积分", value: "1234567890", icon: Star, path: "/points", auth: true },
+      { key: "wallet", label: "返现余额", value: "RM 1234567.89", icon: Wallet, path: "/wallet", auth: true },
+      { key: "extra", label: "额外资产", value: "4", icon: Gift, path: "/profile", auth: true },
+    ];
+
+    await renderNode(
+      <ProfileHeroCard
+        logoSrc="/logo.png"
+        userName="  超长用户昵称展示页  "
+        memberLevelName="至尊精选商城长期会员"
+        assets={heroAssets}
+        unreadCount={199}
+        onMessageClick={vi.fn()}
+        onMemberLevelClick={vi.fn()}
+        onProfileClick={vi.fn()}
+        onViewAllBenefits={vi.fn()}
+        onAssetNavigate={onAssetNavigate}
+        onAvatarClick={vi.fn()}
+        variant="curated"
+      />,
+    );
+
+    const hero = container?.querySelector(".curated-life-profile-hero-card");
+    const assets = Array.from(container?.querySelectorAll<HTMLButtonElement>(".profile-card-asset") ?? []);
+
+    expect(hero?.getAttribute("aria-label")).toBe("至尊精选商城长期会员权益");
+    expect(container?.querySelector(".profile-vip-name")?.textContent).toBe("超长用户昵称展…");
+    expect(container?.querySelector(".profile-vip-badge")?.textContent).toBe("至尊精选商城长期会员");
+    expect(container?.textContent).not.toContain("权益以当前会员配置为准");
+    expect(assets).toHaveLength(3);
+    expect(assets[2]?.getAttribute("aria-label")).toBe("返现余额：RM 1234567.89");
+
+    await act(async () => {
+      assets[2]?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+
+    expect(onAssetNavigate).toHaveBeenCalledWith(heroAssets[2]);
   });
 });

@@ -23,7 +23,6 @@ import { cn } from "@/lib/utils";
 import { usePublicLocale } from "@/i18n/publicLocale";
 import { isInternalStorefrontCopy, storefrontDisplayText } from "@/utils/storefrontCopySanitizer";
 import type { PromotionType, StorefrontPromotion } from "@/services/marketingService";
-import "@/styles/promotions-route.css";
 
 type PromotionFilter = PromotionType | "";
 const PROMOTIONS_BASE_PATH = "/promotions";
@@ -425,6 +424,8 @@ function PromotionsFolio({
 }) {
   const { localizedPath, promotionTypeLabel, t } = usePublicLocale();
   const featured = list[0];
+  const activeCount = list.filter((promotion) => promotion.runtime_status === "active").length;
+  const typeCount = new Set(list.map((promotion) => promotion.type)).size;
   const fallbackCopy = promotionFolioCopy(selectedType, promotionTypeLabel, t);
   const label = selectedType ? promotionTypeLabel(selectedType) : t("common.allPromotions");
   const title = selectedType ? fallbackCopy.title : featured ? displayPromotionTitle(featured, promotionTypeLabel) : fallbackCopy.title;
@@ -436,28 +437,39 @@ function PromotionsFolio({
 
   return (
     <section className="sf-next-promo-folio" aria-label="活动概览" aria-busy={loading ? true : undefined}>
-      <img
-        className="sf-next-promo-folio__media"
-        src="/assets/fixed-storefront/promotions-hero.webp"
-        alt=""
-        width={1200}
-        height={525}
-      />
-      <div className="sf-next-promo-folio__content">
-        <div className="sf-next-promo-folio__copy">
-          <span className="sf-next-promo-folio__eyebrow">
-            <Gift size={15} aria-hidden />
-            {label}
-          </span>
-          <h2>{title}</h2>
-          <p>{description}</p>
-        </div>
-
-        <Link className="sf-next-promo-folio__action" to={actionHref}>
-          {actionLabel}
-          <ArrowRight size={16} aria-hidden />
-        </Link>
+      <div className="sf-next-promo-folio__copy">
+        <span className="sf-next-promo-folio__eyebrow">
+          <Gift size={15} aria-hidden />
+          {label}
+        </span>
+        <h2>{title}</h2>
+        <p>{description}</p>
       </div>
+
+      {list.length > 0 ? (
+        <div className="sf-next-promo-folio__stats" aria-label="活动数据">
+          <span>
+            <Gift size={15} aria-hidden />
+            <strong>{list.length}</strong>
+            活动
+          </span>
+          <span>
+            <Zap size={15} aria-hidden />
+            <strong>{activeCount}</strong>
+            进行中
+          </span>
+          <span>
+            <Store size={15} aria-hidden />
+            <strong>{typeCount}</strong>
+            类型
+          </span>
+        </div>
+      ) : null}
+
+      <Link className="sf-next-promo-folio__action" to={actionHref}>
+        {actionLabel}
+        <ArrowRight size={16} aria-hidden />
+      </Link>
       {loading ? <span className="sf-next-promo-folio__loading-line" aria-hidden /> : null}
     </section>
   );

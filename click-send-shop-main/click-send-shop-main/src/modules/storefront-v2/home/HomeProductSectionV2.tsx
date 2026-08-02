@@ -3,6 +3,7 @@ import StorefrontQuietLoading from "@/components/storefront-motion/StorefrontQui
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import type { Product } from "@/types/product";
 import ProductCardV2 from "../product/ProductCardV2";
+import CuratedLifeProductCard from "../product/CuratedLifeProductCard";
 import StorefrontTitleRow from "../components/StorefrontTitleRow";
 
 type HomeProductSectionV2Props = {
@@ -18,6 +19,7 @@ type HomeProductSectionV2Props = {
   showQuickAction?: boolean;
   previewLimit?: number;
   className?: string;
+  variant?: "default" | "curated";
   onNavigate: (path: string) => void;
 };
 
@@ -34,13 +36,14 @@ export default function HomeProductSectionV2({
   showQuickAction = true,
   previewLimit,
   className,
+  variant = "default",
   onNavigate,
 }: HomeProductSectionV2Props) {
   const visibleProducts = previewLimit && previewLimit > 0 ? products.slice(0, previewLimit) : products;
 
   return (
     <section className={["sf-next-product-shelf min-w-0", className].filter(Boolean).join(" ")}>
-      <div className="sf-next-product-shelf__header">
+      <div className={variant === "curated" ? "curated-life-product-shelf__header" : "sf-next-product-shelf__header"}>
         <StorefrontTitleRow
           title={title}
           subtitle={subtitle}
@@ -49,7 +52,7 @@ export default function HomeProductSectionV2({
             <UnifiedButton
               type="button"
               onClick={() => onNavigate(actionPath)}
-              className="sf-next-product-shelf__action"
+              className={variant === "curated" ? "curated-life-section-heading__action" : "sf-next-product-shelf__action"}
             >
               <PackageSearch size={14} aria-hidden />
               <span>{actionLabel}</span>
@@ -60,8 +63,15 @@ export default function HomeProductSectionV2({
       {loading ? (
         <StorefrontQuietLoading label={`${title}加载中`} className="sf-motion-inline-loading--shelf" />
       ) : (
-        <div className="sf-next-product-grid sf-next-product-shelf__grid">
+        <div className={variant === "curated" ? "curated-life-product-grid" : "sf-next-product-grid sf-next-product-shelf__grid"}>
           {visibleProducts.map((product, index) => (
+            variant === "curated" ? (
+              <CuratedLifeProductCard
+                key={product.id}
+                product={product}
+                index={index}
+              />
+            ) : (
               <ProductCardV2
                 key={product.id}
                 product={product}
@@ -70,6 +80,7 @@ export default function HomeProductSectionV2({
                 showPrice={showPrice}
                 showQuickAction={showQuickAction}
               />
+            )
           ))}
         </div>
       )}

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { LoaderCircle, Plus } from "lucide-react";
+import type { MouseEvent } from "react";
 import "@/styles/product-card-v2.css";
 import ProductCoverImage from "@/components/ProductCoverImage";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
@@ -18,26 +19,33 @@ import type { Product } from "@/types/product";
 type ProductCardV2Props = {
   product: Product;
   index?: number;
+  imageLoading?: "eager" | "lazy";
+  imageFetchPriority?: "high" | "low" | "auto";
   variant?: "grid" | "compact" | "list";
   className?: string;
   showPrice?: boolean;
   showQuickAction?: boolean;
   onClick?: () => void;
+  previewMode?: boolean;
 };
 
 export default function ProductCardV2({
   product,
   index = 0,
+  imageLoading,
+  imageFetchPriority,
   variant = "grid",
   className,
   showPrice = true,
   showQuickAction = true,
   onClick,
+  previewMode = false,
 }: ProductCardV2Props) {
   const vm = buildProductCardV2Model(product);
   const href = vm.href;
-  const loading = index < 8 ? "eager" : "lazy";
-  const fetchPriority = index === 0 ? "high" : undefined;
+  const loading = imageLoading ?? (index < 8 ? "eager" : "lazy");
+  const fetchPriority = imageFetchPriority
+    ?? (loading === "eager" && index === 0 ? "high" : undefined);
   const navigate = useStorefrontNavigate();
   const addItem = useCartStore((state) => state.addItem);
   const [adding, setAdding] = useState(false);
@@ -55,9 +63,15 @@ export default function ProductCardV2({
     : requiresVariantSelection
       ? `选择 ${vm.name} 的规格`
       : `加入购物车 ${vm.name}`;
+  const quickActionDisabled = vm.soldOut || vm.priceUnavailable || adding;
+
+  const handleCardLink = (event: MouseEvent<HTMLAnchorElement>) => {
+    if (previewMode) event.preventDefault();
+    onClick?.();
+  };
 
   const handleQuickAction = async () => {
-    if (adding || vm.soldOut) return;
+    if (previewMode || adding || vm.soldOut || vm.priceUnavailable) return;
     if (requiresVariantSelection) {
       onClick?.();
       navigate(href);
@@ -87,7 +101,7 @@ export default function ProductCardV2({
       >
         <Link
           to={href}
-          onClick={onClick}
+          onClick={handleCardLink}
           className="sf-next-product-card__media h-full min-h-[5.75rem] w-full self-stretch sm:min-h-24"
           aria-label={`查看 ${vm.name}`}
         >
@@ -106,7 +120,7 @@ export default function ProductCardV2({
 
         <div className="sf-next-product-card__info flex min-h-[5.75rem] min-w-0 flex-col sm:min-h-24">
           <div className="sf-next-product-card__copy min-w-0">
-            <Link to={href} onClick={onClick} className="sf-next-product-card__title-link">
+            <Link to={href} onClick={handleCardLink} className="sf-next-product-card__title-link">
               <h3 className={cn(t.text.productTitle, "sf-next-product-card__title")}>{vm.name}</h3>
             </Link>
             <div className="sf-next-product-card__meta-strip">
@@ -121,19 +135,22 @@ export default function ProductCardV2({
           </div>
           {showPrice ? (
             <div className="sf-next-product-card__buy mt-auto flex items-end justify-between gap-2 pt-2">
-              <StorefrontPrice amount={vm.priceText} originalAmount={vm.originalPriceText} />
+              <StorefrontPrice amount={vm.priceText} originalAmount={vm.originalPriceText} unavailable={vm.priceUnavailable} />
               {showQuickAction ? (
                 <UnifiedButton
                   type="button"
-                  disabled={vm.soldOut || adding}
+                  disabled={quickActionDisabled && !previewMode}
                   onClick={() => void handleQuickAction()}
                   aria-label={adding ? `正在加入 ${vm.name}` : quickActionLabel}
                   className={cn(
                     "sf-next-product-card__cart sf-next-product-card__cart--list shrink-0",
-                    vm.soldOut && "is-disabled",
+                    quickActionDisabled && "is-disabled",
+                    requiresVariantSelection && "is-select",
                   )}
                 >
-                  {adding
+                  {requiresVariantSelection && !adding
+                    ? <span aria-hidden>选规格</span>
+                    : adding
                     ? <LoaderCircle size={17} className="animate-spin" aria-hidden />
                     : <Plus size={17} strokeWidth={2.4} aria-hidden />}
                 </UnifiedButton>
@@ -157,7 +174,7 @@ export default function ProductCardV2({
     >
       <Link
         to={href}
-        onClick={onClick}
+        onClick={handleCardLink}
         className="sf-next-product-card__media"
         aria-label={`查看 ${vm.name}`}
       >
@@ -184,24 +201,31 @@ export default function ProductCardV2({
       </Link>
 
       <div className="sf-next-product-card__info flex flex-col">
-        <Link to={href} onClick={onClick} className="sf-next-product-card__title-link">
+        <Link to={href} onClick={handleCardLink} className="sf-next-product-card__title-link">
           <h3 className={cn(t.text.productTitle, "sf-next-product-card__title")}>{vm.name}</h3>
         </Link>
+        <DecisionMetaRow items={vm.decisionTexts} className="sf-next-product-card__decision sf-next-product-card__decision--grid" />
         {showPrice ? (
           <div className={cn(
             "sf-next-product-card__footer flex items-end justify-between gap-2 pt-2.5",
             !showQuickAction && "sf-next-product-card__footer--price-only",
           )}>
-            <StorefrontPrice className="sf-next-product-card__price" amount={vm.priceText} originalAmount={vm.originalPriceText} />
+            <StorefrontPrice className="sf-next-product-card__price" amount={vm.priceText} originalAmount={vm.originalPriceText} unavailable={vm.priceUnavailable} />
             {showQuickAction ? (
               <UnifiedButton
                 type="button"
-                disabled={vm.soldOut || adding}
+                disabled={quickActionDisabled && !previewMode}
                 onClick={() => void handleQuickAction()}
                 aria-label={adding ? `正在加入 ${vm.name}` : quickActionLabel}
-                className={cn("sf-next-product-card__cart", vm.soldOut && "is-disabled")}
+                className={cn(
+                  "sf-next-product-card__cart",
+                  quickActionDisabled && "is-disabled",
+                  requiresVariantSelection && "is-select",
+                )}
               >
-                {adding
+                {requiresVariantSelection && !adding
+                  ? <span aria-hidden>选规格</span>
+                  : adding
                   ? <LoaderCircle size={17} className="animate-spin" aria-hidden />
                   : <Plus size={17} strokeWidth={2.4} aria-hidden />}
               </UnifiedButton>
@@ -257,7 +281,7 @@ function BadgeRow({ badges, subtle = false, className }: { badges: Array<{ key: 
 
 function SoldOutMask() {
   return (
-    <div className="absolute inset-0 flex items-center justify-center bg-[color-mix(in_srgb,var(--sf-ink)_42%,transparent)] text-xs font-bold text-[var(--sf-surface)]">
+    <div className="sf-next-product-card__sold-out absolute bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-[color-mix(in_srgb,var(--sf-ink)_82%,transparent)] px-3 py-1 text-[11px] font-bold text-[var(--sf-surface)] shadow-sm">
       已售罄
     </div>
   );

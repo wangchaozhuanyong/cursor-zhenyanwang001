@@ -12,7 +12,7 @@ export function CheckoutItemsList({ items }: CheckoutItemsListProps) {
     <div className="sf-next-checkout-card">
       <div className="sf-next-checkout-card__head">
         <div>
-          <h3 className="sf-next-checkout-section-title">商品信息</h3>
+          <h2 className="sf-next-checkout-section-title">商品信息</h2>
           <p className="sf-next-checkout-section-description">请核对商品、规格和数量</p>
         </div>
         <span className="sf-next-checkout-section-meta">共 {items.reduce((sum, item) => sum + item.qty, 0)} 件</span>

@@ -1,21 +1,23 @@
 {
   "baseUrl": "https://damatong.net",
-  "checkedAt": "2026-07-29T20:04:29.627Z",
+  "checkedAt": "2026-08-02T07:05:36.842Z",
   "status": "not_ready",
   "summary": {
     "activeBanners": 7,
     "bannersWithoutResponsiveMedia": 7,
+    "bannersUsingFixedResponsiveFallback": 7,
+    "bannersWithoutEffectiveResponsiveMedia": 0,
     "visibleCategories": 7,
     "categoriesWithoutCustomBanner": 7,
-    "enabledHomeNavItems": 10,
-    "invalidHomeNavItems": 5,
+    "enabledHomeNavItems": 5,
+    "invalidHomeNavItems": 0,
     "externalHomeNavItemsToReview": 1,
     "homeProducts": 48,
     "homeProductsWithoutEffectiveImage": 41,
     "ageGateEnabled": false,
     "restrictedCatalogCategories": 2,
     "complianceBlockers": 1,
-    "blockerCount": 54
+    "blockerCount": 42
   },
   "details": {
     "bannerTitlesWithoutResponsiveMedia": [
@@ -27,6 +29,16 @@
       "中国优选采购",
       "礼品精选顾问"
     ],
+    "bannerTitlesUsingFixedResponsiveFallback": [
+      "中文客服确认中心",
+      "会员权益与奖励",
+      "优惠券与限时活动",
+      "配送安排更透明",
+      "本地现货优先",
+      "中国优选采购",
+      "礼品精选顾问"
+    ],
+    "bannerTitlesWithoutEffectiveResponsiveMedia": [],
     "categoriesWithoutCustomBanner": [
       "签证服务",
       "零食饮料",
@@ -36,48 +48,7 @@
       "正品酒水",
       "正品烟草"
     ],
-    "invalidHomeNavItems": [
-      {
-        "title": "正品烟草",
-        "reason": "unknown_category_target",
-        "targetCategoryId": "65005193-4dad-40f1-adcd-ecbf55678861",
-        "id": "e6e78222-bd22-4737-8b57-ae404dc465e9",
-        "suggestedAction": "set_category",
-        "suggestedTargetCategoryId": "4e41062b-82ce-4680-9522-fa1314d9a70e",
-        "suggestedLinkUrl": "/categories?cat=4e41062b-82ce-4680-9522-fa1314d9a70e"
-      },
-      {
-        "title": "床上用品",
-        "reason": "missing_url",
-        "id": "d2117871-cb2e-4071-a66b-1434236e07ad",
-        "suggestedAction": "disable_until_supported"
-      },
-      {
-        "title": "签证办理",
-        "reason": "unknown_category_target",
-        "targetCategoryId": "54c61c6c-86df-4b89-9075-cb45855e9808",
-        "id": "e4ca168f-d4d4-495e-b05f-44e33da1fd7f",
-        "suggestedAction": "set_category",
-        "suggestedTargetCategoryId": "3a7daa85-0e84-4434-8fef-5bcb7bb92811",
-        "suggestedLinkUrl": "/categories?cat=3a7daa85-0e84-4434-8fef-5bcb7bb92811"
-      },
-      {
-        "title": "第二家园",
-        "reason": "missing_url",
-        "id": "6be82b20-71e4-4540-abfc-db96c059a981",
-        "suggestedAction": "set_category",
-        "suggestedTargetCategoryId": "6b565c49-858e-405c-99f1-21e1b6d2b86a",
-        "suggestedLinkUrl": "/categories?cat=6b565c49-858e-405c-99f1-21e1b6d2b86a"
-      },
-      {
-        "title": "留学办理",
-        "reason": "missing_url",
-        "id": "978ea93c-7395-4a77-a652-ad6d0ad3f6a9",
-        "suggestedAction": "set_category",
-        "suggestedTargetCategoryId": "830428b6-69e9-43cb-abb2-905f079273f7",
-        "suggestedLinkUrl": "/categories?cat=830428b6-69e9-43cb-abb2-905f079273f7"
-      }
-    ],
+    "invalidHomeNavItems": [],
     "externalHomeNavItems": [
       {
         "id": "6f38172b-6a2f-4f09-8d28-660a432f6b46",

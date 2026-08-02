@@ -24,7 +24,10 @@ import { ADMIN_PRODUCT_FORM_CONTROL_CLASS } from "@/modules/admin/pages/product/
 import { createEmptyProductForm } from "@/modules/admin/pages/product/productFormInitialState";
 import { deleteAdminProduct, submitAdminProductForm } from "@/modules/admin/pages/product/productFormActions";
 import { buildProductFormFromProduct } from "@/modules/admin/pages/product/productFormHydration";
-import { getProductFormSaveBlockMessage } from "@/modules/admin/pages/product/productFormValidation";
+import {
+  getProductFormSaveBlockMessage,
+  getProductPublishReadiness,
+} from "@/modules/admin/pages/product/productFormValidation";
 import { useProductMediaUploads } from "@/modules/admin/pages/product/useProductMediaUploads";
 import { useProductSkuMatrix } from "@/modules/admin/pages/product/useProductSkuMatrix";
 import ProductMediaSection from "@/modules/admin/pages/product/ProductMediaSection";
@@ -150,11 +153,17 @@ export default function AdminProductForm({
   }, [productQuery.error, productQuery.isError]);
 
   const uploadBusy = uploadingCover || uploadingGallery || uploadingVariantImageIndex !== null;
+  const publishReadiness = useMemo(() => getProductPublishReadiness(form), [form]);
 
   const handleSave = async (publish = false) => {
     if (saving || deleting) return;
     const blockMessage = getProductFormSaveBlockMessage({ form, uploadBusy, isNew, productId: id });
     if (blockMessage) { toast.error(tText(blockMessage)); return; }
+    const willPublish = publish || form.status === "active";
+    if (willPublish && publishReadiness.blockers.length > 0) {
+      toast.error(tText(publishReadiness.blockers[0]));
+      return;
+    }
     const saveStartedAt = performance.now();
     let dirtyCleared = false;
     setSaving(true);
@@ -344,6 +353,7 @@ export default function AdminProductForm({
           saving={saving}
           deleting={deleting}
           uploadBusy={uploadBusy}
+          publishReadiness={publishReadiness}
           onSave={handleSave}
           onCancel={goBack}
           setDeleteConfirmOpen={setDeleteConfirmOpen}

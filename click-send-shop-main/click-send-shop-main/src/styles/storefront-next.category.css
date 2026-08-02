@@ -402,6 +402,104 @@ html[data-app-scope="store"] .sf-next-filter-confirm-button {
   }
 }
 
+@media (max-width: 767px) {
+  html[data-app-scope="store"] .sf-next-category-workspace {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  html[data-app-scope="store"] .sf-next-category-rail {
+    overflow-x: auto;
+    overflow-y: hidden;
+    border-right: 0;
+    border-bottom: 1px solid var(--sf-line);
+    padding: 8px 0;
+    scroll-padding-inline: 2px;
+  }
+
+  html[data-app-scope="store"] .sf-next-category-pills {
+    display: flex;
+    width: max-content;
+    min-width: 100%;
+    gap: 6px;
+  }
+
+  html[data-app-scope="store"] .sf-next-category-pill {
+    width: auto;
+    min-width: max-content;
+    min-height: 44px;
+    justify-content: center;
+    border: 1px solid var(--sf-line);
+    border-radius: 6px;
+    background: var(--sf-surface);
+    padding: 0 13px;
+    text-align: center;
+  }
+
+  html[data-app-scope="store"] .sf-next-category-pill::before {
+    display: none;
+  }
+
+  html[data-app-scope="store"] .sf-next-category-pill__label {
+    display: block;
+    overflow: visible;
+    font-size: 13px;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  html[data-app-scope="store"] .sf-next-category-pill.is-active {
+    border-color: color-mix(in srgb, var(--sf-primary) 34%, var(--sf-line));
+    background: var(--sf-primary-soft);
+    color: var(--sf-primary);
+  }
+
+  html[data-app-scope="store"] .sf-next-listing-section {
+    padding-left: 0;
+  }
+
+  html[data-app-scope="store"] .sf-next-listing-sortbar,
+  html[data-app-scope="store"] .sf-next-sortbar {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0;
+    overflow: visible;
+  }
+
+  html[data-app-scope="store"] .sf-next-sort-pill {
+    min-width: 0;
+    padding-inline: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  html[data-app-scope="store"] .sf-next-category-product-list .sf-next-product-card--list > div {
+    gap: 12px;
+  }
+
+  html[data-app-scope="store"] .sf-next-category-product-list .sf-next-product-card__price {
+    display: flex;
+    min-width: 0;
+    flex-wrap: nowrap;
+    align-items: baseline;
+    gap: 4px;
+    overflow: hidden;
+  }
+
+  html[data-app-scope="store"] .sf-next-category-product-list :where(.sf-next-price__currency, .sf-next-price__amount) {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  html[data-app-scope="store"] .sf-next-category-product-list .sf-next-price__original {
+    min-width: 0;
+    overflow: hidden;
+    font-size: 10px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
 @media (min-width: 768px) {
   html[data-app-scope="store"] .sf-next-category-shell {
     height: calc(100svh - 72px);

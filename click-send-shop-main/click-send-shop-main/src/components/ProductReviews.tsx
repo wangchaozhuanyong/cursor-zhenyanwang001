@@ -32,6 +32,7 @@ export default function ProductReviews({ vm }: ProductReviewsProps) {
     reload,
   } = vm;
 
+  const hasReviews = reviewTotal > 0;
   const selectedPendingItem = eligibility.pending_items.find((item) => item.order_item_id === selectedOrderItemId);
   const distribution = [5, 4, 3, 2, 1].map((rating) => {
     const count = Number(stats.rating_distribution?.[rating as 1 | 2 | 3 | 4 | 5] || 0);
@@ -60,9 +61,13 @@ export default function ProductReviews({ vm }: ProductReviewsProps) {
 
       <div className="sf-next-product-reviews__summary">
         <div className="sf-next-product-reviews__score">
-          <strong>{avgRating.toFixed(1)}</strong>
+          <strong>{hasReviews ? avgRating.toFixed(1) : "—"}</strong>
           <div>
-            <RatingStars rating={Math.round(avgRating)} size={15} />
+            <RatingStars
+              rating={hasReviews ? Math.round(avgRating) : 0}
+              size={15}
+              ariaLabel={hasReviews ? undefined : "暂无评分"}
+            />
             <p>{reviewTotal} 条评价 · {imageReviewCount} 条带图</p>
           </div>
         </div>
@@ -192,9 +197,17 @@ export default function ProductReviews({ vm }: ProductReviewsProps) {
   );
 }
 
-function RatingStars({ rating, size }: { rating: number; size: number }) {
+function RatingStars({
+  rating,
+  size,
+  ariaLabel,
+}: {
+  rating: number;
+  size: number;
+  ariaLabel?: string;
+}) {
   return (
-    <div className="sf-next-product-stars" aria-label={`${rating} 星`}>
+    <div className="sf-next-product-stars" aria-label={ariaLabel ?? `${rating} 星`}>
       {[1, 2, 3, 4, 5].map((score) => (
         <Star
           key={score}

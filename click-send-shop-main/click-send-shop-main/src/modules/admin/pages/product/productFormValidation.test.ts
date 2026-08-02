@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { createEmptyProductForm } from "@/modules/admin/pages/product/productFormInitialState";
-import { getProductFormSaveBlockMessage } from "@/modules/admin/pages/product/productFormValidation";
+import {
+  getProductFormSaveBlockMessage,
+  getProductPublishReadiness,
+} from "@/modules/admin/pages/product/productFormValidation";
 
 describe("getProductFormSaveBlockMessage", () => {
   it("blocks saving while media upload is still running", () => {
@@ -102,5 +105,51 @@ describe("getProductFormSaveBlockMessage", () => {
       "商品编号缺失，请返回商品列表重新进入",
     );
     expect(getProductFormSaveBlockMessage({ form, uploadBusy: false, isNew: false, productId: "p1" })).toBeNull();
+  });
+});
+
+describe("getProductPublishReadiness", () => {
+  it("blocks incomplete products from publishing but keeps quality hints as warnings", () => {
+    const readiness = getProductPublishReadiness(createEmptyProductForm());
+
+    expect(readiness.blockers).toEqual([
+      "请填写商品名称",
+      "请选择商品分类",
+      "请上传封面图，或为可售 SKU 设置图片",
+      "商品售价必须大于 0",
+    ]);
+    expect(readiness.warnings).toContain("建议补充商品图集");
+  });
+
+  it("accepts a complete sold-out product for publishing", () => {
+    const form = {
+      ...createEmptyProductForm(),
+      name: "商品",
+      category_id: "category-1",
+      cover_image: "https://example.com/product.webp",
+      cover_image_alt: "商品封面",
+      price: "28",
+      stock: "0",
+      images: ["https://example.com/detail.webp"],
+    };
+
+    expect(getProductPublishReadiness(form)).toEqual({ blockers: [], warnings: [] });
+  });
+
+  it("uses an enabled SKU image as the storefront card fallback", () => {
+    const form = {
+      ...createEmptyProductForm(),
+      name: "商品",
+      category_id: "category-1",
+      price: "28",
+      variants: [{
+        ...createEmptyProductForm().variants[0],
+        image_url: "https://example.com/sku.webp",
+      }],
+    };
+
+    expect(getProductPublishReadiness(form).blockers).not.toContain(
+      "请上传封面图，或为可售 SKU 设置图片",
+    );
   });
 });

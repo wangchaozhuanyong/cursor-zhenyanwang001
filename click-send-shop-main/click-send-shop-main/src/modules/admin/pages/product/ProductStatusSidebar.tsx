@@ -2,10 +2,12 @@ import type { Dispatch, SetStateAction } from "react";
 import AdminFieldHint, { AdminLabelWithHint } from "@/components/admin/AdminFieldHint";
 import { Tx } from "@/components/admin/AdminText";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
-import { THEME_PRODUCT_MEDIA_ASPECT_STYLE } from "@/constants/productMediaAspect";
 import { useAdminDisplayLabel } from "@/hooks/useAdminDisplayLabel";
 import { LoadingButton } from "@/modules/micro-interactions";
 import type { ProductFormPayloadSlice } from "@/modules/admin/pages/product/productFormTypes";
+import type { ProductPublishReadiness } from "@/modules/admin/pages/product/productFormValidation";
+import { buildAdminProductPreview } from "@/modules/admin/pages/product/productFormPreview";
+import ProductCardV2 from "@/modules/storefront-v2/product/ProductCardV2";
 import {
   ADMIN_PRODUCT_FORM_COMPACT_CONTROL_CLASS,
   ADMIN_PRODUCT_FORM_MEDIUM_CONTROL_CLASS,
@@ -22,6 +24,7 @@ type Props = {
   saving: boolean;
   deleting: boolean;
   uploadBusy: boolean;
+  publishReadiness: ProductPublishReadiness;
   onSave: (publish?: boolean) => void | Promise<void>;
   onCancel: () => void;
   setDeleteConfirmOpen: Dispatch<SetStateAction<boolean>>;
@@ -38,6 +41,7 @@ export default function ProductStatusSidebar({
   saving,
   deleting,
   uploadBusy,
+  publishReadiness,
   onSave,
   onCancel,
   setDeleteConfirmOpen,
@@ -46,6 +50,7 @@ export default function ProductStatusSidebar({
   tText,
 }: Props) {
   const { complianceType: labelComplianceType, text: L } = useAdminDisplayLabel();
+  const previewProduct = buildAdminProductPreview(form, allTags);
 
   return (
     <div className="order-1 space-y-4 lg:order-none">
@@ -173,41 +178,25 @@ export default function ProductStatusSidebar({
 
       <div className="rounded-xl border border-border bg-card p-6">
         <h3 className="mb-3 text-sm font-semibold text-foreground"><Tx>预览</Tx></h3>
-        <div className="rounded-lg border border-border p-3">
-          {form.cover_image ? (
-            <div className="mb-3 w-full overflow-hidden rounded-md border border-border bg-secondary/50" style={THEME_PRODUCT_MEDIA_ASPECT_STYLE}>
-              <img
-                src={form.cover_image}
-                alt={form.cover_image_alt || `${form.name || "商品"} 卡片预览图`}
-                className="h-full w-full object-center [object-fit:var(--theme-image-fit,cover)]"
-              />
-            </div>
-          ) : (
-            <div className="mb-3 rounded-md border border-dashed border-border bg-secondary/50" style={THEME_PRODUCT_MEDIA_ASPECT_STYLE} />
-          )}
-          <div className="mb-1 flex flex-wrap gap-1">
-            {form.tag_ids.length > 0 &&
-              form.tag_ids.map((tid) => {
-                const meta = allTags.find((x) => x.id === tid);
-                if (!meta) return null;
-                return (
-                  <span
-                    key={tid}
-                    className="rounded-full border px-1.5 py-0.5 text-[10px] font-medium"
-                    style={{
-                      backgroundColor: meta.bg_color || "#FEF3C7",
-                      color: meta.text_color || "#92400E",
-                      borderColor: meta.bg_color || "#FEF3C7",
-                    }}
-                  >
-                    {meta.name}
-                  </span>
-                );
-              })}
-          </div>
-          <p className="text-sm font-medium text-foreground">{form.name || "商品名称"}</p>
-          <p className="mt-1 text-sm font-bold text-theme-price">RM {form.price || "0.00"}</p>
+        <div className="admin-product-card-preview mx-auto max-w-[260px]">
+          <ProductCardV2 product={previewProduct} previewMode imageLoading="eager" imageFetchPriority="high" />
         </div>
+      </div>
+
+      <div className={`rounded-xl border p-4 ${publishReadiness.blockers.length ? "border-amber-300 bg-amber-50" : "border-emerald-200 bg-emerald-50"}`}>
+        <p className="text-sm font-semibold text-foreground">
+          <Tx>{publishReadiness.blockers.length ? "上架前还需完成" : "已达到上架标准"}</Tx>
+        </p>
+        {publishReadiness.blockers.length ? (
+          <ul className="mt-2 space-y-1 text-xs text-amber-900">
+            {publishReadiness.blockers.map((item) => <li key={item}>• {item}</li>)}
+          </ul>
+        ) : null}
+        {publishReadiness.warnings.length ? (
+          <div className="mt-2 border-t border-current/10 pt-2 text-xs text-muted-foreground">
+            {publishReadiness.warnings.map((item) => <p key={item}>建议：{item.replace("建议", "")}</p>)}
+          </div>
+        ) : null}
       </div>
 
       <div className="space-y-2">
@@ -216,7 +205,7 @@ export default function ProductStatusSidebar({
           variant="price"
           state={saving ? "loading" : "normal"}
           loadingText="保存中..."
-          disabled={saving || deleting || uploadBusy}
+          disabled={saving || deleting || uploadBusy || (form.status === "active" && publishReadiness.blockers.length > 0)}
           onClick={() => void onSave(false)}
           className="w-full rounded-lg px-6 py-3 text-sm font-semibold"
         ><Tx>
@@ -227,7 +216,7 @@ export default function ProductStatusSidebar({
           variant="outline"
           state={saving ? "loading" : "normal"}
           loadingText="保存中..."
-          disabled={saving || deleting || uploadBusy}
+          disabled={saving || deleting || uploadBusy || publishReadiness.blockers.length > 0}
           onClick={() => void onSave(true)}
           className="w-full rounded-lg border border-[var(--theme-price)] bg-[color-mix(in_srgb,var(--theme-price)_10%,var(--theme-surface))] px-6 py-3 text-sm font-semibold text-theme-price"
         ><Tx>

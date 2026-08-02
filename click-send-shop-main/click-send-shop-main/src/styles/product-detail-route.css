@@ -125,6 +125,12 @@ html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-product-gall
 html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-product-gallery-stage {
   aspect-ratio: 1;
   overflow: hidden;
+  touch-action: pan-y;
+}
+
+html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-product-gallery-stage:focus-visible {
+  outline: 2px solid var(--sf-primary);
+  outline-offset: -3px;
 }
 
 html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-product-gallery-frame {
@@ -140,6 +146,57 @@ html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-product-gall
   object-fit: contain;
   object-position: center;
   background: var(--sf-surface);
+}
+
+html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-product-gallery-controls {
+  position: absolute;
+  z-index: 12;
+  inset: 0;
+  pointer-events: none;
+}
+
+html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-product-gallery-nav {
+  position: absolute;
+  top: 50%;
+  display: inline-grid;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--sf-ink) 12%, transparent);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--sf-surface) 90%, transparent);
+  color: var(--sf-ink);
+  padding: 0;
+  box-shadow: var(--sf-shadow-sm);
+  pointer-events: auto;
+  transform: translateY(-50%);
+  backdrop-filter: blur(8px);
+}
+
+html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-product-gallery-nav--previous {
+  left: clamp(8px, 2vw, 16px);
+}
+
+html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-product-gallery-nav--next {
+  right: clamp(8px, 2vw, 16px);
+}
+
+html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-product-gallery-nav:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--sf-primary) 34%, var(--sf-line));
+  background: var(--sf-surface);
+  color: var(--sf-primary);
+}
+
+html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-product-gallery-nav:focus-visible {
+  outline: 2px solid var(--sf-primary);
+  outline-offset: 2px;
+}
+
+html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-product-gallery-nav:disabled {
+  cursor: default;
+  opacity: 0.42;
 }
 
 html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-product-gallery-count {

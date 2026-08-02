@@ -371,7 +371,7 @@ export default function ReturnDetail() {
 
   return (
     <StoreAccountLayout title={copy.title} onBack={goBack} backFallback={localizedPath("/returns")} desktopBackLabel={copy.backToProgress} className="sf-next-route-page sf-next-return-detail-page" mainClassName="sm:px-4 xl:py-6">
-      <main className="sf-next-return-detail-main">
+      <div className="sf-next-return-detail-main">
         {loading ? <p className="sf-next-return-detail-loading">{copy.loading}</p> : null}
         {!loading && !detail && errorMessage ? (
           <section className="sf-next-state-panel sf-next-return-detail-state" role="status">
@@ -397,7 +397,7 @@ export default function ReturnDetail() {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="sf-next-return-detail-eyebrow">{returnTypeLabel}</p>
-                <h1 className="sf-next-return-detail-title">{returnStatusLabel}</h1>
+                <h2 className="sf-next-return-detail-title">{returnStatusLabel}</h2>
                 <p className="sf-next-return-detail-subtitle">
                   {copy.order} {detail.order_no} · {getReturnItemName(detail, locale)}
                 </p>
@@ -425,7 +425,9 @@ export default function ReturnDetail() {
                 </div>
                 <div className="sf-next-return-detail-product__copy">
                   <div className="sf-next-return-detail-product__title-row">
-                    <h1>{getReturnItemName(detail, locale)}</h1>
+                    <h2 className="m-0 overflow-hidden text-ellipsis whitespace-nowrap text-sm font-[650] text-[var(--sf-ink)]">
+                      {getReturnItemName(detail, locale)}
+                    </h2>
                     <span className={`sf-next-return-detail-product__status ${getReturnStatusBadgeClass(detail.status)}`}>
                       {getReturnStatusLabel(detail.status, locale)}
                     </span>
@@ -609,7 +611,7 @@ export default function ReturnDetail() {
             ) : null}
           </>
         ) : null}
-      </main>
+      </div>
     </StoreAccountLayout>
   );
 }

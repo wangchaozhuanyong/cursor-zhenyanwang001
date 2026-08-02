@@ -21,6 +21,7 @@ export type ProductCardV2Model = {
   imageAlt: string;
   price: number;
   priceText: string;
+  priceUnavailable: boolean;
   originalPrice?: number;
   originalPriceText?: string;
   soldOut: boolean;
@@ -157,6 +158,8 @@ function buildActivityProgress(product: Product) {
 
 export function buildProductCardV2Model(product: Product): ProductCardV2Model {
   const pricedProduct = product as ProductPriceFields;
+  const imageUrl = String(product.cover_image || "").trim()
+    || String(product.default_variant?.image_url || "").trim();
   const displayName = storefrontDisplayText(
     product.name,
     storefrontProductNameFallback(product.active_activity?.type),
@@ -168,6 +171,7 @@ export function buildProductCardV2Model(product: Product): ProductCardV2Model {
   );
   const basePrice = Number(pricedProduct.min_price ?? product.price ?? 0);
   const price = backendActivityPrice || basePrice;
+  const priceUnavailable = !Number.isFinite(price) || price <= 0;
   const maxPrice = Number(pricedProduct.max_price ?? product.price ?? price);
   const hasRange = !backendActivityPrice && Number.isFinite(maxPrice) && maxPrice > price;
   const displayComparePrice = hasRange ? maxPrice : price;
@@ -177,10 +181,14 @@ export function buildProductCardV2Model(product: Product): ProductCardV2Model {
     product.original_price,
     backendActivityPrice ? product.price : 0,
   );
-  const showOriginal = Number.isFinite(original) && original > displayComparePrice;
+  const showOriginal = !priceUnavailable && Number.isFinite(original) && original > displayComparePrice;
 
-  const stock = Number(product.default_variant?.stock ?? product.stock ?? 0);
-  const soldOut = stock <= 0;
+  const enabledVariantStocks = (product.variants || [])
+    .filter((variant) => variant.enabled !== false)
+    .map((variant) => Number(variant.stock || 0));
+  const soldOut = enabledVariantStocks.length > 0
+    ? enabledVariantStocks.every((stock) => stock <= 0)
+    : Number(product.default_variant?.stock ?? product.stock ?? 0) <= 0;
 
   const badges: ProductCardV2Badge[] = [];
 
@@ -200,19 +208,27 @@ export function buildProductCardV2Model(product: Product): ProductCardV2Model {
     badges.push({ key: "new", label: "新品", tone: "new" });
   }
 
+  for (const tag of product.tags || []) {
+    const label = storefrontOptionalDisplayText(tag.name)?.slice(0, 8);
+    if (!label || badges.some((badge) => badge.label === label)) continue;
+    badges.push({ key: `tag-${tag.id}`, label, tone: "normal" });
+  }
+
   const salesText = buildSalesText(product);
   const variantText = buildVariantText(pricedProduct);
   const activityText = buildActivityText(product);
-  const decisionTexts = [salesText, variantText, activityText].filter(Boolean).slice(0, 3) as string[];
+  const categoryText = storefrontOptionalDisplayText(product.category_name)?.slice(0, 18);
+  const decisionTexts = [activityText, variantText, salesText, categoryText].filter(Boolean).slice(0, 2) as string[];
   const activityProgress = buildActivityProgress(product);
 
   return {
     id: product.id,
     name: displayName,
-    imageUrl: product.cover_image,
+    imageUrl,
     imageAlt: product.cover_image_alt || `${displayName} 商品图片`,
     price,
-    priceText: hasRange ? `${money(price)}-${money(maxPrice)}` : money(price),
+    priceText: priceUnavailable ? "价格待确认" : hasRange ? `${money(price)}-${money(maxPrice)}` : money(price),
+    priceUnavailable,
     originalPrice: showOriginal ? original : undefined,
     originalPriceText: showOriginal ? money(original) : undefined,
     soldOut,

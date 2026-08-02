@@ -1,6 +1,8 @@
 import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import RatioImage from "@/components/client/RatioImage";
+import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { THEME_PRODUCT_MEDIA_ASPECT_STYLE } from "@/constants/productMediaAspect";
 import { productCoverForDetail } from "@/utils/uploadImageVariant";
 
@@ -23,22 +25,36 @@ export default function ProductImageGallery({ images, imageAlts, name, videoUrl,
   ];
   const [current, setCurrent] = useState(0);
   const [touchStart, setTouchStart] = useState(0);
-  const currentItem = media[current];
+  const lastIndex = Math.max(0, media.length - 1);
+  const safeCurrent = Math.min(current, lastIndex);
+  const currentItem = media[safeCurrent];
+  const hasMultipleMedia = media.length > 1;
 
   useEffect(() => {
-    if (current >= media.length) setCurrent(Math.max(0, media.length - 1));
-  }, [current, media.length]);
+    if (current !== safeCurrent) setCurrent(safeCurrent);
+  }, [current, safeCurrent]);
 
   const goTo = useCallback((index: number) => {
-    setCurrent(index);
-  }, []);
+    setCurrent(Math.max(0, Math.min(index, lastIndex)));
+  }, [lastIndex]);
 
   const handleTouchStart = (e: React.TouchEvent) => setTouchStart(e.touches[0].clientX);
   const handleTouchEnd = (e: React.TouchEvent) => {
     const diff = touchStart - e.changedTouches[0].clientX;
     if (Math.abs(diff) > 50) {
-      if (diff > 0 && current < media.length - 1) goTo(current + 1);
-      else if (diff < 0 && current > 0) goTo(current - 1);
+      if (diff > 0 && safeCurrent < lastIndex) goTo(safeCurrent + 1);
+      else if (diff < 0 && safeCurrent > 0) goTo(safeCurrent - 1);
+    }
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!hasMultipleMedia || event.target !== event.currentTarget) return;
+    if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      goTo(safeCurrent - 1);
+    } else if (event.key === "ArrowRight") {
+      event.preventDefault();
+      goTo(safeCurrent + 1);
     }
   };
 
@@ -69,6 +85,10 @@ export default function ProductImageGallery({ images, imageAlts, name, videoUrl,
         style={THEME_PRODUCT_MEDIA_ASPECT_STYLE}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
+        onKeyDown={handleKeyDown}
+        role={hasMultipleMedia ? "region" : undefined}
+        aria-label={hasMultipleMedia ? `${name} 商品媒体，共 ${media.length} 项，可使用左右方向键切换` : undefined}
+        tabIndex={hasMultipleMedia ? 0 : undefined}
       >
         <AnimatePresence initial={false} mode="wait">
           <motion.div
@@ -91,21 +111,46 @@ export default function ProductImageGallery({ images, imageAlts, name, videoUrl,
             ) : (
               <RatioImage
                 src={productCoverForDetail(currentItem.url)}
-                alt={currentItem.alt || (current === 0 ? `${name} 主图` : `${name} 详情图 ${current + 1}`)}
+                alt={currentItem.alt || (safeCurrent === 0 ? `${name} 主图` : `${name} 详情图 ${safeCurrent + 1}`)}
                 ratio="1 / 1"
                 rounded="none"
                 className="h-full w-full bg-transparent"
                 imgClassName="h-full w-full [object-fit:var(--theme-image-fit,cover)]"
                 sizes="100vw"
-                {...(current === 0 ? { fetchPriority: "high" as const } : {})}
+                {...(safeCurrent === 0 ? { fetchPriority: "high" as const } : {})}
               />
             )}
           </motion.div>
         </AnimatePresence>
 
-        <div className="sf-next-product-gallery-count">
-          {current + 1} / {media.length}
-        </div>
+        {hasMultipleMedia ? (
+          <div className="sf-next-product-gallery-controls" role="group" aria-label="商品媒体切换">
+            <UnifiedButton
+              type="button"
+              className="sf-next-product-gallery-nav sf-next-product-gallery-nav--previous"
+              onClick={() => goTo(safeCurrent - 1)}
+              disabled={safeCurrent === 0}
+              aria-label="上一张商品媒体"
+            >
+              <ChevronLeft size={20} strokeWidth={1.75} aria-hidden="true" />
+            </UnifiedButton>
+            <UnifiedButton
+              type="button"
+              className="sf-next-product-gallery-nav sf-next-product-gallery-nav--next"
+              onClick={() => goTo(safeCurrent + 1)}
+              disabled={safeCurrent === lastIndex}
+              aria-label="下一张商品媒体"
+            >
+              <ChevronRight size={20} strokeWidth={1.75} aria-hidden="true" />
+            </UnifiedButton>
+          </div>
+        ) : null}
+
+        {hasMultipleMedia ? (
+          <div className="sf-next-product-gallery-count" aria-live="polite" aria-atomic="true">
+            {safeCurrent + 1} / {media.length}
+          </div>
+        ) : null}
       </div>
 
       {overlay}

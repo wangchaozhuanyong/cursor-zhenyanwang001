@@ -500,7 +500,7 @@ export default function Invite() {
         </button>
       )}
     >
-      <main className="sf-next-container sf-next-invite-page">
+      <div className="sf-next-container sf-next-invite-page">
         <div className="pointer-events-none fixed -left-[9999px] -top-[9999px]" aria-hidden>
           <QRCodeCanvas
             ref={qrRef}
@@ -575,7 +575,7 @@ export default function Invite() {
             </div>
           )}
         </section>
-      </main>
+      </div>
     </StoreAccountLayout>
   );
 }

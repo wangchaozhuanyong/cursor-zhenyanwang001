@@ -466,7 +466,7 @@ export default function OrderDetail() {
           </div>
           <div className="min-w-0 flex-1">
             <p className="sf-next-order-detail-eyebrow">{copy.currentStatus}</p>
-            <h1 className="sf-next-order-detail-title">{pageTitle}</h1>
+            <h2 className="sf-next-order-detail-title">{pageTitle}</h2>
             <p className="sf-next-order-detail-subtitle">{logisticsText}</p>
           </div>
           <div className="sf-next-order-detail-hero__actions">

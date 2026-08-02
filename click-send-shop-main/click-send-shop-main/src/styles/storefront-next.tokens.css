@@ -25,7 +25,7 @@ html[data-app-scope="store"][data-storefront-ui="next"] {
 
   --sf-ink: #171c19;
   --sf-ink-secondary: #626a65;
-  --sf-ink-quiet: #858c87;
+  --sf-ink-quiet: #6c736e;
   --sf-line: #dde2de;
   --sf-line-strong: #c8cec9;
 
@@ -36,7 +36,7 @@ html[data-app-scope="store"][data-storefront-ui="next"] {
 
   --sf-price: var(--theme-price, #c24438);
   --sf-success: #216b4b;
-  --sf-warning: #987331;
+  --sf-warning: #8f6927;
   --sf-danger: #b73c34;
   --sf-graphite: #1b201d;
   --sf-graphite-muted: #303632;

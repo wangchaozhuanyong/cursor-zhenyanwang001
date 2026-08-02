@@ -505,6 +505,7 @@ export default function Categories() {
         robots={robots}
       />
       <main className="sf-next-category-shell mx-auto w-full max-w-screen-xl">
+        <h1 className="sr-only">{productSectionTitle}</h1>
         <section className="sf-next-category-toolbar" aria-label="分类搜索和筛选">
           <StoreSearchLauncher
             value={submittedQuery}

@@ -15,10 +15,18 @@ export function timeAgoReview(dateStr: string): string {
 
 const DEFAULT_STATS: ProductReviewStats = {
   total: 0,
-  avg_rating: 5,
+  avg_rating: 0,
   rating_distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
   image_review_count: 0,
 };
+
+export function resolveProductReviewAverage(
+  stats: Pick<ProductReviewStats, "total" | "avg_rating">,
+): number {
+  if (Number(stats.total) <= 0) return 0;
+  const average = Number(stats.avg_rating);
+  return Number.isFinite(average) ? average : 0;
+}
 
 const DEFAULT_ELIGIBILITY: ReviewEligibility = {
   can_review: false,
@@ -110,7 +118,7 @@ export function useProductReviews(productId: string) {
     loading,
     likedIds,
     imgInputRef,
-    avgRating: stats.avg_rating || 5,
+    avgRating: resolveProductReviewAverage(stats),
     handleLike,
     timeAgo: timeAgoReview,
     eligibility,

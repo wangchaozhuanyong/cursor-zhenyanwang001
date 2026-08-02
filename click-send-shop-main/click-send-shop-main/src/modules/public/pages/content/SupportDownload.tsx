@@ -235,6 +235,12 @@ export default function SupportDownload({ installMode = false }: SupportDownload
       }
     />
   );
+  const standaloneWideHeaders = installMode ? (
+    <>
+      <StoreTabletBar className="sf-next-fixed-header" />
+      <StoreDesktopHeader className="sf-next-fixed-header" />
+    </>
+  ) : null;
   const { containerRef: tabsRef, setItemRef: setTabRef, scrollToKey: scrollTabToKey } =
     useHorizontalActiveScroll<HTMLElement, HTMLButtonElement>(activeView || "", availableViews.length);
 
@@ -242,8 +248,7 @@ export default function SupportDownload({ installMode = false }: SupportDownload
     return (
       <div className={`sf-next-page-shell sf-next-bottom-safe sf-next-page sf-next-route-page support-download-page sf-next-support-download-page${installMode ? " support-install-mode" : ""} support-download-page--empty`}>
         {mobileHeader}
-        <StoreTabletBar className="sf-next-fixed-header" />
-        <StoreDesktopHeader className="sf-next-fixed-header" />
+        {standaloneWideHeaders}
         <main className="support-download-shell">
           <header className="support-download-desktop-head">
             <UnifiedButton type="button" onClick={handleBack} className="support-download-desktop-back">
@@ -267,8 +272,7 @@ export default function SupportDownload({ installMode = false }: SupportDownload
         robots="index,follow"
       />
       {mobileHeader}
-      <StoreTabletBar className="sf-next-fixed-header" />
-      <StoreDesktopHeader className="sf-next-fixed-header" />
+      {standaloneWideHeaders}
 
       <main className="support-download-shell">
         <header className="support-download-desktop-head">

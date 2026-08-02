@@ -99,7 +99,7 @@ export function CheckoutPaymentMethod({
     <div className="sf-next-checkout-card">
       <div className="sf-next-checkout-card__head">
         <div>
-          <h3 className="sf-next-checkout-section-title">{copy.title}</h3>
+          <h2 className="sf-next-checkout-section-title">{copy.title}</h2>
         </div>
         <span className="sf-next-checkout-secure-label">
           <ShieldCheck size={12} /> {copy.secure}

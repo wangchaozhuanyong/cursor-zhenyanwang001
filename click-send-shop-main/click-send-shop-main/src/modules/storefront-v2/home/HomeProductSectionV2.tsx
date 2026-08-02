@@ -66,6 +66,7 @@ export default function HomeProductSectionV2({
                 key={product.id}
                 product={product}
                 index={index}
+                imageLoading="lazy"
                 showPrice={showPrice}
                 showQuickAction={showQuickAction}
               />

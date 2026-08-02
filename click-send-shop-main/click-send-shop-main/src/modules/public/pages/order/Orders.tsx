@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { RefreshCw, Search, SearchX, ShoppingBag, X } from "lucide-react";
+import { ChevronRight, RefreshCw, Search, SearchX, ShoppingBag, X } from "lucide-react";
 import { useLocation, useSearchParams } from "react-router-dom";
 import { showStoreToast } from "@/utils/storeToast";
 import StoreAccountLayout from "@/components/store/StoreAccountLayout";
@@ -402,11 +402,25 @@ export default function Orders() {
             return (
               <article key={order.id} className="sf-next-order-card" onClick={() => openDetail(order)}>
                 <div className="sf-next-order-card__head">
-                  <div className="min-w-0">
+                  <div className="sf-next-order-card__identity min-w-0">
                     <span className="sf-next-order-card__number">{order.order_no}</span>
                     <span className="sf-next-order-card__date">{formatDateTime(order.created_at)}</span>
                   </div>
-                  <span className={`sf-next-order-card__status ${getStatusTone(order)}`}>{getBuyerOrderStatusTextLocalized(order, locale)}</span>
+                  <div className="sf-next-order-card__head-actions">
+                    <span className={`sf-next-order-card__status ${getStatusTone(order)}`}>{getBuyerOrderStatusTextLocalized(order, locale)}</span>
+                    <UnifiedButton
+                      type="button"
+                      className="sf-next-order-card__detail-action"
+                      aria-label={locale === "en" ? `View order ${order.order_no} details` : `查看订单 ${order.order_no} 详情`}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        openDetail(order);
+                      }}
+                    >
+                      <span aria-hidden>{locale === "en" ? "Details" : "详情"}</span>
+                      <ChevronRight size={13} aria-hidden />
+                    </UnifiedButton>
+                  </div>
                 </div>
                 {isGiftOrder(order.order_type) && Number(order.points_used || 0) > 0 ? (
                   <p className="sf-next-order-card__points">{copy.giftOrder} · {copy.pointsUsed} {order.points_used}</p>

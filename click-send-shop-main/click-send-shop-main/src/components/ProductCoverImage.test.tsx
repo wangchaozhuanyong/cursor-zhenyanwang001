@@ -32,6 +32,25 @@ describe("ProductCoverImage", () => {
 
     expect(container.querySelector("img")).not.toBeInTheDocument();
     expect(container.querySelector("[role='img']")).toHaveAttribute("aria-label", "缺图商品");
-    expect(container.textContent).toContain("暂无图片");
+    expect(container.textContent).toContain("图片待补充");
+  });
+
+  it("distinguishes a failed image request from missing media", () => {
+    container = document.createElement("div");
+    document.body.appendChild(container);
+    root = createRoot(container);
+
+    act(() => {
+      root?.render(<ProductCoverImage url="https://example.com/broken.jpg" alt="加载失败商品" />);
+    });
+
+    const image = container.querySelector("img");
+    expect(image).toBeInTheDocument();
+    act(() => {
+      image?.dispatchEvent(new Event("error", { bubbles: true }));
+    });
+
+    expect(container.querySelector("img")).not.toBeInTheDocument();
+    expect(container.textContent).toContain("图片暂不可用");
   });
 });

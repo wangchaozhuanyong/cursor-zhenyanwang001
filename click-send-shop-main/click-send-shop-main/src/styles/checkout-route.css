@@ -129,6 +129,30 @@ html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-checkout-for
   padding-bottom: 0.25rem;
 }
 
+html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-checkout-form-field {
+  display: grid;
+  min-width: 0;
+  gap: 0.375rem;
+}
+
+html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-checkout-form-label {
+  color: var(--sf-ink-secondary);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-checkout-form-label span,
+html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-checkout-field-error {
+  color: var(--sf-danger);
+}
+
+html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-checkout-field-error {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-checkout-form-control {
   width: 100%;
   min-width: 0;
@@ -144,6 +168,14 @@ html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-checkout-for
 
 html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-checkout-form-control:focus {
   border-color: var(--sf-primary);
+}
+
+html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-checkout-form-control[aria-invalid="true"] {
+  border-color: var(--sf-danger);
+}
+
+html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-checkout-form-control[aria-invalid="true"]:focus-visible {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--sf-danger) 22%, transparent);
 }
 
 html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-checkout-modal-actions {

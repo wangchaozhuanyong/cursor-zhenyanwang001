@@ -28,6 +28,12 @@ const productItems = Array.isArray(details.productsWithoutEffectiveImage)
 const bannerItems = Array.isArray(details.bannerTitlesWithoutResponsiveMedia)
   ? details.bannerTitlesWithoutResponsiveMedia
   : [];
+const fallbackBannerItems = Array.isArray(details.bannerTitlesUsingFixedResponsiveFallback)
+  ? details.bannerTitlesUsingFixedResponsiveFallback
+  : [];
+const effectiveBannerBlockers = Array.isArray(details.bannerTitlesWithoutEffectiveResponsiveMedia)
+  ? details.bannerTitlesWithoutEffectiveResponsiveMedia
+  : [];
 const categoryBannerItems = Array.isArray(details.categoriesWithoutCustomBanner)
   ? details.categoriesWithoutCustomBanner
   : [];
@@ -38,13 +44,15 @@ const complianceItems = Array.isArray(details.complianceBlockers)
 assert(/^https:\/\//.test(String(plan.baseUrl || "")), "baseUrl must be an HTTPS storefront URL");
 assert(Number.isFinite(Date.parse(plan.checkedAt)), "checkedAt must be an ISO date");
 assert(summary.bannersWithoutResponsiveMedia === bannerItems.length, "banner count does not match details");
+assert(summary.bannersUsingFixedResponsiveFallback === fallbackBannerItems.length, "fallback banner count does not match details");
+assert(summary.bannersWithoutEffectiveResponsiveMedia === effectiveBannerBlockers.length, "effective banner blocker count does not match details");
 assert(summary.categoriesWithoutCustomBanner === categoryBannerItems.length, "category banner count does not match details");
 assert(summary.invalidHomeNavItems === navItems.length, "invalid navigation count does not match details");
 assert(summary.externalHomeNavItemsToReview === externalNavItems.length, "external navigation count does not match details");
 assert(summary.homeProductsWithoutEffectiveImage === productItems.length, "missing product media count does not match details");
 assert(summary.complianceBlockers === complianceItems.length, "compliance blocker count does not match details");
 
-const expectedBlockers = bannerItems.length + navItems.length + productItems.length + complianceItems.length;
+const expectedBlockers = effectiveBannerBlockers.length + navItems.length + productItems.length + complianceItems.length;
 assert(summary.blockerCount === expectedBlockers, "blockerCount does not match detailed blockers");
 assert(plan.status === (expectedBlockers > 0 ? "not_ready" : "ready"), "status does not match blockerCount");
 

@@ -1,3 +1,4 @@
+import { useId } from "react";
 import type { OrderPreviewResult } from "@/types/orderPreview";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 
@@ -46,6 +47,7 @@ export function CheckoutLoyaltySection({
   rewardCashAmount,
   onRewardCashAmountChange,
 }: Props) {
+  const controlId = useId();
   if (!pointsRedeemEnabled && !rewardCashRedeemEnabled) return null;
 
   const availablePoints = Math.max(0, Math.floor(toNum(orderPreview?.available_points)));
@@ -60,15 +62,23 @@ export function CheckoutLoyaltySection({
   const disabledReason = orderPreview?.disabled_reason || (maxPoints <= 0 ? "当前订单暂无可用积分抵扣" : "");
   const availableReward = Math.max(0, toNum(orderPreview?.available_reward_balance));
   const maxReward = Math.max(0, toNum(orderPreview?.max_usable_reward_cash));
+  const sectionTitleId = `checkout-loyalty-title-${controlId}`;
+  const pointsToggleId = `checkout-points-toggle-${controlId}`;
+  const pointsDescriptionId = `checkout-points-description-${controlId}`;
+  const pointsDisabledReasonId = `checkout-points-disabled-${controlId}`;
+  const pointsUsageId = `checkout-points-usage-${controlId}`;
+  const rewardToggleId = `checkout-reward-toggle-${controlId}`;
+  const rewardDescriptionId = `checkout-reward-description-${controlId}`;
+  const pointsDisabled = Boolean(disabledReason && maxPoints <= 0);
   const normalizePointsInput = (value: number) => {
     const clamped = Math.max(0, Math.min(maxPoints, Math.floor(value || 0)));
     return Math.floor(clamped / redeemStep) * redeemStep;
   };
 
   return (
-    <section className="sf-next-checkout-card sf-next-checkout-loyalty-section">
+    <section className="sf-next-checkout-card sf-next-checkout-loyalty-section" aria-labelledby={sectionTitleId}>
       <div className="sf-next-checkout-card__head">
-        <h3 className="sf-next-checkout-section-title">积分与返现抵扣</h3>
+        <h2 id={sectionTitleId} className="sf-next-checkout-section-title">积分与返现抵扣</h2>
       </div>
 
       {pointsRedeemEnabled ? (
@@ -80,19 +90,22 @@ export function CheckoutLoyaltySection({
                 <strong className="text-xl leading-none">{displayRedeemPoints}</strong>
                 <span className="text-xs font-semibold">积分</span>
               </span>
-              <span className="mt-1.5 block text-xs leading-relaxed text-muted-foreground">
+              <span id={pointsDescriptionId} className="mt-1.5 block text-xs leading-relaxed text-muted-foreground">
                 你的积分可抵扣 RM {money(availablePointsDiscount)}，本单最多可抵扣 RM {money(orderMaxPointsDiscount)}
               </span>
             </span>
             <input
+              id={pointsToggleId}
               className="sf-next-checkout-redeem-checkbox"
               type="checkbox"
               checked={usePoints}
               disabled={maxPoints <= 0}
+              aria-label="使用积分抵扣"
+              aria-describedby={pointsDisabled ? `${pointsDescriptionId} ${pointsDisabledReasonId}` : pointsDescriptionId}
               onChange={(e) => onUsePointsChange(e.target.checked)}
             />
           </label>
-          {disabledReason && maxPoints <= 0 ? <p className="mt-2 text-xs text-[var(--theme-danger)]">{disabledReason}</p> : null}
+          {pointsDisabled ? <p id={pointsDisabledReasonId} className="mt-2 text-xs text-[var(--theme-danger)]">{disabledReason}</p> : null}
           {usePoints ? (
             <div className="mt-3 space-y-2">
               <input
@@ -103,6 +116,9 @@ export function CheckoutLoyaltySection({
                 step={redeemStep}
                 disabled={maxPoints <= 0}
                 value={Math.max(0, Math.min(maxPoints, pointsToUse))}
+                aria-label="调整积分使用量"
+                aria-describedby={pointsUsageId}
+                aria-valuetext={`使用 ${Math.max(0, Math.min(maxPoints, pointsToUse))} 积分`}
                 onChange={(e) => onPointsToUseChange(normalizePointsInput(Number(e.target.value || 0)))}
               />
               <div className={REDEEM_INPUT_ROW_CLASS}>
@@ -113,13 +129,15 @@ export function CheckoutLoyaltySection({
                   max={maxPoints}
                   step={redeemStep}
                   value={pointsToUse}
+                  aria-label="输入积分使用量"
+                  aria-describedby={pointsUsageId}
                   onChange={(e) => onPointsToUseChange(normalizePointsInput(Number(e.target.value || 0)))}
                 />
-                <UnifiedButton type="button" className="sf-next-checkout-redeem-all-button" onClick={() => onPointsToUseChange(maxPoints)}>
+                <UnifiedButton type="button" className="sf-next-checkout-redeem-all-button" aria-label="使用全部可用积分" onClick={() => onPointsToUseChange(maxPoints)}>
                   全部
                 </UnifiedButton>
               </div>
-              <p className="text-xs text-muted-foreground">本次将使用 {actualPointsUsed} 积分，抵扣 RM {money(pointsDiscount)}{orderPreview?.adjusted ? "（已按规则自动调整）" : ""}</p>
+              <p id={pointsUsageId} className="text-xs text-muted-foreground">本次将使用 {actualPointsUsed} 积分，抵扣 RM {money(pointsDiscount)}{orderPreview?.adjusted ? "（已按规则自动调整）" : ""}</p>
             </div>
           ) : null}
         </div>
@@ -130,15 +148,18 @@ export function CheckoutLoyaltySection({
           <label className={REDEEM_TOGGLE_CLASS}>
             <span className="min-w-0 flex-1">
               <span className="block text-sm font-semibold text-foreground">返现余额抵扣</span>
-              <span className="mt-1 block text-xs font-normal leading-relaxed text-muted-foreground">
+              <span id={rewardDescriptionId} className="mt-1 block text-xs font-normal leading-relaxed text-muted-foreground">
                 可用 RM {availableReward.toFixed(2)}，本单最多 RM {maxReward.toFixed(2)}
               </span>
             </span>
             <input
+              id={rewardToggleId}
               className="sf-next-checkout-redeem-checkbox"
               type="checkbox"
               checked={useRewardCash}
               disabled={maxReward <= 0}
+              aria-label="使用返现余额抵扣"
+              aria-describedby={rewardDescriptionId}
               onChange={(e) => onUseRewardCashChange(e.target.checked)}
             />
           </label>
@@ -152,6 +173,9 @@ export function CheckoutLoyaltySection({
                 step="0.01"
                 disabled={maxReward <= 0}
                 value={Math.max(0, Math.min(maxReward, rewardCashAmount))}
+                aria-label="调整返现抵扣金额"
+                aria-describedby={rewardDescriptionId}
+                aria-valuetext={`RM ${money(Math.max(0, Math.min(maxReward, rewardCashAmount)))}`}
                 onChange={(e) => onRewardCashAmountChange(Math.max(0, Math.min(maxReward, Number(e.target.value || 0))))}
               />
               <div className={REDEEM_INPUT_ROW_CLASS}>
@@ -162,9 +186,11 @@ export function CheckoutLoyaltySection({
                   max={maxReward}
                   step="0.01"
                   value={rewardCashAmount}
+                  aria-label="输入返现抵扣金额"
+                  aria-describedby={rewardDescriptionId}
                   onChange={(e) => onRewardCashAmountChange(Math.max(0, Math.min(maxReward, Number(e.target.value || 0))))}
                 />
-                <UnifiedButton type="button" className="sf-next-checkout-redeem-all-button" onClick={() => onRewardCashAmountChange(maxReward)}>
+                <UnifiedButton type="button" className="sf-next-checkout-redeem-all-button" aria-label="使用全部可用返现余额" onClick={() => onRewardCashAmountChange(maxReward)}>
                   全部
                 </UnifiedButton>
               </div>

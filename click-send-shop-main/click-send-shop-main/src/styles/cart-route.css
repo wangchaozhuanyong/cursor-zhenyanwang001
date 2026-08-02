@@ -257,9 +257,7 @@ html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-cart-empty-card
   min-width: 0;
   border: 1px solid var(--sf-line) !important;
   border-radius: var(--sf-radius-lg) !important;
-  background:
-    linear-gradient(180deg, rgb(255 255 255 / 86%), rgb(247 249 245 / 92%)),
-    var(--sf-surface);
+  background: var(--sf-cart-empty-bg, var(--sf-surface));
   padding: clamp(2rem, 8vw, 3.5rem) var(--sf-space-5) !important;
   box-shadow: none !important;
 }
@@ -290,7 +288,7 @@ html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-cart-empty-card
 html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-cart-empty-card .sf-next-empty-state__action button {
   min-height: 3rem;
   border: 1px solid var(--sf-graphite);
-  border-radius: var(--sf-radius-full);
+  border-radius: var(--sf-profile-control-radius, var(--sf-radius-full));
   background: var(--sf-graphite);
   color: #fff;
   padding-inline: 1.5rem;

@@ -46,6 +46,8 @@ function warn(area, message, extra = {}) {
 function isExpectedPath(appPath) {
   return (
     appPath === ".gitignore" ||
+    appPath === "design-qa.md" ||
+    appPath.startsWith("design-qa/") ||
     appPath === "index.html" ||
     appPath === "package.json" ||
     appPath === "tailwind.cart.config.ts" ||

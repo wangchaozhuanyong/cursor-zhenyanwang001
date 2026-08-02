@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  CURATED_LIFE_CONFIG,
   IRIS_CONFIG,
   MIDAUTUMN_CONFIG,
   MOSS_CONFIG,
@@ -12,6 +13,20 @@ import { buildStorefrontNextSkinTokens } from "@/utils/storefrontSkinTokens";
 import { generateThemePalette } from "@/utils/themeContrast";
 
 describe("storefrontSkinTokens", () => {
+  it("keeps the curated client on the approved B-layout, A-palette contract", () => {
+    const tokens = buildStorefrontNextSkinTokens(
+      CURATED_LIFE_CONFIG,
+      generateThemePalette(CURATED_LIFE_CONFIG),
+    );
+
+    expect(CURATED_LIFE_CONFIG.bgColor).toBe("#FFFDF9");
+    expect(CURATED_LIFE_CONFIG.primaryColor).toBe("#284D3E");
+    expect(CURATED_LIFE_CONFIG.accentColor).toBe("#96733A");
+    expect(CURATED_LIFE_CONFIG.priceColor).toBe("#B13C2E");
+    expect(tokens["--theme-bg"]).toBe("rgb(255, 253, 249)");
+    expect(tokens["--theme-primary"]).toBe("rgb(40, 77, 62)");
+  });
+
   it("keeps the storefront next visual base skin-aware", () => {
     const polarTokens = buildStorefrontNextSkinTokens(POLAR_CONFIG, generateThemePalette(POLAR_CONFIG));
     const mossTokens = buildStorefrontNextSkinTokens(MOSS_CONFIG, generateThemePalette(MOSS_CONFIG));

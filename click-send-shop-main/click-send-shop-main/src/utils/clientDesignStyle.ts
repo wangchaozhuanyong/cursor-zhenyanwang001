@@ -3,6 +3,7 @@ import {
   CLIENT_BLUE_PORTAL_SKIN_ID,
   CLIENT_DEEP_ENTERPRISE_SKIN_ID,
   CLIENT_SKY_TECH_SKIN_ID,
+  CURATED_LIFE_SKIN_ID,
   IRIS_SKIN_ID,
   MIDAUTUMN_SKIN_ID,
   MOSS_SKIN_ID,
@@ -10,7 +11,13 @@ import {
   POLAR_SKIN_ID,
 } from "@/constants/themePresets";
 
-export type ClientDesignStyle = "blue_portal" | "sky_tech" | "black_gold" | "deep_enterprise" | "classic";
+export type ClientDesignStyle =
+  | "blue_portal"
+  | "sky_tech"
+  | "black_gold"
+  | "deep_enterprise"
+  | "curated_life"
+  | "classic";
 
 const SKIN_STYLE_MAP: Record<string, ClientDesignStyle> = {
   [POLAR_SKIN_ID]: "sky_tech",
@@ -22,6 +29,7 @@ const SKIN_STYLE_MAP: Record<string, ClientDesignStyle> = {
   [CLIENT_SKY_TECH_SKIN_ID]: "sky_tech",
   [CLIENT_BLACK_GOLD_SKIN_ID]: "black_gold",
   [CLIENT_DEEP_ENTERPRISE_SKIN_ID]: "deep_enterprise",
+  [CURATED_LIFE_SKIN_ID]: "curated_life",
 };
 
 export function getClientDesignStyleBySkinId(skinId?: string | null): ClientDesignStyle {

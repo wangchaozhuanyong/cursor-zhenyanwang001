@@ -6,6 +6,11 @@ import {
   DEFAULT_SKIN_ID,
 } from "@/constants/themeRuntimeDefaults";
 import {
+  CURATED_LIFE_CONFIG,
+  CURATED_LIFE_SKIN,
+  CURATED_LIFE_SKIN_ID,
+} from "@/constants/themePresets";
+import {
   THEME_PREVIEW_READY,
   getThemePreviewParentOrigin,
   isThemePreviewApplyMessage,
@@ -60,7 +65,7 @@ function applyStorefrontNextThemeOverrides(
 }
 
 function resolveThemeConfigForScope(config: ThemeConfig, inAdmin: boolean): ThemeConfig {
-  if (!inAdmin) return config;
+  if (!inAdmin) return normalizeThemeConfig(CURATED_LIFE_CONFIG);
   return normalizeThemeConfig({ ...config, ...ADMIN_SAFE_THEME_OVERRIDES });
 }
 
@@ -163,6 +168,10 @@ function normalizeRuntimeThemePayload(payload: {
   if (!skins.some((skin) => skin.id === DEFAULT_SKIN_ID)) {
     skins.unshift(DEFAULT_RUNTIME_THEME_SKIN);
   }
+  if (!skins.some((skin) => skin.id === CURATED_LIFE_SKIN_ID)) {
+    const previewSkin = normalizeRuntimeSkin(CURATED_LIFE_SKIN);
+    if (previewSkin) skins.push(previewSkin);
+  }
   const hasSkin = (id: string | undefined | null) => !!id && skins.some((skin) => skin.id === id);
   const firstDefault = skins.find((skin) => skin.isDefault && skin.status !== "disabled");
   const defaultSkinId = hasSkin(incoming.defaultSkinId)
@@ -245,6 +254,16 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
   }, [previewFrame]);
 
   const loadTheme = useCallback(async () => {
+    if (!isAdminScope()) {
+      const fixedSkin = normalizeRuntimeSkin(CURATED_LIFE_SKIN) ?? CURATED_LIFE_SKIN;
+      setSkins([fixedSkin]);
+      setSkinIdState(CURATED_LIFE_SKIN_ID);
+      setThemeConfig(normalizeThemeConfig(CURATED_LIFE_CONFIG));
+      setThemeReady(true);
+      setThemeSynced(true);
+      return;
+    }
+
     const base = import.meta.env.VITE_API_BASE_URL ?? "/api";
     try {
       const response = await fetch(`${base}/theme/skins?_=${Date.now()}`, {
@@ -333,6 +352,7 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
   }, [loadTheme]);
 
   useEffect(() => {
+    if (!inAdminScope) return undefined;
     const onBump = () => void loadTheme();
     const onStorage = (event: StorageEvent) => {
       if (event.key === THEME_REVISION_KEY) onBump();
@@ -343,7 +363,7 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
       window.removeEventListener("app:theme-updated", onBump);
       window.removeEventListener("storage", onStorage);
     };
-  }, [loadTheme]);
+  }, [inAdminScope, loadTheme]);
 
   useEffect(() => {
     const active = skins.find((skin) => skin.id === skinId) ?? skins[0];
@@ -363,6 +383,7 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
   );
 
   const appliedSkin = useMemo(() => {
+    if (!inAdminScope) return normalizeRuntimeSkin(CURATED_LIFE_SKIN);
     const active = skins.find((skin) => skin.id === effectiveSkinId) ?? skins.find((skin) => skin.id === skinId) ?? skins[0] ?? null;
     if (!previewOverride) return active;
     return {
@@ -408,16 +429,16 @@ export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
   const value = useMemo<ThemeContextValue>(
     () => ({
       theme: "light",
-      skinId: effectiveSkinId,
+      skinId: inAdminScope ? effectiveSkinId : CURATED_LIFE_SKIN_ID,
       skins,
       switchableSkins: [],
       pickerSkins: [],
       setSkinId: () => {},
-      themeConfig: effectiveThemeConfig,
+      themeConfig: appliedConfig,
       themeReady,
       themeSynced,
     }),
-    [effectiveSkinId, skins, effectiveThemeConfig, themeReady, themeSynced],
+    [appliedConfig, effectiveSkinId, inAdminScope, skins, themeReady, themeSynced],
   );
 
   return <ThemeRuntimeContext.Provider value={value}>{children}</ThemeRuntimeContext.Provider>;
@@ -430,6 +451,16 @@ function getInitialThemeState() {
       skinId: DEFAULT_SKIN_ID,
       themeConfig: normalizeThemeConfig(DEFAULT_RUNTIME_THEME_SKIN.config),
       ready: false,
+    };
+  }
+
+  if (!isAdminScope()) {
+    const fixedSkin = normalizeRuntimeSkin(CURATED_LIFE_SKIN) ?? CURATED_LIFE_SKIN;
+    return {
+      skins: [fixedSkin],
+      skinId: CURATED_LIFE_SKIN_ID,
+      themeConfig: normalizeThemeConfig(CURATED_LIFE_CONFIG),
+      ready: true,
     };
   }
 

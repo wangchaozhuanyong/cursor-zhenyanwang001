@@ -151,10 +151,10 @@ html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-price__original
 }
 
 html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-icon-button {
-  width: 2.25rem !important;
-  min-width: 2.25rem !important;
-  height: 2.25rem !important;
-  min-height: 2.25rem !important;
+  width: 44px !important;
+  min-width: 44px !important;
+  height: 44px !important;
+  min-height: 44px !important;
   border-radius: 0.75rem !important;
 }
 
@@ -1532,7 +1532,7 @@ html[data-app-scope="store"][data-storefront-ui="next"] :where(
   .sf-next-search-nav-button,
   .sf-next-icon-button
 ) {
-  min-width: 40px !important;
+  min-width: var(--sf-control-height, 40px) !important;
 }
 
 @media (max-width: 767px) {
@@ -1548,15 +1548,15 @@ html[data-app-scope="store"][data-storefront-ui="next"] :where(
 /* Client design precision repair v16: final non-:where overrides for desktop fixed icon controls. */
 @media (min-width: 768px) {
   html[data-app-scope="store"][data-storefront-ui="next"] button.sf-next-icon-button {
-    width: 40px !important;
-    min-width: 40px !important;
-    height: 40px !important;
-    min-height: 40px !important;
+    width: var(--sf-control-height, 40px) !important;
+    min-width: var(--sf-control-height, 40px) !important;
+    height: var(--sf-control-height, 40px) !important;
+    min-height: var(--sf-control-height, 40px) !important;
   }
 
   html[data-app-scope="store"][data-storefront-ui="next"] button.sf-next-sort-pill {
-    height: 40px !important;
-    min-height: 40px !important;
+    height: var(--sf-control-height, 40px) !important;
+    min-height: var(--sf-control-height, 40px) !important;
   }
 }
 
@@ -1610,7 +1610,7 @@ html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-campaign-card__
 
   html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-page-header__inner > .grid {
     min-width: 0;
-    grid-template-columns: 2.5rem minmax(0, 1fr) 2.5rem !important;
+    grid-template-columns: 44px minmax(0, 1fr) 44px !important;
   }
 
   html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-page-header button[aria-label="返回"] {
@@ -1618,10 +1618,10 @@ html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-campaign-card__
     left: auto !important;
     top: auto !important;
     transform: none !important;
-    width: 2.5rem !important;
-    min-width: 2.5rem !important;
-    height: 2.5rem !important;
-    min-height: 2.5rem !important;
+    width: 44px !important;
+    min-width: 44px !important;
+    height: 44px !important;
+    min-height: 44px !important;
     margin-left: 0 !important;
   }
 
@@ -2197,9 +2197,9 @@ html[data-app-scope="store"][data-storefront-ui="next"] :where(
   align-items: center !important;
   justify-content: center !important;
   min-width: max-content !important;
-  min-height: 2.55rem !important;
+  min-height: var(--sf-control-height, 2.55rem) !important;
   border: 1px solid transparent !important;
-  border-radius: 0.82rem !important;
+  border-radius: var(--sf-control-radius, 0.82rem) !important;
   background: var(--sf-ink) !important;
   color: var(--sf-canvas) !important;
   padding: 0.66rem 1rem !important;
@@ -2594,7 +2594,7 @@ html[data-app-scope="store"][data-storefront-ui="next"] :where(
   .profile-vip-action,
   .profile-section-more
 ) {
-  min-height: 40px !important;
+  min-height: var(--sf-control-height, 40px) !important;
 }
 
 @media (min-width: 768px) {
@@ -2609,7 +2609,7 @@ html[data-app-scope="store"][data-storefront-ui="next"] :where(
     button.profile-section-more,
     button.sf-next-search-nav-button
   ) {
-    height: 40px !important;
-    min-height: 40px !important;
+    height: var(--sf-control-height, 40px) !important;
+    min-height: var(--sf-control-height, 40px) !important;
   }
 }

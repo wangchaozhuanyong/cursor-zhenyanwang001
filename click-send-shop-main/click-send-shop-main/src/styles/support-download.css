@@ -1264,6 +1264,7 @@ html[data-app-scope="store"][data-storefront-ui="next"] .support-download-overvi
 html[data-app-scope="store"][data-storefront-ui="next"] .support-download-tabs {
   display: grid;
   min-width: 0;
+  grid-template-columns: none;
   grid-auto-columns: minmax(7.5rem, 1fr);
   grid-auto-flow: column;
   gap: var(--sf-space-2);
@@ -1279,6 +1280,8 @@ html[data-app-scope="store"][data-storefront-ui="next"] .support-download-tabs::
 
 html[data-app-scope="store"][data-storefront-ui="next"] .support-download-tab {
   display: inline-flex;
+  width: 100%;
+  min-width: 0;
   min-height: 3rem;
   align-items: center;
   justify-content: center;
@@ -1290,6 +1293,12 @@ html[data-app-scope="store"][data-storefront-ui="next"] .support-download-tab {
   font-size: var(--sf-font-sm);
   font-weight: 650;
   white-space: nowrap;
+}
+
+html[data-app-scope="store"][data-storefront-ui="next"] .support-download-tab span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 html[data-app-scope="store"][data-storefront-ui="next"] .support-download-tab.is-active {

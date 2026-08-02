@@ -39,7 +39,7 @@ function ImmersiveIconButton({
       type="button"
       onClick={onClick}
       aria-label={label}
-      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--overlay-color)_60%,transparent)] text-[var(--hero-foreground)] shadow-sm [text-shadow:0_1px_2px_var(--shadow-color)] backdrop-blur-md transition active:scale-95 touch-target"
+      className="sf-next-product-sticky-icon flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--overlay-color)_60%,transparent)] text-[var(--hero-foreground)] shadow-sm [text-shadow:0_1px_2px_var(--shadow-color)] backdrop-blur-md transition active:scale-95 touch-target"
     >
       {children}
     </UnifiedButton>
@@ -60,7 +60,7 @@ function SolidIconButton({
       type="button"
       onClick={onClick}
       aria-label={label}
-      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-bg)] text-[var(--theme-text)] transition active:scale-95 touch-target"
+      className="sf-next-product-sticky-icon flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[var(--theme-border)] bg-[var(--theme-bg)] text-[var(--theme-text)] transition active:scale-95 touch-target"
     >
       {children}
     </UnifiedButton>
@@ -119,7 +119,7 @@ export default function ProductDetailStickyHeader({
   return (
     <header
       className={cn(
-        "pointer-events-none fixed inset-x-0 top-0 z-header pt-[env(safe-area-inset-top,0px)] lg:hidden",
+        "sf-next-product-sticky-header pointer-events-none fixed inset-x-0 top-0 z-header pt-[env(safe-area-inset-top,0px)] lg:hidden",
         "transition-[background-color,box-shadow,border-color] duration-200 ease-out",
         solid
           ? cn("border-b shadow-[var(--theme-shadow)] backdrop-blur-xl", surfaceClass)

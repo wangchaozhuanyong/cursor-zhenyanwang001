@@ -839,10 +839,10 @@ html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupon-hero {
   html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-page-header button[aria-label],
 html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-route-header button[aria-label] {
     left: max(0.25rem, env(safe-area-inset-left, 0px)) !important;
-    width: 2.5rem !important;
-    min-width: 2.5rem !important;
-    height: 2.5rem !important;
-    min-height: 2.5rem !important;
+    width: 44px !important;
+    min-width: 44px !important;
+    height: 44px !important;
+    min-height: 44px !important;
   }
 }
 
@@ -1395,4 +1395,268 @@ html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-sh
 
 html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-coupons-page-shell .sf-next-value-vault__code {
   border-top-color: color-mix(in srgb, var(--sf-line) 80%, transparent) !important;
+}
+
+/* Curated Life coupons: content-first wallet without nested dashboard cards. */
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-coupons-shell {
+  background: var(--sf-canvas);
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-coupons-shell .sf-next-account-main {
+  gap: 12px;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-coupon-summary {
+  display: flex;
+  min-width: 0;
+  min-height: 92px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border: 1px solid var(--sf-line);
+  border-radius: 8px;
+  background: var(--sf-surface);
+  padding: 16px;
+  color: var(--sf-ink);
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-coupon-summary > div:first-child {
+  display: grid;
+  min-width: 0;
+  gap: 6px;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-coupon-summary > div:first-child > span {
+  color: var(--sf-ink-secondary);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-coupon-summary strong {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: 6px;
+  color: var(--sf-accent);
+  font-size: 30px;
+  font-weight: 850;
+  line-height: 1;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-coupon-summary strong small {
+  color: var(--sf-ink);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-coupon-summary__aside {
+  display: grid;
+  min-width: 0;
+  justify-items: end;
+  gap: 8px;
+  color: var(--sf-ink-secondary);
+  font-size: 12px;
+  text-align: right;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-coupon-summary__aside button {
+  min-height: 36px;
+  border: 1px solid var(--sf-line);
+  border-radius: 6px;
+  background: transparent;
+  padding: 0 12px;
+  color: var(--sf-accent);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-coupon-view-switch {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border-bottom: 1px solid var(--sf-line);
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-coupon-view-switch button {
+  min-height: 46px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: var(--sf-ink-secondary);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-coupon-view-switch button.is-active {
+  border-bottom-color: var(--sf-accent);
+  color: var(--sf-ink);
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] :where(
+  .curated-life-coupon-status-rail,
+  .curated-life-coupon-category-rail
+) {
+  min-width: 0;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] :where(
+  .curated-life-coupon-status-rail__inner,
+  .curated-life-coupon-category-rail__inner
+) {
+  display: flex;
+  width: max-content;
+  min-width: 100%;
+  align-items: center;
+  gap: 6px;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] :where(
+  .curated-life-coupon-status-tab,
+  .curated-life-coupon-category-tab
+) {
+  display: inline-flex;
+  min-height: 44px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  padding: 0 10px;
+  color: var(--sf-ink-secondary);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] :where(
+  .curated-life-coupon-status-tab,
+  .curated-life-coupon-category-tab
+).is-active {
+  border-color: color-mix(in srgb, var(--sf-accent) 28%, var(--sf-line));
+  background: var(--sf-accent-soft);
+  color: var(--sf-accent);
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-coupon-category-tab > span:last-child {
+  min-width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--sf-accent) 9%, var(--sf-surface));
+  color: var(--sf-ink-secondary);
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-coupon-category-tab.is-active > span:last-child {
+  background: var(--sf-accent);
+  color: var(--sf-on-accent);
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-coupon-empty {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: 44px minmax(0, 1fr);
+  align-items: start;
+  gap: 12px;
+  border: 1px solid var(--sf-line);
+  border-radius: 8px;
+  background: var(--sf-surface);
+  padding: 18px 16px;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-coupon-empty__icon {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--sf-accent-soft);
+  color: var(--sf-accent);
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-coupon-empty__copy {
+  display: grid;
+  min-width: 0;
+  gap: 5px;
+  padding-top: 2px;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-coupon-empty__copy h2 {
+  margin: 0;
+  color: var(--sf-ink);
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-coupon-empty__copy p {
+  margin: 0;
+  color: var(--sf-ink-secondary);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-coupon-empty__stats {
+  display: grid;
+  min-width: 0;
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-top: 1px solid var(--sf-line);
+  border-bottom: 1px solid var(--sf-line);
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-coupon-empty__stats span {
+  display: grid;
+  min-width: 0;
+  min-height: 58px;
+  place-content: center;
+  gap: 3px;
+  text-align: center;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-coupon-empty__stats span + span {
+  border-left: 1px solid var(--sf-line);
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-coupon-empty__stats strong {
+  color: var(--sf-ink);
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-coupon-empty__stats em {
+  color: var(--sf-ink-secondary);
+  font-size: 10px;
+  font-style: normal;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-coupon-empty__actions {
+  display: flex;
+  min-width: 0;
+  grid-column: 1 / -1;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-coupon-empty__actions button {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid var(--sf-accent);
+  border-radius: 8px;
+  background: var(--sf-accent);
+  padding: 0 14px;
+  color: var(--sf-on-accent);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+@media (min-width: 768px) {
+  html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-coupon-empty {
+    max-width: 760px;
+  }
 }

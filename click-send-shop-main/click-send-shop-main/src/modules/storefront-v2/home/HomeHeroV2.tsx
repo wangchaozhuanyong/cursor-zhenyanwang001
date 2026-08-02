@@ -176,12 +176,6 @@ export default function HomeHeroV2({
         </div>
 
         <div className="sf-next-home-hero__visual">
-          <div className="sf-next-home-hero__art" aria-hidden="true">
-            <span className="sf-next-home-hero__art-block sf-next-home-hero__art-block--ink" />
-            <span className="sf-next-home-hero__art-block sf-next-home-hero__art-block--mint" />
-            <span className="sf-next-home-hero__art-orb" />
-            <span className="sf-next-home-hero__art-base" />
-          </div>
           {hasBanner && carouselReady ? (
             <div className="sf-next-home-hero__banner-texture">
               <Suspense

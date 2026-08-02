@@ -33,6 +33,7 @@
     "release:client-redesign": "node scripts/run-client-redesign-release-gate.mjs",
     "verify:theme-studio": "node scripts/verify-theme-studio.mjs",
     "theme:check": "node scripts/check-public-theme-hardcoded-colors.mjs",
+    "theme:check:client-redesign": "node scripts/check-client-redesign-theme-scope.mjs",
     "check:mojibake": "node scripts/check-mojibake.mjs",
     "check:admin-i18n": "node scripts/check-admin-i18n-health.mjs",
     "check:api-paths": "node scripts/check-api-paths.mjs",

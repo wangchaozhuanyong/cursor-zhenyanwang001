@@ -1,0 +1,1141 @@
+/* Homepage and core route layouts for the fixed 华人城市生活 client. */
+
+/* Home */
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-home-main {
+  display: grid;
+  width: 100%;
+  max-width: 1280px;
+  gap: 0;
+  margin-inline: auto;
+  padding: calc(env(safe-area-inset-top, 0px) + 12px) var(--sc-page-x) var(--sc-bottom-clearance);
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-home-hero {
+  display: grid;
+  min-width: 0;
+  gap: 8px;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-home-header {
+  display: grid;
+  min-height: 48px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-home-brand {
+  display: inline-flex;
+  min-width: 0;
+  min-height: 44px;
+  align-items: center;
+  gap: 9px;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--sf-ink);
+  text-align: left;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-home-brand__logo {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  overflow: hidden;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-home-brand > strong {
+  overflow: hidden;
+  color: var(--sf-ink);
+  font-size: 23px;
+  font-weight: 850;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-home-support {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 7px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  padding: 0 4px;
+  color: var(--sf-ink);
+  font-size: 14px;
+  font-weight: 650;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-home-support svg {
+  color: var(--sf-accent);
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-home-search {
+  display: grid;
+  width: 100%;
+  min-height: 44px;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 11px;
+  border: 1px solid var(--sf-line-strong);
+  border-radius: 8px;
+  background: var(--sf-surface);
+  padding: 0 14px;
+  color: var(--sf-ink-secondary);
+  text-align: left;
+  box-shadow: none;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-home-search > span {
+  overflow: hidden;
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-service-hero {
+  position: relative;
+  isolation: isolate;
+  min-height: 216px;
+  overflow: hidden;
+  border: 1px solid var(--sf-premium-border);
+  border-radius: 8px;
+  background: var(--sf-ink);
+  box-shadow: var(--sf-shadow-sm);
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-service-hero__media,
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-service-hero__media :where(picture, img) {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-service-hero__image {
+  object-fit: cover;
+  object-position: 58% center;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-service-hero__copy {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  width: 57%;
+  min-height: 216px;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 19px 0 18px 20px;
+  color: var(--sf-on-accent);
+  text-shadow: 0 1px 2px color-mix(in srgb, var(--sf-ink) 34%, transparent);
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-service-hero__copy > p {
+  margin: 0 0 8px;
+  color: color-mix(in srgb, var(--sf-on-accent) 78%, transparent);
+  font-size: 10px;
+  font-weight: 650;
+  line-height: 1.3;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-service-hero__copy > h2 {
+  margin: 0;
+  color: var(--sf-on-accent);
+  font-size: clamp(25px, 7vw, 31px);
+  font-weight: 850;
+  line-height: 1.22;
+  letter-spacing: 0;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-service-hero__copy > span {
+  margin-top: 8px;
+  color: color-mix(in srgb, var(--sf-on-accent) 84%, transparent);
+  font-size: 11px;
+  line-height: 1.45;
+  white-space: nowrap;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-service-hero__action {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 7px;
+  margin-top: 16px;
+  border: 1px solid var(--sf-accent);
+  border-radius: 7px;
+  background: var(--sf-accent);
+  padding: 0 14px;
+  color: var(--sf-on-accent);
+  font-size: 13px;
+  font-weight: 750;
+  text-shadow: none;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-service-switch {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border-bottom: 1px solid var(--sf-line);
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-service-switch > button {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  min-height: 56px;
+  align-content: center;
+  gap: 4px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 10px 8px 13px;
+  color: var(--sf-ink-secondary);
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-service-switch > button + button {
+  border-left: 1px solid var(--sf-line);
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-service-switch > button > span {
+  color: var(--sf-ink);
+  font-size: 18px;
+  font-weight: 760;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-service-switch > button > small {
+  overflow: hidden;
+  color: var(--sf-ink-secondary);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-service-switch > button.is-active > span {
+  color: var(--sf-accent);
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-service-switch > button.is-active::after {
+  position: absolute;
+  right: 22%;
+  bottom: -1px;
+  left: 22%;
+  height: 2px;
+  background: var(--sf-accent);
+  content: "";
+}
+
+/* Home service directory */
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-quick-entry {
+  min-width: 0;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-quick-entry__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-top: 1px solid var(--sf-line);
+  border-bottom: 1px solid var(--sf-line);
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-quick-entry__item {
+  display: grid;
+  min-width: 0;
+  min-height: 86px;
+  grid-template-columns: 40px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  border-right: 1px solid var(--sf-line);
+  border-bottom: 1px solid var(--sf-line);
+  border-radius: 0;
+  background: transparent;
+  padding: 12px 8px;
+  color: var(--sf-ink);
+  text-align: left;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-quick-entry__item:nth-child(3n) {
+  border-right: 0;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-quick-entry__item:nth-last-child(-n + 3) {
+  border-bottom: 0;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-quick-entry__icon {
+  display: grid;
+  width: 40px;
+  height: 44px;
+  place-items: center;
+  overflow: hidden;
+  border: 0;
+  border-radius: 6px;
+  background: var(--sf-accent-soft);
+  color: var(--sf-accent);
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] :where(
+  .curated-life-quick-entry__icon-media,
+  .curated-life-quick-entry__icon-image
+) {
+  width: 100%;
+  height: 100%;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] img.curated-life-quick-entry__icon-image {
+  object-fit: contain;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] svg.curated-life-quick-entry__icon-image {
+  width: 25px;
+  height: 25px;
+  color: var(--sf-accent);
+  stroke-width: 1.8;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-quick-entry__copy {
+  min-width: 0;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-quick-entry__copy strong {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--sf-ink);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.35;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+/* Verified platform facts only */
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-trust-strip {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border: 1px solid var(--sf-premium-border);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, white 76%, transparent), transparent),
+    var(--sf-premium-soft);
+  margin-top: 0;
+  padding: 7px 4px;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-trust-strip__item {
+  display: grid;
+  min-width: 0;
+  justify-items: center;
+  gap: 3px;
+  padding: 0 5px;
+  color: var(--sf-accent);
+  text-align: center;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-trust-strip__item + .curated-life-trust-strip__item {
+  border-left: 1px solid var(--sf-premium-border);
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-trust-strip__item > span {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-trust-strip__item strong {
+  overflow: hidden;
+  color: var(--sf-ink);
+  font-size: 10px;
+  font-weight: 720;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-trust-strip__item small {
+  display: none;
+  color: var(--sf-ink-secondary);
+  font-size: 10px;
+  line-height: 1.3;
+}
+
+/* Products */
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-product-shelf {
+  min-width: 0;
+  margin-top: 8px;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-product-shelf__header {
+  margin-bottom: 10px;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-section-heading__action {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 5px;
+  border: 0;
+  background: transparent;
+  padding: 0 2px;
+  color: var(--sf-premium-strong);
+  font-size: 12px;
+  font-weight: 620;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-product-grid {
+  display: grid;
+  min-width: 0;
+  grid-auto-columns: minmax(142px, 42vw);
+  grid-auto-flow: column;
+  gap: 9px;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  padding: 1px 1px 8px;
+  scrollbar-width: none;
+  scroll-snap-type: inline proximity;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-product-grid::-webkit-scrollbar {
+  display: none;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-product-card {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--sf-premium-border);
+  border-radius: 8px;
+  background: var(--sf-surface);
+  color: var(--sf-ink);
+  box-shadow: var(--sf-shadow-xs);
+  scroll-snap-align: start;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-product-card__media {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  background:
+    linear-gradient(145deg, color-mix(in srgb, white 62%, transparent), transparent 48%),
+    var(--sf-premium-soft);
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] :where(
+  .curated-life-product-card__image,
+  .curated-life-product-card__image picture,
+  .curated-life-product-card__image img
+) {
+  width: 100%;
+  height: 100%;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-product-card__image img {
+  object-fit: contain;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-product-card__badge,
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-product-card__sold-out {
+  position: absolute;
+  top: 7px;
+  left: 7px;
+  border-radius: 5px;
+  background: var(--sf-premium-strong);
+  padding: 4px 6px;
+  color: var(--sf-on-accent);
+  font-size: 9px;
+  font-weight: 720;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-product-card__body {
+  display: grid;
+  min-width: 0;
+  gap: 7px;
+  padding: 10px;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-product-card__body > strong {
+  display: -webkit-box;
+  min-height: 35px;
+  overflow: hidden;
+  color: var(--sf-ink);
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.42;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-product-card__meta {
+  overflow: hidden;
+  color: var(--sf-ink-secondary);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-product-card__footer {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr) 34px;
+  align-items: center;
+  gap: 6px;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-product-card__price {
+  min-width: 0;
+  overflow: hidden;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-product-card__price .sf-next-price__currency {
+  color: var(--sf-price);
+  font-size: 9px;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-product-card__price .sf-next-price__amount {
+  color: var(--sf-price);
+  font-size: 15px;
+  font-weight: 820;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-product-card__price .sf-next-price__original {
+  display: none;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-product-card__add {
+  display: grid;
+  width: 34px;
+  min-width: 34px;
+  height: 34px;
+  min-height: 34px;
+  place-items: center;
+  border: 1px solid var(--sf-accent);
+  border-radius: 50%;
+  background: var(--sf-accent);
+  color: var(--sf-on-accent);
+}
+
+/* Compact campaigns come after the product shelf. */
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-campaigns {
+  min-width: 0;
+  margin-top: 18px;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-campaigns__list {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-campaign-row {
+  display: grid;
+  min-width: 0;
+  min-height: 98px;
+  grid-template-columns: minmax(0, 1fr) 64px;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+  border: 1px solid var(--sf-premium-border);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--sf-premium) 5%, transparent), transparent 54%),
+    var(--sf-surface);
+  padding: 11px;
+  color: var(--sf-ink);
+  text-align: left;
+  box-shadow: var(--sf-shadow-xs);
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-campaign-row__copy {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-campaign-row__copy strong {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 13px;
+  line-height: 1.4;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-campaign-row__copy small {
+  overflow: hidden;
+  color: var(--sf-ink-secondary);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-campaign-row__visual {
+  display: grid;
+  width: 64px;
+  height: 64px;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 7px;
+  background: var(--sf-premium-soft);
+  color: var(--sf-premium-strong);
+}
+
+/* Categories */
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-category-page {
+  min-height: 100dvh;
+  background: var(--sf-canvas);
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-category-shell {
+  display: grid;
+  width: min(100%, 1280px);
+  min-width: 0;
+  gap: 14px;
+  margin-inline: auto;
+  padding: 10px var(--sc-page-x) var(--sc-bottom-clearance);
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-category-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-category-search-trigger {
+  display: grid;
+  min-height: 44px;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+  border: 1px solid var(--sf-line);
+  border-radius: 8px;
+  background: var(--sf-surface);
+  padding: 0 12px;
+  color: var(--sf-ink-secondary);
+  text-align: left;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-category-hero {
+  display: grid;
+  min-width: 0;
+  gap: 12px;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-category-titlebar {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-category-titlebar h1 {
+  margin: 0;
+  color: var(--sf-ink);
+  font-size: 22px;
+  font-weight: 800;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-category-primary-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-category-primary-item {
+  display: grid;
+  min-width: 0;
+  min-height: 74px;
+  justify-items: center;
+  gap: 6px;
+  border: 1px solid var(--sf-line);
+  border-radius: 8px;
+  background: var(--sf-surface);
+  padding: 8px 4px;
+  color: var(--sf-ink-secondary);
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-category-primary-item.is-active {
+  border-color: var(--sf-accent-border);
+  background: var(--sf-accent-soft);
+  color: var(--sf-accent);
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-category-primary-item__icon {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 7px;
+  background: var(--sf-surface-muted);
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] :where(
+  .curated-life-category-primary-item__icon-media,
+  .curated-life-category-primary-item__icon-image
+) {
+  width: 100%;
+  height: 100%;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] img.curated-life-category-primary-item__icon-image {
+  object-fit: contain;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] svg.curated-life-category-primary-item__icon-image {
+  width: 21px;
+  height: 21px;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-category-primary-item .sf-next-category-pill__label {
+  width: 100%;
+  overflow: hidden;
+  font-size: 10px;
+  font-weight: 650;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-listing-section {
+  display: grid;
+  min-width: 0;
+  gap: 10px;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-listing-sort-shell {
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-category-sortbar {
+  display: inline-flex;
+  min-width: max-content;
+  gap: 6px;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-category-sortbar .sf-next-sort-pill {
+  min-height: 40px;
+  border: 1px solid var(--sf-line);
+  border-radius: 7px;
+  background: var(--sf-surface);
+  padding-inline: 12px;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-category-sortbar .sf-next-sort-pill.is-active {
+  border-color: var(--sf-accent-border);
+  background: var(--sf-accent-soft);
+  color: var(--sf-accent);
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-category-product-shell {
+  min-width: 0;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-category-product-grid,
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-search-product-grid {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+/* Profile */
+html[data-client-design-style="curated_life"][data-app-scope="store"] .sf-next-profile-layout {
+  width: min(100%, 1120px);
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] :where(
+  .curated-life-profile-hero-card,
+  .sf-next-profile-card,
+  .sf-next-profile-order-panel,
+  .sf-next-profile-service-panel,
+  .sf-next-profile-more-panel,
+  .sf-next-profile-asset-panel,
+  .sf-next-profile-snapshot-panel
+) {
+  overflow: hidden;
+  border: 1px solid var(--sf-line);
+  border-radius: 8px;
+  background: var(--sf-surface);
+  color: var(--sf-ink);
+  box-shadow: var(--sf-shadow-xs);
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-profile-hero-card {
+  padding: 16px;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-profile-hero-card .profile-vip-header {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-profile-hero-card :where(
+  .profile-avatar-button,
+  .profile-guest-avatar
+) {
+  width: 58px;
+  height: 58px;
+  overflow: hidden;
+  border: 1px solid var(--sf-line-strong);
+  border-radius: 8px;
+  background: var(--sf-surface-muted);
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-profile-hero-card .profile-vip-name {
+  color: var(--sf-ink);
+  font-size: 20px;
+  font-weight: 800;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-profile-hero-card .profile-vip-badge {
+  border-radius: 5px;
+  background: var(--sf-accent-soft);
+  color: var(--sf-accent);
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-profile-hero-card .profile-card-assets,
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-profile-guest-card .profile-guest-highlights {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  margin-top: 14px;
+  border-top: 1px solid var(--sf-line);
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] :where(
+  .curated-life-profile-hero-card .profile-card-asset,
+  .curated-life-profile-guest-card .profile-guest-highlight
+) {
+  min-width: 0;
+  min-height: 64px;
+  border: 0;
+  border-right: 1px solid var(--sf-line);
+  border-radius: 0;
+  background: transparent;
+  color: var(--sf-ink);
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] :where(
+  .curated-life-profile-hero-card .profile-card-asset,
+  .curated-life-profile-guest-card .profile-guest-highlight
+):last-child {
+  border-right: 0;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] :where(
+  .profile-order-grid,
+  .profile-service-grid
+) {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] :where(
+  .profile-order-action,
+  .profile-service-action,
+  .profile-secondary-action
+) {
+  min-width: 0;
+  min-height: 72px;
+  border: 1px solid var(--sf-line);
+  border-radius: 8px;
+  background: var(--sf-surface);
+  color: var(--sf-ink);
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] :where(
+  .profile-order-icon,
+  .profile-service-icon,
+  .profile-secondary-icon
+) {
+  color: var(--sf-accent);
+}
+
+/* Coupons and authentication retain their route logic but share the fixed language. */
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-coupons-shell {
+  min-height: 100dvh;
+  background: var(--sf-canvas);
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] :where(
+  .curated-life-coupon-summary,
+  .curated-life-coupon-empty
+) {
+  border: 1px solid var(--sf-line);
+  border-radius: 8px;
+  background: var(--sf-surface);
+  color: var(--sf-ink);
+  box-shadow: var(--sf-shadow-xs);
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] :where(
+  .curated-life-coupon-status-tab,
+  .curated-life-coupon-category-tab,
+  .curated-life-coupon-view-switch button
+) {
+  min-height: 44px;
+  border-radius: 7px;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] :where(
+  .curated-life-coupon-status-tab.is-active,
+  .curated-life-coupon-category-tab.is-active,
+  .curated-life-coupon-view-switch button.is-active
+) {
+  background: var(--sf-accent-soft);
+  color: var(--sf-accent);
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .auth-login-page {
+  min-height: 100dvh;
+  background: var(--sf-canvas);
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-auth-form {
+  border: 1px solid var(--sf-line);
+  border-radius: 8px;
+  background: var(--sf-surface);
+  box-shadow: var(--sf-shadow-xs);
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-auth-submit {
+  min-height: 48px;
+  border-radius: 8px;
+  background: var(--sf-accent);
+  color: var(--sf-on-accent);
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"][data-storefront-ui="next"] button.auth-login-back-btn,
+html[data-client-design-style="curated_life"][data-app-scope="store"][data-storefront-ui="next"] button.curated-life-auth-password-toggle,
+html[data-client-design-style="curated_life"][data-app-scope="store"][data-storefront-ui="next"] button.curated-life-auth-forgot {
+  width: auto;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+}
+
+/* Promotions, cart and detail pages */
+html[data-client-design-style="curated_life"][data-app-scope="store"] :where(
+  .sf-next-promotions-main,
+  .sf-next-promotion-detail-main,
+  .sf-next-cart-main,
+  .sf-next-product-detail-main
+) {
+  width: min(100%, 1280px);
+  margin-inline: auto;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .sf-next-promotions-page {
+  --sf-promo-filter-height: 44px;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] :where(
+  .sf-next-promotion-detail-card,
+  .sf-next-promotion-detail-product-row,
+  .sf-next-cart-discount-panel,
+  .sf-next-cart-summary,
+  .sf-next-cart-login-strip
+) {
+  border: 1px solid var(--sf-line);
+  border-radius: 8px;
+  background: var(--sf-surface);
+  color: var(--sf-ink);
+  box-shadow: var(--sf-shadow-xs);
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .sf-next-cart-item-media {
+  overflow: hidden;
+  border-radius: 7px;
+  background: var(--sf-surface-muted);
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .sf-next-cart-qty-control {
+  height: 36px;
+  overflow: hidden;
+  border: 1px solid var(--sf-line);
+  border-radius: 7px;
+  background: var(--sf-surface);
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .sf-next-cart-checkout-button {
+  min-height: 44px;
+  border-radius: 8px;
+  background: var(--sf-accent);
+  color: var(--sf-on-accent);
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"][data-storefront-ui="next"] .curated-life-category-titlebar button.sf-next-icon-button,
+html[data-client-design-style="curated_life"][data-app-scope="store"][data-storefront-ui="next"] .sf-next-promotions-page a.sf-next-promo-filter,
+html[data-client-design-style="curated_life"][data-app-scope="store"][data-storefront-ui="next"] .sf-next-product-detail-page button.sf-next-product-reviews__write,
+html[data-client-design-style="curated_life"][data-app-scope="store"][data-storefront-ui="next"] a.sf-next-account-product-card__title-link {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .sf-next-product-sticky-icon {
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+}
+
+@media (max-width: 767px) {
+  html[data-client-design-style="curated_life"][data-app-scope="store"][data-storefront-ui="next"] body button {
+    min-height: 44px;
+  }
+
+  html[data-client-design-style="curated_life"][data-app-scope="store"][data-storefront-ui="next"] body :where(
+    button.sf-next-icon-button,
+    button.sf-next-back-button,
+    button.auth-login-back-btn,
+    button.curated-life-auth-password-toggle
+  ) {
+    min-width: 44px;
+  }
+}
+
+@media (max-width: 359px) {
+  html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-service-hero__copy {
+    width: 64%;
+    padding-left: 16px;
+  }
+
+  html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-service-hero__copy > h2 {
+    font-size: 24px;
+  }
+
+  html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-service-hero__copy > span {
+    font-size: 9px;
+  }
+}
+
+@media (min-width: 768px) {
+  html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-home-main {
+    gap: 24px;
+    padding-top: 22px;
+    padding-bottom: 48px;
+  }
+
+  html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-home-hero {
+    grid-template-columns: minmax(0, 1.5fr) minmax(310px, 0.8fr);
+    grid-template-areas:
+      "header header"
+      "search search"
+      "visual switch";
+    align-items: stretch;
+  }
+
+  html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-home-header {
+    grid-area: header;
+  }
+
+  html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-home-search {
+    grid-area: search;
+  }
+
+  html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-service-hero {
+    min-height: 360px;
+    grid-area: visual;
+  }
+
+  html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-service-hero__copy {
+    width: 52%;
+    min-height: 360px;
+    padding-left: clamp(28px, 4vw, 52px);
+  }
+
+  html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-service-hero__copy > h2 {
+    font-size: clamp(34px, 4vw, 50px);
+  }
+
+  html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-service-switch {
+    grid-area: switch;
+    grid-template-columns: 1fr;
+    border: 1px solid var(--sf-line);
+    border-radius: 8px;
+    background: var(--sf-surface);
+  }
+
+  html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-service-switch > button {
+    min-height: 180px;
+  }
+
+  html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-service-switch > button + button {
+    border-top: 1px solid var(--sf-line);
+    border-left: 0;
+  }
+
+  html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-service-switch > button.is-active::after {
+    top: 18%;
+    right: auto;
+    bottom: 18%;
+    left: -1px;
+    width: 3px;
+    height: auto;
+  }
+
+  html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-quick-entry__item {
+    min-height: 116px;
+    grid-template-columns: 48px minmax(0, 1fr);
+    padding-inline: 20px;
+  }
+
+  html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-quick-entry__icon {
+    width: 48px;
+    height: 52px;
+  }
+
+  html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-quick-entry__copy strong {
+    font-size: 15px;
+  }
+
+  html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-trust-strip {
+    padding: 16px 10px;
+  }
+
+  html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-trust-strip__item {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    justify-items: start;
+    text-align: left;
+  }
+
+  html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-trust-strip__item small {
+    display: block;
+  }
+
+  html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-product-grid {
+    grid-auto-columns: auto;
+    grid-auto-flow: initial;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    overflow: visible;
+  }
+
+  html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-category-primary-grid {
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+  }
+
+  html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-category-product-grid,
+  html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-search-product-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+  }
+}
+
+@media (min-width: 1180px) {
+  html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-category-product-grid,
+  html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-search-product-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}

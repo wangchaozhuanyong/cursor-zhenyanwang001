@@ -493,8 +493,8 @@ html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-promo-filters {
   scroll-padding-inline: var(--sc-page-x) !important;
 }
 html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-promo-filter {
-  min-height: 2.38rem !important;
-  border-radius: 999px !important;
+  min-height: var(--sf-promo-filter-height, 2.38rem) !important;
+  border-radius: var(--sf-promo-filter-radius, 999px) !important;
   padding-inline: 0.72rem !important;
 }
 @media (max-width: 767px) {
@@ -553,9 +553,9 @@ html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-promo-filters {
   scroll-padding-inline: 0 !important;
 }
 html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-promo-filter {
-  min-height: 2.46rem !important;
+  min-height: var(--sf-promo-filter-height, 2.46rem) !important;
   padding-inline: 0.82rem !important;
-  border-radius: 999px !important;
+  border-radius: var(--sf-promo-filter-radius, 999px) !important;
   white-space: nowrap !important;
 }
 @media (max-width: 767px) {
@@ -568,7 +568,7 @@ html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-promo-filter {
   html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-promo-folio {
     min-height: auto !important;
     padding: 1rem !important;
-    border-radius: 1rem !important;
+    border-radius: var(--sf-promo-folio-radius, 1rem) !important;
   }
 }
 @media (max-width: 767px) {
@@ -588,7 +588,7 @@ html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-promo-filter {
 
   html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-promo-card {
     padding: 0.82rem !important;
-    border-radius: 1rem !important;
+    border-radius: var(--sf-promo-card-radius, 1rem) !important;
   }
 }
 html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-promotions-main {
@@ -618,7 +618,7 @@ html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-promo-filter {
   html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-promo-folio {
     min-height: auto !important;
     padding: 0.86rem !important;
-    border-radius: 0.94rem !important;
+    border-radius: var(--sf-promo-folio-radius, 0.94rem) !important;
   }
 }
 @media (max-width: 767px) {
@@ -646,7 +646,7 @@ html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-promo-filter {
 
   html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-promo-card {
     padding: 0.78rem !important;
-    border-radius: 0.94rem !important;
+    border-radius: var(--sf-promo-card-radius, 0.94rem) !important;
   }
 }
 @media (min-width: 768px) {
@@ -685,10 +685,10 @@ html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-promo-filter {
   justify-content: center !important;
   min-width: 0 !important;
   width: 100% !important;
-  min-height: 2.38rem !important;
+  min-height: var(--sf-promo-filter-height, 2.38rem) !important;
   padding-inline: 0.32rem !important;
-  border-radius: 999px !important;
-  font-size: 0.75rem !important;
+  border-radius: var(--sf-promo-filter-radius, 999px) !important;
+  font-size: var(--sf-promo-filter-font-size, 0.75rem) !important;
   white-space: nowrap !important;
 }
 html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-promo-filter span {
@@ -726,15 +726,19 @@ html[data-app-scope="store"] .sf-next-promo-folio {
   --promotion-gold: var(--theme-warning);
   --promotion-cream: color-mix(in srgb, var(--theme-price) 8%, var(--theme-surface));
   border-color: color-mix(in srgb, var(--theme-price) 18%, var(--theme-border)) !important;
-  background:
+  background: var(
+    --sf-promo-folio-bg,
     linear-gradient(135deg, color-mix(in srgb, var(--theme-price) 7%, var(--theme-surface)) 0%, var(--theme-surface) 62%, color-mix(in srgb, var(--theme-primary) 7%, var(--theme-bg)) 100%),
-    var(--theme-surface) !important;
+    var(--theme-surface)
+  ) !important;
 }
 html[data-app-scope="store"] .sf-next-promo-card {
   border-color: color-mix(in srgb, var(--theme-price) 16%, var(--theme-border)) !important;
-  background:
+  background: var(
+    --sf-promo-card-bg,
     linear-gradient(135deg, var(--theme-surface) 0%, color-mix(in srgb, var(--theme-price) 4%, var(--theme-surface)) 100%),
-    var(--theme-surface) !important;
+    var(--theme-surface)
+  ) !important;
 }
 html[data-app-scope="store"] .sf-next-promo-card__type,
 html[data-app-scope="store"] .sf-next-promo-card__cta {

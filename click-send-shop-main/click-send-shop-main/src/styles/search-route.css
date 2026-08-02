@@ -49,9 +49,9 @@ html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-search-group-la
 }
 
 html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-search-section-action {
-  min-width: auto;
-  min-height: 2rem;
-  border-radius: var(--sf-radius-full);
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: var(--sf-radius-sm);
   background: transparent;
   color: var(--sf-accent);
   padding: 0 0.25rem;
@@ -571,10 +571,10 @@ html[data-app-scope="store"][data-storefront-ui="next"] .sf-next-search-bar {
 
 @media (min-width: 768px) {
   html[data-app-scope="store"][data-storefront-ui="next"] button.sf-next-search-nav-button {
-    width: 40px !important;
-    min-width: 40px !important;
-    height: 40px !important;
-    min-height: 40px !important;
+    width: var(--sf-control-height, 40px) !important;
+    min-width: var(--sf-control-height, 40px) !important;
+    height: var(--sf-control-height, 40px) !important;
+    min-height: var(--sf-control-height, 40px) !important;
   }
 }
 

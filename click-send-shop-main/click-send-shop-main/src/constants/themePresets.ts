@@ -6,6 +6,7 @@ export const MOSS_SKIN_ID = "moss";
 export const IRIS_SKIN_ID = "iris";
 export const NEWYEAR_SKIN_ID = "newyear";
 export const MIDAUTUMN_SKIN_ID = "midautumn";
+export const CURATED_LIFE_SKIN_ID = "curated_life";
 export const PREMIUM_CHAMPAGNE_IVORY_SKIN_ID = "premium_champagne_ivory";
 export const PREMIUM_PEARL_BLUSH_SKIN_ID = "premium_pearl_blush";
 export const PREMIUM_PORCELAIN_JADE_SKIN_ID = "premium_porcelain_jade";
@@ -44,6 +45,70 @@ export const RETIRED_SYSTEM_SKIN_IDS = new Set([
 
 export const DAILY_COMMERCE_SKIN_ID = POLAR_SKIN_ID;
 export const FESTIVAL_SKIN_ID = NEWYEAR_SKIN_ID;
+
+export const CURATED_LIFE_CONFIG: ThemeConfig = {
+  skinName: "华人城市生活入口",
+  bgColor: "#FFFDF9",
+  surfaceColor: "#FFFFFF",
+  primaryColor: "#284D3E",
+  secondaryColor: "#F5EFE5",
+  accentColor: "#96733A",
+  priceColor: "#B13C2E",
+  borderColor: "#E8E2DA",
+  textColor: "#17201B",
+  mutedTextColor: "#6E6A62",
+  successColor: "#3E6B55",
+  warningColor: "#96733A",
+  dangerColor: "#B13C2E",
+  ...STOREFRONT_THEME_DEFAULTS,
+  radius: "8px",
+  density: "comfortable",
+  motionLevel: "soft",
+  shadowStyle: "paper",
+  buttonStyle: "rounded",
+  navStyle: "clean",
+  badgeStyle: "outline",
+  priceStyle: "tabularBold",
+  productCardVariant: "standard",
+  cardStyle: "minimal",
+  cardTextAlign: "left",
+  imageRatio: "1 / 1",
+  imageFit: "contain",
+  homeLayout: "classic",
+  headerStyle: "clean",
+  bannerStyle: "clean",
+  couponStyle: "minimal",
+  memberCardStyle: "light",
+  categoryIconStyle: "outline",
+  adminThemeMode: "fixed",
+  texture: {
+    material: "warmIvoryPaper",
+    intensity: "subtle",
+    surface: "matte",
+    grain: "none",
+    grainOpacity: 0,
+    highlight: "champagneEdge",
+    highlightOpacity: 0.045,
+    metal: "softChampagne",
+    pattern: "none",
+    patternOpacity: 0,
+    line: "warmHairline",
+    shadow: "warmSoftContact",
+    temperature: "warmNeutral",
+    imageContrast: 0.96,
+    imageSaturation: 0.92,
+  },
+  festival: {
+    mode: "none",
+    activation: "manual",
+    dateMode: "solar",
+    leadDays: 0,
+    tailDays: 0,
+    decorativeDensity: "quiet",
+    showCountdown: false,
+    fallbackSkinId: null,
+  },
+};
 
 export const POLAR_CONFIG: ThemeConfig = {
   skinName: "银翼极昼·旗舰科技",
@@ -777,6 +842,20 @@ export const POLAR_SKIN: ThemeSkin = {
   config: POLAR_CONFIG,
 };
 
+export const CURATED_LIFE_SKIN: ThemeSkin = {
+  id: CURATED_LIFE_SKIN_ID,
+  themeKey: CURATED_LIFE_SKIN_ID,
+  name: "华人生活精选商城",
+  description: "米白画布、墨色正文、深玉绿主色、香槟金细节与朱红价格。用于客户端精致化重构的独立预览皮肤。",
+  category: "客户端预览",
+  sceneTag: "mall",
+  type: "evergreen",
+  status: "draft",
+  isDefault: false,
+  priority: 95,
+  config: CURATED_LIFE_CONFIG,
+};
+
 export const MOSS_SKIN: ThemeSkin = {
   id: MOSS_SKIN_ID,
   themeKey: MOSS_SKIN_ID,
@@ -838,6 +917,7 @@ export const PREMIUM_IVORY_JADE_SKIN = PREMIUM_CHAMPAGNE_IVORY_SKIN;
 export const FALLBACK_THEME_SKIN = POLAR_SKIN;
 export const THEME_PRESETS: ThemeSkin[] = [
   POLAR_SKIN,
+  CURATED_LIFE_SKIN,
   MOSS_SKIN,
   IRIS_SKIN,
   NEWYEAR_SKIN,

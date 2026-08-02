@@ -28,6 +28,7 @@ import { appendThemePreviewParams } from "@/utils/themePreviewParams";
 import { storefrontCategoryName } from "@/utils/storefrontCopySanitizer";
 import type { Product, ProductListParams, ProductTag } from "@/types/product";
 import "@/styles/search-route.css";
+import "@/styles/storefront-curated-life.css";
 import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
 const HISTORY_KEY = "search_history";
@@ -86,9 +87,12 @@ export default function Search() {
   const navigate = useStorefrontNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const clientStyle = useClientDesignStyle();
+  const isCuratedLife = clientStyle === "curated_life";
   const siteInfo = useSiteInfo();
   const siteCapabilities = useSiteCapabilities();
-  const productGridClass = "sf-next-product-grid grid grid-cols-2 gap-x-5 gap-y-8 pt-1 md:grid-cols-3 xl:grid-cols-4";
+  const productGridClass = isCuratedLife
+    ? "sf-next-product-grid curated-life-search-product-grid grid grid-cols-2 gap-2 pt-1 md:grid-cols-3 xl:grid-cols-4"
+    : "sf-next-product-grid grid grid-cols-2 gap-x-5 gap-y-8 pt-1 md:grid-cols-3 xl:grid-cols-4";
   const productCardSiteContext = useMemo(
     () => ({
       restrictedComplianceEnabled: siteCapabilities.restrictedProductComplianceEnabled,
@@ -341,10 +345,11 @@ export default function Search() {
               </div>
             ) : null}
 
-            <SilkProductGrid
+          <SilkProductGrid
               products={visibleProducts}
               className={productGridClass}
-              siteContext={productCardSiteContext}
+            siteContext={productCardSiteContext}
+            cardVariant={isCuratedLife ? "curated" : "default"}
               itemKeyPrefix={`search:${submittedQuery.trim()}`}
               showQuietLoading={showQuietLoading}
               showSoftRefreshing={showSoftRefreshing}

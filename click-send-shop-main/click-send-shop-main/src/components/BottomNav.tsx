@@ -13,6 +13,8 @@ import { getRememberedStoreTabPath, rememberCurrentStoreScrollPosition } from "@
 import { stripPublicLocaleFromPathname, usePublicLocale } from "@/i18n/publicLocale";
 import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 import { useStorefrontMotionState } from "@/components/storefront-motion/useStorefrontMotionState";
+import { useClientDesignStyle } from "@/modules/storefront-v2/design/useClientDesignStyle";
+import "@/styles/storefront-curated-life-base.css";
 
 /** 轻触允许的最大位移（px）；略放宽，避免「刚滑完页面就点底栏」被误判为滑动 */
 const TAP_MOVE_THRESHOLD = 28;
@@ -48,6 +50,7 @@ export default function BottomNav() {
   const location = useLocation();
   const navigate = useStorefrontNavigate();
   const motion = useStorefrontMotionState();
+  const clientStyle = useClientDesignStyle();
   const { themeConfig } = useThemeRuntime();
   const { localizedPath, t } = usePublicLocale();
   const navStyle = themeConfig.navStyle;
@@ -57,13 +60,21 @@ export default function BottomNav() {
   const [badgeBump, setBadgeBump] = useState(false);
   const [intentPath, setIntentPath] = useState<string | null>(null);
   const currentPathname = stripPublicLocaleFromPathname(location.pathname);
-  const tabs = [
+  const defaultTabs = [
     { path: "/", label: t("common.home"), icon: Home },
     { path: "/categories", label: t("common.categories"), icon: LayoutGrid },
     { path: "/promotions", label: t("common.promotions"), icon: BadgePercent },
     { path: "/cart", label: t("common.cart"), icon: ShoppingCart },
     { path: "/profile", label: t("common.myAccount"), icon: User },
   ];
+  const curatedTabs = [
+    { path: "/", label: t("common.home"), icon: Home },
+    { path: "/categories", label: t("common.categories"), icon: LayoutGrid },
+    { path: "/promotions", label: t("common.promotions"), icon: BadgePercent },
+    { path: "/cart", label: t("common.cart"), icon: ShoppingCart },
+    { path: "/profile", label: t("common.myAccount"), icon: User },
+  ];
+  const tabs = clientStyle === "curated_life" ? curatedTabs : defaultTabs;
 
   useEffect(() => {
     let timer: number | undefined;
@@ -127,6 +138,7 @@ export default function BottomNav() {
     return Boolean(pendingBase && pendingBase === base && currentPathname !== base);
   };
   const visibleTabs = tabs.filter((tab) => isStoreNavPathVisible(tab.path, capabilities));
+  const isCuratedLife = clientStyle === "curated_life";
 
   const isTapIntent = (active: ActivePointer) => active.maxMove <= TAP_MOVE_THRESHOLD;
 
@@ -199,8 +211,8 @@ export default function BottomNav() {
   return (
     <nav
       className={cn(
-        "sf-next-bottom-nav sf-next-bottom-nav--stable",
-        getBottomNavShellClassName(navStyle, "sticky"),
+        isCuratedLife ? "curated-life-bottom-nav" : "sf-next-bottom-nav sf-next-bottom-nav--stable",
+        !isCuratedLife && getBottomNavShellClassName(navStyle, "sticky"),
         "md:hidden translate-y-0 opacity-100",
       )}
       data-theme-nav-style={navStyle}
@@ -210,8 +222,17 @@ export default function BottomNav() {
         WebkitTapHighlightColor: "transparent",
       }}
     >
-      <div className={cn("sf-next-bottom-nav-inner sf-next-bottom-nav__inner", getBottomNavInnerClassName(navStyle))} style={{ touchAction: "manipulation" }}>
-        <div className="sf-next-bottom-nav__grid grid h-[68px] items-center px-1" style={{ gridTemplateColumns: `repeat(${visibleTabs.length}, minmax(0, 1fr))` }}>
+      <div
+        className={cn(
+          isCuratedLife ? "curated-life-bottom-nav__inner" : "sf-next-bottom-nav-inner sf-next-bottom-nav__inner",
+          !isCuratedLife && getBottomNavInnerClassName(navStyle),
+        )}
+        style={{ touchAction: "manipulation" }}
+      >
+        <div
+          className={isCuratedLife ? "curated-life-bottom-nav__grid" : "sf-next-bottom-nav__grid grid h-[68px] items-center px-1"}
+          style={{ gridTemplateColumns: `repeat(${visibleTabs.length}, minmax(0, 1fr))` }}
+        >
           {visibleTabs.map((tab) => {
             const isCurrent = isTabActive(tab.path);
             const isPending = isTabPending(tab.path);
@@ -233,12 +254,14 @@ export default function BottomNav() {
                 onMouseEnter={() => preloadIdleTabRoute(tab.path)}
                 onFocus={() => preloadIdleTabRoute(tab.path)}
                 onClick={() => activateTab(tab.path)}
-                className="sf-next-bottom-nav-item relative flex min-h-0 w-full cursor-pointer select-none flex-col items-center justify-center gap-1 border-0 bg-transparent px-1 py-2"
+                className={isCuratedLife
+                  ? "curated-life-bottom-nav__item"
+                  : "sf-next-bottom-nav-item relative flex min-h-0 w-full cursor-pointer select-none flex-col items-center justify-center gap-1 border-0 bg-transparent px-1 py-2"}
               >
                 <span
-                  className={`sf-next-bottom-nav-icon relative flex h-8 min-w-8 items-center justify-center rounded-full px-2 transition-transform duration-150 ${
+                  className={`${isCuratedLife ? "curated-life-bottom-nav__icon" : "sf-next-bottom-nav-icon relative flex h-8 min-w-8 items-center justify-center rounded-full px-2 transition-transform duration-150"} ${
                     isCurrent
-                      ? "scale-105 bg-[var(--store-icon-bg)] shadow-[inset_0_0_0_1px_var(--store-icon-border)]"
+                      ? isCuratedLife ? "is-active" : "scale-105 bg-[var(--store-icon-bg)] shadow-[inset_0_0_0_1px_var(--store-icon-border)]"
                       : "bg-transparent"
                   }`}
                 >
@@ -250,9 +273,9 @@ export default function BottomNav() {
                   {tab.path.startsWith("/cart") ? <DeferredStoreCartBadge bumped={badgeBump} variant="bottom" /> : null}
                 </span>
                 <span
-                  className={`sf-next-bottom-nav-label text-xs leading-tight ${
+                  className={`${isCuratedLife ? "curated-life-bottom-nav__label" : "sf-next-bottom-nav-label text-xs leading-tight"} ${
                     isCurrent
-                      ? "font-bold text-[var(--theme-primary)]"
+                      ? isCuratedLife ? "is-active" : "font-bold text-[var(--theme-primary)]"
                       : isPending
                         ? "font-semibold text-[var(--theme-primary)]"
                       : "font-medium text-[var(--theme-text-muted)]"

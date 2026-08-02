@@ -23,7 +23,6 @@ import { cn } from "@/lib/utils";
 import { usePublicLocale } from "@/i18n/publicLocale";
 import { isInternalStorefrontCopy, storefrontDisplayText } from "@/utils/storefrontCopySanitizer";
 import type { PromotionType, StorefrontPromotion } from "@/services/marketingService";
-import "@/styles/promotions-route.css";
 
 type PromotionFilter = PromotionType | "";
 const PROMOTIONS_BASE_PATH = "/promotions";
@@ -447,23 +446,25 @@ function PromotionsFolio({
         <p>{description}</p>
       </div>
 
-      <div className="sf-next-promo-folio__stats" aria-label="活动数据">
-        <span>
-          <Gift size={15} aria-hidden />
-          <strong>{list.length}</strong>
-          活动
-        </span>
-        <span>
-          <Zap size={15} aria-hidden />
-          <strong>{activeCount}</strong>
-          进行中
-        </span>
-        <span>
-          <Store size={15} aria-hidden />
-          <strong>{typeCount}</strong>
-          类型
-        </span>
-      </div>
+      {list.length > 0 ? (
+        <div className="sf-next-promo-folio__stats" aria-label="活动数据">
+          <span>
+            <Gift size={15} aria-hidden />
+            <strong>{list.length}</strong>
+            活动
+          </span>
+          <span>
+            <Zap size={15} aria-hidden />
+            <strong>{activeCount}</strong>
+            进行中
+          </span>
+          <span>
+            <Store size={15} aria-hidden />
+            <strong>{typeCount}</strong>
+            类型
+          </span>
+        </div>
+      ) : null}
 
       <Link className="sf-next-promo-folio__action" to={actionHref}>
         {actionLabel}

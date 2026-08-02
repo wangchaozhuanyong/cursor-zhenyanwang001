@@ -184,9 +184,9 @@ export default function ProductDetail() {
           onShare={() => {}}
           onCart={() => navigate(localizedPath("/cart"))}
         />
-        <div className="mx-auto w-full max-w-screen-xl px-[var(--store-page-x)] pt-[var(--store-page-y)] md:px-6 md:py-10">
+        <main className="mx-auto w-full max-w-screen-xl px-[var(--store-page-x)] pt-[var(--store-page-y)] md:px-6 md:py-10">
           <StorefrontQuietLoading label="商品详情加载中" className="sf-motion-inline-loading--detail" />
-        </div>
+        </main>
       </div>
     );
   }
@@ -200,7 +200,7 @@ export default function ProductDetail() {
           onShare={() => {}}
           onCart={() => navigate(localizedPath("/cart"))}
         />
-        <div
+        <main
           className="mx-auto w-full max-w-screen-sm px-[var(--store-page-x)]"
           style={{
             paddingTop: "calc(var(--store-tab-header-height, 3.5rem) + env(safe-area-inset-top, 0px) + 2rem)",
@@ -213,7 +213,7 @@ export default function ProductDetail() {
             onBrowse={() => navigate(localizedPath("/categories"))}
             onPromotions={promotionsEnabled ? () => navigate(localizedPath("/promotions")) : undefined}
           />
-        </div>
+        </main>
       </div>
     );
   }

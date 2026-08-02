@@ -8,10 +8,7 @@ let promotionsRouteStylesPromise: Promise<unknown> | undefined;
 let cartRouteStylesPromise: Promise<unknown> | undefined;
 
 function preloadPromotionsRouteStyles() {
-  promotionsRouteStylesPromise ??= Promise.all([
-    import("@/styles/promotions-tailwind.css"),
-    import("@/styles/storefront-route-primitives.css"),
-  ]).catch((error: unknown) => {
+  promotionsRouteStylesPromise ??= import("@/styles/promotions-curated-route.css").catch((error: unknown) => {
     promotionsRouteStylesPromise = undefined;
     throw error;
   });

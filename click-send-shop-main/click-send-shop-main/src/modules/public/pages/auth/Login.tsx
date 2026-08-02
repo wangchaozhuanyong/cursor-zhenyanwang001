@@ -42,6 +42,7 @@ import { resolveAuthRedirectTarget, resolveLoginCancelTarget } from "@/utils/aut
 import { buildRoutePath, readRouteBack } from "@/utils/routeBackState";
 import { stripPublicLocaleFromPathname, usePublicLocale } from "@/i18n/publicLocale";
 import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
+import { useClientDesignStyle } from "@/modules/storefront-v2/design/useClientDesignStyle";
 
 const REMEMBER_KEY = "login_remembered_phone";
 /** text-base(16px) 避免 iOS 聚焦时自动缩放视口导致整页闪动 */
@@ -63,6 +64,8 @@ export default function Login() {
   const { banners } = useHomeBanners();
   const { settings: homeModules } = useHomeModuleSettings();
   const siteInfo = useSiteInfo();
+  const clientStyle = useClientDesignStyle();
+  const isCuratedLife = clientStyle === "curated_life";
   const { channels } = useSupportRuntime();
   const supportContact = useMemo(() => {
     const wa = channels.find((channel) => channel.type === "whatsapp");
@@ -550,7 +553,7 @@ export default function Login() {
           </section>
         </div>
 
-        {banners.length > 0 ? (
+        {!isCuratedLife && banners.length > 0 ? (
           <section
             className="auth-login-banner mb-3 overflow-hidden lg:hidden [transition:none]"
           >
@@ -558,10 +561,24 @@ export default function Login() {
           </section>
         ) : null}
 
-        {showHomeTrustBar ? <HomeTrustBar className="auth-login-trust mb-4 lg:hidden" /> : null}
+        {showHomeTrustBar ? (
+          <HomeTrustBar
+            className={cn(
+              "lg:hidden",
+              isCuratedLife ? "curated-life-auth-trust" : "auth-login-trust mb-4",
+            )}
+          />
+        ) : null}
 
-        <section className="auth-login-mode-tabs mb-4">
-          <div className="flex rounded-2xl bg-secondary p-1" role="tablist" aria-label={t("auth.loginOrRegister")}>
+        <section className={isCuratedLife ? "curated-life-auth-mode-tabs" : "auth-login-mode-tabs mb-4"}>
+          <div
+            className={cn(
+              "flex",
+              isCuratedLife ? "curated-life-auth-mode-tabs__inner" : "rounded-2xl bg-secondary p-1",
+            )}
+            role="tablist"
+            aria-label={t("auth.loginOrRegister")}
+          >
             {(["login", "register"] as AuthMode[]).map((m) => (
               <UnifiedButton
                 key={m}
@@ -570,11 +587,17 @@ export default function Login() {
                 aria-selected={mode === m}
                 aria-label={m === "login" ? t("auth.login") : t("auth.register")}
                 onClick={() => switchAuthMode(m)}
-                className={`relative min-h-10 flex-1 rounded-xl py-2.5 text-sm font-semibold transition-all ${
+                className={cn(
+                  "relative min-h-10 flex-1 py-2.5 text-sm font-semibold transition-all",
+                  isCuratedLife
+                    ? "curated-life-auth-mode-tab"
+                    : "rounded-xl",
                   mode === m
-                    ? "bg-card text-foreground shadow-sm"
-                    : "text-muted-foreground"
-                }`}
+                    ? isCuratedLife
+                      ? "is-active"
+                      : "bg-card text-foreground shadow-sm"
+                    : "text-muted-foreground",
+                )}
               >
                 {m === "login" ? t("auth.loginTab") : t("auth.registerTab")}
               </UnifiedButton>
@@ -590,7 +613,16 @@ export default function Login() {
         ) : null}
 
         {mode === "login" && authFeaturesReady && smsOtpLoginEnabled ? (
-          <section className="auth-login-credential-tabs mb-4 flex rounded-2xl bg-secondary p-1" role="tablist" aria-label={t("auth.loginOrRegister")}>
+          <section
+            className={cn(
+              "flex",
+              isCuratedLife
+                ? "curated-life-auth-credential-tabs"
+                : "auth-login-credential-tabs mb-4 rounded-2xl bg-secondary p-1",
+            )}
+            role="tablist"
+            aria-label={t("auth.loginOrRegister")}
+          >
             {(["password", "otp"] as CredentialMode[]).map((c) => (
               <UnifiedButton
                 key={c}
@@ -603,11 +635,17 @@ export default function Login() {
                   setFieldErrors({});
                   setFormError("");
                 }}
-                className={`flex-1 rounded-xl py-2 text-xs font-semibold transition-colors ${
+                className={cn(
+                  "flex-1 py-2 text-xs font-semibold transition-colors",
+                  isCuratedLife
+                    ? "curated-life-auth-credential-tab"
+                    : "rounded-xl",
                   credentialMode === c
-                    ? "bg-card text-foreground shadow-sm"
-                    : "text-muted-foreground"
-                }`}
+                    ? isCuratedLife
+                      ? "is-active"
+                      : "bg-card text-foreground shadow-sm"
+                    : "text-muted-foreground",
+                )}
               >
                 {c === "password" ? t("auth.passwordLogin") : t("auth.otpLogin")}
               </UnifiedButton>
@@ -622,9 +660,20 @@ export default function Login() {
           </div>
         ) : null}
 
-        <FormFieldShake shake={shakeKey} className="auth-login-form-wrap space-y-3.5">
+        <FormFieldShake
+          shake={shakeKey}
+          className={cn(
+            "space-y-3.5",
+            isCuratedLife ? "curated-life-auth-form-wrap" : "auth-login-form-wrap",
+          )}
+        >
           <form
-            className="auth-login-form sf-next-form-sheet auth-next-sheet flex flex-col gap-3.5"
+            className={cn(
+              "flex flex-col gap-3.5",
+              isCuratedLife
+                ? "curated-life-auth-form"
+                : "auth-login-form sf-next-form-sheet auth-next-sheet",
+            )}
             autoComplete="on"
             onSubmit={(e) => {
               e.preventDefault();
@@ -720,7 +769,12 @@ export default function Login() {
                 type="button"
                 onClick={() => setShowPwd(!showPwd)}
                 aria-label={showPwd ? t("auth.hidePassword") : t("auth.showPassword")}
-                className="absolute right-2 top-1/2 inline-flex h-[44px] w-[44px] -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-primary)] focus-visible:ring-offset-2 touch-target"
+                className={cn(
+                  "absolute right-2 top-1/2 inline-flex h-[44px] w-[44px] -translate-y-1/2 items-center justify-center text-muted-foreground transition focus-visible:outline-none touch-target",
+                  isCuratedLife
+                    ? "curated-life-auth-password-toggle"
+                    : "rounded-full hover:bg-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-[var(--theme-primary)] focus-visible:ring-offset-2",
+                )}
               >
                 {showPwd ? <EyeOff size={18} aria-hidden /> : <Eye size={18} aria-hidden />}
               </UnifiedButton>
@@ -764,7 +818,12 @@ export default function Login() {
           ) : null}
 
           {mode === "login" && effectiveCredentialMode === "password" && (
-            <div className="auth-login-meta-row flex items-center justify-between">
+            <div
+              className={cn(
+                "flex items-center justify-between",
+                isCuratedLife ? "curated-life-auth-meta" : "auth-login-meta-row",
+              )}
+            >
               <label className="flex min-h-11 cursor-pointer items-center gap-2 rounded-full px-1 pr-2">
                 <input
                   type="checkbox"
@@ -778,7 +837,10 @@ export default function Login() {
               <UnifiedButton
                 type="button"
                 onClick={() => navigate(localizedPath("/forgot"), { state: { from: localizedPath("/login") } })}
-                className="inline-flex min-h-9 items-center rounded-full px-2 text-xs font-medium text-theme-price active:opacity-70"
+                className={cn(
+                  "inline-flex min-h-9 items-center px-2 text-xs font-medium active:opacity-70",
+                  isCuratedLife ? "curated-life-auth-forgot" : "rounded-full text-theme-price",
+                )}
               >
                 {t("auth.forgotPassword")}
               </UnifiedButton>
@@ -789,7 +851,12 @@ export default function Login() {
             type="submit"
             disabled={loading}
             aria-busy={loading || undefined}
-            className="auth-login-submit min-h-12 w-full rounded-2xl btn-theme-price px-4 py-3.5 text-sm font-bold text-[var(--theme-price-foreground)] shadow-[0_18px_34px_-26px_var(--theme-price)] transition-all active:scale-[0.98] disabled:opacity-60"
+            className={cn(
+              "auth-login-submit min-h-12 w-full px-4 py-3.5 text-sm font-bold transition-all active:scale-[0.98] disabled:opacity-60",
+              isCuratedLife
+                ? "curated-life-auth-submit"
+                : "rounded-2xl btn-theme-price text-[var(--theme-price-foreground)] shadow-[0_18px_34px_-26px_var(--theme-price)]",
+            )}
           >
             {loading ? (
               <span className="flex min-w-0 items-center justify-center gap-2 whitespace-nowrap">
@@ -808,7 +875,8 @@ export default function Login() {
           mode={mode}
           termsPath={siteInfo.termsPath}
           privacyPath={siteInfo.privacyPolicyPath}
-          className="auth-login-agreement-footer--sheet"
+          className={isCuratedLife ? "curated-life-auth-agreement" : "auth-login-agreement-footer--sheet"}
+          linkClassName={isCuratedLife ? "curated-life-auth-agreement-link" : undefined}
         />
       </main>
 

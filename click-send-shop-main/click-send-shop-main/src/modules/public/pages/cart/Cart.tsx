@@ -793,7 +793,7 @@ export default function Cart() {
                 <p className="text-sm">{t("cart.loading")}</p>
               </div>
             ) : (
-              <section className="sf-next-state-panel sf-next-cart-state max-w-none">
+              <section className="sf-next-state-panel sf-next-cart-state sf-next-cart-empty-card max-w-none">
                 <span className="sf-next-state-panel__icon" aria-hidden>
                   <ShoppingBag size={28} />
                 </span>
@@ -806,6 +806,14 @@ export default function Cart() {
                 >
                   <ShoppingBag size={17} aria-hidden />
                   {t("cart.browseCategories")}
+                </UnifiedButton>
+                <UnifiedButton
+                  type="button"
+                  onClick={() => navigate(localizedPath("/promotions"))}
+                  className="sf-next-state-panel__secondary"
+                >
+                  <BadgePercent size={17} aria-hidden />
+                  查看优惠活动
                 </UnifiedButton>
               </section>
             )}

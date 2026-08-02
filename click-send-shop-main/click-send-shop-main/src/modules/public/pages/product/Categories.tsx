@@ -37,12 +37,14 @@ import {
 } from "@/constants/newArrivalNavigation";
 import { storefrontCategoryName } from "@/utils/storefrontCopySanitizer";
 import "@/styles/storefront-next.category.css";
+import "@/styles/storefront-curated-life.css";
 import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 
 const INLINE_SUBCATEGORY_LIMIT = 6;
 
 export default function Categories() {
   const clientStyle = useClientDesignStyle();
+  const isCuratedLife = clientStyle === "curated_life";
   const siteInfo = useSiteInfo();
   const siteCapabilities = useSiteCapabilities();
   const navigate = useStorefrontNavigate();
@@ -56,7 +58,9 @@ export default function Categories() {
   const [searchParams, setSearchParams] = useSearchParams();
   const syncedSearchKeyRef = useRef(searchParams.toString());
   const syncingFromUrlRef = useRef(false);
-  const productGridClass = "sf-next-product-grid sf-next-category-product-list grid grid-cols-1 gap-2 pt-1";
+  const productGridClass = isCuratedLife
+    ? "curated-life-category-product-grid"
+    : "sf-next-product-grid sf-next-category-product-list grid grid-cols-1 gap-2 pt-1";
   const emptyColSpan = "col-span-full";
 
   const initialIsNew = isNewArrivalCategoryParams(searchParams);
@@ -524,7 +528,9 @@ export default function Categories() {
 
   return (
     <div
-      className="sf-next-page-shell sf-next-route-page sf-next-categories-page sf-next-listing-page sf-next-category-page sf-next-bottom-safe text-[var(--theme-text)]"
+      className={isCuratedLife
+        ? "sf-next-page-shell sf-next-route-page curated-life-category-page text-[var(--theme-text)]"
+        : "sf-next-page-shell sf-next-route-page sf-next-categories-page sf-next-listing-page sf-next-category-page sf-next-bottom-safe text-[var(--theme-text)]"}
       data-storefront-client-style={clientStyle}
     >
       <SeoHead
@@ -533,30 +539,34 @@ export default function Categories() {
         canonical={canonical}
         robots={robots}
       />
-      <main className="sf-next-category-shell mx-auto w-full max-w-screen-xl">
-        <section className="sf-next-category-toolbar" aria-label="分类搜索和筛选">
+      <main className={isCuratedLife ? "curated-life-category-shell" : "sf-next-category-shell mx-auto w-full max-w-screen-xl"}>
+        <section className={isCuratedLife ? "curated-life-category-toolbar" : "sf-next-category-toolbar"} aria-label="分类搜索和筛选">
           <StoreSearchLauncher
             value={submittedQuery}
             placeholder={STORE_COPY.searchPlaceholder}
-            className="sf-next-category-search-trigger"
+            className={isCuratedLife ? "curated-life-category-search-trigger" : "sf-next-category-search-trigger"}
             onClick={() => setSearchPanelOpen(true)}
           />
-          <div className="sf-next-category-filter-slot">
+          <div className={isCuratedLife ? "curated-life-category-filter-slot" : "sf-next-category-filter-slot"}>
             {filterDrawer}
           </div>
         </section>
 
-        <section className="sf-next-category-hero" aria-label="分类入口">
-          <div className="sf-next-category-titlebar">
+        <section className={isCuratedLife ? "curated-life-category-hero" : "sf-next-category-hero"} aria-label="分类入口">
+          <div className={isCuratedLife ? "curated-life-category-titlebar" : "sf-next-category-titlebar"}>
             <h1>分类</h1>
             <UnifiedButton type="button" className="sf-next-icon-button" onClick={() => setSearchPanelOpen(true)} aria-label="打开商品搜索">
               <Search size={24} aria-hidden />
             </UnifiedButton>
           </div>
-          <StoreCategoryPrimaryNav items={categoryPills} loading={loading && categories.length === 0} />
+          <StoreCategoryPrimaryNav
+            items={categoryPills}
+            loading={loading && categories.length === 0}
+            variant={isCuratedLife ? "curated" : "pills"}
+          />
         </section>
 
-        <section ref={listingSectionRef} className="sf-next-listing-section" aria-label={productSectionTitle}>
+        <section ref={listingSectionRef} className={isCuratedLife ? "curated-life-listing-section" : "sf-next-listing-section"} aria-label={productSectionTitle}>
           <CategoryBannerCard category={activeCategoryBanner} />
           {subCategories.length > 0 && activeRootId ? (
             <StoreCategorySubcategorySelector
@@ -573,8 +583,12 @@ export default function Categories() {
               onTogglePanel={() => setSubcategoryPanelOpen((open) => !open)}
             />
           ) : null}
-          <div className="sf-next-listing-sort-shell">
-            <ProductSortBar value={sort} onChange={setSort} className="sf-next-listing-sortbar" />
+          <div className={isCuratedLife ? "curated-life-listing-sort-shell" : "sf-next-listing-sort-shell"}>
+            <ProductSortBar
+              value={sort}
+              onChange={setSort}
+              className={isCuratedLife ? "curated-life-category-sortbar" : "sf-next-listing-sortbar"}
+            />
           </div>
           {error && visibleProducts.length > 0 ? (
             <p className={`mb-3 px-3 py-2 text-center text-xs ${THEME_ALERT_ERROR_SOFT}`}>
@@ -586,10 +600,11 @@ export default function Categories() {
             products={visibleProducts}
             className={productGridClass}
             shellClassName={cn(
-              "sf-next-category-product-shell md:min-h-[28rem]",
-              useCompactProductShell && "sf-next-category-product-shell--compact",
+              isCuratedLife ? "curated-life-category-product-shell" : "sf-next-category-product-shell md:min-h-[28rem]",
+              useCompactProductShell && (isCuratedLife ? "is-compact" : "sf-next-category-product-shell--compact"),
             )}
-            displayMode="list"
+            displayMode={isCuratedLife ? "theme" : "list"}
+            cardVariant={isCuratedLife ? "curated" : "default"}
             siteContext={productCardSiteContext}
             itemKeyPrefix={`category:${isNew ? "new" : activeCat}`}
             showQuietLoading={showQuietLoading}

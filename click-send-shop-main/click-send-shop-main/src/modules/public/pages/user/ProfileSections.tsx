@@ -71,6 +71,11 @@ function formatCount(count?: number) {
   return value > 99 ? "99+" : String(value);
 }
 
+function formatMemberBenefitsLabel(memberLevelName: string) {
+  const normalized = memberLevelName.trim() || "普通会员";
+  return normalized.endsWith("会员") ? `${normalized}权益` : `${normalized}会员权益`;
+}
+
 function ProfileSectionTitle({
   title,
   rightLabel,
@@ -156,6 +161,7 @@ export function ProfileHeroCard({
   onProfileClick,
   onAssetNavigate,
   onAvatarClick,
+  variant = "default",
 }: {
   logoSrc: string;
   avatar?: string;
@@ -170,14 +176,20 @@ export function ProfileHeroCard({
   onViewAllBenefits: () => void;
   onAssetNavigate?: (item: ProfileAssetItem) => void;
   onAvatarClick: () => void;
+  variant?: "default" | "curated";
 }) {
   const folioAssets = (assets || []).slice(0, 3);
   const displayName = formatProfileHeroName(userName);
+  const displayMemberLevelName = memberLevelName.trim() || "普通会员";
+  const memberBenefitsLabel = formatMemberBenefitsLabel(displayMemberLevelName);
   const avatarSrc = avatar || profileVipAvatarImage || logoSrc;
 
   return (
-    <section className="sf-next-profile-hero-card" aria-label={`${memberLevelName}会员权益`}>
-      <span className="profile-vip-watermark" aria-hidden="true" />
+    <section
+      className={variant === "curated" ? "curated-life-profile-hero-card" : "sf-next-profile-hero-card"}
+      aria-label={memberBenefitsLabel}
+    >
+      {variant === "curated" ? null : <span className="profile-vip-watermark" aria-hidden="true" />}
       <div className="profile-vip-header" aria-label="账户资料">
         <UnifiedButton type="button" onClick={onAvatarClick} className="profile-avatar-button" aria-label="更换头像">
           <span className="profile-avatar-ring">
@@ -198,7 +210,7 @@ export function ProfileHeroCard({
         </UnifiedButton>
         <button type="button" onClick={onProfileClick} className="profile-vip-name-row profile-vip-profile-trigger">
           <span className="profile-vip-name" title={userName} aria-label={userName}>{displayName}</span>
-          <span className="profile-vip-badge">{memberLevelName}</span>
+          <span className="profile-vip-badge" title={displayMemberLevelName}>{displayMemberLevelName}</span>
         </button>
         <div className="profile-vip-header-actions">
           <NotificationIconButton
@@ -215,10 +227,10 @@ export function ProfileHeroCard({
         type="button"
         onClick={onMemberLevelClick}
         className="profile-vip-folio-head"
-        aria-label={`查看${memberLevelName}会员权益`}
+        aria-label={`查看${memberBenefitsLabel}`}
       >
         <span>会员权益</span>
-        <h2>{memberLevelName}</h2>
+        <h2 title={displayMemberLevelName}>{displayMemberLevelName}</h2>
       </UnifiedButton>
 
       {folioAssets.length ? (
@@ -256,9 +268,11 @@ function normalizeAssetLabel(label: string) {
 export function ProfileGuestCard({
   onLogin,
   onRegister,
+  variant = "default",
 }: {
   onLogin: () => void;
   onRegister: () => void;
+  variant?: "default" | "curated";
 }) {
   const guestHighlights = [
     { label: "订单追踪", desc: "待付款/发货/收货", icon: PackageCheck },
@@ -268,8 +282,11 @@ export function ProfileGuestCard({
   ];
 
   return (
-    <section className="sf-next-profile-hero-card sf-next-profile-guest-card">
-      <span className="profile-vip-watermark" aria-hidden="true" />
+    <section className={variant === "curated"
+      ? "curated-life-profile-hero-card curated-life-profile-guest-card"
+      : "sf-next-profile-hero-card sf-next-profile-guest-card"}
+    >
+      {variant === "curated" ? null : <span className="profile-vip-watermark" aria-hidden="true" />}
       <div className="profile-vip-header">
         <span className="profile-guest-avatar" aria-hidden="true">
           <User size={22} strokeWidth={2.1} />

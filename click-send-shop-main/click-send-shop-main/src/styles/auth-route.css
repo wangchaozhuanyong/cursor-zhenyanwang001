@@ -646,9 +646,9 @@ html[data-app-scope="store"][data-storefront-ui="next"] .auth-login-page .auth-l
 @media (max-width: 767px) {
 
   html[data-app-scope="store"][data-storefront-ui="next"] .auth-login-back-btn {
-    width: 2.7rem !important;
-    height: 2.7rem !important;
-    min-height: 2.7rem !important;
+    width: 44px !important;
+    height: 44px !important;
+    min-height: 44px !important;
     border-radius: 0.82rem !important;
   }
 }
@@ -699,10 +699,10 @@ html[data-app-scope="store"][data-storefront-ui="next"] .auth-login-page .auth-l
 @media (max-width: 767px) {
 
   html[data-app-scope="store"][data-storefront-ui="next"] .auth-login-page :where(.auth-password-toggle, button[aria-label="显示密码"]) {
-    width: 2.5rem !important;
-    min-width: 2.5rem !important;
-    height: 2.5rem !important;
-    min-height: 2.5rem !important;
+    width: 44px !important;
+    min-width: 44px !important;
+    height: 44px !important;
+    min-height: 44px !important;
   }
 }
 @media (max-width: 767px) {
@@ -717,7 +717,7 @@ html[data-app-scope="store"][data-storefront-ui="next"] .auth-login-page .auth-l
 html[data-app-scope="store"][data-storefront-ui="next"] .auth-login-page .auth-login-agreement-footer--sheet :where(button),
 html[data-app-scope="store"][data-storefront-ui="next"] .auth-login-page .auth-login-meta-row :where(button),
 html[data-app-scope="store"][data-storefront-ui="next"] .auth-login-page :where(button[class*="min-h-9"]) {
-    min-height: 2.35rem !important;
+    min-height: 44px !important;
     height: auto !important;
     padding-block: 0.22rem !important;
   }
@@ -749,9 +749,9 @@ html[data-app-scope="store"][data-storefront-ui="next"] .auth-login-page :where(
 @media (max-width: 767px) {
 
   html[data-app-scope="store"][data-storefront-ui="next"] .auth-login-back-btn {
-    width: 2.5rem !important;
-    height: 2.5rem !important;
-    min-height: 2.5rem !important;
+    width: 44px !important;
+    height: 44px !important;
+    min-height: 44px !important;
     border-radius: 0.8rem !important;
   }
 }
@@ -1287,5 +1287,219 @@ html[data-app-scope="store"][data-storefront-ui="next"] .auth-login-page[data-ke
 
   html[data-app-scope="store"][data-storefront-ui="next"] .auth-login-page .auth-login-form {
     padding: var(--sf-space-3);
+  }
+}
+
+/* Curated Life auth: a quiet account entry surface without the legacy campaign carousel. */
+html[data-client-design-style="curated_life"][data-app-scope="store"] .auth-login-page {
+  background: var(--sf-canvas);
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .auth-login-main {
+  max-width: 390px;
+  background: var(--sf-canvas);
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .auth-login-page .auth-login-topbar {
+  margin-bottom: 2px;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .auth-login-page .auth-login-heading {
+  padding: 0;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .auth-login-page .auth-login-heading h1 {
+  color: var(--sf-ink);
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-auth-trust.sf-next-trust-bar {
+  min-height: 58px;
+  margin: 0;
+  overflow: visible;
+  border: 1px solid var(--sf-line);
+  border-radius: 8px;
+  background: var(--sf-surface);
+  padding: 6px 4px;
+  box-shadow: none;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-auth-trust.sf-next-trust-bar::before,
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-auth-trust.sf-next-trust-bar::after,
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-auth-trust .sf-next-trust-icon::before,
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-auth-trust .sf-next-trust-icon::after {
+  display: none;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-auth-trust .sf-next-trust-item {
+  min-height: 44px;
+  gap: 4px;
+  padding: 0 2px;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-auth-trust .sf-next-trust-item + .sf-next-trust-item::before {
+  top: 9px;
+  bottom: 9px;
+  background: var(--sf-line);
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-auth-trust .sf-next-trust-icon {
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--sf-accent-soft);
+  color: var(--sf-accent);
+  box-shadow: none;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-auth-trust .sf-next-trust-icon__glyph {
+  width: 14px;
+  height: 14px;
+  color: var(--sf-accent);
+  filter: none;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-auth-trust .sf-next-trust-label {
+  color: var(--sf-ink-secondary);
+  font-size: 10px;
+  font-weight: 650;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] :where(
+  .curated-life-auth-mode-tabs__inner,
+  .curated-life-auth-credential-tabs
+) {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  border-bottom: 1px solid var(--sf-line);
+  background: transparent;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] :where(
+  .curated-life-auth-mode-tab,
+  .curated-life-auth-credential-tab
+) {
+  min-height: 46px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: var(--sf-ink-secondary);
+  box-shadow: none;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] :where(
+  .curated-life-auth-mode-tab,
+  .curated-life-auth-credential-tab
+).is-active {
+  border-bottom-color: var(--sf-accent);
+  color: var(--sf-ink);
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-auth-form-wrap {
+  min-width: 0;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-auth-form {
+  display: grid;
+  min-width: 0;
+  gap: 12px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+  box-shadow: none;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-auth-form > * {
+  min-width: 0;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-auth-form input:not([type="checkbox"]),
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-auth-form .auth-login-phone-field > div {
+  min-height: 52px;
+  border-color: var(--sf-line);
+  border-radius: 8px;
+  background: var(--sf-surface);
+  color: var(--sf-ink);
+  box-shadow: none;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-auth-form input:not([type="checkbox"]):focus,
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-auth-form .auth-login-phone-field > div:focus-within {
+  border-color: var(--sf-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--sf-accent) 12%, transparent);
+  outline: 0;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-auth-form button[aria-label="显示密码"],
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-auth-form button[aria-label="隐藏密码"] {
+  border-radius: 6px;
+  background: transparent;
+  color: var(--sf-ink-secondary);
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-auth-meta {
+  min-width: 0;
+  min-height: 44px;
+  gap: 8px;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-auth-meta label {
+  min-height: 44px;
+  border-radius: 6px;
+  padding: 0 4px;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-auth-meta input[type="checkbox"] {
+  accent-color: var(--sf-accent);
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .auth-login-page .curated-life-auth-meta button {
+  min-height: 44px;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--sf-accent);
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .auth-login-page .curated-life-auth-submit {
+  min-height: 52px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--sf-accent);
+  color: var(--sf-on-accent);
+  box-shadow: none;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .curated-life-auth-agreement {
+  min-width: 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  padding: 4px 0 max(8px, env(safe-area-inset-bottom, 0px));
+  color: var(--sf-ink-secondary);
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+html[data-client-design-style="curated_life"][data-app-scope="store"] .auth-login-page .curated-life-auth-agreement button {
+  min-height: 36px;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--sf-accent);
+}
+
+@media (min-width: 768px) {
+  html[data-client-design-style="curated_life"][data-app-scope="store"] .auth-login-main {
+    max-width: 420px;
+    border: 1px solid var(--sf-line);
+    border-radius: 8px;
+    background: var(--sf-surface);
+    padding: 28px;
+    box-shadow: none;
   }
 }

@@ -1,6 +1,10 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import {
+  Headphones,
+  LockKeyhole,
   RefreshCw,
+  ShieldCheck,
+  Truck,
   Users,
 } from "lucide-react";
 import "@/styles/store-home-v2.css";
@@ -46,6 +50,7 @@ import {
   recordStorefrontCampaignImpression,
 } from "../campaign/campaignService";
 import { storefrontPageClassName } from "../design/classes";
+import CuratedLifeHomeHero from "./CuratedLifeHomeHero";
 import HomeHeroV2 from "./HomeHeroV2";
 import HomePrimaryCampaignV2 from "./HomePrimaryCampaignV2";
 import { buildHomeCampaignEntrances, dedupeFooterNav, parseFooterNav, uniqueProducts } from "./homeV2Utils";
@@ -80,9 +85,10 @@ export default function StoreHomeV2() {
   const { themeConfig } = useThemeRuntime();
   const { localizedPath } = usePublicLocale();
   const clientStyle = useClientDesignStyle();
+  const isCuratedLife = clientStyle === "curated_life";
   const { settings: homeModules, navItems, ready: homeModulesReady } = useHomeModuleSettings();
   const { config: loyaltyConfig, loading: loyaltyLoading } = useLoyaltyVisibility();
-  const { banners, loading: bannersLoading } = useHomeBanners();
+  const { banners, loading: bannersLoading } = useHomeBanners({ fetchRemote: !isCuratedLife });
 
   const hotProducts = useProductStore((state) => state.hotProducts);
   const newProducts = useProductStore((state) => state.newProducts);
@@ -105,7 +111,7 @@ export default function StoreHomeV2() {
   }, [loadHomeData]);
 
   useEffect(() => {
-    if (!isAuthenticated || !isLoggedIn()) {
+    if (isCuratedLife || !isAuthenticated || !isLoggedIn()) {
       setMemberHomeSignals(EMPTY_MEMBER_HOME_SIGNALS);
       return;
     }
@@ -160,10 +166,10 @@ export default function StoreHomeV2() {
       cancelIdle?.();
       unsubscribers.forEach((unsubscribe) => unsubscribe());
     };
-  }, [isAuthenticated]);
+  }, [isAuthenticated, isCuratedLife]);
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isCuratedLife || isAuthenticated) {
       setGuestFooterReady(false);
       return;
     }
@@ -212,9 +218,13 @@ export default function StoreHomeV2() {
       cancelIdle();
       detachScroll();
     };
-  }, [guestFooterReady, isAuthenticated]);
+  }, [guestFooterReady, isAuthenticated, isCuratedLife]);
 
   useEffect(() => {
+    if (isCuratedLife) {
+      setDeferredHomeContentReady(false);
+      return;
+    }
     if (deferredHomeContentReady) return;
 
     let cancelled = false;
@@ -260,7 +270,7 @@ export default function StoreHomeV2() {
       cancelIdle();
       detachScroll();
     };
-  }, [deferredHomeContentReady]);
+  }, [deferredHomeContentReady, isCuratedLife]);
 
   useEffect(() => {
     let cancelled = false;
@@ -319,8 +329,12 @@ export default function StoreHomeV2() {
     () => uniqueProducts([...hotProducts, ...recommendedProducts], homeModules.guestRecommendMax),
     [homeModules.guestRecommendMax, hotProducts, recommendedProducts],
   );
+  const curatedProducts = useMemo(
+    () => uniqueProducts([...newProducts, ...hotProducts, ...recommendedProducts], 8),
+    [hotProducts, newProducts, recommendedProducts],
+  );
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (isCuratedLife || !isAuthenticated) {
       setMemberRecommendations([]);
       return;
     }
@@ -350,6 +364,7 @@ export default function StoreHomeV2() {
     };
   }, [
     isAuthenticated,
+    isCuratedLife,
     memberHomeSignals.cartItems,
     memberHomeSignals.favoriteIds,
     memberHomeSignals.favoriteProducts,
@@ -433,22 +448,34 @@ export default function StoreHomeV2() {
           { id: "organization", data: buildOrganizationJsonLd(siteInfo) },
         ]}
       />
-      <main className={storefrontPageClassName("sf-next-home-main")}>
+      <main
+        className={isCuratedLife
+          ? "curated-life-home-main mx-auto w-full"
+          : storefrontPageClassName("sf-next-home-main")}
+      >
         <h1 className="sr-only">{slogan}</h1>
         <p className="sr-only">{description}</p>
 
-        <HomeHeroV2
-          siteName={siteName}
-          slogan={slogan}
-          description={description}
-          logoSrc={logoSrc}
-          banners={banners}
-          bannersLoading={bannersLoading}
-          bannerEnabled={showBanner}
-          themeConfig={themeConfig}
-          autoRotateMs={homeModules.bannerAutoplaySeconds * 1000}
-          onNavigate={navigatePath}
-        />
+        {isCuratedLife ? (
+          <CuratedLifeHomeHero
+            siteName={siteName}
+            logoSrc={logoSrc}
+            onNavigate={navigatePath}
+          />
+        ) : (
+          <HomeHeroV2
+            siteName={siteName}
+            slogan={slogan}
+            description={description}
+            logoSrc={logoSrc}
+            banners={banners}
+            bannersLoading={bannersLoading}
+            bannerEnabled={showBanner}
+            themeConfig={themeConfig}
+            autoRotateMs={homeModules.bannerAutoplaySeconds * 1000}
+            onNavigate={navigatePath}
+          />
+        )}
 
         {showNavGrid ? (
           <HomeQuickEntryPanel
@@ -456,7 +483,30 @@ export default function StoreHomeV2() {
             ready={homeModulesReady}
             capabilities={siteCapabilities}
             onNavigate={navigatePath}
+            curated={isCuratedLife}
           />
+        ) : null}
+
+        {isCuratedLife ? <CuratedLifeTrustStrip /> : null}
+
+        {showTrustBar && !isCuratedLife ? <HomeTrustBar className="sf-next-home-trust-compact" /> : null}
+
+        {isCuratedLife && siteCapabilities.mallEnabled ? (
+          <Suspense fallback={null}>
+            <HomeProductSectionV2
+              title="精选好物"
+              products={curatedProducts}
+              loading={homeLoading && curatedProducts.length === 0}
+              actionLabel="更多好物"
+              actionPath="/categories"
+              emptyText="精选商品正在整理中，可以先浏览全部分类。"
+              emptyActionLabel="浏览分类"
+              previewLimit={6}
+              className="curated-life-product-shelf"
+              variant="curated"
+              onNavigate={navigatePath}
+            />
+          </Suspense>
         ) : null}
 
         <HomePrimaryCampaignV2
@@ -466,11 +516,10 @@ export default function StoreHomeV2() {
           onNavigate={navigatePath}
           onCampaignImpression={handleCampaignImpression}
           onCampaignClick={handleCampaignClick}
+          variant={isCuratedLife ? "curated" : "default"}
         />
 
-        {showTrustBar ? <HomeTrustBar className="sf-next-home-trust-compact" /> : null}
-
-        {deferredHomeContentReady && siteCapabilities.mallEnabled && showNewArrivals ? (
+        {!isCuratedLife && deferredHomeContentReady && siteCapabilities.mallEnabled && showNewArrivals ? (
           <Suspense fallback={null}>
             <HomeProductSectionV2
               title={newArrivalTitle}
@@ -487,7 +536,7 @@ export default function StoreHomeV2() {
           </Suspense>
         ) : null}
 
-        {deferredHomeContentReady && siteCapabilities.mallEnabled && showGuestRecommend ? (
+        {!isCuratedLife && deferredHomeContentReady && siteCapabilities.mallEnabled && showGuestRecommend ? (
           <Suspense fallback={null}>
             <HomeProductSectionV2
               title={getHomeModuleTitle(homeModules, "guest_recommend", "精选商品")}
@@ -502,7 +551,7 @@ export default function StoreHomeV2() {
           </Suspense>
         ) : null}
 
-        {showInviteEntry ? (
+        {showInviteEntry && !isCuratedLife ? (
           <HomeInviteEntry
             authenticated={isAuthenticated}
             title={getHomeModuleTitle(homeModules, "invite_entry", "邀请好友")}
@@ -510,7 +559,7 @@ export default function StoreHomeV2() {
           />
         ) : null}
 
-        {deferredHomeContentReady && siteCapabilities.mallEnabled && showHotSales ? (
+        {!isCuratedLife && deferredHomeContentReady && siteCapabilities.mallEnabled && showHotSales ? (
           <Suspense fallback={null}>
             <HomeProductSectionV2
               title={getHomeModuleTitle(homeModules, "hot_sales", "今日热销")}
@@ -526,7 +575,7 @@ export default function StoreHomeV2() {
           </Suspense>
         ) : null}
 
-        {deferredHomeContentReady && siteCapabilities.mallEnabled && showRecommend ? (
+        {!isCuratedLife && deferredHomeContentReady && siteCapabilities.mallEnabled && showRecommend ? (
           <Suspense fallback={null}>
             <HomeProductSectionV2
               title={getHomeModuleTitle(homeModules, "recommend", "猜你喜欢")}
@@ -555,7 +604,7 @@ export default function StoreHomeV2() {
           </div>
         ) : null}
 
-        {!isAuthenticated && guestFooterReady ? (
+        {!isCuratedLife && !isAuthenticated && guestFooterReady ? (
           <Suspense fallback={null}>
             <GuestMobileFooter
               siteName={siteName}
@@ -588,52 +637,82 @@ function HomeQuickEntryPanel({
   ready,
   capabilities,
   onNavigate,
+  curated = false,
 }: {
   navItems: HomeNavItem[];
   ready: boolean;
   capabilities: ReturnType<typeof useSiteCapabilities>;
   onNavigate: (path: string) => void;
+  curated?: boolean;
 }) {
+  const visibleLimit = curated ? 6 : 8;
   const actions = useMemo(
-    () => filterVisibleHomeNavItems(Array.isArray(navItems) ? navItems : [], capabilities).slice(0, 10),
-    [capabilities, navItems],
+    () => filterVisibleHomeNavItems(Array.isArray(navItems) ? navItems : [], capabilities).slice(0, visibleLimit),
+    [capabilities, navItems, visibleLimit],
   );
 
   if (ready && actions.length === 0) return null;
 
   return (
     <section
-      className="sf-next-quick-entry"
+      className={curated ? "curated-life-quick-entry" : "sf-next-quick-entry"}
       aria-label="快捷入口"
       aria-busy={!ready ? true : undefined}
       data-home-nav-source="admin-home-ops"
-      data-command-count={ready ? actions.length : 10}
+      data-command-count={ready ? actions.length : visibleLimit}
+      data-curated-layout={curated ? "true" : undefined}
     >
       {!ready ? (
         <StorefrontQuietLoading label="快捷入口加载中" className="sf-motion-inline-loading--shelf" />
       ) : (
-        <div className="sf-next-quick-entry__grid">
+        <div className={curated ? "curated-life-quick-entry__grid" : "sf-next-quick-entry__grid"}>
           {actions.map((action) => (
             <UnifiedButton
               key={action.id}
               type="button"
               onClick={() => openHomeNavItemTarget(action, capabilities, onNavigate, (message) => showStoreToast.error(message))}
-              className="sf-next-quick-entry__item"
+              className={curated ? "curated-life-quick-entry__item" : "sf-next-quick-entry__item"}
             >
-              <span className="sf-next-quick-entry__icon">
+              <span className={curated ? "curated-life-quick-entry__icon" : "sf-next-quick-entry__icon"}>
                 <HomeNavIcon
                   value={action.icon_url}
-                  className="sf-next-quick-entry__icon-media"
-                  imageClassName="sf-next-quick-entry__icon-image"
+                  className={curated ? "curated-life-quick-entry__icon-media" : "sf-next-quick-entry__icon-media"}
+                  imageClassName={curated ? "curated-life-quick-entry__icon-image" : "sf-next-quick-entry__icon-image"}
                 />
               </span>
-              <span className="sf-next-quick-entry__copy">
+              <span className={curated ? "curated-life-quick-entry__copy" : "sf-next-quick-entry__copy"}>
                 <strong>{normalizeHomeNavText(action.title, "分类")}</strong>
               </span>
             </UnifiedButton>
           ))}
         </div>
       )}
+    </section>
+  );
+}
+
+function CuratedLifeTrustStrip() {
+  const items = [
+    { label: "中文客服", detail: "沟通更顺畅", icon: Headphones },
+    { label: "本地配送", detail: "覆盖以结算为准", icon: Truck },
+    { label: "隐私保护", detail: "信息安全处理", icon: LockKeyhole },
+    { label: "售后支持", detail: "订单全程可查", icon: ShieldCheck },
+  ];
+
+  return (
+    <section className="curated-life-trust-strip" aria-label="平台服务保障">
+      {items.map((item) => {
+        const Icon = item.icon;
+        return (
+          <div key={item.label} className="curated-life-trust-strip__item">
+            <Icon size={21} aria-hidden />
+            <span>
+              <strong>{item.label}</strong>
+              <small>{item.detail}</small>
+            </span>
+          </div>
+        );
+      })}
     </section>
   );
 }

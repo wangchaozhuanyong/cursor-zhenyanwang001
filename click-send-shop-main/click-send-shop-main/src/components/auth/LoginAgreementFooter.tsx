@@ -10,7 +10,6 @@ type LoginAgreementFooterProps = {
   /** 触屏软键盘弹起时隐藏，避免与键盘争抢底部空间导致闪跳 */
   hiddenOnKeyboard?: boolean;
   className?: string;
-  linkClassName?: string;
 };
 
 export function LoginAgreementFooter({
@@ -19,7 +18,6 @@ export function LoginAgreementFooter({
   privacyPath = "/content/privacy-policy",
   hiddenOnKeyboard = false,
   className,
-  linkClassName,
 }: LoginAgreementFooterProps) {
   const navigate = useStorefrontNavigate();
   const { localizedPath, t } = usePublicLocale();
@@ -37,10 +35,7 @@ export function LoginAgreementFooter({
       <UnifiedButton
         type="button"
         onClick={() => navigate(localizedPath(termsPath))}
-        className={cn(
-          "mx-0.5 inline-flex min-h-9 items-center rounded-full px-1.5 align-middle hover:underline",
-          linkClassName ?? "text-theme-price",
-        )}
+        className="mx-0.5 inline-flex min-h-9 items-center rounded-full px-1.5 align-middle text-theme-price hover:underline"
       >
         {t("auth.terms")}
       </UnifiedButton>
@@ -48,10 +43,7 @@ export function LoginAgreementFooter({
       <UnifiedButton
         type="button"
         onClick={() => navigate(localizedPath(privacyPath))}
-        className={cn(
-          "mx-0.5 inline-flex min-h-9 items-center rounded-full px-1.5 align-middle hover:underline",
-          linkClassName ?? "text-theme-price",
-        )}
+        className="mx-0.5 inline-flex min-h-9 items-center rounded-full px-1.5 align-middle text-theme-price hover:underline"
       >
         {t("auth.privacyPolicy")}
       </UnifiedButton>

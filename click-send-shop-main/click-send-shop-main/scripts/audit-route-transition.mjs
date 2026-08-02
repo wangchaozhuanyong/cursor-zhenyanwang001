@@ -368,7 +368,7 @@ async function readFrameState(page) {
   return page.evaluate(() => {
     const fallback = document.querySelector("[data-route-fallback]");
     const storeShell = document.querySelector(".sf-next-store-shell");
-    const storeBottomNav = document.querySelector(".sf-next-bottom-nav, .curated-life-bottom-nav");
+    const storeBottomNav = document.querySelector(".sf-next-bottom-nav");
     const storeHeader = document.querySelector(".sf-next-header-brand");
     const adminShell = document.querySelector("[data-admin-shell]");
     const adminChrome = document.querySelector(".admin-chrome");

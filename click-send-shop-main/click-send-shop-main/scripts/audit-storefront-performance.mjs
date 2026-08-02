@@ -4,13 +4,12 @@ import { chromium } from "@playwright/test";
 const REQUESTED_BASE_URL = String(process.env.BASE_URL || "").trim().replace(/\/$/, "");
 const DEFAULT_BASE_URL = "http://127.0.0.1:4173";
 const AUDIT_PATH = process.env.STOREFRONT_PERF_PATH || "/promotions?type=flash_sale";
-const AUDIT_SKIN = String(process.env.STOREFRONT_PERF_SKIN || "").trim();
 const CPU_THROTTLE_RATE = readBudget("STOREFRONT_PERF_CPU_RATE", 4);
 const INITIAL_SETTLE_MS = readBudget("STOREFRONT_PERF_INITIAL_SETTLE_MS", 1500);
 const IDLE_WINDOW_MS = readBudget("STOREFRONT_PERF_IDLE_WINDOW_MS", 16000);
 
 const budgets = {
-  initialJsKb: readBudget("STOREFRONT_PERF_MAX_INITIAL_JS_KB", 490),
+  initialJsKb: readBudget("STOREFRONT_PERF_MAX_INITIAL_JS_KB", 480),
   initialCssKb: readBudget("STOREFRONT_PERF_MAX_INITIAL_CSS_KB", 250),
   idleJsKb: readBudget("STOREFRONT_PERF_MAX_IDLE_JS_KB", 4),
   idleCssKb: readBudget("STOREFRONT_PERF_MAX_IDLE_CSS_KB", 2),
@@ -41,35 +40,12 @@ function toKb(bytes) {
   return round(bytes / 1024);
 }
 
-function buildAuditUrl(baseUrl, pathname) {
-  const url = new URL(pathname, `${baseUrl}/`);
-  if (AUDIT_SKIN) url.searchParams.set("skin", AUDIT_SKIN);
-  return url.toString();
-}
-
 function addIssue(area, message, details = {}) {
   issues.push({ area, message, ...details });
 }
 
 function addWarning(area, message, details = {}) {
   warnings.push({ area, message, ...details });
-}
-
-function capturePageDiagnostics(page) {
-  const events = [];
-  const record = (type, message) => {
-    if (events.length < 20) events.push({ type, message: String(message).slice(0, 500) });
-  };
-  page.on("pageerror", (error) => record("pageerror", error.message));
-  page.on("console", (message) => {
-    if (message.type() === "error" || message.type() === "warning") {
-      record(`console:${message.type()}`, message.text());
-    }
-  });
-  page.on("requestfailed", (request) => {
-    record("requestfailed", `${request.method()} ${request.url()} ${request.failure()?.errorText || ""}`);
-  });
-  return events;
 }
 
 async function isStorefrontReady(baseUrl) {
@@ -181,12 +157,7 @@ async function stubLocalApi(page, baseUrl) {
   if (hostname !== "127.0.0.1" && hostname !== "localhost") return;
 
   await page.route("**/api/**", async (route) => {
-    const requestPathname = new URL(route.request().url()).pathname;
-    if (!requestPathname.startsWith("/api/")) {
-      await route.continue();
-      return;
-    }
-    const pathname = requestPathname.replace(/^\/api/, "");
+    const pathname = new URL(route.request().url()).pathname.replace(/^\/api/, "");
     let data = {};
 
     if (pathname === "/categories" || pathname === "/products/tags") {
@@ -220,13 +191,6 @@ async function stubLocalApi(page, baseUrl) {
           couponCenter: null,
           newUserGift: null,
         },
-      };
-    } else if (pathname === "/theme/skins") {
-      data = {
-        defaultSkinId: "default_life_green",
-        activeSkinId: "default_life_green",
-        holidayRules: [],
-        skins: [],
       };
     }
     await route.fulfill({
@@ -303,20 +267,11 @@ function checkMaximum(area, actual, maximum, unit) {
 async function auditPerformance(browser, baseUrl) {
   const context = await configureMeasuredContext(browser);
   const page = await context.newPage();
-  const diagnostics = capturePageDiagnostics(page);
   await enableColdCpuProfile(context, page);
   await stubLocalApi(page, baseUrl);
 
-  await page.goto(buildAuditUrl(baseUrl, AUDIT_PATH), { waitUntil: "domcontentloaded", timeout: 30_000 });
-  try {
-    await waitForStorefrontMain(page);
-  } catch (error) {
-    const bodyText = await page.locator("body").innerText().catch(() => "");
-    throw new Error(
-      `${error instanceof Error ? error.message : String(error)}; `
-      + `page diagnostics=${JSON.stringify(diagnostics)}; body=${bodyText.replace(/\s+/g, " ").trim().slice(0, 800)}`,
-    );
-  }
+  await page.goto(`${baseUrl}${AUDIT_PATH}`, { waitUntil: "domcontentloaded", timeout: 30_000 });
+  await waitForStorefrontMain(page);
 
   const initialAssets = await readAssetEntries(page);
   const initialLongTasks = await readLongTasks(page);
@@ -367,7 +322,7 @@ async function auditToast(browser, baseUrl) {
   await enableColdCpuProfile(context, page);
   await stubLocalApi(page, baseUrl);
 
-  await page.goto(buildAuditUrl(baseUrl, "/categories"), { waitUntil: "domcontentloaded", timeout: 30_000 });
+  await page.goto(`${baseUrl}/categories`, { waitUntil: "domcontentloaded", timeout: 30_000 });
   await waitForStorefrontMain(page);
   const beforeAssets = await readAssetEntries(page);
   const beforeNames = beforeAssets.map((entry) => entry.name);
@@ -429,7 +384,6 @@ async function main() {
     const toast = await auditToast(browser, target.baseUrl);
     const summary = {
       baseUrl: target.baseUrl,
-      skin: AUDIT_SKIN || null,
       viewport: "390x844",
       cpuThrottleRate: CPU_THROTTLE_RATE,
       serviceWorkers: "blocked",

@@ -73,8 +73,6 @@ import { publicNavigatePath, publicRoutePath } from "@/routes/publicRoutePaths";
 import StorefrontMotionBoundary from "@/components/storefront-motion/StorefrontMotionBoundary";
 import StorefrontProgressThread from "@/components/storefront-motion/StorefrontProgressThread";
 import StorefrontRouteVeil from "@/components/storefront-motion/StorefrontRouteVeil";
-import "@/styles/storefront-curated-life-base.css";
-import "@/styles/storefront-curated-life.css";
 
 const CARD_EQUAL_MOBILE_FIX_STYLE_ID = "sf-next-card-equal-mobile-fix";
 const BACKGROUND_ANALYTICS_DELAY_MS = 18_000;

@@ -1,21 +1,16 @@
 import { useState, useEffect, useMemo, useCallback, type CSSProperties, type KeyboardEvent } from "react";
 import { AlertCircle, ArrowLeft, Eye, EyeOff, Lock, User, KeyRound } from "lucide-react";
 import { useLocation } from "react-router-dom";
-import "@/styles/storefront-next.extended-routes.css";
 import "@/styles/auth-route.css";
-import "@/styles/auth-trust-bar.css";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useUserStore } from "@/stores/useUserStore";
 import * as authService from "@/services/authService";
 import { showStoreToast } from "@/utils/storeToast";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
-import LoginBannerCarousel from "@/components/LoginBannerCarousel";
-import HomeTrustBar from "@/components/HomeTrustBar";
 import { LoginAgreementFooter } from "@/components/auth/LoginAgreementFooter";
 import { LoginPasswordResetSheet } from "@/components/auth/LoginPasswordResetSheet";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useSiteInfo } from "@/hooks/useSiteInfo";
-import { useHomeBanners } from "@/hooks/useHomeBanners";
 import {
   clearLockedInviteCode,
   getLockedInviteCode,
@@ -24,7 +19,6 @@ import {
 import { SMS_OTP_LOGIN_BUILD_HINT, THIRD_PARTY_LOGIN_ENABLED } from "@/constants/authLogin";
 import { readCachedAuthFeatures, writeCachedAuthFeatures } from "@/utils/authFeaturesCache";
 import { STORE_AUTH_MAIN_CLASS, STORE_AUTH_SHELL_CLASS } from "@/constants/storeLayout";
-import { isHomeModuleEnabled } from "@/constants/homeModules";
 import { cn } from "@/lib/utils";
 import { FormFieldShake } from "@/modules/micro-interactions";
 import CountryPhoneInput from "@/components/auth/CountryPhoneInput";
@@ -36,13 +30,11 @@ import {
 } from "@/utils/authValidation";
 import { useFormFieldFocus } from "@/hooks/useFormFieldFocus";
 import { useSupportRuntime } from "@/hooks/useSupportRuntime";
-import { useHomeModuleSettings } from "@/hooks/useHomeModuleSettings";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
 import { resolveAuthRedirectTarget, resolveLoginCancelTarget } from "@/utils/authRedirect";
 import { buildRoutePath, readRouteBack } from "@/utils/routeBackState";
 import { stripPublicLocaleFromPathname, usePublicLocale } from "@/i18n/publicLocale";
 import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
-import { useClientDesignStyle } from "@/modules/storefront-v2/design/useClientDesignStyle";
 
 const REMEMBER_KEY = "login_remembered_phone";
 /** text-base(16px) 避免 iOS 聚焦时自动缩放视口导致整页闪动 */
@@ -61,11 +53,7 @@ export default function Login() {
   const { localizedPath, t } = usePublicLocale();
   const canonicalPathname = stripPublicLocaleFromPathname(location.pathname);
   const authStore = useAuthStore();
-  const { banners } = useHomeBanners();
-  const { settings: homeModules } = useHomeModuleSettings();
   const siteInfo = useSiteInfo();
-  const clientStyle = useClientDesignStyle();
-  const isCuratedLife = clientStyle === "curated_life";
   const { channels } = useSupportRuntime();
   const supportContact = useMemo(() => {
     const wa = channels.find((channel) => channel.type === "whatsapp");
@@ -120,8 +108,7 @@ export default function Login() {
   const smsOtpLoginEnabled = authFeatures?.smsOtpLoginEnabled === true;
   const effectiveCredentialMode: CredentialMode =
     authFeaturesReady && smsOtpLoginEnabled ? credentialMode : "password";
-  const { formCompact, keyboardOpen, keyboardInset, visualViewportOffsetTop, visualViewportHeight } = useFormFieldFocus();
-  const showHomeTrustBar = isHomeModuleEnabled(homeModules, "trust_bar", "guest");
+  const { keyboardOpen, keyboardInset, visualViewportOffsetTop, visualViewportHeight } = useFormFieldFocus();
   const hasLockedInviteCode = !!lockedInviteCode;
   const [shakeKey, setShakeKey] = useState(0);
   const [fieldErrors, setFieldErrors] = useState<{ phone?: string; password?: string; otp?: string; nickname?: string }>({});
@@ -536,144 +523,91 @@ export default function Login() {
       style={authShellStyle}
     >
       <main className={`${STORE_AUTH_MAIN_CLASS} auth-login-main auth-next-main`}>
-        <div className="auth-login-topbar">
-          <button
-            type="button"
-            onClick={handleBack}
-            aria-label={t("auth.back")}
-            className="auth-login-back-btn"
-          >
-            <ArrowLeft size={19} aria-hidden="true" />
-          </button>
-
-          <section className="auth-login-heading shrink-0">
-            <h1 className="font-display text-xl font-bold text-foreground sm:text-[22px]">
-              {mode === "login" ? t("auth.welcomeBack") : t("auth.createAccount")}
-            </h1>
-          </section>
-        </div>
-
-        {!isCuratedLife && banners.length > 0 ? (
-          <section
-            className="auth-login-banner mb-3 overflow-hidden lg:hidden [transition:none]"
-          >
-            <LoginBannerCarousel banners={banners} paused={formCompact} />
-          </section>
-        ) : null}
-
-        {showHomeTrustBar ? (
-          <HomeTrustBar
-            className={cn(
-              "lg:hidden",
-              isCuratedLife ? "curated-life-auth-trust" : "auth-login-trust mb-4",
-            )}
+        <aside className="auth-login-desktop-visual" aria-hidden="true">
+          <img
+            src="/assets/fixed-storefront/option2-home-hero-desktop.webp"
+            alt=""
+            width={1600}
+            height={600}
           />
-        ) : null}
+        </aside>
 
-        <section className={isCuratedLife ? "curated-life-auth-mode-tabs" : "auth-login-mode-tabs mb-4"}>
-          <div
-            className={cn(
-              "flex",
-              isCuratedLife ? "curated-life-auth-mode-tabs__inner" : "rounded-2xl bg-secondary p-1",
-            )}
-            role="tablist"
-            aria-label={t("auth.loginOrRegister")}
-          >
-            {(["login", "register"] as AuthMode[]).map((m) => (
-              <UnifiedButton
-                key={m}
-                type="button"
-                role="tab"
-                aria-selected={mode === m}
-                aria-label={m === "login" ? t("auth.login") : t("auth.register")}
-                onClick={() => switchAuthMode(m)}
-                className={cn(
-                  "relative min-h-10 flex-1 py-2.5 text-sm font-semibold transition-all",
-                  isCuratedLife
-                    ? "curated-life-auth-mode-tab"
-                    : "rounded-xl",
-                  mode === m
-                    ? isCuratedLife
-                      ? "is-active"
-                      : "bg-card text-foreground shadow-sm"
-                    : "text-muted-foreground",
-                )}
-              >
-                {m === "login" ? t("auth.loginTab") : t("auth.registerTab")}
-              </UnifiedButton>
-            ))}
+        <div className="auth-login-content">
+          <div className="auth-login-topbar">
+            <button
+              type="button"
+              onClick={handleBack}
+              aria-label={t("auth.back")}
+              className="auth-login-back-btn"
+            >
+              <ArrowLeft size={19} aria-hidden="true" />
+            </button>
+
+            <section className="auth-login-heading shrink-0">
+              <h1 className="font-display text-xl font-bold text-foreground sm:text-[22px]">
+                {mode === "login" ? t("auth.welcomeBack") : t("auth.createAccount")}
+              </h1>
+            </section>
           </div>
-        </section>
 
-        {mode === "login" && !authFeaturesReady ? (
-          <section
-            className="mb-4 h-[42px] animate-pulse rounded-2xl bg-secondary"
-            aria-hidden="true"
-          />
-        ) : null}
-
-        {mode === "login" && authFeaturesReady && smsOtpLoginEnabled ? (
-          <section
-            className={cn(
-              "flex",
-              isCuratedLife
-                ? "curated-life-auth-credential-tabs"
-                : "auth-login-credential-tabs mb-4 rounded-2xl bg-secondary p-1",
-            )}
-            role="tablist"
-            aria-label={t("auth.loginOrRegister")}
-          >
-            {(["password", "otp"] as CredentialMode[]).map((c) => (
-              <UnifiedButton
-                key={c}
-                type="button"
-                role="tab"
-                aria-selected={credentialMode === c}
-                onClick={() => {
-                  setCredentialMode(c);
-                  setShowReset(false);
-                  setFieldErrors({});
-                  setFormError("");
-                }}
-                className={cn(
-                  "flex-1 py-2 text-xs font-semibold transition-colors",
-                  isCuratedLife
-                    ? "curated-life-auth-credential-tab"
-                    : "rounded-xl",
-                  credentialMode === c
-                    ? isCuratedLife
-                      ? "is-active"
-                      : "bg-card text-foreground shadow-sm"
-                    : "text-muted-foreground",
-                )}
-              >
-                {c === "password" ? t("auth.passwordLogin") : t("auth.otpLogin")}
-              </UnifiedButton>
-            ))}
+          <section className="auth-login-mode-tabs mb-4">
+            <div className="flex rounded-2xl bg-secondary p-1" role="tablist" aria-label={t("auth.loginOrRegister")}>
+              {(["login", "register"] as AuthMode[]).map((m) => (
+                <UnifiedButton
+                  key={m}
+                  type="button"
+                  role="tab"
+                  aria-selected={mode === m}
+                  aria-label={m === "login" ? t("auth.login") : t("auth.register")}
+                  onClick={() => switchAuthMode(m)}
+                  className={`relative min-h-10 flex-1 rounded-xl py-2.5 text-sm font-semibold transition-all ${
+                    mode === m
+                      ? "bg-card text-foreground shadow-sm"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  {m === "login" ? t("auth.loginTab") : t("auth.registerTab")}
+                </UnifiedButton>
+              ))}
+            </div>
           </section>
-        ) : null}
 
-        {formError ? (
-          <div className="mb-3 flex items-start gap-2 rounded-2xl border border-destructive/25 bg-destructive/10 px-3.5 py-3 text-sm leading-relaxed text-destructive" role="alert">
-            <AlertCircle size={17} className="mt-0.5 shrink-0" />
-            <span>{formError}</span>
-          </div>
-        ) : null}
+          {mode === "login" && authFeaturesReady && smsOtpLoginEnabled ? (
+            <section className="auth-login-credential-tabs mb-4 flex rounded-2xl bg-secondary p-1" role="tablist" aria-label={t("auth.loginOrRegister")}>
+              {(["password", "otp"] as CredentialMode[]).map((c) => (
+                <UnifiedButton
+                  key={c}
+                  type="button"
+                  role="tab"
+                  aria-selected={credentialMode === c}
+                  onClick={() => {
+                    setCredentialMode(c);
+                    setShowReset(false);
+                    setFieldErrors({});
+                    setFormError("");
+                  }}
+                  className={`flex-1 rounded-xl py-2 text-xs font-semibold transition-colors ${
+                    credentialMode === c
+                      ? "bg-card text-foreground shadow-sm"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  {c === "password" ? t("auth.passwordLogin") : t("auth.otpLogin")}
+                </UnifiedButton>
+              ))}
+            </section>
+          ) : null}
 
-        <FormFieldShake
-          shake={shakeKey}
-          className={cn(
-            "space-y-3.5",
-            isCuratedLife ? "curated-life-auth-form-wrap" : "auth-login-form-wrap",
-          )}
-        >
+          {formError ? (
+            <div className="mb-3 flex items-start gap-2 rounded-2xl border border-destructive/25 bg-destructive/10 px-3.5 py-3 text-sm leading-relaxed text-destructive" role="alert">
+              <AlertCircle size={17} className="mt-0.5 shrink-0" />
+              <span>{formError}</span>
+            </div>
+          ) : null}
+
+          <FormFieldShake shake={shakeKey} className="auth-login-form-wrap space-y-3.5">
           <form
-            className={cn(
-              "flex flex-col gap-3.5",
-              isCuratedLife
-                ? "curated-life-auth-form"
-                : "auth-login-form sf-next-form-sheet auth-next-sheet",
-            )}
+            className="auth-login-form sf-next-form-sheet auth-next-sheet flex flex-col gap-3.5"
             autoComplete="on"
             onSubmit={(e) => {
               e.preventDefault();
@@ -769,12 +703,7 @@ export default function Login() {
                 type="button"
                 onClick={() => setShowPwd(!showPwd)}
                 aria-label={showPwd ? t("auth.hidePassword") : t("auth.showPassword")}
-                className={cn(
-                  "absolute right-2 top-1/2 inline-flex h-[44px] w-[44px] -translate-y-1/2 items-center justify-center text-muted-foreground transition focus-visible:outline-none touch-target",
-                  isCuratedLife
-                    ? "curated-life-auth-password-toggle"
-                    : "rounded-full hover:bg-secondary hover:text-foreground focus-visible:ring-2 focus-visible:ring-[var(--theme-primary)] focus-visible:ring-offset-2",
-                )}
+                className="absolute right-2 top-1/2 inline-flex h-[44px] w-[44px] -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--theme-primary)] focus-visible:ring-offset-2 touch-target"
               >
                 {showPwd ? <EyeOff size={18} aria-hidden /> : <Eye size={18} aria-hidden />}
               </UnifiedButton>
@@ -818,12 +747,7 @@ export default function Login() {
           ) : null}
 
           {mode === "login" && effectiveCredentialMode === "password" && (
-            <div
-              className={cn(
-                "flex items-center justify-between",
-                isCuratedLife ? "curated-life-auth-meta" : "auth-login-meta-row",
-              )}
-            >
+            <div className="auth-login-meta-row flex items-center justify-between">
               <label className="flex min-h-11 cursor-pointer items-center gap-2 rounded-full px-1 pr-2">
                 <input
                   type="checkbox"
@@ -837,10 +761,7 @@ export default function Login() {
               <UnifiedButton
                 type="button"
                 onClick={() => navigate(localizedPath("/forgot"), { state: { from: localizedPath("/login") } })}
-                className={cn(
-                  "inline-flex min-h-9 items-center px-2 text-xs font-medium active:opacity-70",
-                  isCuratedLife ? "curated-life-auth-forgot" : "rounded-full text-theme-price",
-                )}
+                className="inline-flex min-h-9 items-center rounded-full px-2 text-xs font-medium text-theme-price active:opacity-70"
               >
                 {t("auth.forgotPassword")}
               </UnifiedButton>
@@ -851,12 +772,7 @@ export default function Login() {
             type="submit"
             disabled={loading}
             aria-busy={loading || undefined}
-            className={cn(
-              "auth-login-submit min-h-12 w-full px-4 py-3.5 text-sm font-bold transition-all active:scale-[0.98] disabled:opacity-60",
-              isCuratedLife
-                ? "curated-life-auth-submit"
-                : "rounded-2xl btn-theme-price text-[var(--theme-price-foreground)] shadow-[0_18px_34px_-26px_var(--theme-price)]",
-            )}
+            className="auth-login-submit min-h-12 w-full rounded-2xl btn-theme-price px-4 py-3.5 text-sm font-bold text-[var(--theme-price-foreground)] shadow-[0_18px_34px_-26px_var(--theme-price)] transition-all active:scale-[0.98] disabled:opacity-60"
           >
             {loading ? (
               <span className="flex min-w-0 items-center justify-center gap-2 whitespace-nowrap">
@@ -869,15 +785,15 @@ export default function Login() {
             ) : submitLabel}
           </UnifiedButton>
           </form>
-        </FormFieldShake>
+          </FormFieldShake>
 
-        <LoginAgreementFooter
-          mode={mode}
-          termsPath={siteInfo.termsPath}
-          privacyPath={siteInfo.privacyPolicyPath}
-          className={isCuratedLife ? "curated-life-auth-agreement" : "auth-login-agreement-footer--sheet"}
-          linkClassName={isCuratedLife ? "curated-life-auth-agreement-link" : undefined}
-        />
+          <LoginAgreementFooter
+            mode={mode}
+            termsPath={siteInfo.termsPath}
+            privacyPath={siteInfo.privacyPolicyPath}
+            className="auth-login-agreement-footer--sheet"
+          />
+        </div>
       </main>
 
       <LoginPasswordResetSheet

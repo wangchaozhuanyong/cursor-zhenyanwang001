@@ -29,12 +29,12 @@ const staticGate = [
   npm("后台构建", "build:admin"),
   npm("dist/admin-dist/PWA 资源校验", "verify:dist"),
   npm("数据库迁移编号检查", "check:migrations"),
+  command("服务端固定客户端回归", npmCmd, ["--prefix", "../../server", "run", "verify:fixed-client"]),
   npm("浏览器兼容单测", "test:browser-compat"),
-  npm("全仓主题历史债务扫描", "theme:check", {
-    optional: true,
-    reason: "仅作历史债务提示；客户端发布由下一项增量扫描阻断新增问题",
-  }),
-  npm("客户端发布主题增量扫描", "theme:check:client-redesign"),
+  npm("固定客户端关键交互单测", "test:client-redesign-contract"),
+  npm("固定客户端素材规格", "audit:fixed-assets"),
+  npm("主题硬编码颜色扫描", "theme:check"),
+  npm("生产内容修复清单结构", "verify:production-content-plan"),
   npm("客户端重构提交范围检查", "check:client-redesign-scope"),
   command("Git diff 空白检查", "git", ["diff", "--check"]),
 ];
@@ -113,10 +113,6 @@ function runStep(step, index) {
     throw result.error;
   }
   if (result.status !== 0) {
-    if (step.optional) {
-      console.warn(`[client-redesign-release-gate] optional warning: ${step.label} exited with code ${result.status}`);
-      return;
-    }
     const err = new Error(`${step.label} failed with exit code ${result.status}`);
     err.exitCode = result.status || 1;
     throw err;

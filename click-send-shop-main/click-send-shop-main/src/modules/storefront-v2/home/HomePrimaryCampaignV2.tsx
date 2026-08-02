@@ -14,7 +14,6 @@ type HomePrimaryCampaignV2Props = {
   onNavigate: (path: string) => void;
   onCampaignImpression?: (campaign: StorefrontCampaignVm, position: string) => void;
   onCampaignClick?: (campaign: StorefrontCampaignVm, position: string) => void;
-  variant?: "default" | "curated";
 };
 
 export default function HomePrimaryCampaignV2({
@@ -24,7 +23,6 @@ export default function HomePrimaryCampaignV2({
   onNavigate,
   onCampaignImpression,
   onCampaignClick,
-  variant = "default",
 }: HomePrimaryCampaignV2Props) {
   const trackedImpressionsRef = useRef<Set<string>>(new Set());
   const primary = useMemo(() => pickPrimaryCampaign(campaigns), [campaigns]);
@@ -36,8 +34,8 @@ export default function HomePrimaryCampaignV2({
     const configured = primary ? [primary, ...secondary] : [];
     const configuredTypes = new Set(configured.map((campaign) => campaign.type));
     const fallbackFillers = fallbackCampaigns.filter((campaign) => !configuredTypes.has(campaign.type));
-    return [...configured, ...fallbackFillers].slice(0, variant === "curated" ? 2 : 4);
-  }, [fallbackCampaigns, primary, secondary, variant]);
+    return [...configured, ...fallbackFillers].slice(0, 4);
+  }, [fallbackCampaigns, primary, secondary]);
 
   useEffect(() => {
     if (loading || !onCampaignImpression) return;
@@ -56,46 +54,10 @@ export default function HomePrimaryCampaignV2({
     onNavigate(campaign.href || "/categories");
   };
 
-  if (variant === "curated") {
-    return (
-      <section
-        className="curated-life-campaigns"
-        aria-busy={loading || undefined}
-        aria-label="今日优惠"
-      >
-        <header className="curated-life-section-heading">
-          <h2>今日优惠</h2>
-          <UnifiedButton
-            type="button"
-            onClick={() => onNavigate("/promotions")}
-            className="curated-life-section-heading__action"
-          >
-            <span>更多优惠</span>
-            <ArrowRight size={15} aria-hidden />
-          </UnifiedButton>
-        </header>
-        {loading && visibleCampaigns.length === 0 ? (
-          <StorefrontQuietLoading label="活动优惠加载中" className="sf-motion-inline-loading--shelf" />
-        ) : (
-          <div className="curated-life-campaigns__list">
-            {visibleCampaigns.map((campaign, index) => (
-              <CuratedCampaignRow
-                key={`${campaign.source}-${campaign.type}-${campaign.id}`}
-                campaign={campaign}
-                position={index === 0 ? "home_primary_campaign" : `home_secondary_campaign_${index}`}
-                onClick={handleCampaignNavigate}
-              />
-            ))}
-          </div>
-        )}
-      </section>
-    );
-  }
-
   if (loading && !primary) {
     return (
       <section
-        className={cn("sf-next-campaign-section", variant === "curated" && "curated-life-campaign-section")}
+        className="sf-next-campaign-section"
         aria-busy="true"
         aria-label="活动优惠加载中"
       >
@@ -121,7 +83,7 @@ export default function HomePrimaryCampaignV2({
   if (!visibleCampaigns.length) return null;
 
   return (
-    <section className={cn("sf-next-campaign-section", variant === "curated" && "curated-life-campaign-section")}>
+    <section className="sf-next-campaign-section">
       <StorefrontTitleRow
         title="今日优惠"
         action={(
@@ -148,45 +110,6 @@ export default function HomePrimaryCampaignV2({
         ))}
       </div>
     </section>
-  );
-}
-
-function CuratedCampaignRow({
-  campaign,
-  position,
-  onClick,
-}: {
-  campaign: StorefrontCampaignVm;
-  position: string;
-  onClick: (campaign: StorefrontCampaignVm, position: string) => void;
-}) {
-  const isHighlight = campaign.type === "flash_sale"
-    || campaign.type === "full_reduction"
-    || campaign.type === "full_discount";
-
-  return (
-    <UnifiedButton
-      type="button"
-      onClick={() => onClick(campaign, position)}
-      className="curated-life-campaign-row"
-    >
-      <span
-        className="curated-life-campaign-row__visual"
-        data-tone={isHighlight ? "highlight" : "gift"}
-        aria-hidden
-      >
-        {isHighlight ? <TicketPercent size={28} /> : <Gift size={28} />}
-      </span>
-      <span className="curated-life-campaign-row__copy">
-        <em>{CAMPAIGN_TYPE_LABELS[campaign.type]}</em>
-        <strong>{campaign.title}</strong>
-        <small>{campaign.subtitle || campaign.description || "优惠集中在这里"}</small>
-      </span>
-      <span className="curated-life-campaign-row__action">
-        {campaignActionLabel(campaign)}
-        <ArrowRight size={15} aria-hidden />
-      </span>
-    </UnifiedButton>
   );
 }
 

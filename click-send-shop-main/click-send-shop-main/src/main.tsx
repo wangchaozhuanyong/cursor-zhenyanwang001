@@ -20,18 +20,15 @@ import { lazyPublicRouteWithPreload } from "@/routes/lazyWithPreload";
 const TikTokLanding = lazyPublicRouteWithPreload(() => import("@/modules/public/pages/content/TikTokLanding"));
 
 const StoreShell = lazy(async () => {
-  const [{ default: StoreApp }, { ThemeRuntimeProvider }] = await Promise.all([
-    import("./StoreApp.tsx"),
-    import("@/contexts/ThemeRuntimeProvider"),
-  ]);
+  const { default: StoreApp } = await import("./StoreApp.tsx");
 
   return {
     default: function StoreShellComponent() {
       return (
-        <ThemeRuntimeProvider>
+        <>
           <AppVersionReadyMarker appName="storefront" onReady={markStoreSpaReady} />
           <StoreApp />
-        </ThemeRuntimeProvider>
+        </>
       );
     },
   };

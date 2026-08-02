@@ -27,7 +27,6 @@ import { THIRD_PARTY_LOGIN_ENABLED } from "@/constants/authLogin";
 import { computeUpgradeProgress } from "@/utils/memberBenefitPresentation";
 import { scheduleIdleTask } from "@/utils/idleScheduler";
 import { showStoreToast } from "@/utils/storeToast";
-import { useClientDesignStyle } from "@/modules/storefront-v2/design/useClientDesignStyle";
 import {
   buildAccountFeaturesByKeys,
   type AccountFeatureContext,
@@ -49,7 +48,6 @@ import {
   type ProfileServiceItem,
 } from "./ProfileSections";
 import "@/styles/profile-route.css";
-import "@/styles/storefront-curated-life.css";
 
 const ProfileWechatBindSection = THIRD_PARTY_LOGIN_ENABLED
   ? lazy(() => import("./ProfileWechatBindSection"))
@@ -85,7 +83,6 @@ function ProfileAuthLoadingCard() {
 
 export default function Profile() {
   const { navigateFeature, navigateStorePath } = useStoreNavigationGuard();
-  const clientStyle = useClientDesignStyle();
   const siteInfo = useSiteInfo();
   const capabilities = useSiteCapabilities();
   const logoSrc = resolveSiteLogoUrl(siteInfo);
@@ -358,10 +355,7 @@ export default function Profile() {
   };
 
   return (
-    <div
-      className="sf-next-page sf-next-profile-page sf-next-page-shell sf-next-bottom-safe text-[var(--theme-text)]"
-      data-storefront-client-style={clientStyle}
-    >
+    <div className="sf-next-page sf-next-profile-page sf-next-page-shell sf-next-bottom-safe text-[var(--theme-text)]">
       <SeoHead
         title={`我的｜${siteInfo.siteName || "大马通"}`}
         description="查看订单、购物服务、会员权益和账户功能。"
@@ -378,7 +372,6 @@ export default function Profile() {
             <ProfileGuestCard
               onLogin={() => navigateStorePath("/login", { from: "/profile" })}
               onRegister={() => navigateStorePath("/register", { from: "/profile" })}
-              variant={clientStyle === "curated_life" ? "curated" : "default"}
             />
           ) : (
             <>
@@ -396,7 +389,6 @@ export default function Profile() {
                 onViewAllBenefits={() => handleFeatureNavigate("memberBenefits", "/member/benefits", true)}
                 onAssetNavigate={(item) => handleFeatureNavigate(item.key, item.path, item.auth)}
                 onAvatarClick={() => avatarInputRef.current?.click()}
-                variant={clientStyle === "curated_life" ? "curated" : "default"}
               />
               <input ref={avatarInputRef} type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
               {ProfileWechatBindSection ? (

@@ -1,25 +1,20 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Search, X } from "lucide-react";
+import { PackageSearch, X } from "lucide-react";
 import { useProductStore } from "@/stores/useProductStore";
 import { STORE_COPY } from "@/constants/storeCopy";
 import { cn } from "@/lib/utils";
 import { StoreSearchDrawer, StoreSearchLauncher } from "@/components/store/StoreSearchDrawer";
 import type { StoreSearchCategoryOption, StoreSearchTagOption } from "@/components/store/storeSearchOptions";
 import StoreCategoryPrimaryNav from "@/components/store/StoreCategoryPrimaryNav";
-import StoreCategorySubcategorySelector from "@/components/store/StoreCategorySubcategorySelector";
 import ProductFilterDrawer from "@/components/ProductFilterDrawer";
 import ProductSortBar from "@/components/ProductSortBar";
-import type { CategoryKingkongItem } from "@/components/CategoryKingkongRow";
-import { getCategoryNavIconValue } from "@/utils/categoryNavIcon";
 import * as productService from "@/services/productService";
 import type { ProductListParams, ProductSortType, ProductTag } from "@/types/product";
 import type { Category } from "@/types/category";
 import { findCategoryById, findRootCategoryIdForActive, isCategoryOrDescendantActive } from "@/utils/categoryTree";
 import { trackEvent } from "@/services/analyticsService";
-import { useClientDesignStyle } from "@/modules/storefront-v2/design/useClientDesignStyle";
 import { THEME_ALERT_ERROR_SOFT } from "@/utils/themeVisuals";
-import { appendThemePreviewParams, THEME_PREVIEW_PARAM_NAMES } from "@/utils/themePreviewParams";
 import SeoHead from "@/components/SeoHead";
 import { buildCanonical } from "@/utils/seo";
 import { useSiteCapabilities } from "@/hooks/useSiteCapabilities";
@@ -37,14 +32,10 @@ import {
 } from "@/constants/newArrivalNavigation";
 import { storefrontCategoryName } from "@/utils/storefrontCopySanitizer";
 import "@/styles/storefront-next.category.css";
-import "@/styles/storefront-curated-life.css";
 import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
-
-const INLINE_SUBCATEGORY_LIMIT = 6;
+import { resolveCategoryFallbackHero } from "@/constants/categoryFallbackMedia";
 
 export default function Categories() {
-  const clientStyle = useClientDesignStyle();
-  const isCuratedLife = clientStyle === "curated_life";
   const siteInfo = useSiteInfo();
   const siteCapabilities = useSiteCapabilities();
   const navigate = useStorefrontNavigate();
@@ -58,9 +49,7 @@ export default function Categories() {
   const [searchParams, setSearchParams] = useSearchParams();
   const syncedSearchKeyRef = useRef(searchParams.toString());
   const syncingFromUrlRef = useRef(false);
-  const productGridClass = isCuratedLife
-    ? "curated-life-category-product-grid"
-    : "sf-next-product-grid sf-next-category-product-list grid grid-cols-1 gap-2 pt-1";
+  const productGridClass = "sf-next-product-grid sf-next-category-product-list grid grid-cols-1 gap-2 pt-1";
   const emptyColSpan = "col-span-full";
 
   const initialIsNew = isNewArrivalCategoryParams(searchParams);
@@ -77,7 +66,6 @@ export default function Categories() {
   const [isNew, setIsNew] = useState(initialIsNew);
   const [isHot, setIsHot] = useState(searchParams.get("is_hot") === "1");
   const [isRecommended, setIsRecommended] = useState(searchParams.get("is_recommended") === "1");
-  const [subcategoryPanelOpen, setSubcategoryPanelOpen] = useState(false);
   const [readyProductQueryKey, setReadyProductQueryKey] = useState("");
   const latestProductQueryKeyRef = useRef("");
   const products = useProductStore((s) => s.products);
@@ -119,10 +107,6 @@ export default function Categories() {
 
   const syncQuery = useCallback(() => {
     const next = new URLSearchParams();
-    THEME_PREVIEW_PARAM_NAMES.forEach((name) => {
-      const value = searchParams.get(name)?.trim();
-      if (value) next.set(name, value);
-    });
     if (activeCat && activeCat !== "all") next.set("cat", activeCat);
     if (activeTagId) next.set("tag_id", activeTagId);
     if (minPrice) next.set("min_price", minPrice);
@@ -205,18 +189,10 @@ export default function Categories() {
     listingSectionRef.current?.scrollTo({ top: 0, behavior: "auto" });
   }, [productQueryKey]);
 
-  const handleSelectChild = useCallback((childId: string) => {
-    void trackEvent({ event_type: "category_click", module: "categories", category_id: childId });
-    setIsNew(false);
-    setActiveCat(childId);
-    setSubcategoryPanelOpen(false);
-  }, []);
-
   const handleRootCategoryClick = useCallback((cat: Category) => {
     void trackEvent({ event_type: "category_click", module: "categories", category_id: cat.id });
     setIsNew(false);
     setActiveCat(cat.id);
-    setSubcategoryPanelOpen(false);
   }, []);
 
   const clearFilters = useCallback(() => {
@@ -235,7 +211,7 @@ export default function Categories() {
   const handleSearchPanelSubmit = useCallback((nextValue: string) => {
     const normalized = nextValue.trim();
     const target = normalized ? `/search?keyword=${encodeURIComponent(normalized)}` : "/search";
-    navigate(appendThemePreviewParams(target));
+    navigate(target);
   }, [navigate]);
 
   const handleClearTopSearch = useCallback(() => {
@@ -260,24 +236,7 @@ export default function Categories() {
     return findRootCategoryIdForActive(categories, activeCat);
   }, [activeCat, categories, isNew]);
 
-  const subCategories = useMemo(() => {
-    if (!activeRootId) return [];
-    const root = findCategoryById(categories, activeRootId);
-    return root?.children?.filter(Boolean) ?? [];
-  }, [activeRootId, categories]);
-  const visibleSubCategories = useMemo(() => {
-    if (subCategories.length <= INLINE_SUBCATEGORY_LIMIT) return subCategories;
-    const primaryItems = subCategories.slice(0, INLINE_SUBCATEGORY_LIMIT);
-    const activeChild = subCategories.find((child) => child.id === activeCat);
-    if (!activeChild || primaryItems.some((child) => child.id === activeChild.id)) return primaryItems;
-    return [...primaryItems.slice(0, INLINE_SUBCATEGORY_LIMIT - 1), activeChild];
-  }, [activeCat, subCategories]);
-  const hasMoreSubCategories = subCategories.length > visibleSubCategories.length;
-  const hiddenSubcategoryCount = Math.max(0, subCategories.length - INLINE_SUBCATEGORY_LIMIT);
-  const systemAllIconValue = siteInfo.categorySystemAllIconUrl?.trim() || "all";
-  const systemNewIconValue = siteInfo.categorySystemNewIconUrl?.trim() || "new";
-
-  const rootKingkongItems = useMemo((): CategoryKingkongItem[] => {
+  const rootKingkongItems = useMemo(() => {
     const row: Array<{ kind: "all" } | { kind: "new" } | { kind: "root"; node: Category }> = [
       { kind: "all" },
       { kind: "new" },
@@ -288,7 +247,6 @@ export default function Categories() {
         return {
           id: "all",
           label: "全部",
-          iconValue: systemAllIconValue,
           active: activeCat === "all" && !isNew,
           onClick: handleSelectAll,
         };
@@ -297,7 +255,6 @@ export default function Categories() {
         return {
           id: "new",
           label: NEW_ARRIVAL_CATEGORY_LABEL,
-          iconValue: systemNewIconValue,
           active: isNew,
           onClick: handleSelectNewArrivals,
         };
@@ -306,12 +263,11 @@ export default function Categories() {
       return {
         id: node.id,
         label: storefrontCategoryName(node.name),
-        iconValue: getCategoryNavIconValue(node),
         active: !isNew && isCategoryOrDescendantActive(node, activeCat),
         onClick: () => handleRootCategoryClick(node),
       };
     });
-  }, [activeCat, categories, handleRootCategoryClick, handleSelectAll, handleSelectNewArrivals, isNew, systemAllIconValue, systemNewIconValue]);
+  }, [activeCat, categories, handleRootCategoryClick, handleSelectAll, handleSelectNewArrivals, isNew]);
 
   const activeFilterCount = useMemo(() => {
     let c = 0;
@@ -345,6 +301,10 @@ export default function Categories() {
     const root = findCategoryById(categories, activeRootId);
     return hasEnabledCategoryBanner(root) ? root : null;
   }, [activeCategory, activeRootId, categories]);
+  const activeRootCategory = activeRootId ? findCategoryById(categories, activeRootId) : null;
+  const categoryFallbackHero = resolveCategoryFallbackHero(
+    activeRootCategory?.name || activeCategory?.name,
+  );
   const activeCategoryName = activeCategory ? storefrontCategoryName(activeCategory.name) : "";
   const categoryDescription = activeCategory?.description?.trim() || "";
   const siteName = (siteInfo.siteName || STORE_COPY.brandName).trim();
@@ -420,10 +380,6 @@ export default function Categories() {
       observer.disconnect();
     };
   }, [hasMoreProducts, listRefreshing, loadMoreProducts, loading, productQueryReady]);
-
-  useEffect(() => {
-    setSubcategoryPanelOpen(false);
-  }, [activeRootId]);
 
   const filterDrawer = (
     <ProductFilterDrawer
@@ -503,35 +459,44 @@ export default function Categories() {
   ) : (
     <section className={cn(emptyColSpan, "sf-next-state-panel sf-next-listing-empty")}>
       <span className="sf-next-state-panel__icon" aria-hidden>
-        <Search size={28} />
+        <PackageSearch size={23} strokeWidth={1.8} />
       </span>
-      <h2>
-        {activeFilterCount > 0 || submittedQuery
-          ? "当前筛选条件无结果"
-          : activeCat !== "all"
-            ? "当前分类暂无商品"
-            : "暂无商品上架"}
-      </h2>
-      <p>
-        {(activeFilterCount > 0 || submittedQuery)
-          ? "可以清空筛选后重新浏览全部商品。"
-          : "商品上架后会自动显示在这里。"}
-      </p>
+      <span className="sf-next-listing-empty__copy">
+        <h2>
+          {activeFilterCount > 0 || submittedQuery
+            ? "没有符合条件的商品"
+            : activeCat !== "all" || isNew
+              ? "这个分类暂时没有商品"
+              : "商品正在整理中"}
+        </h2>
+        <p>
+          {(activeFilterCount > 0 || submittedQuery)
+            ? "调整筛选条件，或返回浏览全部商品。"
+            : activeCat !== "all" || isNew
+              ? "先看看其他分类，新的商品上架后会显示在这里。"
+              : "稍后再来看看，或先浏览当前优惠活动。"}
+        </p>
+      </span>
       {(activeFilterCount > 0 || submittedQuery) ? (
         <UnifiedButton type="button" onClick={clearFilters} className="sf-next-state-panel__primary">
           <X size={17} aria-hidden />
           清空筛选
         </UnifiedButton>
-      ) : null}
+      ) : activeCat !== "all" || isNew ? (
+        <UnifiedButton type="button" onClick={handleSelectAll} className="sf-next-state-panel__primary">
+          查看全部商品
+        </UnifiedButton>
+      ) : (
+        <UnifiedButton type="button" onClick={() => navigate("/promotions")} className="sf-next-state-panel__primary">
+          查看优惠活动
+        </UnifiedButton>
+      )}
     </section>
   );
 
   return (
     <div
-      className={isCuratedLife
-        ? "sf-next-page-shell sf-next-route-page curated-life-category-page text-[var(--theme-text)]"
-        : "sf-next-page-shell sf-next-route-page sf-next-categories-page sf-next-listing-page sf-next-category-page sf-next-bottom-safe text-[var(--theme-text)]"}
-      data-storefront-client-style={clientStyle}
+      className="sf-next-page-shell sf-next-route-page sf-next-categories-page sf-next-listing-page sf-next-category-page sf-next-bottom-safe text-[var(--theme-text)]"
     >
       <SeoHead
         title={title}
@@ -539,57 +504,30 @@ export default function Categories() {
         canonical={canonical}
         robots={robots}
       />
-      <main className={isCuratedLife ? "curated-life-category-shell" : "sf-next-category-shell mx-auto w-full max-w-screen-xl"}>
-        <section className={isCuratedLife ? "curated-life-category-toolbar" : "sf-next-category-toolbar"} aria-label="分类搜索和筛选">
+      <main className="sf-next-category-shell mx-auto w-full max-w-screen-xl">
+        <h1 className="sr-only">{productSectionTitle}</h1>
+        <section className="sf-next-category-toolbar" aria-label="分类搜索和筛选">
           <StoreSearchLauncher
             value={submittedQuery}
             placeholder={STORE_COPY.searchPlaceholder}
-            className={isCuratedLife ? "curated-life-category-search-trigger" : "sf-next-category-search-trigger"}
+            className="sf-next-category-search-trigger"
             onClick={() => setSearchPanelOpen(true)}
           />
-          <div className={isCuratedLife ? "curated-life-category-filter-slot" : "sf-next-category-filter-slot"}>
+          <div className="sf-next-category-filter-slot">
             {filterDrawer}
           </div>
         </section>
 
-        <section className={isCuratedLife ? "curated-life-category-hero" : "sf-next-category-hero"} aria-label="分类入口">
-          <div className={isCuratedLife ? "curated-life-category-titlebar" : "sf-next-category-titlebar"}>
-            <h1>分类</h1>
-            <UnifiedButton type="button" className="sf-next-icon-button" onClick={() => setSearchPanelOpen(true)} aria-label="打开商品搜索">
-              <Search size={24} aria-hidden />
-            </UnifiedButton>
-          </div>
-          <StoreCategoryPrimaryNav
-            items={categoryPills}
-            loading={loading && categories.length === 0}
-            variant={isCuratedLife ? "curated" : "pills"}
-          />
-        </section>
+        <div className="sf-next-category-workspace">
+          <aside className="sf-next-category-rail">
+            <StoreCategoryPrimaryNav items={categoryPills} loading={loading && categories.length === 0} />
+          </aside>
 
-        <section ref={listingSectionRef} className={isCuratedLife ? "curated-life-listing-section" : "sf-next-listing-section"} aria-label={productSectionTitle}>
-          <CategoryBannerCard category={activeCategoryBanner} />
-          {subCategories.length > 0 && activeRootId ? (
-            <StoreCategorySubcategorySelector
-              sectionLabel={`${productSectionTitle}二级分类`}
-              activeCat={activeCat}
-              activeRootId={activeRootId}
-              subCategories={subCategories}
-              visibleSubCategories={visibleSubCategories}
-              hasMoreSubCategories={hasMoreSubCategories}
-              hiddenSubcategoryCount={hiddenSubcategoryCount}
-              panelOpen={subcategoryPanelOpen}
-              onClosePanel={() => setSubcategoryPanelOpen(false)}
-              onSelect={handleSelectChild}
-              onTogglePanel={() => setSubcategoryPanelOpen((open) => !open)}
-            />
-          ) : null}
-          <div className={isCuratedLife ? "curated-life-listing-sort-shell" : "sf-next-listing-sort-shell"}>
-            <ProductSortBar
-              value={sort}
-              onChange={setSort}
-              className={isCuratedLife ? "curated-life-category-sortbar" : "sf-next-listing-sortbar"}
-            />
-          </div>
+          <section ref={listingSectionRef} className="sf-next-listing-section" aria-label={productSectionTitle}>
+            <CategoryBannerCard category={activeCategoryBanner} fallbackImage={categoryFallbackHero} />
+            <div className="sf-next-listing-sort-shell">
+              <ProductSortBar value={sort} onChange={setSort} className="sf-next-listing-sortbar" />
+            </div>
           {error && visibleProducts.length > 0 ? (
             <p className={`mb-3 px-3 py-2 text-center text-xs ${THEME_ALERT_ERROR_SOFT}`}>
               商品列表暂时无法刷新，以下为缓存数据
@@ -600,11 +538,10 @@ export default function Categories() {
             products={visibleProducts}
             className={productGridClass}
             shellClassName={cn(
-              isCuratedLife ? "curated-life-category-product-shell" : "sf-next-category-product-shell md:min-h-[28rem]",
-              useCompactProductShell && (isCuratedLife ? "is-compact" : "sf-next-category-product-shell--compact"),
+              "sf-next-category-product-shell md:min-h-[28rem]",
+              useCompactProductShell && "sf-next-category-product-shell--compact",
             )}
-            displayMode={isCuratedLife ? "theme" : "list"}
-            cardVariant={isCuratedLife ? "curated" : "default"}
+            displayMode="list"
             siteContext={productCardSiteContext}
             itemKeyPrefix={`category:${isNew ? "new" : activeCat}`}
             showQuietLoading={showQuietLoading}
@@ -619,19 +556,19 @@ export default function Categories() {
                 <UnifiedButton
                   type="button"
                   onClick={() => void loadMoreProducts()}
-                  className="rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-2 text-xs font-semibold text-[var(--theme-text-muted)]"
+                  className="sf-next-category-load-more rounded-md border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-2 text-xs font-semibold text-[var(--theme-text-muted)]"
                 >
-                  继续滑动加载更多
+                  加载更多
                 </UnifiedButton>
               ) : pagination.total > 0 ? (
-                `已加载全部 ${visibleProducts.length}/${pagination.total} 款`
+                "已加载全部商品"
               ) : null}
               {error && visibleProducts.length > 0 && hasMoreProducts ? (
                 <div className="mt-3">
                   <UnifiedButton
                     type="button"
                     onClick={() => void loadMoreProducts()}
-                    className="rounded-full border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-2 text-xs font-semibold text-[var(--theme-text)]"
+                    className="sf-next-category-load-more rounded-md border border-[var(--theme-border)] bg-[var(--theme-surface)] px-4 py-2 text-xs font-semibold text-[var(--theme-text)]"
                   >
                     加载失败，点击重试
                   </UnifiedButton>
@@ -639,7 +576,8 @@ export default function Categories() {
               ) : null}
             </div>
           ) : null}
-        </section>
+          </section>
+        </div>
       </main>
       <StoreSearchDrawer
         open={searchPanelOpen}
@@ -660,33 +598,33 @@ function hasEnabledCategoryBanner(category?: Category | null): category is Categ
   return Boolean(category?.banner_enabled && category.banner_image_url?.trim());
 }
 
-function CategoryBannerCard({ category }: { category: Category | null }) {
+function CategoryBannerCard({ category, fallbackImage }: { category: Category | null; fallbackImage: string }) {
   const [hidden, setHidden] = useState(false);
 
   useEffect(() => {
     setHidden(false);
   }, [category?.id, category?.banner_image_url]);
 
-  if (!category || hidden) return null;
-
-  const imageUrl = category.banner_image_url?.trim();
-  if (!imageUrl) return null;
-
-  const title = category.banner_title?.trim();
-  const subtitle = category.banner_subtitle?.trim();
-  const link = category.banner_link?.trim();
+  const configuredImage = category?.banner_image_url?.trim();
+  const imageUrl = hidden ? fallbackImage : configuredImage || fallbackImage;
+  const title = category?.banner_title?.trim();
+  const subtitle = category?.banner_subtitle?.trim();
+  const link = category?.banner_link?.trim();
+  const fallbackLabel = category ? storefrontCategoryName(category.name) : "商品";
   const content = (
     <>
       <StableImage
         src={imageUrl}
-        alt={title || `${storefrontCategoryName(category.name)} 分类广告`}
+        alt={title || `${fallbackLabel}分类图片`}
         width={720}
         height={315}
         aspectRatio="16 / 7"
         className="sf-next-category-banner__media"
         imgClassName="object-cover"
         loading="lazy"
-        onError={() => setHidden(true)}
+        onError={() => {
+          if (configuredImage) setHidden(true);
+        }}
       />
       {(title || subtitle) ? (
         <span className="sf-next-category-banner__copy">
@@ -699,14 +637,14 @@ function CategoryBannerCard({ category }: { category: Category | null }) {
 
   if (link) {
     return (
-      <a className="sf-next-category-banner" href={link} aria-label={title || `${storefrontCategoryName(category.name)} 分类广告`}>
+      <a className="sf-next-category-banner" href={link} aria-label={title || `${fallbackLabel}分类图片`}>
         {content}
       </a>
     );
   }
 
   return (
-    <div className="sf-next-category-banner" aria-label={title || `${storefrontCategoryName(category.name)} 分类广告`}>
+    <div className="sf-next-category-banner" aria-label={title || `${fallbackLabel}分类图片`}>
       {content}
     </div>
   );

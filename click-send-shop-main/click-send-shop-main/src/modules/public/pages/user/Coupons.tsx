@@ -28,7 +28,6 @@ import { showStoreToast } from "@/utils/storeToast";
 import { toastPresetQuickSuccess } from "@/utils/toastPresets";
 import "@/styles/coupons-route.css";
 import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
-import { useClientDesignStyle } from "@/modules/storefront-v2/design/useClientDesignStyle";
 
 type DisplayStatus = "available" | "claimed" | "pending" | "used" | "expired" | "invalidated";
 
@@ -225,8 +224,6 @@ function getValueVaultValue(coupon: DisplayCoupon) {
 
 export default function Coupons() {
   const navigate = useStorefrontNavigate();
-  const clientStyle = useClientDesignStyle();
-  const isCuratedLife = clientStyle === "curated_life";
   const { localizedPath, t } = usePublicLocale();
   const location = useLocation() as { state?: { pageView?: PageView } | null };
   const goBack = useGoBack(localizedPath("/profile"));
@@ -373,14 +370,10 @@ export default function Coupons() {
     <StoreAccountLayout
       title="优惠券"
       onBack={pageView === "claimCenter" ? () => setPageView("mine") : goBack}
-      className={cn(
-        "sf-next-page sf-next-coupons-page-shell",
-        isCuratedLife && "curated-life-coupons-shell",
-      )}
+      className="sf-next-page sf-next-coupons-page-shell"
       mainClassName="sf-next-account-main"
     >
       <CouponVaultHero
-        curated={isCuratedLife}
         pageView={pageView}
         canViewOwnedCoupons={canViewOwnedCoupons}
         availableCount={available.length}
@@ -396,11 +389,11 @@ export default function Coupons() {
       {pageView === "mine" ? (
         <motion.div
           ref={statusTabsRef}
-          className={isCuratedLife ? "curated-life-coupon-status-rail no-scrollbar" : "sf-next-coupon-status-rail no-scrollbar"}
+          className="sf-next-coupon-status-rail no-scrollbar"
           role="tablist"
           aria-label="优惠券状态筛选"
         >
-          <div className={isCuratedLife ? "curated-life-coupon-status-rail__inner" : "sf-next-coupon-status-rail__inner"}>
+          <div className="sf-next-coupon-status-rail__inner">
             {visibleStatusTabs.map((t) => {
               const count = t.badge ? usableCount : 0;
               return (
@@ -415,14 +408,10 @@ export default function Coupons() {
                     setTab(t.key);
                   }}
                   className={cn(
-                    isCuratedLife ? "curated-life-coupon-status-tab" : "sf-next-coupon-status-tab",
+                    "sf-next-coupon-status-tab",
                     tab === t.key
-                      ? isCuratedLife
-                        ? "is-active"
-                        : "sf-next-coupon-status-tab--active"
-                      : isCuratedLife
-                        ? "is-idle"
-                        : "sf-next-coupon-status-tab--idle",
+                      ? "sf-next-coupon-status-tab--active"
+                      : "sf-next-coupon-status-tab--idle",
                   )}
                 >
                   {t.label}
@@ -446,7 +435,6 @@ export default function Coupons() {
       ) : null}
 
       <CouponCategoryRail
-        curated={isCuratedLife}
         coupons={statusFilteredCoupons}
         active={category}
         onChange={setCategory}
@@ -482,7 +470,6 @@ export default function Coupons() {
               className="xl:col-span-2"
             >
               <CouponEmptyState
-                curated={isCuratedLife}
                 pageView={pageView}
                 tab={tab}
                 availableCount={available.length}
@@ -510,7 +497,6 @@ export default function Coupons() {
 }
 
 function CouponEmptyState({
-  curated,
   pageView,
   tab,
   availableCount,
@@ -519,7 +505,6 @@ function CouponEmptyState({
   onShowClaimCenter,
   onGoCart,
 }: {
-  curated: boolean;
   pageView: PageView;
   tab: Tab;
   availableCount: number;
@@ -535,50 +520,6 @@ function CouponEmptyState({
     : EMPTY_STATE_COPY[tab].description || "当前筛选下没有匹配的优惠券。";
   const shouldShowClaimAction = !isClaimCenter && tab === "mine" && availableCount > 0;
   const shouldShowCartAction = selectedCartCount > 0;
-
-  if (curated) {
-    return (
-      <section className="curated-life-coupon-empty" aria-label={title}>
-        <span className="curated-life-coupon-empty__icon" aria-hidden>
-          <Ticket size={24} />
-        </span>
-        <div className="curated-life-coupon-empty__copy">
-          <h2>{title}</h2>
-          <p>{description}</p>
-        </div>
-        <div className="curated-life-coupon-empty__stats" aria-label="优惠券状态">
-          <span>
-            <strong>{availableCount}</strong>
-            <em>可领取</em>
-          </span>
-          <span>
-            <strong>{ownedCount}</strong>
-            <em>已领取</em>
-          </span>
-          <span>
-            <strong>{selectedCartCount}</strong>
-            <em>购物车</em>
-          </span>
-        </div>
-        {shouldShowClaimAction || shouldShowCartAction ? (
-          <div className="curated-life-coupon-empty__actions">
-            {shouldShowClaimAction ? (
-              <UnifiedButton type="button" onClick={onShowClaimCenter}>
-                <Ticket size={17} aria-hidden />
-                去领券中心
-              </UnifiedButton>
-            ) : null}
-            {shouldShowCartAction ? (
-              <UnifiedButton type="button" onClick={onGoCart}>
-                <ShoppingBag size={17} aria-hidden />
-                去购物车
-              </UnifiedButton>
-            ) : null}
-          </div>
-        ) : null}
-      </section>
-    );
-  }
 
   return (
     <section className="sf-next-coupon-empty" aria-label={title}>
@@ -634,7 +575,6 @@ function CouponEmptyState({
 }
 
 function CouponVaultHero({
-  curated,
   pageView,
   canViewOwnedCoupons,
   availableCount,
@@ -646,7 +586,6 @@ function CouponVaultHero({
   onLogin,
   onGoCart,
 }: {
-  curated: boolean;
   pageView: PageView;
   canViewOwnedCoupons: boolean;
   availableCount: number;
@@ -661,50 +600,6 @@ function CouponVaultHero({
   const walletCount = pageView === "mine" ? usableCount : availableCount;
   const walletUnit = pageView === "mine" ? "张可用" : "张可领";
   const sideLabel = pageView === "mine" ? `领券中心 ${availableCount}` : canViewOwnedCoupons ? `已领取 ${ownedCount}` : "登录后领取";
-
-  if (curated) {
-    return (
-      <>
-        <section className="curated-life-coupon-summary" aria-label="优惠券概览">
-          <div>
-            <span>优惠钱包</span>
-            <strong>
-              {walletCount}
-              <small>{walletUnit}</small>
-            </strong>
-          </div>
-          <div className="curated-life-coupon-summary__aside">
-            <span>{sideLabel}</span>
-            {selectedCartCount > 0 ? (
-              <UnifiedButton type="button" onClick={onGoCart}>
-                去购物车
-              </UnifiedButton>
-            ) : null}
-          </div>
-        </section>
-        <div className="curated-life-coupon-view-switch" role="tablist" aria-label="优惠券页面切换">
-          <UnifiedButton
-            type="button"
-            role="tab"
-            aria-selected={pageView === "mine"}
-            onClick={canViewOwnedCoupons ? onShowMine : onLogin}
-            className={pageView === "mine" ? "is-active" : undefined}
-          >
-            我的优惠券
-          </UnifiedButton>
-          <UnifiedButton
-            type="button"
-            role="tab"
-            aria-selected={pageView === "claimCenter"}
-            onClick={onShowClaimCenter}
-            className={pageView === "claimCenter" ? "is-active" : undefined}
-          >
-            领券中心
-          </UnifiedButton>
-        </div>
-      </>
-    );
-  }
 
   return (
     <>
@@ -811,12 +706,10 @@ const CouponCard = forwardRef<HTMLDivElement, CouponCardProps>(function CouponCa
 });
 
 function CouponCategoryRail({
-  curated,
   coupons,
   active,
   onChange,
 }: {
-  curated: boolean;
   coupons: DisplayCoupon[];
   active: CouponCategory;
   onChange: (category: CouponCategory) => void;
@@ -827,13 +720,13 @@ function CouponCategoryRail({
   return (
     <motion.div
       ref={categoryRailRef}
-      className={curated ? "curated-life-coupon-category-rail no-scrollbar scroll-smooth" : "sf-next-coupon-category-rail no-scrollbar mt-4 scroll-smooth"}
+      className="sf-next-coupon-category-rail no-scrollbar mt-4 scroll-smooth"
       role="tablist"
       aria-label="优惠分类"
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
     >
-      <div className={curated ? "curated-life-coupon-category-rail__inner" : "sf-next-coupon-category-rail__inner"}>
+      <div className="sf-next-coupon-category-rail__inner">
         {COUPON_CATEGORY_ITEMS.map((item) => {
           const Icon = item.icon;
           const count = filterByCategory(coupons, item.key).length;
@@ -850,14 +743,10 @@ function CouponCategoryRail({
                 onChange(item.key);
               }}
               className={cn(
-                curated ? "curated-life-coupon-category-tab" : "sf-next-coupon-category-pill",
+                "sf-next-coupon-category-pill",
                 selected
-                  ? curated
-                    ? "is-active"
-                    : "sf-next-coupon-category-pill--active"
-                  : curated
-                    ? "is-idle"
-                    : "sf-next-coupon-category-pill--idle",
+                  ? "sf-next-coupon-category-pill--active"
+                  : "sf-next-coupon-category-pill--idle",
               )}
             >
               <Icon size={15} aria-hidden />

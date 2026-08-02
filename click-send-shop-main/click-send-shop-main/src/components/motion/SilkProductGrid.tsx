@@ -4,7 +4,6 @@ import StorefrontQuietLoading from "@/components/storefront-motion/StorefrontQui
 import { cn } from "@/lib/utils";
 import type { Product } from "@/types/product";
 import ProductCardV2 from "@/modules/storefront-v2/product/ProductCardV2";
-import CuratedLifeProductCard from "@/modules/storefront-v2/product/CuratedLifeProductCard";
 import type { ProductCardSiteContext } from "@/components/ProductCard";
 
 const INITIAL_PRODUCT_RENDER_LIMIT = 24;
@@ -27,7 +26,6 @@ type SilkProductGridProps = {
   itemKeyPrefix?: string;
   /** 由列表页注入，避免每张卡重复订阅站点配置 */
   siteContext?: ProductCardSiteContext;
-  cardVariant?: "default" | "curated";
 };
 
 export default function SilkProductGrid({
@@ -39,7 +37,6 @@ export default function SilkProductGrid({
   showSoftRefreshing = false,
   emptyState,
   itemKeyPrefix = "product",
-  cardVariant = "default",
 }: SilkProductGridProps) {
   const isListView = displayMode === "list";
   const shouldDeferList = products.length > INITIAL_PRODUCT_RENDER_LIMIT;
@@ -94,20 +91,12 @@ export default function SilkProductGrid({
       ) : (
         <div className={cn(className, showDelayedRefreshNotice && "opacity-95")}>
           {visibleProducts.map((product, index) => (
-            cardVariant === "curated" ? (
-              <CuratedLifeProductCard
-                key={`${itemKeyPrefix}:${index}:${product.id}`}
-                product={product}
-                index={index}
-              />
-            ) : (
               <ProductCardV2
                 key={`${itemKeyPrefix}:${index}:${product.id}`}
                 product={product}
                 index={index}
                 variant={isListView ? "list" : "grid"}
               />
-            )
           ))}
           {products.length === 0 ? emptyState : null}
         </div>

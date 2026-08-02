@@ -1,13 +1,19 @@
+import { mkdir, writeFile } from "node:fs/promises";
+import path from "node:path";
 import process from "node:process";
 
 const args = process.argv.slice(2);
 const strict = args.includes("--strict");
+const outputArg = args.find((arg) => arg.startsWith("--output="));
+const outputPath = outputArg
+  ? path.resolve(process.cwd(), outputArg.slice("--output=".length))
+  : "";
 const baseUrlArg = args.find((arg) => !arg.startsWith("--"));
 const baseUrl = String(baseUrlArg || process.env.CONTENT_BASE_URL || "").replace(/\/+$/, "");
 
 if (!baseUrl) {
   console.error(
-    "Usage: npm run audit:production-content -- https://example.com [--strict]",
+    "Usage: npm run audit:production-content -- https://example.com [--strict] [--output=path]",
   );
   process.exit(1);
 }
@@ -118,6 +124,18 @@ const bannersWithoutResponsiveMedia = activeBanners.filter((banner) => (
   !String(banner?.image_mobile || "").trim()
   || !String(banner?.image_desktop || "").trim()
 ));
+// StoreHome uses the fixed responsive set when the API has no responsive banner.
+// Keep raw configuration gaps visible for repair, but do not count a covered gap as a visual blocker.
+const bannersUsingFixedResponsiveFallback = activeBanners.length > 0
+  && activeBanners.every((banner) => (
+    !String(banner?.image_mobile || "").trim()
+    && !String(banner?.image_desktop || "").trim()
+  ))
+  ? activeBanners
+  : [];
+const bannersWithoutEffectiveResponsiveMedia = activeBanners.length === 0
+  ? ["no_active_home_banner"]
+  : [];
 const categoriesWithoutCustomBanner = allCategories.filter((category) => (
   category?.is_visible !== false
   && (!category?.banner_enabled || !String(category?.banner_image_url || "").trim())
@@ -199,7 +217,7 @@ const complianceBlockers = restrictedCategories.length > 0 && !ageGateEnabled
     }]
   : [];
 
-const blockerCount = bannersWithoutResponsiveMedia.length
+const blockerCount = bannersWithoutEffectiveResponsiveMedia.length
   + invalidNavItems.length
   + productsWithoutImages.length
   + complianceBlockers.length;
@@ -210,6 +228,8 @@ const report = {
   summary: {
     activeBanners: activeBanners.length,
     bannersWithoutResponsiveMedia: bannersWithoutResponsiveMedia.length,
+    bannersUsingFixedResponsiveFallback: bannersUsingFixedResponsiveFallback.length,
+    bannersWithoutEffectiveResponsiveMedia: bannersWithoutEffectiveResponsiveMedia.length,
     visibleCategories: allCategories.filter((category) => category?.is_visible !== false).length,
     categoriesWithoutCustomBanner: categoriesWithoutCustomBanner.length,
     enabledHomeNavItems: enabledNavItems.length,
@@ -224,6 +244,8 @@ const report = {
   },
   details: {
     bannerTitlesWithoutResponsiveMedia: bannersWithoutResponsiveMedia.map((banner) => banner.title || banner.id),
+    bannerTitlesUsingFixedResponsiveFallback: bannersUsingFixedResponsiveFallback.map((banner) => banner.title || banner.id),
+    bannerTitlesWithoutEffectiveResponsiveMedia: bannersWithoutEffectiveResponsiveMedia,
     categoriesWithoutCustomBanner: categoriesWithoutCustomBanner.map((category) => category.name || category.id),
     invalidHomeNavItems: invalidNavItems.map((item) => {
       const source = enabledNavItems.find((navItem) => navItem.title === item.title);
@@ -257,4 +279,8 @@ const report = {
 
 const serializedReport = `${JSON.stringify(report, null, 2)}\n`;
 console.log(serializedReport.trimEnd());
+if (outputPath) {
+  await mkdir(path.dirname(outputPath), { recursive: true });
+  await writeFile(outputPath, serializedReport, "utf8");
+}
 if (strict && blockerCount > 0) process.exit(2);

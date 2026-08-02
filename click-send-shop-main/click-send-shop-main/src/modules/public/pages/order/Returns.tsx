@@ -121,7 +121,7 @@ export default function Returns() {
       className="sf-next-page sf-next-route-page sf-next-returns-page"
       mainClassName="sf-next-account-main sm:px-4 xl:py-6"
     >
-      <main className="sf-next-returns-main">
+      <div className="sf-next-returns-main">
         <section className="sf-next-returns-hero sf-next-returns-hero--compact">
           <div className="sf-next-returns-hero__copy">
             <p>{copy.heroDescription}</p>
@@ -247,7 +247,7 @@ export default function Returns() {
             );
           })}
         </section>
-      </main>
+      </div>
 
       <ReturnApplySheet
         orderId={applyOrderId}

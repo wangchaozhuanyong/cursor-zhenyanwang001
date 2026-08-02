@@ -146,7 +146,7 @@ export default function Checkout() {
       contentClassName="sf-next-checkout-content"
       rightSlot={<NotificationIconButton unreadCount={checkout.unreadCount} onClick={checkout.goNotifications} />}
     >
-      <main className="w-full">
+      <div className="w-full">
         <DesktopPurchaseTwoColumn
           contentClassName="sf-next-checkout-flow"
           aside={
@@ -249,7 +249,7 @@ export default function Checkout() {
             />
 
             <div className="sf-next-checkout-card sf-next-checkout-summary sf-next-checkout-summary--mobile md:hidden">
-              <h3 className="sf-next-checkout-section-title">{t("checkout.amountDetail")}</h3>
+              <h2 className="sf-next-checkout-section-title">{t("checkout.amountDetail")}</h2>
               <CheckoutPriceSummary
                 rawTotal={checkout.rawTotal}
                 discountAmount={checkout.discountAmount}
@@ -266,7 +266,7 @@ export default function Checkout() {
               />
             </div>
         </DesktopPurchaseTwoColumn>
-      </main>
+      </div>
 
       <CheckoutSubmitBar
         finalTotal={checkout.finalTotal}

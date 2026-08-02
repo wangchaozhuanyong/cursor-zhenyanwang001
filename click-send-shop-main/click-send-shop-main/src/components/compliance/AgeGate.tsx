@@ -10,6 +10,12 @@ import {
   writeAgeGateConfirmation,
 } from "@/utils/ageGate";
 import { UnifiedButton } from "@/components/ui/UnifiedButton";
+import {
+  BLOCKING_ACCESS_GATE_PRIORITY,
+  BlockingAccessDialog,
+  BlockingAccessDialogDescription,
+  BlockingAccessDialogTitle,
+} from "@/components/compliance/BlockingAccessDialog";
 import { Check, LogOut, ShieldCheck } from "lucide-react";
 import "@/styles/fixed-storefront-overlays.css";
 
@@ -68,44 +74,41 @@ export default function AgeGate() {
   };
 
   return (
-    <div
-      className="sf-fixed-access-gate"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="age-gate-title"
+    <BlockingAccessDialog
+      gateId="age"
+      priority={BLOCKING_ACCESS_GATE_PRIORITY.age}
+      panelClassName="is-age-gate"
     >
-      <section className="sf-fixed-access-gate__panel is-age-gate">
-        <span className="sf-fixed-access-gate__icon" aria-hidden>
-          <ShieldCheck size={22} />
-        </span>
-        <div className="sf-fixed-access-gate__copy">
-          <p className="sf-fixed-access-gate__eyebrow">访问验证</p>
-          <h1 id="age-gate-title">年龄确认</h1>
-          <p>
-            本网站可能包含受年龄或当地法规限制的商品与服务信息，仅面向符合法定年龄要求的用户。
-            继续浏览即表示您确认已满 <strong>{minimumAge}</strong> 岁，并符合您所在地区的相关规定。
-          </p>
-          {complianceText ? <p className="sf-fixed-access-gate__notice">{complianceText}</p> : null}
-        </div>
-        <div className="sf-fixed-access-gate__actions">
-          <UnifiedButton
-            type="button"
-            onClick={handleDecline}
-            className="sf-fixed-overlay-action"
-          >
-            <LogOut size={16} aria-hidden />
-            离开网站
-          </UnifiedButton>
-          <UnifiedButton
-            type="button"
-            onClick={handleConfirm}
-            className="sf-fixed-overlay-action is-primary"
-          >
-            <Check size={16} aria-hidden />
-            我已满 {minimumAge} 岁
-          </UnifiedButton>
-        </div>
-      </section>
-    </div>
+      <span className="sf-fixed-access-gate__icon" aria-hidden>
+        <ShieldCheck size={22} />
+      </span>
+      <div className="sf-fixed-access-gate__copy">
+        <p className="sf-fixed-access-gate__eyebrow">访问验证</p>
+        <BlockingAccessDialogTitle>年龄确认</BlockingAccessDialogTitle>
+        <BlockingAccessDialogDescription>
+          本网站可能包含受年龄或当地法规限制的商品与服务信息，仅面向符合法定年龄要求的用户。
+          继续浏览即表示您确认已满 <strong>{minimumAge}</strong> 岁，并符合您所在地区的相关规定。
+        </BlockingAccessDialogDescription>
+        {complianceText ? <p className="sf-fixed-access-gate__notice">{complianceText}</p> : null}
+      </div>
+      <div className="sf-fixed-access-gate__actions">
+        <UnifiedButton
+          type="button"
+          onClick={handleDecline}
+          className="sf-fixed-overlay-action"
+        >
+          <LogOut size={16} aria-hidden />
+          离开网站
+        </UnifiedButton>
+        <UnifiedButton
+          type="button"
+          onClick={handleConfirm}
+          className="sf-fixed-overlay-action is-primary"
+        >
+          <Check size={16} aria-hidden />
+          我已满 {minimumAge} 岁
+        </UnifiedButton>
+      </div>
+    </BlockingAccessDialog>
   );
 }

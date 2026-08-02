@@ -23,6 +23,57 @@ function product(partial: Partial<Product>): Product {
 }
 
 describe("buildProductCardV2Model", () => {
+  it("prefers the product cover over the default variant image", () => {
+    const vm = buildProductCardV2Model(product({
+      cover_image: "/cover.jpg",
+      default_variant: {
+        id: "v1",
+        title: "默认",
+        price: 12,
+        stock: 9,
+        image_url: "/variant.jpg",
+        sort_order: 0,
+        is_default: true,
+      },
+    }));
+
+    expect(vm.imageUrl).toBe("/cover.jpg");
+  });
+
+  it("falls back to the default variant image when the cover is missing", () => {
+    const vm = buildProductCardV2Model(product({
+      cover_image: "",
+      default_variant: {
+        id: "v1",
+        title: "默认",
+        price: 12,
+        stock: 9,
+        image_url: "/variant.jpg",
+        sort_order: 0,
+        is_default: true,
+      },
+    }));
+
+    expect(vm.imageUrl).toBe("/variant.jpg");
+  });
+
+  it("keeps the image URL empty when the cover and default variant image are missing", () => {
+    const vm = buildProductCardV2Model(product({
+      cover_image: "",
+      default_variant: {
+        id: "v1",
+        title: "默认",
+        price: 12,
+        stock: 9,
+        image_url: "",
+        sort_order: 0,
+        is_default: true,
+      },
+    }));
+
+    expect(vm.imageUrl).toBe("");
+  });
+
   it("limits badges to two entries", () => {
     const vm = buildProductCardV2Model(product({
       active_activity: {
@@ -76,7 +127,7 @@ describe("buildProductCardV2Model", () => {
     expect(vm.soldOut).toBe(true);
   });
 
-  it("builds compact decision texts from sales, variants, and activity", () => {
+  it("prioritizes activity and variants in the compact decision row", () => {
     const vm = buildProductCardV2Model(product({
       sales_count: 1280,
       enabled_sku_count: 3,
@@ -86,7 +137,7 @@ describe("buildProductCardV2Model", () => {
     expect(vm.salesText).toBe("销量 1.3k+");
     expect(vm.variantText).toBe("3种规格");
     expect(vm.activityText).toBe("满100减10");
-    expect(vm.decisionTexts).toEqual(["销量 1.3k+", "3种规格", "满100减10"]);
+    expect(vm.decisionTexts).toEqual(["满100减10", "3种规格"]);
   });
 
   it("falls back to recent sales and flash sale inventory hints", () => {
@@ -112,6 +163,38 @@ describe("buildProductCardV2Model", () => {
     expect(vm.activityText).toBe("秒杀剩余 4");
     expect(vm.activityProgressPercent).toBe(60);
     expect(vm.activityProgressText).toBe("剩 4 · 限购 1");
-    expect(vm.decisionTexts).toEqual(["30天售 28", "秒杀剩余 4"]);
+    expect(vm.decisionTexts).toEqual(["秒杀剩余 4", "30天售 28"]);
+  });
+
+  it("uses custom tags when built-in badges do not fill both slots", () => {
+    const vm = buildProductCardV2Model(product({
+      is_hot: true,
+      tags: [
+        { id: "t1", name: "限定" },
+        { id: "t2", name: "会员专享" },
+      ],
+    }));
+
+    expect(vm.badges.map((badge) => badge.label)).toEqual(["热销", "限定"]);
+  });
+
+  it("renders legacy zero-price products as unavailable", () => {
+    const vm = buildProductCardV2Model(product({ price: 0, original_price: 30 }));
+
+    expect(vm.priceUnavailable).toBe(true);
+    expect(vm.priceText).toBe("价格待确认");
+    expect(vm.originalPriceText).toBeUndefined();
+  });
+
+  it("keeps a multi-SKU product available when any enabled SKU has stock", () => {
+    const vm = buildProductCardV2Model(product({
+      stock: 0,
+      variants: [
+        { id: "v1", title: "A", price: 12, stock: 0, enabled: true, sort_order: 0, is_default: true },
+        { id: "v2", title: "B", price: 15, stock: 3, enabled: true, sort_order: 1, is_default: false },
+      ],
+    }));
+
+    expect(vm.soldOut).toBe(false);
   });
 });

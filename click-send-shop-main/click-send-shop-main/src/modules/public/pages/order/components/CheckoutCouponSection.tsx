@@ -26,7 +26,7 @@ export function CheckoutCouponSection({
     <div className={SECTION_SHELL}>
       <div className="sf-next-checkout-card__head">
         <div>
-          <h3 className="sf-next-checkout-section-title">优惠</h3>
+          <h2 className="sf-next-checkout-section-title">优惠</h2>
         </div>
         {selectedCoupon ? (
           <span className="sf-next-checkout-used-status">

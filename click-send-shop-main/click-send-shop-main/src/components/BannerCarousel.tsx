@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
-import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { ArrowRight, ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
 import "@/styles/banner-carousel.css";
 import { useMotionConfig } from "@/modules/micro-interactions/hooks/useMotionConfig";
 import { trackEventLazy } from "@/services/trackEventLazy";
@@ -111,10 +111,8 @@ export default function BannerCarousel({
   const bannerDescription = banner?.description?.trim() || "";
   const bannerCopy = splitBannerDescription(bannerDescription);
   const bannerCtaText = banner ? getBannerCtaText(banner) : "";
-  const rootIsInteractive = Boolean(bannerLink && !bannerCtaText);
   const hasTextLayer = showCopyLayer && Boolean(bannerTitle || bannerDescription || bannerCtaText);
   const showControls = banners.length > 1;
-  const fallbackLabel = `${ariaLabelPrefix} ${safeIndex + 1}`;
   const nextBannerMedia = useMemo(
     () => (banners.length > 1
       ? getResponsiveBannerImageForBanner(banners[(safeIndex + 1) % banners.length])
@@ -128,6 +126,9 @@ export default function BannerCarousel({
   const [touchStart, setTouchStart] = useState(0);
   const [manualPauseUntil, setManualPauseUntil] = useState(0);
   const [hoverPaused, setHoverPaused] = useState(false);
+  const [focusPaused, setFocusPaused] = useState(false);
+  const [userPaused, setUserPaused] = useState(false);
+  const [announcement, setAnnouncement] = useState("");
   const [copyTone, setCopyTone] = useState<BannerCopyTone>("light");
   const [slideDirection, setSlideDirection] = useState<SlideDirection>("forward");
   const activeImageRef = useRef<HTMLImageElement | null>(null);
@@ -137,6 +138,8 @@ export default function BannerCarousel({
   const resolvedAutoRotateMs = typeof autoRotateMs === "number" && Number.isFinite(autoRotateMs)
     ? Math.min(20_000, Math.max(3_000, Math.trunc(Number(autoRotateMs))))
     : AUTO_ROTATE_MS;
+  const autoPlayLocked = paused || !motionEnabled;
+  const autoPlayPaused = autoPlayLocked || userPaused || focusPaused || hoverPaused;
 
   useEffect(() => {
     onActiveBannerChange?.(banner);
@@ -148,13 +151,18 @@ export default function BannerCarousel({
   }, [hasTextLayer]);
 
   const goTo = useCallback((index: number, userDriven = false, direction?: SlideDirection) => {
+    if (banners.length === 0) return;
     const nextIndex = Math.max(0, Math.min(index, banners.length - 1));
     setSlideDirection(direction ?? (nextIndex >= current ? "forward" : "backward"));
     setCurrent(nextIndex);
     if (userDriven) {
       setManualPauseUntil(Date.now() + USER_INTERACTION_PAUSE_MS);
+      const nextTitle = banners[nextIndex]?.title?.trim();
+      setAnnouncement(
+        `已切换到第 ${nextIndex + 1} 张，共 ${banners.length} 张${nextTitle ? `：${nextTitle}` : ""}`,
+      );
     }
-  }, [banners.length, current]);
+  }, [banners, current]);
 
   useEffect(() => {
     if (banners.length > 0 && current >= banners.length) {
@@ -210,7 +218,7 @@ export default function BannerCarousel({
   }, [nextBannerMedia, responsiveImage.preloadSrc]);
 
   useEffect(() => {
-    if (paused || hoverPaused || !motionEnabled || banners.length <= 1) return;
+    if (autoPlayPaused || banners.length <= 1) return;
     let delay = INITIAL_AUTO_ROTATE_DELAY_MS;
     let timer: ReturnType<typeof window.setTimeout>;
     const scheduleNext = () => {
@@ -225,7 +233,7 @@ export default function BannerCarousel({
     };
     scheduleNext();
     return () => window.clearTimeout(timer);
-  }, [banners.length, hoverPaused, manualPauseUntil, motionEnabled, paused, resolvedAutoRotateMs]);
+  }, [autoPlayPaused, banners.length, manualPauseUntil, resolvedAutoRotateMs]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     setTouchStart(e.touches[0].clientX);
@@ -241,6 +249,20 @@ export default function BannerCarousel({
         : (current - 1 + banners.length) % banners.length;
       goTo(nextIndex, true, direction);
     }
+  };
+
+  const handleBlurCapture = (event: React.FocusEvent<HTMLDivElement>) => {
+    const nextTarget = event.relatedTarget;
+    if (nextTarget instanceof Node && event.currentTarget.contains(nextTarget)) return;
+    setFocusPaused(false);
+  };
+
+  const handleToggleAutoPlay = () => {
+    if (autoPlayLocked) return;
+    const nextUserPaused = !userPaused;
+    setUserPaused(nextUserPaused);
+    if (!nextUserPaused) setManualPauseUntil(0);
+    setAnnouncement(nextUserPaused ? "轮播已暂停" : "轮播已继续");
   };
 
   if (banners.length === 0) {
@@ -278,12 +300,6 @@ export default function BannerCarousel({
       return;
     }
     navigate(bannerLink.startsWith("/") ? bannerLink : `/${bannerLink}`);
-  };
-
-  const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
-    if (!bannerLink || (e.key !== "Enter" && e.key !== " ")) return;
-    e.preventDefault();
-    handleOpenBanner();
   };
 
   const bannerImageNodes = banners.map((item, index) => {
@@ -344,23 +360,23 @@ export default function BannerCarousel({
 
   return (
     <div
-      className={`sf-next-banner-carousel sf-next-banner-carousel--showcase sf-next-banner-skin relative w-full overflow-hidden ${rootIsInteractive ? "cursor-pointer" : ""}`}
+      className="sf-next-banner-carousel sf-next-banner-carousel--showcase sf-next-banner-skin relative w-full overflow-hidden"
       data-banner-style={bannerStyle}
       data-theme-banner-style={bannerStyle}
       data-banner-has-copy={hasTextLayer ? "true" : "false"}
       data-copy-tone={hasTextLayer ? copyTone : undefined}
       data-slide-direction={slideDirection}
-      data-auto-paused={paused || hoverPaused || !motionEnabled ? "true" : "false"}
+      data-auto-paused={autoPlayPaused ? "true" : "false"}
       style={rootStyle}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       onMouseEnter={() => setHoverPaused(true)}
       onMouseLeave={() => setHoverPaused(false)}
-      onClick={rootIsInteractive ? handleOpenBanner : undefined}
-      onKeyDown={rootIsInteractive ? handleKeyDown : undefined}
-      role={rootIsInteractive ? "button" : undefined}
-      tabIndex={rootIsInteractive ? 0 : undefined}
-      aria-label={rootIsInteractive ? `打开轮播图：${bannerTitle || fallbackLabel}` : undefined}
+      onFocusCapture={() => setFocusPaused(true)}
+      onBlurCapture={handleBlurCapture}
+      role="region"
+      aria-roledescription="carousel"
+      aria-label={ariaLabelPrefix}
     >
       <div className="absolute inset-0">
         <div
@@ -421,9 +437,26 @@ export default function BannerCarousel({
       {showControls ? (
         <div
           className="sf-next-banner-indicators pointer-events-auto absolute z-30"
-          onClick={(e) => e.stopPropagation()}
+          role="group"
           aria-label="轮播图切换"
         >
+          <UnifiedButton
+            type="button"
+            onClick={handleToggleAutoPlay}
+            className="sf-next-banner-page-button sf-next-banner-playback-button"
+            aria-label={autoPlayLocked ? "自动轮播已关闭" : userPaused ? "继续轮播" : "暂停轮播"}
+            aria-pressed={autoPlayLocked ? undefined : userPaused}
+            disabled={autoPlayLocked}
+          >
+            {autoPlayLocked ? (
+              <Pause size={15} strokeWidth={1.75} aria-hidden="true" />
+            ) : userPaused ? (
+              <Play size={15} strokeWidth={1.75} aria-hidden="true" />
+            ) : (
+              <Pause size={15} strokeWidth={1.75} aria-hidden="true" />
+            )}
+            <span>{autoPlayLocked ? "已关闭" : userPaused ? "继续" : "暂停"}</span>
+          </UnifiedButton>
           <div className="sf-next-banner-pager">
             <UnifiedButton
               type="button"
@@ -436,7 +469,7 @@ export default function BannerCarousel({
             >
               <ChevronLeft size={17} strokeWidth={1.75} aria-hidden="true" />
             </UnifiedButton>
-            <span className="sf-next-banner-page-count" aria-live="polite">
+            <span className="sf-next-banner-page-count">
               <strong>{safeIndex + 1}</strong>
               <span aria-hidden="true">/</span>
               <span>{banners.length}</span>
@@ -455,6 +488,13 @@ export default function BannerCarousel({
           </div>
         </div>
       ) : null}
+      <span
+        className="sf-next-banner-announcement sr-only"
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        {announcement}
+      </span>
     </div>
   );
 }

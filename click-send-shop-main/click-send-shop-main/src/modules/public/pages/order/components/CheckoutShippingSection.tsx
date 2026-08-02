@@ -22,7 +22,7 @@ export function CheckoutShippingSection({
   return (
     <div className={SECTION_SHELL}>
       <div className="sf-next-checkout-card__head">
-        <h3 className="sf-next-checkout-section-title">配送与备注</h3>
+        <h2 className="sf-next-checkout-section-title">配送与备注</h2>
       </div>
       <div className="sf-next-checkout-shipping-fields">
         <div className="sf-next-checkout-shipping-row">

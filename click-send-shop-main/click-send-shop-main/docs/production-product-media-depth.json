@@ -1,8 +1,8 @@
 {
   "baseUrl": "https://damatong.net",
-  "checkedAt": "2026-07-29T20:04:43.792Z",
+  "checkedAt": "2026-08-02T07:05:42.190Z",
   "sourcePlan": "docs/production-content-repair-plan.json",
-  "sourcePlanCheckedAt": "2026-07-29T20:04:29.627Z",
+  "sourcePlanCheckedAt": "2026-08-02T07:05:36.842Z",
   "summary": {
     "auditedProducts": 41,
     "recoverable_product_media": 0,
@@ -11,7 +11,7 @@
     "review_description_media": 0,
     "truly_missing_public_media": 41,
     "detail_unavailable": 0,
-    "productsExposingInternalFields": 41
+    "productsExposingInternalFields": 0
   },
   "items": [
     {
@@ -33,16 +33,8 @@
         "description": []
       },
       "publicInternalFields": {
-        "product": [
-          "stock_warning_threshold",
-          "stock_lower_limit",
-          "stock_upper_limit"
-        ],
-        "variants": [
-          "cost_price",
-          "barcode",
-          "stock_warning_threshold"
-        ]
+        "product": [],
+        "variants": []
       },
       "variantCount": 2
     },
@@ -65,16 +57,8 @@
         "description": []
       },
       "publicInternalFields": {
-        "product": [
-          "stock_warning_threshold",
-          "stock_lower_limit",
-          "stock_upper_limit"
-        ],
-        "variants": [
-          "cost_price",
-          "barcode",
-          "stock_warning_threshold"
-        ]
+        "product": [],
+        "variants": []
       },
       "variantCount": 2
     },
@@ -97,16 +81,8 @@
         "description": []
       },
       "publicInternalFields": {
-        "product": [
-          "stock_warning_threshold",
-          "stock_lower_limit",
-          "stock_upper_limit"
-        ],
-        "variants": [
-          "cost_price",
-          "barcode",
-          "stock_warning_threshold"
-        ]
+        "product": [],
+        "variants": []
       },
       "variantCount": 2
     },
@@ -129,16 +105,8 @@
         "description": []
       },
       "publicInternalFields": {
-        "product": [
-          "stock_warning_threshold",
-          "stock_lower_limit",
-          "stock_upper_limit"
-        ],
-        "variants": [
-          "cost_price",
-          "barcode",
-          "stock_warning_threshold"
-        ]
+        "product": [],
+        "variants": []
       },
       "variantCount": 2
     },
@@ -161,16 +129,8 @@
         "description": []
       },
       "publicInternalFields": {
-        "product": [
-          "stock_warning_threshold",
-          "stock_lower_limit",
-          "stock_upper_limit"
-        ],
-        "variants": [
-          "cost_price",
-          "barcode",
-          "stock_warning_threshold"
-        ]
+        "product": [],
+        "variants": []
       },
       "variantCount": 2
     },
@@ -193,16 +153,8 @@
         "description": []
       },
       "publicInternalFields": {
-        "product": [
-          "stock_warning_threshold",
-          "stock_lower_limit",
-          "stock_upper_limit"
-        ],
-        "variants": [
-          "cost_price",
-          "barcode",
-          "stock_warning_threshold"
-        ]
+        "product": [],
+        "variants": []
       },
       "variantCount": 1
     },
@@ -225,16 +177,8 @@
         "description": []
       },
       "publicInternalFields": {
-        "product": [
-          "stock_warning_threshold",
-          "stock_lower_limit",
-          "stock_upper_limit"
-        ],
-        "variants": [
-          "cost_price",
-          "barcode",
-          "stock_warning_threshold"
-        ]
+        "product": [],
+        "variants": []
       },
       "variantCount": 2
     },
@@ -257,16 +201,8 @@
         "description": []
       },
       "publicInternalFields": {
-        "product": [
-          "stock_warning_threshold",
-          "stock_lower_limit",
-          "stock_upper_limit"
-        ],
-        "variants": [
-          "cost_price",
-          "barcode",
-          "stock_warning_threshold"
-        ]
+        "product": [],
+        "variants": []
       },
       "variantCount": 2
     },
@@ -289,16 +225,8 @@
         "description": []
       },
       "publicInternalFields": {
-        "product": [
-          "stock_warning_threshold",
-          "stock_lower_limit",
-          "stock_upper_limit"
-        ],
-        "variants": [
-          "cost_price",
-          "barcode",
-          "stock_warning_threshold"
-        ]
+        "product": [],
+        "variants": []
       },
       "variantCount": 2
     },
@@ -321,16 +249,8 @@
         "description": []
       },
       "publicInternalFields": {
-        "product": [
-          "stock_warning_threshold",
-          "stock_lower_limit",
-          "stock_upper_limit"
-        ],
-        "variants": [
-          "cost_price",
-          "barcode",
-          "stock_warning_threshold"
-        ]
+        "product": [],
+        "variants": []
       },
       "variantCount": 1
     },
@@ -353,16 +273,8 @@
         "description": []
       },
       "publicInternalFields": {
-        "product": [
-          "stock_warning_threshold",
-          "stock_lower_limit",
-          "stock_upper_limit"
-        ],
-        "variants": [
-          "cost_price",
-          "barcode",
-          "stock_warning_threshold"
-        ]
+        "product": [],
+        "variants": []
       },
       "variantCount": 2
     },
@@ -385,16 +297,8 @@
         "description": []
       },
       "publicInternalFields": {
-        "product": [
-          "stock_warning_threshold",
-          "stock_lower_limit",
-          "stock_upper_limit"
-        ],
-        "variants": [
-          "cost_price",
-          "barcode",
-          "stock_warning_threshold"
-        ]
+        "product": [],
+        "variants": []
       },
       "variantCount": 2
     },
@@ -417,16 +321,8 @@
         "description": []
       },
       "publicInternalFields": {
-        "product": [
-          "stock_warning_threshold",
-          "stock_lower_limit",
-          "stock_upper_limit"
-        ],
-        "variants": [
-          "cost_price",
-          "barcode",
-          "stock_warning_threshold"
-        ]
+        "product": [],
+        "variants": []
       },
       "variantCount": 2
     },
@@ -449,16 +345,8 @@
         "description": []
       },
       "publicInternalFields": {
-        "product": [
-          "stock_warning_threshold",
-          "stock_lower_limit",
-          "stock_upper_limit"
-        ],
-        "variants": [
-          "cost_price",
-          "barcode",
-          "stock_warning_threshold"
-        ]
+        "product": [],
+        "variants": []
       },
       "variantCount": 1
     },
@@ -481,16 +369,8 @@
         "description": []
       },
       "publicInternalFields": {
-        "product": [
-          "stock_warning_threshold",
-          "stock_lower_limit",
-          "stock_upper_limit"
-        ],
-        "variants": [
-          "cost_price",
-          "barcode",
-          "stock_warning_threshold"
-        ]
+        "product": [],
+        "variants": []
       },
       "variantCount": 2
     },
@@ -513,16 +393,8 @@
         "description": []
       },
       "publicInternalFields": {
-        "product": [
-          "stock_warning_threshold",
-          "stock_lower_limit",
-          "stock_upper_limit"
-        ],
-        "variants": [
-          "cost_price",
-          "barcode",
-          "stock_warning_threshold"
-        ]
+        "product": [],
+        "variants": []
       },
       "variantCount": 1
     },
@@ -545,16 +417,8 @@
         "description": []
       },
       "publicInternalFields": {
-        "product": [
-          "stock_warning_threshold",
-          "stock_lower_limit",
-          "stock_upper_limit"
-        ],
-        "variants": [
-          "cost_price",
-          "barcode",
-          "stock_warning_threshold"
-        ]
+        "product": [],
+        "variants": []
       },
       "variantCount": 1
     },
@@ -577,16 +441,8 @@
         "description": []
       },
       "publicInternalFields": {
-        "product": [
-          "stock_warning_threshold",
-          "stock_lower_limit",
-          "stock_upper_limit"
-        ],
-        "variants": [
-          "cost_price",
-          "barcode",
-          "stock_warning_threshold"
-        ]
+        "product": [],
+        "variants": []
       },
       "variantCount": 2
     },
@@ -609,16 +465,8 @@
         "description": []
       },
       "publicInternalFields": {
-        "product": [
-          "stock_warning_threshold",
-          "stock_lower_limit",
-          "stock_upper_limit"
-        ],
-        "variants": [
-          "cost_price",
-          "barcode",
-          "stock_warning_threshold"
-        ]
+        "product": [],
+        "variants": []
       },
       "variantCount": 2
     },
@@ -641,16 +489,8 @@
         "description": []
       },
       "publicInternalFields": {
-        "product": [
-          "stock_warning_threshold",
-          "stock_lower_limit",
-          "stock_upper_limit"
-        ],
-        "variants": [
-          "cost_price",
-          "barcode",
-          "stock_warning_threshold"
-        ]
+        "product": [],
+        "variants": []
       },
       "variantCount": 2
     },
@@ -673,16 +513,8 @@
         "description": []
       },
       "publicInternalFields": {
-        "product": [
-          "stock_warning_threshold",
-          "stock_lower_limit",
-          "stock_upper_limit"
-        ],
-        "variants": [
-          "cost_price",
-          "barcode",
-          "stock_warning_threshold"
-        ]
+        "product": [],
+        "variants": []
       },
       "variantCount": 2
     },
@@ -705,16 +537,8 @@
         "description": []
       },
       "publicInternalFields": {
-        "product": [
-          "stock_warning_threshold",
-          "stock_lower_limit",
-          "stock_upper_limit"
-        ],
-        "variants": [
-          "cost_price",
-          "barcode",
-          "stock_warning_threshold"
-        ]
+        "product": [],
+        "variants": []
       },
       "variantCount": 2
     },
@@ -737,16 +561,8 @@
         "description": []
       },
       "publicInternalFields": {
-        "product": [
-          "stock_warning_threshold",
-          "stock_lower_limit",
-          "stock_upper_limit"
-        ],
-        "variants": [
-          "cost_price",
-          "barcode",
-          "stock_warning_threshold"
-        ]
+        "product": [],
+        "variants": []
       },
       "variantCount": 2
     },
@@ -769,16 +585,8 @@
         "description": []
       },
       "publicInternalFields": {
-        "product": [
-          "stock_warning_threshold",
-          "stock_lower_limit",
-          "stock_upper_limit"
-        ],
-        "variants": [
-          "cost_price",
-          "barcode",
-          "stock_warning_threshold"
-        ]
+        "product": [],
+        "variants": []
       },
       "variantCount": 2
     },
@@ -801,16 +609,8 @@
         "description": []
       },
       "publicInternalFields": {
-        "product": [
-          "stock_warning_threshold",
-          "stock_lower_limit",
-          "stock_upper_limit"
-        ],
-        "variants": [
-          "cost_price",
-          "barcode",
-          "stock_warning_threshold"
-        ]
+        "product": [],
+        "variants": []
       },
       "variantCount": 1
     },
@@ -833,16 +633,8 @@
         "description": []
       },
       "publicInternalFields": {
-        "product": [
-          "stock_warning_threshold",
-          "stock_lower_limit",
-          "stock_upper_limit"
-        ],
-        "variants": [
-          "cost_price",
-          "barcode",
-          "stock_warning_threshold"
-        ]
+        "product": [],
+        "variants": []
       },
       "variantCount": 2
     },
@@ -865,16 +657,8 @@
         "description": []
       },
       "publicInternalFields": {
-        "product": [
-          "stock_warning_threshold",
-          "stock_lower_limit",
-          "stock_upper_limit"
-        ],
-        "variants": [
-          "cost_price",
-          "barcode",
-          "stock_warning_threshold"
-        ]
+        "product": [],
+        "variants": []
       },
       "variantCount": 1
     },
@@ -897,16 +681,8 @@
         "description": []
       },
       "publicInternalFields": {
-        "product": [
-          "stock_warning_threshold",
-          "stock_lower_limit",
-          "stock_upper_limit"
-        ],
-        "variants": [
-          "cost_price",
-          "barcode",
-          "stock_warning_threshold"
-        ]
+        "product": [],
+        "variants": []
       },
       "variantCount": 2
     },
@@ -929,16 +705,8 @@
         "description": []
       },
       "publicInternalFields": {
-        "product": [
-          "stock_warning_threshold",
-          "stock_lower_limit",
-          "stock_upper_limit"
-        ],
-        "variants": [
-          "cost_price",
-          "barcode",
-          "stock_warning_threshold"
-        ]
+        "product": [],
+        "variants": []
       },
       "variantCount": 2
     },
@@ -961,16 +729,8 @@
         "description": []
       },
       "publicInternalFields": {
-        "product": [
-          "stock_warning_threshold",
-          "stock_lower_limit",
-          "stock_upper_limit"
-        ],
-        "variants": [
-          "cost_price",
-          "barcode",
-          "stock_warning_threshold"
-        ]
+        "product": [],
+        "variants": []
       },
       "variantCount": 2
     },
@@ -993,16 +753,8 @@
         "description": []
       },
       "publicInternalFields": {
-        "product": [
-          "stock_warning_threshold",
-          "stock_lower_limit",
-          "stock_upper_limit"
-        ],
-        "variants": [
-          "cost_price",
-          "barcode",
-          "stock_warning_threshold"
-        ]
+        "product": [],
+        "variants": []
       },
       "variantCount": 2
     },
@@ -1025,16 +777,8 @@
         "description": []
       },
       "publicInternalFields": {
-        "product": [
-          "stock_warning_threshold",
-          "stock_lower_limit",
-          "stock_upper_limit"
-        ],
-        "variants": [
-          "cost_price",
-          "barcode",
-          "stock_warning_threshold"
-        ]
+        "product": [],
+        "variants": []
       },
       "variantCount": 2
     },
@@ -1057,16 +801,8 @@
         "description": []
       },
       "publicInternalFields": {
-        "product": [
-          "stock_warning_threshold",
-          "stock_lower_limit",
-          "stock_upper_limit"
-        ],
-        "variants": [
-          "cost_price",
-          "barcode",
-          "stock_warning_threshold"
-        ]
+        "product": [],
+        "variants": []
       },
       "variantCount": 2
     },
@@ -1089,16 +825,8 @@
         "description": []
       },
       "publicInternalFields": {
-        "product": [
-          "stock_warning_threshold",
-          "stock_lower_limit",
-          "stock_upper_limit"
-        ],
-        "variants": [
-          "cost_price",
-          "barcode",
-          "stock_warning_threshold"
-        ]
+        "product": [],
+        "variants": []
       },
       "variantCount": 1
     },
@@ -1121,16 +849,8 @@
         "description": []
       },
       "publicInternalFields": {
-        "product": [
-          "stock_warning_threshold",
-          "stock_lower_limit",
-          "stock_upper_limit"
-        ],
-        "variants": [
-          "cost_price",
-          "barcode",
-          "stock_warning_threshold"
-        ]
+        "product": [],
+        "variants": []
       },
       "variantCount": 1
     },
@@ -1153,16 +873,8 @@
         "description": []
       },
       "publicInternalFields": {
-        "product": [
-          "stock_warning_threshold",
-          "stock_lower_limit",
-          "stock_upper_limit"
-        ],
-        "variants": [
-          "cost_price",
-          "barcode",
-          "stock_warning_threshold"
-        ]
+        "product": [],
+        "variants": []
       },
       "variantCount": 2
     },
@@ -1185,16 +897,8 @@
         "description": []
       },
       "publicInternalFields": {
-        "product": [
-          "stock_warning_threshold",
-          "stock_lower_limit",
-          "stock_upper_limit"
-        ],
-        "variants": [
-          "cost_price",
-          "barcode",
-          "stock_warning_threshold"
-        ]
+        "product": [],
+        "variants": []
       },
       "variantCount": 1
     },
@@ -1217,16 +921,8 @@
         "description": []
       },
       "publicInternalFields": {
-        "product": [
-          "stock_warning_threshold",
-          "stock_lower_limit",
-          "stock_upper_limit"
-        ],
-        "variants": [
-          "cost_price",
-          "barcode",
-          "stock_warning_threshold"
-        ]
+        "product": [],
+        "variants": []
       },
       "variantCount": 1
     },
@@ -1249,16 +945,8 @@
         "description": []
       },
       "publicInternalFields": {
-        "product": [
-          "stock_warning_threshold",
-          "stock_lower_limit",
-          "stock_upper_limit"
-        ],
-        "variants": [
-          "cost_price",
-          "barcode",
-          "stock_warning_threshold"
-        ]
+        "product": [],
+        "variants": []
       },
       "variantCount": 1
     },
@@ -1281,16 +969,8 @@
         "description": []
       },
       "publicInternalFields": {
-        "product": [
-          "stock_warning_threshold",
-          "stock_lower_limit",
-          "stock_upper_limit"
-        ],
-        "variants": [
-          "cost_price",
-          "barcode",
-          "stock_warning_threshold"
-        ]
+        "product": [],
+        "variants": []
       },
       "variantCount": 2
     },
@@ -1313,16 +993,8 @@
         "description": []
       },
       "publicInternalFields": {
-        "product": [
-          "stock_warning_threshold",
-          "stock_lower_limit",
-          "stock_upper_limit"
-        ],
-        "variants": [
-          "cost_price",
-          "barcode",
-          "stock_warning_threshold"
-        ]
+        "product": [],
+        "variants": []
       },
       "variantCount": 2
     }

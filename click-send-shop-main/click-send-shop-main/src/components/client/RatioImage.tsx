@@ -155,7 +155,7 @@ export default function RatioImage({
       ) : (
         <div className={cn("sf-next-ratio-image__placeholder", placeholderClassName)}>
           <ImageOff size={18} aria-hidden />
-          <span>暂无图片</span>
+          <span>{hasError ? "图片暂不可用" : "图片待补充"}</span>
         </div>
       )}
     </div>

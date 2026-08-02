@@ -116,6 +116,8 @@ describe("fixed checkout design", () => {
     expect(view.textContent).toContain("共 2 件");
     expect(view.textContent).toContain("规格：榛果风味");
     expect(view.textContent).toContain("RM 59.80");
+    expect(view.querySelector("h2")?.textContent).toBe("商品信息");
+    expect(view.querySelector("h3")).not.toBeInTheDocument();
     expect(view.querySelector(".rounded-2xl")).not.toBeInTheDocument();
   });
 });

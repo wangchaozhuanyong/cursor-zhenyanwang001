@@ -297,6 +297,7 @@ export default function Search() {
       <main className="sf-next-search-body mx-auto w-full max-w-screen-xl">
         {shouldShowDiscovery ? (
           <div className="sf-next-search-discovery-layout">
+            <h1 className="sr-only">商品搜索</h1>
             <div className="sf-next-search-discovery-nav">
               <SearchHistorySection
                 items={searchHistory}

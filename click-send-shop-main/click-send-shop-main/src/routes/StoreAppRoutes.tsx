@@ -7,6 +7,7 @@ import AppBootReady from "@/components/AppBootReady";
 import RouteSeoGuard from "@/components/RouteSeoGuard";
 import RouteBackTracker from "@/components/RouteBackTracker";
 import AgeGate from "@/components/compliance/AgeGate";
+import { BlockingAccessDialogProvider } from "@/components/compliance/BlockingAccessDialog";
 import LanguageGate from "@/components/LanguageGate";
 import FrontLayout from "@/layouts/FrontLayout";
 import BottomNav from "@/components/BottomNav";
@@ -570,8 +571,10 @@ function MainStoreRoutes() {
             <AppScopeSync />
             <RouteBackTracker />
             <RouteSeoGuard />
-            <LanguageGate />
-            <AgeGate />
+            <BlockingAccessDialogProvider>
+              <LanguageGate />
+              <AgeGate />
+            </BlockingAccessDialogProvider>
             {ENABLE_LEGACY_CARD_OVERLAP_FIX ? <StoreCardOverlapFix /> : null}
             <AppBootReady />
             <StorefrontMotionBoundary>

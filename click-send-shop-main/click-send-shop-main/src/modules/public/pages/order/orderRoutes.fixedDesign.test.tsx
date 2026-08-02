@@ -105,6 +105,8 @@ describe("fixed order route design", () => {
     expect(view.textContent).not.toContain("售后进度中心");
     expect(view.querySelector(".sf-next-returns-summary")).not.toBeInTheDocument();
     expect(view.querySelector(".sf-next-returns-tabs")).toBeInTheDocument();
+    expect(view.querySelectorAll("main")).toHaveLength(1);
+    expect(view.querySelectorAll("h1")).toHaveLength(1);
   });
 
   it("uses the compact pending-review summary without the redundant guide", async () => {

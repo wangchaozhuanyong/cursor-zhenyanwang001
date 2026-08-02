@@ -187,9 +187,9 @@ export default function OrderLogistics() {
             </div>
             <div className="min-w-0 flex-1">
               <p className="sf-next-logistics-eyebrow">{copy.currentStatus}</p>
-              <h1 className="sf-next-logistics-title">
+              <h2 className="sf-next-logistics-title">
                 {snapshot?.statusLabel || getBuyerOrderStatusTextLocalized(order, locale)}
-              </h1>
+              </h2>
               <p className="sf-next-logistics-subtitle">
                 {snapshot?.exceptionMessage || copy.subtitle}
               </p>

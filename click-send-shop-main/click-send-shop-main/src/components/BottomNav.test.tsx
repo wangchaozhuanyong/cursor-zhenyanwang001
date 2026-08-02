@@ -6,6 +6,14 @@ import BottomNav from "./BottomNav";
 import { initializeStorefrontMotionLocation } from "@/components/storefront-motion/useStorefrontMotionState";
 import { PublicLocaleProvider } from "@/i18n/PublicLocaleProvider";
 
+vi.mock("@/contexts/ThemeRuntimeProvider", () => ({
+  useThemeRuntime: () => ({
+    themeConfig: {
+      navStyle: "clean",
+    },
+  }),
+}));
+
 vi.mock("@/hooks/useSiteCapabilities", () => ({
   useSiteCapabilities: () => ({
     mallEnabled: true,

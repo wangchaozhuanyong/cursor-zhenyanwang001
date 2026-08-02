@@ -1,36 +1,19 @@
-import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { createContext, useContext, useLayoutEffect, useMemo } from "react";
 import type { ReactNode } from "react";
-import {
-  ADMIN_SAFE_THEME_OVERRIDES,
-  DEFAULT_RUNTIME_THEME_SKIN,
-  DEFAULT_SKIN_ID,
-} from "@/constants/themeRuntimeDefaults";
+import { DEFAULT_RUNTIME_THEME_SKIN } from "@/constants/themeRuntimeDefaults";
 import {
   CURATED_LIFE_CONFIG,
   CURATED_LIFE_SKIN,
   CURATED_LIFE_SKIN_ID,
 } from "@/constants/themePresets";
-import {
-  THEME_PREVIEW_READY,
-  getThemePreviewParentOrigin,
-  isThemePreviewApplyMessage,
-  isThemePreviewFrame,
-} from "@/lib/themePreviewBridge";
-import { THEME_REVISION_KEY } from "@/lib/themeRevision";
 import { resolvePublicThemeFromSkin } from "@/lib/publicTheme";
-import { normalizeMediaUrls } from "@/utils/mediaUrl";
 import { getClientDesignStyleBySkinId } from "@/utils/clientDesignStyle";
 import { buildStorefrontNextSkinTokens } from "@/utils/storefrontSkinTokens";
 import { generateThemePalette } from "@/utils/themeContrast";
-import { readThemePreviewDraftToken, readThemePreviewSkinId } from "@/utils/themePreviewParams";
-import type { ThemeConfig, ThemeHolidayRule, ThemeSkin } from "@/types/theme";
-
-type ThemeMode = "light" | "dark";
-
-const SKINS_CACHE_KEY = "theme_cached_skins";
+import type { ThemeConfig, ThemeSkin } from "@/types/theme";
 
 type ThemeContextValue = {
-  theme: ThemeMode;
+  theme: "light";
   skinId: string;
   skins: ThemeSkin[];
   switchableSkins: ThemeSkin[];
@@ -42,47 +25,35 @@ type ThemeContextValue = {
 };
 
 const ThemeRuntimeContext = createContext<ThemeContextValue | null>(null);
+const FIXED_SKINS = [CURATED_LIFE_SKIN];
+const EMPTY_SKINS: ThemeSkin[] = [];
+const NOOP_SET_SKIN = () => {};
 
-function isAdminScope() {
-  return typeof window !== "undefined" && window.location.pathname.startsWith("/admin");
+function normalizeThemeConfig(input: Partial<ThemeConfig> | null | undefined): ThemeConfig {
+  const raw = input ?? {};
+  return {
+    ...DEFAULT_RUNTIME_THEME_SKIN.config,
+    ...raw,
+    texture: {
+      ...DEFAULT_RUNTIME_THEME_SKIN.config.texture,
+      ...(raw.texture ?? {}),
+    },
+    festival: {
+      ...DEFAULT_RUNTIME_THEME_SKIN.config.festival,
+      ...(raw.festival ?? {}),
+    },
+    adminThemeMode: "fixed",
+  };
 }
 
-function isStorefrontNextScope(root: HTMLElement, inAdmin: boolean) {
-  if (inAdmin) return false;
-  return root.getAttribute("data-storefront-ui") === "next" || root.getAttribute("data-app-scope") === "store";
-}
-
-function applyStorefrontNextThemeOverrides(
-  root: HTMLElement,
-  inAdmin: boolean,
-  config: ThemeConfig,
-  palette: Record<string, string>,
-) {
-  if (!isStorefrontNextScope(root, inAdmin)) return;
-  Object.entries(buildStorefrontNextSkinTokens(config, palette)).forEach(([key, value]) => {
-    root.style.setProperty(key, value);
-  });
-}
-
-function resolveThemeConfigForScope(config: ThemeConfig, inAdmin: boolean): ThemeConfig {
-  if (!inAdmin) return normalizeThemeConfig(CURATED_LIFE_CONFIG);
-  return normalizeThemeConfig({ ...config, ...ADMIN_SAFE_THEME_OVERRIDES });
-}
-
-function applyThemeDataAttributes(root: HTMLElement, config: ThemeConfig, skin?: ThemeSkin | null) {
+function applyThemeDataAttributes(root: HTMLElement, config: ThemeConfig, skin: ThemeSkin) {
   root.setAttribute("data-public-theme", resolvePublicThemeFromSkin(skin, config));
   root.setAttribute("data-admin-theme", config.adminThemeMode);
-  if (skin?.id) {
-    root.setAttribute("data-theme-skin-id", skin.id);
-    root.setAttribute("data-theme", skin.id);
-  } else {
-    root.removeAttribute("data-theme-skin-id");
-    root.removeAttribute("data-theme");
-  }
-  root.setAttribute("data-client-design-style", getClientDesignStyleBySkinId(skin?.id));
-  if (skin?.category) root.setAttribute("data-theme-category", skin.category);
-  else root.removeAttribute("data-theme-category");
-  if (skin?.sceneTag) root.setAttribute("data-theme-scene", skin.sceneTag);
+  root.setAttribute("data-theme-skin-id", skin.id);
+  root.setAttribute("data-theme", skin.id);
+  root.setAttribute("data-client-design-style", getClientDesignStyleBySkinId(skin.id));
+  root.setAttribute("data-theme-category", skin.category);
+  if (skin.sceneTag) root.setAttribute("data-theme-scene", skin.sceneTag);
   else root.removeAttribute("data-theme-scene");
   root.setAttribute("data-theme-button-style", config.buttonStyle);
   root.setAttribute("data-theme-nav-style", config.navStyle);
@@ -114,383 +85,45 @@ function applyThemeDataAttributes(root: HTMLElement, config: ThemeConfig, skin?:
   root.setAttribute("data-festival-mode", config.festival.mode);
 }
 
-function normalizeThemeConfig(input: Partial<ThemeConfig> | null | undefined): ThemeConfig {
-  const raw = input ?? {};
-  return {
-    ...DEFAULT_RUNTIME_THEME_SKIN.config,
-    ...raw,
-    texture: {
-      ...DEFAULT_RUNTIME_THEME_SKIN.config.texture,
-      ...(raw.texture ?? {}),
-    },
-    festival: {
-      ...DEFAULT_RUNTIME_THEME_SKIN.config.festival,
-      ...(raw.festival ?? {}),
-    },
-    adminThemeMode: "fixed",
-  };
+function applyStorefrontTheme(root: HTMLElement, config: ThemeConfig, skin: ThemeSkin) {
+  root.classList.remove("dark");
+  root.setAttribute("data-theme-ready", "true");
+  root.setAttribute("data-theme-synced", "true");
+  applyThemeDataAttributes(root, config, skin);
+
+  const palette = generateThemePalette(config);
+  Object.entries(palette).forEach(([key, value]) => root.style.setProperty(key, value));
+  Object.entries(buildStorefrontNextSkinTokens(config, palette)).forEach(([key, value]) => {
+    root.style.setProperty(key, value);
+  });
 }
 
-function normalizeRuntimeSkin(input: Partial<ThemeSkin> & { id?: string; name?: string } | null | undefined): ThemeSkin | null {
-  if (!input?.id) return null;
-  const id = String(input.id).trim();
-  if (!id) return null;
+function buildContextValue(config: ThemeConfig, skinId: string): ThemeContextValue {
   return {
-    id,
-    themeKey: typeof input.themeKey === "string" && input.themeKey.trim() ? input.themeKey.trim() : id,
-    name: typeof input.name === "string" && input.name.trim() ? input.name.trim() : id,
-    description: typeof input.description === "string" && input.description.trim() ? input.description.trim() : undefined,
-    category: typeof input.category === "string" && input.category.trim() ? input.category.trim() : DEFAULT_RUNTIME_THEME_SKIN.category,
-    sceneTag: input.sceneTag,
-    type: input.type,
-    status: input.status,
-    isDefault: input.isDefault === true,
-    startAt: input.startAt,
-    endAt: input.endAt,
-    priority: input.priority,
-    updatedAt: input.updatedAt,
-    config: normalizeThemeConfig(input.config),
+    theme: "light",
+    skinId,
+    skins: FIXED_SKINS,
+    switchableSkins: EMPTY_SKINS,
+    pickerSkins: EMPTY_SKINS,
+    setSkinId: NOOP_SET_SKIN,
+    themeConfig: config,
+    themeReady: true,
+    themeSynced: true,
   };
-}
-
-function normalizeRuntimeThemePayload(payload: {
-  defaultSkinId?: string;
-  activeSkinId?: string;
-  runtimeSkinId?: string;
-  holidaySkinId?: string;
-  holidayRules?: ThemeHolidayRule[];
-  skins?: Array<Partial<ThemeSkin> & { id?: string; name?: string }>;
-} | null | undefined) {
-  const incoming = payload ?? {};
-  const skins = (incoming.skins ?? [])
-    .map((skin) => normalizeRuntimeSkin(skin))
-    .filter((skin): skin is ThemeSkin => Boolean(skin));
-  if (!skins.some((skin) => skin.id === DEFAULT_SKIN_ID)) {
-    skins.unshift(DEFAULT_RUNTIME_THEME_SKIN);
-  }
-  if (!skins.some((skin) => skin.id === CURATED_LIFE_SKIN_ID)) {
-    const previewSkin = normalizeRuntimeSkin(CURATED_LIFE_SKIN);
-    if (previewSkin) skins.push(previewSkin);
-  }
-  const hasSkin = (id: string | undefined | null) => !!id && skins.some((skin) => skin.id === id);
-  const firstDefault = skins.find((skin) => skin.isDefault && skin.status !== "disabled");
-  const defaultSkinId = hasSkin(incoming.defaultSkinId)
-    ? String(incoming.defaultSkinId)
-    : firstDefault?.id ?? DEFAULT_SKIN_ID;
-  const activeSkinId = hasSkin(incoming.activeSkinId) ? String(incoming.activeSkinId) : defaultSkinId;
-  const runtimeSkinId = hasSkin(incoming.runtimeSkinId) ? String(incoming.runtimeSkinId) : activeSkinId;
-  const holidaySkinId = hasSkin(incoming.holidaySkinId) ? String(incoming.holidaySkinId) : activeSkinId;
-  return {
-    defaultSkinId,
-    activeSkinId,
-    runtimeSkinId,
-    holidaySkinId,
-    holidayRules: incoming.holidayRules ?? [],
-    skins,
-  };
-}
-
-function chooseRuntimeSkin(normalized: ReturnType<typeof normalizeRuntimeThemePayload>) {
-  const runtimeSkinId = normalized.runtimeSkinId;
-  const fallbackId = normalized.activeSkinId || normalized.defaultSkinId || DEFAULT_SKIN_ID;
-  const chosen = runtimeSkinId || fallbackId;
-  return normalized.skins.some((skin) => skin.id === chosen) ? chosen : fallbackId;
 }
 
 export function ThemeRuntimeProvider({ children }: { children: ReactNode }) {
-  const initial = getInitialThemeState();
-  const [skins, setSkins] = useState<ThemeSkin[]>(initial.skins);
-  const [skinId, setSkinIdState] = useState<string>(initial.skinId);
-  const [themeConfig, setThemeConfig] = useState<ThemeConfig>(initial.themeConfig);
-  const [themeReady, setThemeReady] = useState(initial.ready);
-  const [themeSynced, setThemeSynced] = useState(false);
-  const [inAdminScope, setInAdminScope] = useState(() => isAdminScope());
-  const [urlSkinId, setUrlSkinId] = useState(() => readThemePreviewSkinId());
-  const [previewOverride, setPreviewOverride] = useState<{ config: ThemeConfig; skinKey?: string } | null>(null);
-  const previewFrame = useMemo(() => isThemePreviewFrame(), []);
-
-  useEffect(() => {
-    const syncScope = () => setInAdminScope(isAdminScope());
-    syncScope();
-    window.addEventListener("app:scope-changed", syncScope);
-    return () => window.removeEventListener("app:scope-changed", syncScope);
-  }, []);
-
-  useEffect(() => {
-    const syncUrlSkin = () => setUrlSkinId(readThemePreviewSkinId());
-    syncUrlSkin();
-    window.addEventListener("popstate", syncUrlSkin);
-    window.addEventListener("app:scope-changed", syncUrlSkin);
-    return () => {
-      window.removeEventListener("popstate", syncUrlSkin);
-      window.removeEventListener("app:scope-changed", syncUrlSkin);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!previewFrame) return undefined;
-    const targetOrigin = getThemePreviewParentOrigin();
-    const notifyReady = () => {
-      window.parent?.postMessage({ type: THEME_PREVIEW_READY }, targetOrigin);
-    };
-    const onPreviewMessage = (event: MessageEvent) => {
-      if (event.origin !== targetOrigin) return;
-      if (!isThemePreviewApplyMessage(event.data)) return;
-      setPreviewOverride({
-        config: normalizeThemeConfig(event.data.config),
-        skinKey: event.data.skinKey,
-      });
-      setThemeReady(true);
-      setThemeSynced(true);
-    };
-
-    window.addEventListener("message", onPreviewMessage);
-    notifyReady();
-    const readyTimer = window.setTimeout(notifyReady, 120);
-    return () => {
-      window.clearTimeout(readyTimer);
-      window.removeEventListener("message", onPreviewMessage);
-    };
-  }, [previewFrame]);
-
-  const loadTheme = useCallback(async () => {
-    if (!isAdminScope()) {
-      const fixedSkin = normalizeRuntimeSkin(CURATED_LIFE_SKIN) ?? CURATED_LIFE_SKIN;
-      setSkins([fixedSkin]);
-      setSkinIdState(CURATED_LIFE_SKIN_ID);
-      setThemeConfig(normalizeThemeConfig(CURATED_LIFE_CONFIG));
-      setThemeReady(true);
-      setThemeSynced(true);
-      return;
-    }
-
-    const base = import.meta.env.VITE_API_BASE_URL ?? "/api";
-    try {
-      const response = await fetch(`${base}/theme/skins?_=${Date.now()}`, {
-        cache: "no-store",
-        credentials: "same-origin",
-        headers: { Accept: "application/json" },
-      });
-      if (!response.ok) throw new Error(`Request failed (${response.status})`);
-      const body = (await response.json()) as {
-        code?: number;
-        message?: string;
-        data?: unknown;
-        traceId?: string;
-      };
-      if (typeof body.code === "number" && body.code !== 0) {
-        throw new Error(body.message || "Load theme skins failed");
-      }
-
-      const raw = normalizeMediaUrls((body.data ?? {}) as object, base) as {
-        defaultSkinId?: string;
-        activeSkinId?: string;
-        runtimeSkinId?: string;
-        holidaySkinId?: string;
-        holidayRules?: ThemeHolidayRule[];
-        skins?: ThemeSkin[];
-      };
-      const draftToken = readThemePreviewDraftToken();
-      if (draftToken) {
-        const draftResponse = await fetch(`${base}/theme/preview/${encodeURIComponent(draftToken)}?_=${Date.now()}`, {
-          cache: "no-store",
-          credentials: "same-origin",
-          headers: { Accept: "application/json" },
-        });
-        if (draftResponse.ok) {
-          const draftBody = (await draftResponse.json()) as {
-            code?: number;
-            data?: { themeKey?: string; name?: string; config?: ThemeConfig };
-          };
-          if ((draftBody.code ?? 0) === 0 && draftBody.data?.themeKey && draftBody.data.config) {
-            const draftSkin: ThemeSkin = {
-              id: draftBody.data.themeKey,
-              themeKey: draftBody.data.themeKey,
-              name: draftBody.data.name || "主题预览草稿",
-              category: "预览草稿",
-              sceneTag: "mall",
-              type: "evergreen",
-              status: "draft",
-              config: normalizeThemeConfig(draftBody.data.config),
-            };
-            raw.skins = [draftSkin, ...(raw.skins || []).filter((skin) => skin.id !== draftSkin.id)];
-            raw.activeSkinId = draftSkin.id;
-            raw.runtimeSkinId = draftSkin.id;
-          }
-        }
-      }
-      const normalized = normalizeRuntimeThemePayload(raw);
-      const chosen = chooseRuntimeSkin(normalized);
-      const active = normalized.skins.find((skin) => skin.id === chosen) ?? normalized.skins[0];
-
-      setSkins(normalized.skins);
-      setSkinIdState(chosen);
-      setThemeConfig(normalizeThemeConfig(active?.config));
-      setThemeReady(true);
-      setThemeSynced(true);
-
-      if (typeof window !== "undefined") {
-        localStorage.setItem(SKINS_CACHE_KEY, JSON.stringify(normalized.skins));
-      }
-    } catch (error) {
-      const fallback = normalizeRuntimeThemePayload({
-        defaultSkinId: DEFAULT_SKIN_ID,
-        activeSkinId: DEFAULT_SKIN_ID,
-        skins: [DEFAULT_RUNTIME_THEME_SKIN],
-      });
-      setSkins(fallback.skins);
-      setSkinIdState(DEFAULT_SKIN_ID);
-      setThemeConfig(normalizeThemeConfig(DEFAULT_RUNTIME_THEME_SKIN.config));
-      setThemeReady(true);
-      setThemeSynced(true);
-      console.warn("[theme] failed to sync skins, fallback applied", error);
-    }
-  }, []);
-
-  useEffect(() => {
-    void loadTheme();
-  }, [loadTheme]);
-
-  useEffect(() => {
-    if (!inAdminScope) return undefined;
-    const onBump = () => void loadTheme();
-    const onStorage = (event: StorageEvent) => {
-      if (event.key === THEME_REVISION_KEY) onBump();
-    };
-    window.addEventListener("app:theme-updated", onBump);
-    window.addEventListener("storage", onStorage);
-    return () => {
-      window.removeEventListener("app:theme-updated", onBump);
-      window.removeEventListener("storage", onStorage);
-    };
-  }, [inAdminScope, loadTheme]);
-
-  useEffect(() => {
-    const active = skins.find((skin) => skin.id === skinId) ?? skins[0];
-    setThemeConfig(normalizeThemeConfig(active?.config));
-  }, [skinId, skins]);
-
-  const urlSkin = useMemo(
-    () => (urlSkinId ? skins.find((skin) => skin.id === urlSkinId) ?? null : null),
-    [skins, urlSkinId],
+  const themeConfig = useMemo(() => normalizeThemeConfig(CURATED_LIFE_CONFIG), []);
+  const value = useMemo(
+    () => buildContextValue(themeConfig, CURATED_LIFE_SKIN_ID),
+    [themeConfig],
   );
-  const effectiveThemeConfig = previewOverride?.config ?? urlSkin?.config ?? themeConfig;
-  const effectiveSkinId = previewOverride?.skinKey ? `preview-${previewOverride.skinKey}` : urlSkin?.id ?? skinId;
-
-  const appliedConfig = useMemo(
-    () => resolveThemeConfigForScope(effectiveThemeConfig, inAdminScope),
-    [effectiveThemeConfig, inAdminScope],
-  );
-
-  const appliedSkin = useMemo(() => {
-    if (!inAdminScope) return normalizeRuntimeSkin(CURATED_LIFE_SKIN);
-    const active = skins.find((skin) => skin.id === effectiveSkinId) ?? skins.find((skin) => skin.id === skinId) ?? skins[0] ?? null;
-    if (!previewOverride) return active;
-    return {
-      ...(active ?? {
-        id: effectiveSkinId,
-        name: "Theme preview draft",
-        config: previewOverride.config,
-      }),
-      id: effectiveSkinId,
-      name: active?.name ? `${active.name} · 预览草稿` : "预览草稿",
-      category: active?.category ?? (inAdminScope ? "admin" : "preview"),
-      sceneTag: inAdminScope ? "admin" : active?.sceneTag,
-      config: previewOverride.config,
-    } satisfies ThemeSkin;
-  }, [effectiveSkinId, inAdminScope, previewOverride, skinId, skins]);
 
   useLayoutEffect(() => {
-    const root = document.documentElement;
-    root.classList.remove("dark");
-    root.setAttribute("data-theme-ready", themeReady ? "true" : "false");
-    root.setAttribute("data-theme-synced", themeSynced ? "true" : "false");
-    applyThemeDataAttributes(root, appliedConfig, appliedSkin);
-
-    const palette = generateThemePalette(appliedConfig);
-    Object.entries(palette).forEach(([key, value]) => root.style.setProperty(key, value));
-    applyStorefrontNextThemeOverrides(root, inAdminScope, appliedConfig, palette);
-  }, [appliedConfig, appliedSkin, inAdminScope, themeReady, themeSynced]);
-
-  useLayoutEffect(() => {
-    const syncScope = () => {
-      const root = document.documentElement;
-      const scoped = resolveThemeConfigForScope(effectiveThemeConfig, isAdminScope());
-      const palette = generateThemePalette(scoped);
-      Object.entries(palette).forEach(([key, value]) => root.style.setProperty(key, value));
-      applyThemeDataAttributes(root, scoped, appliedSkin);
-      applyStorefrontNextThemeOverrides(root, isAdminScope(), scoped, palette);
-    };
-    syncScope();
-    window.addEventListener("app:scope-changed", syncScope);
-    return () => window.removeEventListener("app:scope-changed", syncScope);
-  }, [effectiveThemeConfig, appliedSkin]);
-
-  const value = useMemo<ThemeContextValue>(
-    () => ({
-      theme: "light",
-      skinId: inAdminScope ? effectiveSkinId : CURATED_LIFE_SKIN_ID,
-      skins,
-      switchableSkins: [],
-      pickerSkins: [],
-      setSkinId: () => {},
-      themeConfig: appliedConfig,
-      themeReady,
-      themeSynced,
-    }),
-    [appliedConfig, effectiveSkinId, inAdminScope, skins, themeReady, themeSynced],
-  );
+    applyStorefrontTheme(document.documentElement, themeConfig, CURATED_LIFE_SKIN);
+  }, [themeConfig]);
 
   return <ThemeRuntimeContext.Provider value={value}>{children}</ThemeRuntimeContext.Provider>;
-}
-
-function getInitialThemeState() {
-  if (typeof window === "undefined") {
-    return {
-      skins: [DEFAULT_RUNTIME_THEME_SKIN],
-      skinId: DEFAULT_SKIN_ID,
-      themeConfig: normalizeThemeConfig(DEFAULT_RUNTIME_THEME_SKIN.config),
-      ready: false,
-    };
-  }
-
-  if (!isAdminScope()) {
-    const fixedSkin = normalizeRuntimeSkin(CURATED_LIFE_SKIN) ?? CURATED_LIFE_SKIN;
-    return {
-      skins: [fixedSkin],
-      skinId: CURATED_LIFE_SKIN_ID,
-      themeConfig: normalizeThemeConfig(CURATED_LIFE_CONFIG),
-      ready: true,
-    };
-  }
-
-  const cachedSkins = readCachedSkins();
-  const normalized = normalizeRuntimeThemePayload({
-    defaultSkinId: DEFAULT_SKIN_ID,
-    activeSkinId: DEFAULT_SKIN_ID,
-    skins: cachedSkins.length > 0 ? cachedSkins : [DEFAULT_RUNTIME_THEME_SKIN],
-  });
-  const sourceSkins = normalized.skins;
-  const previewSkinId = readThemePreviewSkinId();
-  const active = sourceSkins.find((skin) => skin.id === previewSkinId) ?? sourceSkins.find((skin) => skin.id === DEFAULT_SKIN_ID) ?? sourceSkins[0];
-
-  return {
-    skins: sourceSkins,
-    skinId: active?.id ?? DEFAULT_SKIN_ID,
-    themeConfig: normalizeThemeConfig(active?.config),
-    ready: cachedSkins.length > 0,
-  };
-}
-
-function readCachedSkins(): ThemeSkin[] {
-  try {
-    const raw = localStorage.getItem(SKINS_CACHE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
 }
 
 export function ThemeRuntimeOverrideProvider({
@@ -502,15 +135,11 @@ export function ThemeRuntimeOverrideProvider({
 }) {
   const parent = useThemeRuntime();
   const previewConfig = useMemo(() => normalizeThemeConfig(config), [config]);
-
-  const value = useMemo(
+  const value = useMemo<ThemeContextValue>(
     () => ({
       ...parent,
-      themeConfig: previewConfig,
       skinId: `preview-${parent.skinId}`,
-      setSkinId: () => {},
-      themeReady: true,
-      themeSynced: true,
+      themeConfig: previewConfig,
     }),
     [parent, previewConfig],
   );

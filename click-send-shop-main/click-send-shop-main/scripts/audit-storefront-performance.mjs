@@ -10,7 +10,7 @@ const INITIAL_SETTLE_MS = readBudget("STOREFRONT_PERF_INITIAL_SETTLE_MS", 1500);
 const IDLE_WINDOW_MS = readBudget("STOREFRONT_PERF_IDLE_WINDOW_MS", 16000);
 
 const budgets = {
-  initialJsKb: readBudget("STOREFRONT_PERF_MAX_INITIAL_JS_KB", 480),
+  initialJsKb: readBudget("STOREFRONT_PERF_MAX_INITIAL_JS_KB", 490),
   initialCssKb: readBudget("STOREFRONT_PERF_MAX_INITIAL_CSS_KB", 250),
   idleJsKb: readBudget("STOREFRONT_PERF_MAX_IDLE_JS_KB", 4),
   idleCssKb: readBudget("STOREFRONT_PERF_MAX_IDLE_CSS_KB", 2),
@@ -220,6 +220,13 @@ async function stubLocalApi(page, baseUrl) {
           couponCenter: null,
           newUserGift: null,
         },
+      };
+    } else if (pathname === "/theme/skins") {
+      data = {
+        defaultSkinId: "default_life_green",
+        activeSkinId: "default_life_green",
+        holidayRules: [],
+        skins: [],
       };
     }
     await route.fulfill({

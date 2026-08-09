@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { LoaderCircle, Plus } from "lucide-react";
+import { LoaderCircle, ShoppingCart } from "lucide-react";
 import type { MouseEvent } from "react";
 import "@/styles/product-card-v2.css";
 import ProductCoverImage from "@/components/ProductCoverImage";
@@ -152,7 +152,7 @@ export default function ProductCardV2({
                     ? <span aria-hidden>选规格</span>
                     : adding
                     ? <LoaderCircle size={17} className="animate-spin" aria-hidden />
-                    : <Plus size={17} strokeWidth={2.4} aria-hidden />}
+                    : <ShoppingCart className="sf-next-product-card__cart-icon" size={20} strokeWidth={1.9} aria-hidden />}
                 </UnifiedButton>
               ) : null}
             </div>
@@ -227,7 +227,7 @@ export default function ProductCardV2({
                   ? <span aria-hidden>选规格</span>
                   : adding
                   ? <LoaderCircle size={17} className="animate-spin" aria-hidden />
-                  : <Plus size={17} strokeWidth={2.4} aria-hidden />}
+                  : <ShoppingCart className="sf-next-product-card__cart-icon" size={20} strokeWidth={1.9} aria-hidden />}
               </UnifiedButton>
             ) : null}
           </div>

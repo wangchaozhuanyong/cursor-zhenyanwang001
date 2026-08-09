@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { StoreSearchDrawer, StoreSearchLauncher } from "@/components/store/StoreSearchDrawer";
 import type { StoreSearchCategoryOption, StoreSearchTagOption } from "@/components/store/storeSearchOptions";
 import StoreCategoryPrimaryNav from "@/components/store/StoreCategoryPrimaryNav";
+import StoreCategorySubcategorySelector from "@/components/store/StoreCategorySubcategorySelector";
 import ProductFilterDrawer from "@/components/ProductFilterDrawer";
 import ProductSortBar from "@/components/ProductSortBar";
 import * as productService from "@/services/productService";
@@ -34,6 +35,7 @@ import { storefrontCategoryName } from "@/utils/storefrontCopySanitizer";
 import "@/styles/storefront-next.category.css";
 import { useStorefrontNavigate } from "@/components/storefront-motion/useStorefrontNavigate";
 import { resolveCategoryFallbackHero } from "@/constants/categoryFallbackMedia";
+import { getCategoryNavIconValue } from "@/utils/categoryNavIcon";
 
 export default function Categories() {
   const siteInfo = useSiteInfo();
@@ -60,6 +62,7 @@ export default function Categories() {
   const [query, setQuery] = useState(searchParams.get("keyword") || "");
   const [submittedQuery, setSubmittedQuery] = useState(searchParams.get("keyword") || "");
   const [searchPanelOpen, setSearchPanelOpen] = useState(false);
+  const [allCategoriesExpanded, setAllCategoriesExpanded] = useState(false);
   const [minPrice, setMinPrice] = useState(searchParams.get("min_price") || "");
   const [maxPrice, setMaxPrice] = useState(searchParams.get("max_price") || "");
   const [inStock, setInStock] = useState(searchParams.get("in_stock") === "1");
@@ -103,6 +106,10 @@ export default function Categories() {
     setIsNew(nextIsNew);
     setIsHot(searchParams.get("is_hot") === "1");
     setIsRecommended(searchParams.get("is_recommended") === "1");
+  }, [searchParams]);
+
+  useEffect(() => {
+    setAllCategoriesExpanded(false);
   }, [searchParams]);
 
   const syncQuery = useCallback(() => {
@@ -195,6 +202,12 @@ export default function Categories() {
     setActiveCat(cat.id);
   }, []);
 
+  const handleSubcategoryClick = useCallback((categoryId: string) => {
+    void trackEvent({ event_type: "category_click", module: "categories", category_id: categoryId });
+    setIsNew(false);
+    setActiveCat(categoryId);
+  }, []);
+
   const clearFilters = useCallback(() => {
     setActiveTagId("");
     setSort("default");
@@ -246,7 +259,8 @@ export default function Categories() {
       if (item.kind === "all") {
         return {
           id: "all",
-          label: "全部",
+          label: "全部商品",
+          iconValue: siteInfo.categorySystemAllIconUrl?.trim() || "all",
           active: activeCat === "all" && !isNew,
           onClick: handleSelectAll,
         };
@@ -255,6 +269,7 @@ export default function Categories() {
         return {
           id: "new",
           label: NEW_ARRIVAL_CATEGORY_LABEL,
+          iconValue: siteInfo.categorySystemNewIconUrl?.trim() || "new",
           active: isNew,
           onClick: handleSelectNewArrivals,
         };
@@ -263,11 +278,21 @@ export default function Categories() {
       return {
         id: node.id,
         label: storefrontCategoryName(node.name),
+        iconValue: getCategoryNavIconValue(node),
         active: !isNew && isCategoryOrDescendantActive(node, activeCat),
         onClick: () => handleRootCategoryClick(node),
       };
     });
-  }, [activeCat, categories, handleRootCategoryClick, handleSelectAll, handleSelectNewArrivals, isNew]);
+  }, [
+    activeCat,
+    categories,
+    handleRootCategoryClick,
+    handleSelectAll,
+    handleSelectNewArrivals,
+    isNew,
+    siteInfo.categorySystemAllIconUrl,
+    siteInfo.categorySystemNewIconUrl,
+  ]);
 
   const activeFilterCount = useMemo(() => {
     let c = 0;
@@ -302,6 +327,8 @@ export default function Categories() {
     return hasEnabledCategoryBanner(root) ? root : null;
   }, [activeCategory, activeRootId, categories]);
   const activeRootCategory = activeRootId ? findCategoryById(categories, activeRootId) : null;
+  const activeSubCategories = activeRootCategory?.children || [];
+  const showSecondaryNav = !isNew && Boolean(activeRootCategory && activeSubCategories.length > 0);
   const categoryFallbackHero = resolveCategoryFallbackHero(
     activeRootCategory?.name || activeCategory?.name,
   );
@@ -340,7 +367,10 @@ export default function Categories() {
     && visibleProducts.length <= 2
     && !hasMoreProducts;
 
-  const categoryPills = rootKingkongItems;
+  const categoryPills = useMemo(
+    () => rootKingkongItems.filter((item) => item.id !== "all"),
+    [rootKingkongItems],
+  );
   const searchCategoryOptions = useMemo<StoreSearchCategoryOption[]>(() => rootKingkongItems.map((item) => ({
     id: item.id,
     label: item.label,
@@ -506,22 +536,42 @@ export default function Categories() {
       />
       <main className="sf-next-category-shell mx-auto w-full max-w-screen-xl">
         <h1 className="sr-only">{productSectionTitle}</h1>
-        <section className="sf-next-category-toolbar" aria-label="分类搜索和筛选">
-          <StoreSearchLauncher
-            value={submittedQuery}
-            placeholder={STORE_COPY.searchPlaceholder}
-            className="sf-next-category-search-trigger"
-            onClick={() => setSearchPanelOpen(true)}
-          />
-          <div className="sf-next-category-filter-slot">
-            {filterDrawer}
+        <section className="sf-next-category-toolbar" aria-label="搜索和筛选">
+          <div className="sf-next-category-toolbar__controls">
+            <StoreSearchLauncher
+              value={submittedQuery}
+              placeholder={STORE_COPY.searchPlaceholder}
+              className="sf-next-category-search-trigger"
+              onClick={() => setSearchPanelOpen(true)}
+            />
+            <div className="sf-next-category-filter-slot">
+              {filterDrawer}
+            </div>
           </div>
         </section>
 
-        <div className="sf-next-category-workspace">
-          <aside className="sf-next-category-rail">
-            <StoreCategoryPrimaryNav items={categoryPills} loading={loading && categories.length === 0} />
-          </aside>
+        <section className="sf-next-category-primary" aria-label="一级分类导航">
+          <StoreCategoryPrimaryNav
+            items={categoryPills}
+            expandedItems={rootKingkongItems}
+            loading={loading && categories.length === 0}
+            expanded={allCategoriesExpanded}
+            onExpandedChange={setAllCategoriesExpanded}
+          />
+        </section>
+
+        <div className={cn("sf-next-category-workspace", showSecondaryNav && "has-secondary-nav")}>
+          {showSecondaryNav && activeRootCategory ? (
+            <aside className="sf-next-category-secondary-rail">
+              <StoreCategorySubcategorySelector
+                sectionLabel={`${storefrontCategoryName(activeRootCategory.name)}二级分类`}
+                activeCat={activeCat}
+                activeRootId={activeRootCategory.id}
+                subCategories={activeSubCategories}
+                onSelect={handleSubcategoryClick}
+              />
+            </aside>
+          ) : null}
 
           <section ref={listingSectionRef} className="sf-next-listing-section" aria-label={productSectionTitle}>
             <CategoryBannerCard category={activeCategoryBanner} fallbackImage={categoryFallbackHero} />

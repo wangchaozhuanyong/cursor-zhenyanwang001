@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   ArrowRight,
   BadgePercent,
   CalendarDays,
+  ChevronLeft,
+  ChevronRight,
   Clock3,
   Gem,
   Gift,
@@ -22,6 +24,7 @@ import { buildCanonical } from "@/utils/seo";
 import { cn } from "@/lib/utils";
 import { usePublicLocale } from "@/i18n/publicLocale";
 import { isInternalStorefrontCopy, storefrontDisplayText } from "@/utils/storefrontCopySanitizer";
+import { getMotionSafeScrollBehavior, scrollElementToHorizontalCenter } from "@/utils/horizontalScroll";
 import type { PromotionType, StorefrontPromotion } from "@/services/marketingService";
 import "@/styles/promotions-route.css";
 
@@ -474,6 +477,12 @@ function PromotionsLoadingLine() {
 export default function Promotions() {
   const [searchParams] = useSearchParams();
   const { localizedPath, promotionTypeLabel, t } = usePublicLocale();
+  const filterRailRef = useRef<HTMLElement>(null);
+  const [filterScrollState, setFilterScrollState] = useState({
+    canScrollLeft: false,
+    canScrollRight: false,
+    hasOverflow: false,
+  });
   const selectedType = useMemo(() => {
     const raw = searchParams.get("type") || "";
     return FILTERABLE_PROMOTION_TYPES.includes(raw as PromotionType) ? raw as PromotionType : "";
@@ -484,6 +493,27 @@ export default function Promotions() {
   const [overviewList, setOverviewList] = useState<StorefrontPromotion[]>(() => initialOverviewCache?.list || []);
   const [loading, setLoading] = useState(() => !initialCache);
   const [error, setError] = useState("");
+
+  const refreshFilterScrollState = useCallback(() => {
+    const rail = filterRailRef.current;
+    if (!rail) return;
+    const hasOverflow = rail.scrollWidth > rail.clientWidth + 2;
+    setFilterScrollState({
+      canScrollLeft: hasOverflow && rail.scrollLeft > 2,
+      canScrollRight: hasOverflow && rail.scrollLeft + rail.clientWidth < rail.scrollWidth - 2,
+      hasOverflow,
+    });
+  }, []);
+
+  const scrollFilters = useCallback((direction: "left" | "right") => {
+    const rail = filterRailRef.current;
+    if (!rail) return;
+    const distance = Math.max(160, Math.round(rail.clientWidth * 0.78));
+    rail.scrollBy({
+      left: direction === "left" ? -distance : distance,
+      behavior: getMotionSafeScrollBehavior(),
+    });
+  }, []);
 
   const load = useCallback(async () => {
     const cached = readPromotionListCache(selectedType);
@@ -510,6 +540,32 @@ export default function Promotions() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    const rail = filterRailRef.current;
+    if (!rail) return;
+
+    refreshFilterScrollState();
+    rail.addEventListener("scroll", refreshFilterScrollState, { passive: true });
+    const observer = typeof ResizeObserver === "undefined"
+      ? null
+      : new ResizeObserver(refreshFilterScrollState);
+    observer?.observe(rail);
+    window.addEventListener("resize", refreshFilterScrollState);
+
+    return () => {
+      rail.removeEventListener("scroll", refreshFilterScrollState);
+      observer?.disconnect();
+      window.removeEventListener("resize", refreshFilterScrollState);
+    };
+  }, [refreshFilterScrollState]);
+
+  useEffect(() => {
+    const rail = filterRailRef.current;
+    const activeFilter = rail?.querySelector<HTMLElement>("[aria-current='page']");
+    scrollElementToHorizontalCenter(rail, activeFilter);
+    refreshFilterScrollState();
+  }, [refreshFilterScrollState, selectedType]);
 
   useEffect(() => {
     const cached = readPromotionListCache("");
@@ -560,31 +616,59 @@ export default function Promotions() {
           loading={showInitialLoading && !folioList.length}
         />
 
-        <nav
-          className="sf-next-promo-filters no-scrollbar"
-          aria-label={t("promotion.quickNav")}
+        <div
+          className={cn(
+            "sf-next-promo-filter-shell",
+            filterScrollState.hasOverflow && "is-scrollable",
+          )}
         >
-          {FILTERS.map((filter) => {
-            const Icon = filter.icon;
-            const active = selectedType === filter.type;
-            const label = filter.type ? promotionTypeLabel(filter.type) : t("common.allPromotions");
-            return (
-              <Link
-                key={filter.type || "all"}
-                to={localizedPath(buildFilterHref(filter.type))}
-                preventScrollReset
-                aria-current={active ? "page" : undefined}
-                className={cn(
-                  "sf-next-promo-filter",
-                  active && "is-active",
-                )}
-              >
-                <Icon size={15} className="shrink-0" />
-                <span className="truncate">{label || filter.fallbackLabel}</span>
-              </Link>
-            );
-          })}
-        </nav>
+          <button
+            type="button"
+            className="sf-next-promo-filter-control"
+            aria-label="向左查看更多活动分类"
+            disabled={!filterScrollState.canScrollLeft}
+            onClick={() => scrollFilters("left")}
+          >
+            <ChevronLeft size={18} aria-hidden />
+          </button>
+
+          <nav
+            ref={filterRailRef}
+            className="sf-next-promo-filters no-scrollbar"
+            aria-label={t("promotion.quickNav")}
+          >
+            {FILTERS.map((filter) => {
+              const Icon = filter.icon;
+              const active = selectedType === filter.type;
+              const label = filter.type ? promotionTypeLabel(filter.type) : t("common.allPromotions");
+              return (
+                <Link
+                  key={filter.type || "all"}
+                  to={localizedPath(buildFilterHref(filter.type))}
+                  preventScrollReset
+                  aria-current={active ? "page" : undefined}
+                  className={cn(
+                    "sf-next-promo-filter",
+                    active && "is-active",
+                  )}
+                >
+                  <Icon size={15} className="shrink-0" />
+                  <span>{label || filter.fallbackLabel}</span>
+                </Link>
+              );
+            })}
+          </nav>
+
+          <button
+            type="button"
+            className="sf-next-promo-filter-control"
+            aria-label="向右查看更多活动分类"
+            disabled={!filterScrollState.canScrollRight}
+            onClick={() => scrollFilters("right")}
+          >
+            <ChevronRight size={18} aria-hidden />
+          </button>
+        </div>
         {showInitialLoading ? (
           <PromotionsLoadingLine />
         ) : error && list.length === 0 ? (

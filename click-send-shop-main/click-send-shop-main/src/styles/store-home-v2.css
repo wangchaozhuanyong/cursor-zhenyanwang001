@@ -550,6 +550,128 @@ html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-home-page .s
   font-size: 10px;
 }
 
+/* Homepage product display only: ivory surfaces, restrained gold details, and a mobile left-image list. */
+html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-home-page .sf-next-product-shelf--editorial {
+  --sf-home-product-ivory: color-mix(in srgb, var(--sf-surface) 94%, var(--sf-warning));
+  --sf-home-product-gold: color-mix(in srgb, var(--sf-warning) 44%, var(--sf-line));
+  --sf-home-product-gold-strong: color-mix(in srgb, var(--sf-warning) 70%, var(--sf-line-strong));
+}
+
+html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-home-page .sf-next-product-shelf--editorial .sf-next-product-shelf__grid .sf-next-product-card {
+  overflow: hidden;
+  border: 1px solid var(--sf-home-product-gold);
+  border-radius: 10px;
+  background: var(--sf-home-product-ivory);
+  box-shadow: 0 10px 24px -22px color-mix(in srgb, var(--sf-warning) 72%, transparent);
+}
+
+html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-home-page .sf-next-product-shelf--editorial .sf-next-product-shelf__grid .sf-next-product-card::before {
+  display: none;
+}
+
+html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-home-page .sf-next-product-shelf--editorial .sf-next-product-shelf__grid .sf-next-product-card__media {
+  height: auto;
+  aspect-ratio: 6 / 5;
+  border: 1px solid var(--sf-home-product-gold-strong);
+  border-radius: 9px 9px 0 0;
+  background: var(--sf-home-product-ivory);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sf-surface) 55%, transparent);
+}
+
+html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-home-page .sf-next-product-shelf--editorial .sf-next-product-shelf__grid .sf-next-product-card__media :where(img, .sf-next-ratio-image__img) {
+  object-fit: cover;
+  padding: 0;
+  background: var(--sf-home-product-ivory);
+}
+
+html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-home-page .sf-next-product-shelf--editorial .sf-next-product-shelf__grid .sf-next-product-card__info {
+  padding: 10px 11px 11px;
+}
+
+html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-home-page .sf-next-product-shelf--editorial .sf-next-product-shelf__grid .sf-next-product-card__cart {
+  border-color: var(--sf-primary);
+  background: var(--sf-primary);
+  color: var(--theme-primary-foreground);
+}
+
+html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-home-page .sf-next-product-shelf--editorial .sf-next-product-shelf__grid .sf-next-product-card__cart:is(:hover, :focus-visible):not(:disabled) {
+  border-color: color-mix(in srgb, var(--sf-primary) 86%, var(--sf-warning));
+  background: color-mix(in srgb, var(--sf-primary) 86%, var(--sf-warning));
+}
+
+html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-home-page .sf-next-product-shelf--editorial .sf-next-product-shelf__grid .sf-next-product-card__cart:disabled,
+html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-home-page .sf-next-product-shelf--editorial .sf-next-product-shelf__grid .sf-next-product-card__cart.is-disabled {
+  border-color: var(--sf-line);
+  background: color-mix(in srgb, var(--sf-line) 42%, var(--sf-surface));
+  color: var(--sf-muted);
+}
+
+@media (max-width: 767px) {
+  html[data-app-scope="store"][data-fixed-storefront="true"] body .sf-next-home-page main .sf-next-product-shelf--editorial .sf-next-product-grid.sf-next-product-shelf__grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-home-page .sf-next-product-shelf--editorial .sf-next-product-shelf__grid .sf-next-product-card {
+    display: grid;
+    min-height: 108px;
+    grid-template-columns: 96px minmax(0, 1fr);
+    align-items: stretch;
+    gap: 0;
+    padding: 6px;
+    border-radius: 10px;
+  }
+
+  html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-home-page .sf-next-product-shelf--editorial .sf-next-product-shelf__grid .sf-next-product-card__media {
+    width: 96px;
+    min-width: 96px;
+    height: 96px;
+    min-height: 96px;
+    align-self: center;
+    aspect-ratio: 1 / 1;
+    border-radius: 7px;
+  }
+
+  html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-home-page .sf-next-product-shelf--editorial .sf-next-product-shelf__grid .sf-next-product-card__info {
+    min-height: 96px;
+    gap: 3px;
+    padding: 5px 4px 4px 11px;
+  }
+
+  html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-home-page .sf-next-product-shelf--editorial .sf-next-product-shelf__grid .sf-next-product-card__title {
+    min-height: 20px;
+    font-size: 14px;
+    line-height: 1.4;
+  }
+
+  html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-home-page .sf-next-product-shelf--editorial .sf-next-product-shelf__grid .sf-next-product-card__decision--grid {
+    min-height: 16px;
+    margin-top: 1px;
+    overflow: hidden;
+    flex-wrap: nowrap;
+  }
+
+  html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-home-page .sf-next-product-shelf--editorial .sf-next-product-shelf__grid .sf-next-product-card__footer {
+    min-height: 44px;
+    grid-template-columns: minmax(0, 1fr) 44px;
+    align-items: end;
+    gap: 8px;
+    padding-top: 3px;
+  }
+
+  html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-home-page .sf-next-product-shelf--editorial .sf-next-product-shelf__grid .sf-next-product-card__footer:has(.is-select) {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-home-page .sf-next-product-shelf--editorial .sf-next-product-shelf__grid .sf-next-product-card__price .sf-next-price__amount {
+    font-size: 16px;
+  }
+
+  html[data-app-scope="store"][data-fixed-storefront="true"] .sf-next-home-page .sf-next-product-shelf--editorial .sf-next-product-shelf__grid .sf-next-product-card__price .sf-next-price__original {
+    grid-column: auto;
+  }
+}
+
 html[data-app-scope="store"][data-fixed-storefront="true"] :where(.sf-next-campaign-section, .sf-next-product-shelf) .storefront-title-row {
   display: flex;
   min-width: 0;

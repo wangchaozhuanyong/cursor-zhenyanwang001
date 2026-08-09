@@ -20,8 +20,8 @@ const product = {
   effective_price: 89.9,
   original_price: 109.9,
   points: 90,
-  category_id: "fixture-category",
-  category_name: "礼物精选",
+  category_id: "fixture-category-gift-box",
+  category_name: "节庆礼盒",
   stock: 28,
   status: "active",
   lifecycle_status: 1,
@@ -46,8 +46,8 @@ const fixtureProducts = [
     effective_price: 59.9,
     original_price: 79.9,
     points: 60,
-    category_id: "fixture-category-home",
-    category_name: "家居生活",
+    category_id: "fixture-category-home-daily",
+    category_name: "日用收纳",
     stock: 42,
     sales_count: 218,
     is_new: false,
@@ -79,8 +79,8 @@ const fixtureProducts = [
     effective_price: 76.5,
     original_price: 96,
     points: 77,
-    category_id: "fixture-category-food",
-    category_name: "食品饮料",
+    category_id: "fixture-category-food-drink",
+    category_name: "咖啡饮品",
     stock: 31,
     sales_count: 302,
     is_recommended: false,
@@ -95,8 +95,8 @@ const fixtureProducts = [
     effective_price: 39.9,
     original_price: 49.9,
     points: 40,
-    category_id: "fixture-category-home",
-    category_name: "家居生活",
+    category_id: "fixture-category-home-kitchen",
+    category_name: "厨房小家电",
     stock: 56,
     sales_count: 418,
     is_new: false,
@@ -111,8 +111,8 @@ const fixtureProducts = [
     effective_price: 29.9,
     original_price: 39.9,
     points: 30,
-    category_id: "fixture-category-gift",
-    category_name: "礼物精选",
+    category_id: "fixture-category-gift-member",
+    category_name: "会员礼遇",
     stock: 68,
     sales_count: 512,
     is_hot: false,
@@ -140,6 +140,7 @@ const fixtureCategories = [
   {
     id: "fixture-category-gift",
     name: "礼物精选",
+    icon_url: fixtureMediaUrl("product-gift.webp"),
     description: "节庆、探访与日常心意精选",
     banner_image_url: "/assets/fixed-storefront/category-gift-hero.webp",
     banner_title: "礼物精选",
@@ -150,11 +151,33 @@ const fixtureCategories = [
     is_active: true,
     is_visible: true,
     productCount: 2,
-    children: [],
+    children: [
+      {
+        id: "fixture-category-gift-box",
+        name: "节庆礼盒",
+        sort_order: 1,
+        parent_id: "fixture-category-gift",
+        is_active: true,
+        is_visible: true,
+        productCount: 1,
+        children: [],
+      },
+      {
+        id: "fixture-category-gift-member",
+        name: "会员礼遇",
+        sort_order: 2,
+        parent_id: "fixture-category-gift",
+        is_active: true,
+        is_visible: true,
+        productCount: 1,
+        children: [],
+      },
+    ],
   },
   {
     id: "fixture-category-home",
     name: "家居生活",
+    icon_url: fixtureMediaUrl("product-towels.webp"),
     description: "日用、收纳与居家补给",
     banner_image_url: "/assets/fixed-storefront/category-home-hero.webp",
     banner_title: "家居生活",
@@ -165,11 +188,33 @@ const fixtureCategories = [
     is_active: true,
     is_visible: true,
     productCount: 2,
-    children: [],
+    children: [
+      {
+        id: "fixture-category-home-daily",
+        name: "日用收纳",
+        sort_order: 1,
+        parent_id: "fixture-category-home",
+        is_active: true,
+        is_visible: true,
+        productCount: 1,
+        children: [],
+      },
+      {
+        id: "fixture-category-home-kitchen",
+        name: "厨房小家电",
+        sort_order: 2,
+        parent_id: "fixture-category-home",
+        is_active: true,
+        is_visible: true,
+        productCount: 1,
+        children: [],
+      },
+    ],
   },
   {
     id: "fixture-category-food",
     name: "食品饮料",
+    icon_url: fixtureMediaUrl("product-coffee.webp"),
     description: "日常风味与安心补给",
     banner_image_url: "/assets/fixed-storefront/category-food-hero.webp",
     banner_title: "食品饮料",
@@ -180,11 +225,23 @@ const fixtureCategories = [
     is_active: true,
     is_visible: true,
     productCount: 1,
-    children: [],
+    children: [
+      {
+        id: "fixture-category-food-drink",
+        name: "咖啡饮品",
+        sort_order: 1,
+        parent_id: "fixture-category-food",
+        is_active: true,
+        is_visible: true,
+        productCount: 1,
+        children: [],
+      },
+    ],
   },
   {
     id: "fixture-category-beauty",
     name: "个护美妆",
+    icon_url: fixtureMediaUrl("product-serum.webp"),
     description: "温和护理与日常焕新",
     banner_image_url: "/assets/fixed-storefront/category-beauty-hero.webp",
     banner_title: "个护美妆",
@@ -200,6 +257,7 @@ const fixtureCategories = [
   {
     id: "fixture-category-service",
     name: "城市服务",
+    icon_url: fixtureMediaUrl("product-diffuser.webp"),
     description: "咨询、确认与本地生活协助",
     banner_image_url: "/assets/fixed-storefront/category-visa-hero.webp",
     banner_title: "城市服务",
@@ -213,6 +271,27 @@ const fixtureCategories = [
     children: [],
   },
 ];
+
+function findFixtureCategory(nodes, categoryId) {
+  for (const node of nodes) {
+    if (node.id === categoryId) return node;
+    const nested = findFixtureCategory(node.children || [], categoryId);
+    if (nested) return nested;
+  }
+  return null;
+}
+
+function collectFixtureCategoryIds(categoryId) {
+  const root = findFixtureCategory(fixtureCategories, categoryId);
+  if (!root) return new Set([categoryId]);
+  const ids = new Set();
+  const visit = (node) => {
+    ids.add(node.id);
+    (node.children || []).forEach(visit);
+  };
+  visit(root);
+  return ids;
+}
 
 const fixturePromotions = [
   {
@@ -995,7 +1074,7 @@ function fixtureResponse(pathname, method, searchParams = new URLSearchParams())
   const categoryMatch = pathname.match(/^\/categories\/([^/]+)$/);
   if (categoryMatch && method === "GET") {
     const categoryId = decodeURIComponent(categoryMatch[1]);
-    return ok(fixtureCategories.find((item) => item.id === categoryId) || fixtureCategories[0]);
+    return ok(findFixtureCategory(fixtureCategories, categoryId) || fixtureCategories[0]);
   }
   if (pathname === "/products/home" && method === "GET") {
     return ok({
@@ -1017,7 +1096,12 @@ function fixtureResponse(pathname, method, searchParams = new URLSearchParams())
     const minPrice = Number(searchParams.get("min_price"));
     const maxPrice = Number(searchParams.get("max_price"));
     const sort = String(searchParams.get("sort") || "");
-    if (categoryId) list = list.filter((item) => item.category_id === categoryId);
+    if (categoryId) {
+      const categoryIds = searchParams.get("include_descendants")
+        ? collectFixtureCategoryIds(categoryId)
+        : new Set([categoryId]);
+      list = list.filter((item) => categoryIds.has(item.category_id));
+    }
     if (keyword) {
       list = list.filter((item) => (
         `${item.name} ${item.category_name || ""} ${item.description || ""}`.toLowerCase().includes(keyword)
